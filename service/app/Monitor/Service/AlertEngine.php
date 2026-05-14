@@ -1,0 +1,89 @@
+<?php
+namespace App\Monitor\Service;
+
+use App\Monitor\Model\Alert;
+
+class AlertEngine
+{
+    private array $alertRules = [
+        'server_down' => [
+            'severity' => 'critical',
+            'notify'   => ['in_app', 'email', 'sms'],
+        ],
+        'cpu_high' => [
+            'severity'  => 'warning',
+            'threshold' => ['cpu_percent' => 90, 'duration_minutes' => 10],
+            'notify'    => ['in_app', 'email'],
+        ],
+        'disk_high' => [
+            'severity'  => 'warning',
+            'threshold' => ['disk_percent' => 90, 'duration_minutes' => 5],
+            'notify'    => ['in_app', 'email'],
+        ],
+        'ssl_expiring' => [
+            'severity'  => 'warning',
+            'threshold' => ['days_left' => 30],
+            'notify'    => ['in_app', 'email'],
+        ],
+        'domain_expiring' => [
+            'severity'  => 'warning',
+            'threshold' => ['days_left' => 30],
+            'notify'    => ['in_app', 'email'],
+        ],
+        'provision_failed' => [
+            'severity' => 'critical',
+            'notify'   => ['in_app', 'email', 'sms'],
+        ],
+    ];
+
+    public function trigger(string $ruleCode, $resource, array $context = []): void
+    {
+        $rule = $this->alertRules[$ruleCode] ?? null;
+        if (!$rule) return;
+
+        Alert::create([
+            'rule_code'   => $ruleCode,
+            'severity'    => $rule['severity'],
+            'resource_id' => $resource->id ?? null,
+            'user_id'     => $resource->user_id ?? 0,
+            'context'     => json_encode($context),
+            'status'      => 'triggered',
+        ]);
+
+        $dispatcher = new \App\Notification\Service\NotificationDispatcher();
+        $dispatcher->dispatch(
+            $resource->user_id ?? 0,
+            'alert_' . $ruleCode,
+            array_merge($context, ['resource_type' => $resource->type ?? 'unknown']),
+            $rule['notify']
+        );
+
+        if (in_array($rule['severity'], ['critical', 'major'])) {
+            $this->notifyOnCall($ruleCode, $resource, $context);
+        }
+    }
+
+    private function notifyOnCall(string $ruleCode, $resource, array $context): void
+    {
+        $oncallStaff = \App\User\Model\User::where('role', 'admin')
+            ->where('status', 'active')
+            ->get();
+
+        $dispatcher = new \App\Notification\Service\NotificationDispatcher();
+        foreach ($oncallStaff as $staff) {
+            $dispatcher->dispatch($staff->id, 'alert_oncall', array_merge($context, [
+                'rule_code'   => $ruleCode,
+                'resource_id' => $resource->id ?? 'N/A',
+            ]), ['sms']);
+        }
+    }
+
+    public function onProvisionFailed(\App\Provisioning\Event\ProvisionFailed $event): void
+    {
+        $this->trigger('provision_failed', $event->task, [
+            'task_id'    => $event->task->id,
+            'order_id'   => $event->task->order_id,
+            'last_error' => $event->task->last_error,
+        ]);
+    }
+}

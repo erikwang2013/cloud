@@ -23,4 +23,9 @@ class OrderItem extends Model
     {
         return $this->belongsTo(\App\Product\Model\ProductSku::class, 'sku_id');
     }
+
+    public function tasks()
+    {
+        return $this->hasMany(\App\Provisioning\Model\ProvisionTask::class, 'order_item_id');
+    }
 }

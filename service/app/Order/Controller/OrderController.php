@@ -61,6 +61,12 @@ class OrderController
         ));
     }
 
+    public function removeFromCart($request, string $id)
+    {
+        $this->cartService->removeFromCart($request->userId, (int)$id);
+        return json(Response::success(null, 'Removed from cart'));
+    }
+
     public function show($request, int $id)
     {
         $order = Order::with(['items', 'timeline'])

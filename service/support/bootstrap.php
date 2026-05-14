@@ -139,6 +139,22 @@ $capsule->addConnection($auditConfig, 'audit');
 $capsule->setAsGlobal();
 $capsule->bootEloquent();
 
+// Event listeners
+if (class_exists(\Illuminate\Support\Facades\Event::class)) {
+    \Illuminate\Support\Facades\Event::listen(
+        \App\Payment\Event\OrderPaid::class,
+        [\App\Provisioning\Listener\OrderPaidListener::class, 'handle']
+    );
+    \Illuminate\Support\Facades\Event::listen(
+        \App\Ticket\Event\TicketCreated::class,
+        [\App\Ticket\Listener\AutoAssignListener::class, 'handle']
+    );
+    \Illuminate\Support\Facades\Event::listen(
+        \App\Provisioning\Event\ProvisionFailed::class,
+        [\App\Monitor\Service\AlertEngine::class, 'onProvisionFailed']
+    );
+}
+
 // Request ID helper
 if (!function_exists('request_id')) {
     function request_id(): string {

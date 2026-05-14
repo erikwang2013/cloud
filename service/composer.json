@@ -10,6 +10,9 @@
         "firebase/php-jwt": "^6.0",
         "vlucas/phpdotenv": "^5.0",
         "monolog/monolog": "^3.0",
+        "webman/redis-queue": "^1.0",
+        "illuminate/redis": "^10.0",
+        "guzzlehttp/guzzle": "^7.0",
         "ext-json": "*",
         "ext-pdo": "*",
         "ext-redis": "*"

@@ -25,4 +25,19 @@ class Order extends Model
     {
         return $this->belongsTo(\App\User\Model\User::class);
     }
+
+    public function transactions()
+    {
+        return $this->hasMany(\App\Payment\Model\PaymentTransaction::class);
+    }
+
+    public function resources()
+    {
+        return $this->hasMany(\App\Provisioning\Model\Resource::class);
+    }
+
+    public function refund()
+    {
+        return $this->hasOne(Refund::class);
+    }
 }

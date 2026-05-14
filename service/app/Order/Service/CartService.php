@@ -12,4 +12,9 @@ class CartService
             ->get()
             ->toArray();
     }
+
+    public function removeFromCart(int $userId, int $cartId): void
+    {
+        Cart::where('id', $cartId)->where('user_id', $userId)->delete();
+    }
 }
