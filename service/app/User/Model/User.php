@@ -5,11 +5,13 @@ use Illuminate\Database\Eloquent\Model;
 use Common\Snowflake\HasSnowflakeId;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Maize\Encryptable\Encryptable;
+use Erikwang2013\WebmanScout\Searchable;
 
 class User extends Model
 {
     use HasSnowflakeId;
     use SoftDeletes;
+    use Searchable;
 
     protected $fillable = [
         'email', 'phone', 'password_hash', 'language',
