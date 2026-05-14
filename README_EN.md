@@ -8,7 +8,11 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 |-------|------------|
 | Backend | PHP 8.2 + [webman](https://github.com/walkor/webman) (workerman) |
 | ORM | Illuminate/Eloquent 10.x |
-| Auth | JWT RS256 (firebase/php-jwt) |
+| Auth | JWT HS256 ([erikwang2013/jwt-webman](https://github.com/erikwang2013/jwt-webman)) |
+| Distributed PK | Snowflake ID ([erikwang2013/snowflake-php](https://github.com/erikwang2013/snowflake-php)) |
+| ID Obfuscation | Hashids ([erikwang2013/hashids](https://github.com/erikwang2013/hashids)) |
+| Transport Encryption | AES-256-GCM ([erikwang2013/encryption](https://github.com/erikwang2013/encryption)) |
+| Field Encryption | AES-128-ECB ([erikwang2013/encryptable](https://github.com/erikwang2013/encryptable)) |
 | Queue | webman redis-queue |
 | Database | MySQL 8.0 (main + audit dual connection) |
 | Virtualization | Proxmox VE REST API |
@@ -35,17 +39,21 @@ cloud-php/
 │   │   ├── Ticket/            # Support tickets / SLA auto-assignment
 │   │   └── User/              # Users / auth / KYC / balances
 │   ├── common/                # Shared libraries (PSR-4: Common\)
-│   │   ├── Auth/              # JWT middleware / RBAC
-│   │   ├── Helper/            # Response formatting
+│   │   ├── Auth/              # JWT authentication / middleware
+│   │   ├── Encryption/        # Transport encryption middleware (AES-256-GCM) / service
+│   │   ├── Hashid/            # Hashids request middleware / encode-decode service
+│   │   ├── Helper/            # Response formatting (auto hashid encoding)
 │   │   ├── I18n/              # Internationalization
-│   │   └── Security/          # CORS / WAF / rate limiting / audit logging
-│   ├── config/                # Routes / middleware / logging / database / queue
-│   └── support/               # Bootstrap (Eloquent / Events / env)
+│   │   ├── Security/          # CORS / WAF / rate limiting / audit logging
+│   │   └── Snowflake/         # Snowflake ID service / Eloquent model trait
+│   ├── config/                # 17 configs: routes / middleware / logging / DB / queue / crypto
+│   └── support/               # Bootstrap (Eloquent / Events / encryption / snowflake / hashids init)
 ├── apps/
 │   ├── flutter/               # Flutter client (PC-first web layout)
 │   └── harmonyos/             # HarmonyOS client skeleton
 ├── docker/                    # Dockerfile / docker-compose / nginx / supervisor
-└── docs/                      # Design docs / implementation plans
+├── docs/                      # Database DDL / design docs / implementation plans
+└── README*.md                 # Project documentation
 ```
 
 ## Quick Start
@@ -66,13 +74,20 @@ composer install
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env with your database password, JWT keys, etc.
+# Edit .env with database password, JWT key, encryption keys, etc.
+# ENCRYPTION_MASTER_KEY: openssl rand -base64 32
+# ENCRYPTION_KEY:       echo -n "$(openssl rand -base64 16)" | base64 -w0
+# JWT_SECRET_KEY:       openssl rand -base64 32
 
 # 3. Create databases
 mysql -u root -p -e "CREATE DATABASE cloud_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -u root -p -e "CREATE DATABASE cloud_platform_audit CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-# 4. Start (dev mode)
+# 4. Import schema
+mysql -u root -p cloud_platform < ../docs/database.sql
+mysql -u root -p cloud_platform_audit < ../docs/database_audit.sql
+
+# 5. Start (dev mode)
 php start.php start
 # Visit http://localhost:8787
 ```
@@ -103,15 +118,15 @@ php start.php stop              # Stop
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Health check |
-| POST | `/api/v1/auth/register` | Register |
-| POST | `/api/v1/auth/login` | Login |
-| POST | `/api/v1/auth/refresh` | Refresh token |
+| POST | `/api/v1/auth/register` | Register (body AES-256-GCM encrypted) |
+| POST | `/api/v1/auth/login` | Login (body AES-256-GCM encrypted) |
+| POST | `/api/v1/auth/refresh` | Refresh token (body AES-256-GCM encrypted) |
 | GET | `/api/v1/products` | Product listing (filterable by category/region/keyword) |
-| GET | `/api/v1/products/{id}` | Product detail |
+| GET | `/api/v1/products/{id}` | Product detail (id is a hashid string) |
 | GET | `/api/v1/regions` | Available regions |
 | GET | `/api/v1/domain/check/{domain}/{tld}` | Domain availability check |
 | GET | `/api/v1/domain/tlds` | Available TLDs |
-| POST | `/api/v1/payments/webhook/stripe` | Stripe webhook |
+| POST | `/api/v1/payments/webhook/stripe` | Stripe webhook (signature verified, no encryption) |
 
 ### Authenticated Endpoints (Bearer Token)
 | Method | Path | Description |
@@ -122,10 +137,19 @@ php start.php stop              # Stop
 | GET | `/api/v1/user/balance` | Account balance |
 | GET/POST | `/api/v1/cart` | Shopping cart |
 | POST/GET | `/api/v1/orders` | Orders |
+| GET | `/api/v1/orders/{id}/payment-methods` | Available payment methods |
+| POST | `/api/v1/orders/{id}/pay` | Initiate payment |
 | GET/POST | `/api/v1/resources` | My resources |
+| GET | `/api/v1/resources/{id}/status` | Resource status |
+| GET | `/api/v1/resources/{id}/console` | VNC console URL |
 | GET/POST | `/api/v1/tickets` | Support tickets |
+| POST | `/api/v1/tickets/{id}/reply` | Reply to ticket |
 | GET/POST | `/api/v1/dns/{domain}` | DNS management |
 | POST | `/api/v1/supplier/apply` | Apply as supplier |
+| GET | `/api/v1/supplier/settlements` | Settlement history |
+| POST | `/api/v1/supplier/withdraw` | Request withdrawal |
+
+> **Note:** Authenticated and admin endpoints are processed by `EncryptionMiddleware`. Clients set `X-Encrypted: 1` header and wrap body as `{"payload": "<base64(AES-256-GCM)>"}`. Responses are likewise encrypted and wrapped in a `payload` field. Integer IDs in API responses are automatically converted to 12-character Hashid strings; Hashid strings in requests are decoded back to integer IDs by `HashidRequestMiddleware`.
 
 ### Admin Endpoints
 | Method | Path | Description |
@@ -134,13 +158,17 @@ php start.php stop              # Stop
 | GET/PUT | `/admin/api/v1/users` | User management |
 | GET/POST | `/admin/api/v1/kyc` | KYC review |
 | GET/POST/PUT/DELETE | `/admin/api/v1/products` | Product management |
+| POST | `/admin/api/v1/products/{productId}/skus` | Create SKU |
+| POST | `/admin/api/v1/skus/{skuId}/region-price` | Set regional price |
 | GET/POST | `/admin/api/v1/orders` | Order management (incl. refunds) |
 | GET/PUT | `/admin/api/v1/payments/*` | Channels / transactions / reconciliation |
-| GET | `/admin/api/v1/provisioning/*` | Provisioning tasks / host management |
-| GET/POST | `/admin/api/v1/suppliers/*` | Supplier approval / settlement |
+| GET/POST | `/admin/api/v1/provisioning/*` | Provisioning tasks / host management |
+| GET/POST | `/admin/api/v1/suppliers/*` | Supplier approval / settlement / withdrawal |
 | GET/POST | `/admin/api/v1/tickets` | Ticket assignment / closure |
 | GET | `/admin/api/v1/reports/*` | Revenue / regional / supplier reports |
 | GET | `/admin/api/v1/monitor/*` | Monitoring dashboard / resource metrics |
+| GET | `/admin/api/v1/audit-logs` | Audit logs |
+| PUT | `/admin/api/v1/system/config` | System config update |
 
 ## Design Philosophy
 
@@ -191,14 +219,36 @@ ProviderInterface
 
 ### 5. Security Architecture
 
-Global middleware pipeline: `CORS → WAF → Locale → Auth (authenticated routes) → RBAC (admin routes)`
+Global middleware pipeline: `CORS → WAF → Locale → HashidRequest → [Route: Encryption → Auth]`
 
+- **CORS** — Cross-origin request headers
 - **WAF** — Blocks SQL injection / XSS / path traversal attacks
-- **Rate Limiting** — Registration 5/hour, login 10/hour (per IP)
-- **JWT RS256** — Access Token (15 min) + Refresh Token (30 days, with token rotation)
+- **Locale** — Parses Accept-Language, sets locale
+- **HashidRequest** — Auto-decodes hashid strings in requests to real integer IDs
+- **Encryption** — AES-256-GCM transport encryption (auth + admin routes), prevents MITM eavesdropping and tampering
+- **Auth** — JWT HS256, Access Token 15 min, Refresh Token 30 days, Redis blacklist
+- **Rate Limiting** — Default 60/min, login 5/min, register 3/min, payment 10/min
 - **Audit Logging** — All sensitive operations written to a separate audit database
 
-### 6. Internationalization
+### 6. Data Security
+
+**Layered encryption strategy:**
+
+| Layer | Technology | Description |
+|-------|-----------|-------------|
+| Transport | AES-256-GCM | API request/response body encryption, GCM provides authenticated encryption |
+| Field | AES-128-ECB | Auto encrypt/decrypt sensitive model attributes, ECB is deterministic (queryable) |
+| Primary Key | Hashids | External IDs obfuscated to 12-char strings, hides true data scale |
+
+**Encrypted fields:** 14 fields across 7 models use `Encryptable::class` auto-casting — `User(email, phone, password_hash)`, `UserKyc(id_number, real_name)`, `UserAddress(phone, address)`, `Supplier(contact_name, phone, email)`, `HostMachine(api_token)`, `PaymentChannel(api_key, webhook_secret)`, `RefreshToken(token_hash, device_fingerprint)`.
+
+**Key management:** Transport and field encryption use independent keys (`ENCRYPTION_MASTER_KEY` vs `ENCRYPTION_KEY`). Previous key list (`ENCRYPTION_PREVIOUS_KEYS`) enables zero-downtime key rotation.
+
+### 7. Distributed ID Generation
+
+Twitter Snowflake algorithm generates 64-bit globally unique IDs: `timestamp(41b) | datacenter(5b) | worker(5b) | sequence(12b)`. All 38 Eloquent models auto-generate Snowflake IDs on the `creating` event. No database auto-increment dependency — natively supports sharding.
+
+### 8. Internationalization
 
 - Product names / descriptions stored as JSON `{"en": "...", "zh": "..."}`. API returns content matching the `Accept-Language` header.
 - Notification templates support multiple languages and dispatch in the user's preferred language.
@@ -206,7 +256,13 @@ Global middleware pipeline: `CORS → WAF → Locale → Auth (authenticated rou
 
 ## Roadmap
 
-- [ ] Database migration scripts (DDL generation from models)
+- [x] Database DDL (`docs/database.sql`, 39 tables, erik_ prefix, BigInt non-auto-increment PKs)
+- [x] Snowflake ID generation (`erikwang2013/snowflake-php`)
+- [x] JWT authentication (`erikwang2013/jwt-webman`, HS256 + Redis blacklist)
+- [x] API ID obfuscation (`erikwang2013/hashids`, auto decode requests + auto encode responses)
+- [x] Transport encryption (`erikwang2013/encryption`, AES-256-GCM middleware)
+- [x] Field-level encryption (`erikwang2013/encryptable`, auto encrypt/decrypt sensitive fields)
+- [ ] Database migration scripting (`docs/database.sql` ready, pending migration command)
 - [ ] Stripe production integration (currently mocked)
 - [ ] Twilio / Alibaba Cloud SMS production integration
 - [ ] FCM push notification production integration
