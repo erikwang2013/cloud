@@ -84,6 +84,16 @@
 - **provision_tasks** — 开通任务 (order_id, resource_id, provider, action: create/renew/upgrade/destroy, status, params, result, retry_count, next_retry_at)
 - **provider_apis** — 云厂商 API 配置 (id, name, code, api_key_encrypted, api_secret_encrypted, webhook_secret, status)
 
+### 物理机资源管理 (Host & IP Pool)
+
+自营物理服务器使用 Proxmox VE (社区版，免费) 管理虚拟机，通过 REST API 创建/管理 VM、分配 IP、挂载磁盘。
+
+- **host_machines** — 宿主机 (id, name, region_id, ip_address, proxmox_node, proxmox_api_url, api_token_encrypted, status: online/maintenance/offline, specs: {cpu_total, cpu_allocated, ram_total_gb, ram_allocated_gb, disk_total_gb, disk_allocated_gb}, storage_pool, created_at, updated_at)
+- **ip_pools** — IP 池 (id, host_machine_id, region_id, network_cidr, gateway, vlan_id, ip_start, ip_end, total_count, used_count, status)
+- **ip_allocations** — IP 分配记录 (id, ip_pool_id, resource_id, ip_address, type: primary/secondary, allocated_at, released_at)
+- **disks** — VM 磁盘明细 (id, resource_id, host_machine_id, vm_id, size_gb, disk_type: system/data, storage_pool, device_path, status)
+- **disk_resizes** — 磁盘扩容记录 (id, disk_id, old_size_gb, new_size_gb, status, finished_at)
+
 ### 供应商 (Supplier)
 
 - **suppliers** — 供应商主表 (id, user_id, company_name, contact, status, settlement_method)
@@ -174,14 +184,19 @@ interface ResourceProvider
     public function destroy(Resource $resource): ProvisionResult;
     public function status(Resource $resource): ResourceStatus;
     public function consoleUrl(Resource $resource): string;
+    // 物理机自营专用
+    public function resizeDisk(Resource $resource, int $newSizeGb): ProvisionResult;
+    public function createDisk(ProvisionTask $task): ProvisionResult;
+    public function createIp(ProvisionTask $task): ProvisionResult;
 }
 ```
 
 ProviderFactory 根据 (product_type, provider) 路由到具体实现:
-- AwsServerProvider / AliyunServerProvider
-- GcpIpProvider
-- AzureDiskProvider
-- NamecheapDomainProvider / GoDaddyDomainProvider
+- ProxmoxProvider (自营物理机: 服务器/数据盘/IP)
+- AwsServerProvider / AliyunServerProvider (第三方云服务器)
+- GcpIpProvider (第三方 IP)
+- AzureDiskProvider (第三方云盘)
+- NamecheapDomainProvider / GoDaddyDomainProvider (域名)
 
 ### 异步任务保障
 
@@ -189,6 +204,115 @@ ProviderFactory 根据 (product_type, provider) 路由到具体实现:
 - 按 provider 分组控制并发 (每个 provider 最多 5 并发)
 - 重试策略: 1min → 5min → 15min → 1h → 6h → 24h (最多 6 次)
 - 不可重试失败 → 告警 + 自动生成工单
+
+### 自营物理机方案：Proxmox VE (社区版)
+
+自营服务器采用 Proxmox VE (开源免费，AGPL v3)，PHP 通过 HTTP 调用 Proxmox REST API 管理 KVM 虚拟机生命周期和资源分配。
+
+架构:
+```
+PHP (webman) ──HTTPS──> Proxmox VE API (port 8006)
+                               │
+                               └──> KVM/QEMU ──> VM (分配给用户)
+```
+
+#### ProxmoxApi 客户端封装
+
+```php
+class ProxmoxApi
+{
+    private string $baseUrl;
+    private string $token;
+
+    public function __construct(HostMachine $host)
+    {
+        $this->baseUrl = "https://{$host->ip_address}:8006/api2/json";
+        $this->token   = $host->api_token_encrypted;
+    }
+
+    // GET  /api2/json/nodes/{node}/...
+    public function get(string $path, array $params = []): array;
+    // POST /api2/json/nodes/{node}/...
+    public function post(string $path, array $data = []): array;
+    // PUT  /api2/json/nodes/{node}/...
+    public function put(string $path, array $data = []): array;
+    // DELETE /api2/json/nodes/{node}/...
+    public function delete(string $path): array;
+}
+```
+
+#### 资源操作
+
+**创建 VM (服务器):**
+1. HostSelector 选择一台资源够用的宿主机 (按 cpu/ram/disk 余量 + 负载均衡排序)
+2. 从该宿主机的 ip_pool 分配一个 IP
+3. ProxmoxApi.post("/nodes/{node}/qemu") 创建 VM (设定 vmid、name、cores、memory、net0、ipconfig0)
+4. ProxmoxApi.post("/nodes/{node}/qemu/{vmid}/config") 挂载系统盘 (scsi0: storagePool:sizeG)
+5. ProxmoxApi.post("/nodes/{node}/qemu/{vmid}/status/start") 启动 VM
+6. 更新 host_machine.specs 已分配量 (cpu_allocated / ram_allocated_gb / disk_allocated_gb)
+
+**升级 CPU (在线):**
+```php
+$api->put("/nodes/{node}/qemu/{vmid}/config", ['cores' => $newCpu]);
+$host->recalculate(); // 更新宿主机资源统计
+```
+
+**升级内存 (在线):**
+```php
+$api->put("/nodes/{node}/qemu/{vmid}/config", ['memory' => $newRamGb * 1024]);
+$host->recalculate();
+```
+
+**扩容系统盘:**
+```php
+$api->put("/nodes/{node}/qemu/{vmid}/resize", ['disk' => 'scsi0', 'size' => "{$newSizeGb}G"]);
+```
+
+**单独创建数据盘:**
+```php
+$diskSlot = nextDiskSlot($vmid); // scsi1, scsi2...
+$api->post("/nodes/{node}/qemu/{vmid}/config", [$diskSlot => "{$pool}:{$sizeGb}G"]);
+```
+
+**单独创建 IP:**
+从 IP 池分配 → 通过 Proxmox API 添加虚拟网卡 + 配置 IP，或保留为独立资源分配给已有 VM 的额外网卡。
+
+**销毁 VM:**
+```php
+$api->post("/nodes/{node}/qemu/{vmid}/status/stop");  // 关机
+$api->delete("/nodes/{node}/qemu/{vmid}");             // 删除 VM
+releaseIp($resourceId);                                // 释放 IP 回池
+$host->deallocate($specs);                             // 回收宿主机资源
+```
+
+#### 宿主机选择策略
+
+```php
+class HostSelector
+{
+    public function select(int $regionId, array $specs): HostMachine
+    {
+        return HostMachine::where('region_id', $regionId)
+            ->where('status', 'online')
+            ->whereRaw('JSON_EXTRACT(specs, "$.cpu_total") - JSON_EXTRACT(specs, "$.cpu_allocated") >= ?', [$specs['cpu']])
+            ->whereRaw('JSON_EXTRACT(specs, "$.ram_total_gb") - JSON_EXTRACT(specs, "$.ram_allocated_gb") >= ?', [$specs['ram']])
+            ->whereRaw('JSON_EXTRACT(specs, "$.disk_total_gb") - JSON_EXTRACT(specs, "$.disk_allocated_gb") >= ?', [$specs['system_disk']])
+            ->orderByRaw('JSON_EXTRACT(specs, "$.cpu_allocated") / JSON_EXTRACT(specs, "$.cpu_total") ASC')
+            ->firstOrFail();
+    }
+}
+```
+
+#### 资源拆分操作汇总
+
+| 操作 | 实现方式 | 热操作 |
+|------|----------|--------|
+| 创建 VM (CPU+内存+系统盘+IP) | Proxmox create qemu | — |
+| 单独升级 CPU | PUT config cores | 在线 |
+| 单独升级内存 | PUT config memory | 在线 |
+| 扩容系统盘 | PUT resize disk | 在线 (需 VM 支持) |
+| 单独创建数据盘 | POST config 添加磁盘 | 在线 |
+| 单独创建 IP | 从 IP 池分配 + VM 添加网卡 | 在线 |
 
 ### 资源生命周期
 
@@ -199,7 +323,15 @@ pending → active → destroyed (保留 30 天) → purged (不可恢复)
 续费: active → (renew) → active (延长 expired_at)
 升级: active → (upgrade) → upgrading → active
 
-### 首期对接云厂商
+### 资源来源
+
+| 来源 | 虚拟化/API | 产品类型 | 说明 |
+|------|-----------|----------|------|
+| 自营物理机 | Proxmox VE (社区版) | 服务器、数据盘、IP | 自有数据中心托管，PHP 调 Proxmox API |
+| 第三方云厂商 | AWS/GCP/阿里云/华为云/Azure SDK | 服务器、IP、云盘 | 转售第三方云资源 |
+| 域名注册商 | Namecheap/GoDaddy/阿里云万网 API | 域名注册/转移 | 域名服务 |
+
+### 首期对接
 
 | 区域 | 服务器 | IP | 云盘 | 域名 |
 |------|--------|----|------|------|
