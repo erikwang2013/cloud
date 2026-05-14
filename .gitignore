@@ -9,3 +9,7 @@
 /composer.lock
 /.cursor
 /.claude
+/service/vendor
+/admin/vendor
+/service/composer.lock
+/admin/composer.lock
