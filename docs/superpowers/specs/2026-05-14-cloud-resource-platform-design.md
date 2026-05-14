@@ -151,16 +151,6 @@
 | 供应商 API | API Key + IP 白名单 |
 | 云厂商回调 | 签名验证 (HMAC-SHA256) |
 
-### 安全措施
-
-- 全站 HTTPS + HSTS
-- JWT + Redis 黑名单
-- RBAC (角色 → 权限 → 资源)
-- IP/用户级令牌桶限流，支付接口严格限速
-- 参数化查询 + XSS 过滤
-- 密钥加密存储，日志脱敏
-- admin 操作全量审计日志
-
 ### 多语言方案
 
 - 请求头: Accept-Language: zh-CN / en-US / ja-JP
@@ -169,7 +159,605 @@
 
 ---
 
-## 四、资源开通引擎
+## 四、安全防护体系
+
+### 分层防护模型
+
+```
+┌─────────────────────────────────────────────────────┐
+│ 第一层: 网络边界防护                                    │
+│   DDoS清洗 / WAF / IP黑白名单 / Geo-Blocking          │
+├─────────────────────────────────────────────────────┤
+│ 第二层: 传输与应用防护                                  │
+│   HTTPS+TLS1.3 / CSP / CORS / JWT鉴权 / 限流          │
+├─────────────────────────────────────────────────────┤
+│ 第三层: 数据与存储安全                                  │
+│   加密存储 / 脱敏 / 审计日志 / 备份                     │
+├─────────────────────────────────────────────────────┤
+│ 第四层: 虚拟化与资源隔离                                 │
+│   Proxmox安全加固 / VM间隔离 / 网络隔离                 │
+├─────────────────────────────────────────────────────┤
+│ 第五层: 运营与风控                                     │
+│   操作审计 / 异常检测 / 告警 / 应急响应                  │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+### 4.1 网络边界防护
+
+#### DDoS 防护
+
+```
+用户请求 → CDN (Cloudflare / 阿里云CDN)
+              │
+              ├── JS质询 / 验证码 (可疑流量)
+              ├── 速率限制 (每IP每秒请求数)
+              ├── 区域封禁 (阻断指定国家/地区)
+              │
+              ▼
+          源站 (Nginx + webman)
+```
+
+| 层级 | 措施 | 说明 |
+|------|------|------|
+| CDN 层 | 自动 DDoS 清洗 | Cloudflare 免费计划即支持 L3/L4 防护 |
+| CDN 层 | Bot Management | 识别和拦截恶意爬虫/刷单脚本 |
+| Nginx 层 | limit_req_zone | 每 IP 10 req/s，超限返回 429 |
+| Nginx 层 | limit_conn | 每 IP 最大 20 并发连接 |
+| webman 层 | 令牌桶限流中间件 | 按用户/接口粒度的精确限流 |
+
+#### WAF 规则 (webman 中间件)
+
+```php
+class WafMiddleware
+{
+    // SQL 注入检测
+    const SQLI_PATTERNS = [
+        '/(\%27)|(\')|(\-\-)|(\%23)|(#)/i',
+        '/((\%3D)|(=))[^\n]*((\%27)|(\')|(\-\-)|(\%3B)|(;))/i',
+        '/\b(union|select|insert|update|delete|drop|alter|create|truncate)\b/i',
+    ];
+
+    // XSS 检测
+    const XSS_PATTERNS = [
+        '/((\%3C)|<)((\%2F)|\/)*[a-z0-9\%]+((\%3E)|>)/i',
+        '/((\%3C)|<)((\%69)|i|(\%49))((\%6D)|m|(\%4D))/i',
+        '/\b(onload|onerror|onclick|onmouseover|document\.|window\.|alert|eval)\b/i',
+    ];
+
+    // 路径遍历检测
+    const PATH_TRAVERSAL = '/\.\.\/|\.\.\%2f|\.\.\\\\/i';
+
+    public function process(Request $request, callable $next): Response
+    {
+        $input = json_encode($request->all());
+
+        foreach (self::SQLI_PATTERNS as $pattern) {
+            if (preg_match($pattern, $input)) {
+                $this->logThreat('sqli', $request);
+                return errorResponse(403, 'Request blocked by WAF');
+            }
+        }
+        // XSS、路径遍历同理...
+        
+        return $next($request);
+    }
+}
+```
+
+#### IP 黑白名单
+
+```
+黑名单:
+- 已知恶意 IP 库 (定期同步 AbuseIPDB)
+- 频繁触发 WAF 规则的 IP (自动加入，Redis TTL 24h)
+- 暴力破解登录的 IP (5次失败 → 锁定 30min)
+
+白名单:
+- Proxmox 宿主机 IP
+- 云厂商回调 IP 段
+- 支付网关 webhook IP 段
+- 管理员办公网络 IP (可选)
+```
+
+#### Geo-Blocking
+
+```php
+// GeoIP2 库 (MaxMind)
+$country = geoip($request->getRealIp());
+
+// 可配置的阻断列表
+$blockedCountries = config('security.geo_block', []);
+if (in_array($country, $blockedCountries)) {
+    return errorResponse(403, 'Access denied for your region');
+}
+```
+
+---
+
+### 4.2 传输与应用安全
+
+#### HTTPS 强制
+
+```nginx
+# Nginx 配置
+server {
+    listen 80;
+    server_name api.example.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
+    add_header X-Content-Type-Options "nosniff";
+    add_header X-Frame-Options "DENY";
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'";
+    add_header Referrer-Policy "strict-origin-when-cross-origin";
+}
+```
+
+#### JWT 安全加固
+
+```
+- access_token 有效期 2h，refresh_token 有效期 30d
+- 密钥使用 RSA256 (非对称)，定期轮换 (90天)
+- jti (JWT ID) 存入 Redis 实现主动吊销
+- refresh_token 绑定设备指纹 (User-Agent + IP 段)
+- 换发 refresh_token 时旧 token 立即失效 (rotation)
+- 敏感操作 (支付/销毁资源) 需二次验证
+
+设备指纹:
+  device_fingerprint = hash(user_agent + ip_cidr_24 + client_type)
+  refresh_token 表记录此指纹，换发时校验
+```
+
+#### 密码策略
+
+```
+- bcrypt 加密，cost factor = 12
+- 最小 8 字符，必须包含大小写字母 + 数字
+- 注册/登录连续失败 5 次 → 账号锁定 15 分钟
+- 密码修改后，所有已签发 token 立即失效
+- 支持 TOTP 两步验证 (用户可选开启)
+```
+
+#### CORS 策略
+
+```php
+// webman 中间件
+class CorsMiddleware
+{
+    public function process(Request $request, callable $next): Response
+    {
+        $allowedOrigins = config('cors.allowed_origins', []);
+        $origin = $request->header('Origin');
+
+        $response = $next($request);
+
+        if (in_array($origin, $allowedOrigins)) {
+            $response->header('Access-Control-Allow-Origin', $origin);
+            $response->header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+            $response->header('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept-Language');
+            $response->header('Access-Control-Max-Age', '86400');
+        }
+
+        return $response;
+    }
+}
+```
+
+#### 文件上传安全
+
+```
+- 白名单校验扩展名 (仅允许: jpg, jpeg, png, pdf, gif)
+- 校验文件 MIME 类型 (不允许伪造 Content-Type)
+- 文件大小限制: 头像 2MB, KYC 证件 5MB, 附件 10MB
+- 上传后重命名: {uuid}.{ext}, 不保留原始文件名
+- 图片二次处理: GD/Imagick 去除 EXIF + 元数据
+- 存储路径在 web 不可访问目录, 通过 PHP 代理读取
+- 病毒扫描: ClamAV (KYC 证件/用户上传文件)
+```
+
+---
+
+### 4.3 数据与存储安全
+
+#### 敏感数据加密
+
+```
+加密算法: AES-256-GCM (带认证的加密，防篡改)
+密钥管理: 主密钥存于环境变量，每个字段使用独立派生密钥
+
+需要加密存储的字段:
+| 数据类型 | 字段 | 加密方式 |
+|----------|------|----------|
+| 密码 | users.password_hash | bcrypt (单向) |
+| 支付密钥 | payment_channels.api_key | AES-256-GCM |
+| 云厂商密钥 | provider_apis.api_key_encrypted, api_secret_encrypted | AES-256-GCM |
+| Proxmox Token | host_machines.api_token_encrypted | AES-256-GCM |
+| KYC 证件号 | user_kyc.id_number | AES-256-GCM |
+| 支付账号 | 提现账号 | AES-256-GCM |
+| 登录密码(VNC) | resource_servers.login_password | AES-256-GCM |
+
+密钥派生:
+  derived_key = HKDF-SHA256(master_key, salt: table_name + '.' + field_name)
+```
+
+#### 日志脱敏
+
+```php
+class LogSanitizer
+{
+    // 自动脱敏的字段名模式
+    private array $sensitiveFields = [
+        'password', 'password_hash', 'secret', 'api_key',
+        'token', 'credit_card', 'cvv', 'ssn', 'id_number',
+        'login_password', 'private_key',
+    ];
+
+    public function sanitize(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if ($this->matchSensitive($key)) {
+                $data[$key] = '***REDACTED***';
+            } elseif (is_array($value)) {
+                $data[$key] = $this->sanitize($value);
+            }
+        }
+        return $data;
+    }
+}
+
+// Monolog Processor 在写入日志前自动调用
+```
+
+#### 数据库安全
+
+```
+- MySQL 使用 prepared statement (Eloquent 自动处理)
+- 数据库访问账号最小权限原则:
+  - app_user: SELECT, INSERT, UPDATE, DELETE (无 DDL)
+  - migration_user: DDL 权限 (仅迁移时使用，IP 限制)
+  - read_user: SELECT 只读 (报表/数据分析使用)
+- 连接使用 SSL/TLS (PHP PDO SSL options)
+- 数据库端口不对公网开放 (仅内网可访问)
+- 定期备份: 全量备份 1天, binlog 实时同步
+```
+
+#### 数据备份与恢复
+
+```
+备份策略:
+- MySQL: 每日全量 + binlog 实时增量
+- Redis: RDB 每小时 + AOF 实时持久化
+- 用户上传文件: S3/OSS 自动多副本 + 跨区域复制
+- Proxmox VM 快照: 每周一次 (保留 4 周)
+- 备份加密: AES-256 加密后存储
+
+恢复演练:
+- 每季度执行一次灾难恢复演练
+- 恢复时间目标 (RTO): < 4 小时
+- 恢复点目标 (RPO): < 1 小时
+```
+
+---
+
+### 4.4 虚拟化与资源隔离
+
+#### Proxmox 安全加固
+
+```
+1. API 访问控制:
+   - Proxmox API 仅监听内网 IP (不绑定公网)
+   - Token 权限最小化: 每个 role 仅授予必要权限
+   - API 端口 (8006) 仅允许 PHP 应用服务器 IP 访问 (iptables)
+
+2. SSH 加固:
+   - 禁用密码登录，仅允许密钥认证
+   - 禁用 root 登录，使用专用管理账户
+   - SSH 端口改为非标准端口 (减少扫描)
+   - Fail2ban: 5 次失败锁定 1 小时
+
+3. 系统更新:
+   - Proxmox 订阅安全更新邮件列表
+   - 定期 apt update && apt upgrade
+   - 内核 livepatch (Canonical Livepatch Service)
+
+4. 防火墙 (iptables/nftables):
+   - 默认拒绝所有入站
+   - 仅开放: 8006 (仅应用服务器IP), SSH端口 (仅管理IP)
+   - VM 网桥与宿主机管理网络的隔离
+```
+
+#### VM 间隔离
+
+```
+- 每个 VM 使用独立的虚拟网桥 VLAN
+- 禁止 VM 间通信 (Proxmox 防火墙规则 + VLAN 隔离)
+- 用户仅能通过公网 IP 访问自己的 VM
+- VM 资源限制 (cgroup): 防止单个 VM 耗尽宿主机资源
+  - CPU limit: 购买的核数上限
+  - RAM limit: 购买的容量上限
+  - Disk IOPS limit: 防止磁盘争用
+  - Network bandwidth limit: 购买的带宽上限
+```
+
+#### IP 分配安全
+
+```
+- IP 分配记录完整审计 (谁、何时、分配了什么 IP)
+- IP 释放后冷却期 24h (防止 IP 被立即分配给其他人导致的误用)
+- IP 黑名单: 被投诉/滥用的 IP 标记为不可分配
+- IP 使用监控: 定期检查分配的 IP 是否正常使用中
+```
+
+---
+
+### 4.5 支付安全
+
+```
+1. PCI DSS 合规:
+   - 信用卡数据不经过自有服务器 (Stripe Elements / Checkout)
+   - card_token 由 Stripe 前端直接生成，后端仅接收 token
+   - 不在日志/数据库中存储任何 CVV/完整卡号
+
+2. 加密货币:
+   - 收款私钥冷存储 (离线签名)
+   - 热钱包仅保留日常周转额度
+   - 收款地址生成后验证校验和
+   - 大额交易 ( > $10000) 人工审核后手动确认
+
+3. 支付防欺诈:
+   - 同一用户/IP 短时间内高频支付 → 风控冻结
+   - 新注册用户大额支付 → 人工审核
+   - 支付金额异常 (与商品价格不匹配) → 阻断
+   - 退款率过高的用户 → 标记风控
+
+4. 回调验签:
+   - Stripe: 验证 webhook signature (stripe-signature header)
+   - Coinbase: 验证 webhook signature (X-CC-Webhook-Signature header)
+   - 支付宝: 验证 notify_id 回调支付宝服务器二次确认
+   - 所有回调: 验证 IP 是否为已知支付网关 IP 段
+```
+
+#### 退款安全
+
+```
+- 退款必须经过二级审批 (客服发起 → 管理员确认)
+- 退款前校验: 订单状态、退款时限、退款次数
+- 退款金额不能超过原订单实付金额
+- 原路退回: 支付通道退款接口 + 余额退回
+- 退款互斥锁 (Redis): 防止并发重复退款
+```
+
+---
+
+### 4.6 访问控制与权限
+
+#### RBAC 模型
+
+```
+角色层级:
+  super_admin    (超级管理员 — 全部权限)
+  admin          (管理员 — 除系统配置外全部)
+  finance        (财务 — 支付/对账/退款/结算)
+  support        (客服 — 用户/订单/工单管理)
+  supplier       (供应商 — 自己的商品/订单/结算)
+  user           (普通用户 — 自己的资源/订单/工单)
+
+权限定义:
+  {module}.{action}
+  例: order.view, order.create, order.refund, resource.destroy
+
+权限检查中间件:
+  class RbacMiddleware
+  {
+      public function process(Request $request, callable $next): Response
+      {
+          $user = Auth::user();
+          $requiredPermission = $request->route->get('permission');
+          
+          if (!$user || !$user->hasPermission($requiredPermission)) {
+              AuditLog::unauthorized($user, $requiredPermission, $request);
+              return errorResponse(403, 'Forbidden');
+          }
+          return $next($request);
+      }
+  }
+```
+
+#### API 速率限制
+
+```php
+// webman 限流中间件 (Redis 令牌桶)
+class RateLimitMiddleware
+{
+    // 默认: 60 req/min 每用户
+    private array $limits = [
+        'default'     => ['rate' => 60,   'burst' => 10, 'per' => 60],
+        'login'       => ['rate' => 5,    'burst' => 2,  'per' => 60],  // 防暴力破解
+        'register'    => ['rate' => 3,    'burst' => 0,  'per' => 60],  // 防批量注册
+        'pay'         => ['rate' => 10,   'burst' => 3,  'per' => 60],  // 支付限速
+        'api'         => ['rate' => 120,  'burst' => 20, 'per' => 60],  // API 调用
+        'upload'      => ['rate' => 10,   'burst' => 2,  'per' => 60],  // 上传限速
+    ];
+    
+    public function process(Request $request, callable $next): Response
+    {
+        $route = $request->route->getName();
+        $limit = $this->limits[$route] ?? $this->limits['default'];
+        $key = "ratelimit:{$request->getRealIp()}:{$route}";
+        
+        if (!$this->checkLimit($key, $limit)) {
+            return errorResponse(429, 'Too Many Requests', [
+                'retry_after' => $limit['per'],
+            ]);
+        }
+        return $next($request);
+    }
+}
+```
+
+#### 供应商数据隔离
+
+```
+数据隔离原则:
+- 供应商只能查询和操作自己的资源
+- 所有涉及 supplier_id 的查询自动追加 WHERE supplier_id = auth()->supplier_id
+
+实现方式:
+  // 全局 Scope
+  class SupplierScope implements Scope
+  {
+      public function apply(Builder $builder, Model $model)
+      {
+          if ($user = Auth::user()) {
+              if ($user->role === 'supplier') {
+                  $builder->where('supplier_id', $user->supplier_id);
+              }
+          }
+      }
+  }
+  
+  // 在 Product/Order 等 Model 上注册
+  protected static function booted()
+  {
+      static::addGlobalScope(new SupplierScope);
+  }
+```
+
+---
+
+### 4.7 操作审计
+
+```
+审计日志记录内容:
+- 操作者 ID、IP、User-Agent
+- 操作时间
+- 操作模块 (哪个菜单/接口)
+- 操作类型: 创建/修改/删除/导出/审批
+- 操作对象: 哪个资源的哪个字段
+- 操作前值 / 操作后值 (字段级变更)
+- 操作结果: 成功/失败
+- 请求 ID (全链路追踪)
+
+记录范围:
+- 所有管理端操作 (100% 记录)
+- 用户端敏感操作: 支付/销毁资源/KYC提交/修改密码 (100% 记录)
+- 登录/登出 (100% 记录)
+- API Key 创建/撤销 (100% 记录)
+
+存储与保留:
+- 审计日志写入独立数据库 (audit_db)，与应用库分离
+- 至少保留 1 年，金融相关保留 3 年
+- 支持导出为 CSV/JSON 供合规审查
+
+审计日志中间件:
+  class AuditMiddleware
+  {
+      public function process(Request $request, callable $next): Response
+      {
+          $startTime = microtime(true);
+          $response = $next($request);
+          $duration = microtime(true) - $startTime;
+          
+          if ($this->shouldAudit($request)) {
+              AuditLog::record([
+                  'user_id'    => Auth::id(),
+                  'ip'         => $request->getRealIp(),
+                  'method'     => $request->method(),
+                  'path'       => $request->path(),
+                  'input'      => LogSanitizer::sanitize($request->all()),
+                  'status'     => $response->getStatusCode(),
+                  'duration'   => $duration,
+                  'request_id' => $request->header('X-Request-Id'),
+                  'user_agent' => $request->header('User-Agent'),
+              ]);
+          }
+          return $response;
+      }
+  }
+```
+
+---
+
+### 4.8 风控规则
+
+```
+实时风控引擎:
+
+规则 1: 新账号异常行为
+  条件: 注册时间 < 24h AND (支付总额 > $500 OR 创建工单 > 5)
+  动作: 标记账号为"观察中"，通知风控管理员
+
+规则 2: 批量注册检测
+  条件: 同一 IP 24h 内注册 > 3 个账号
+  动作: 拒绝新注册，冻结该 IP 下新账号
+
+规则 3: 支付异常
+  条件: 同一用户 1h 内支付失败 > 5 次
+  动作: 冻结支付功能 2h，生成风控工单
+
+规则 4: 退款滥用
+  条件: 同一用户 30 天内退款 > 3 笔 OR 退款率 > 20%
+  动作: 限制该账号退款权限，新订单标记风控审查
+
+规则 5: API 滥用
+  条件: 单 token 1h 内 API 调用 > 10000 次
+  动作: 该 token 降级 (降低限流阈值)，通知管理员
+
+规则 6: 资源滥用
+  条件: VM 被投诉 spam/DDoS/挖矿 (接收 Abuse 通知)
+  动作: 自动关机，冻结资源，生成高优先级工单
+
+风控动作:
+- 标记 (flag): 仅记录，不影响使用
+- 降级 (throttle): 降低限流阈值
+- 冻结 (freeze): 暂时禁用特定功能
+- 封禁 (ban): 账号永久封禁
+```
+
+---
+
+### 4.9 应急响应
+
+```
+安全事件分级:
+
+P0 (紧急) — 数据泄露、资金损失、平台宕机
+  → 立即通知 CTO + 安全团队
+  → 30 分钟内启动应急响应
+  → 下线上游受影响服务，保留证据
+  → 修复后 24h 内发布事件报告
+
+P1 (严重) — 单账号被盗、支付欺诈、WAF 触发异常上升
+  → 通知安全负责人
+  → 2h 内处理
+  → 冻结受影响账号/资源
+
+P2 (一般) — 漏洞扫描发现中低危漏洞、异常登录告警
+  → 录入工单系统
+  → 下一个迭代修复
+
+应急联系:
+- 触发 P0/P1 告警后自动通知 (邮件 + 短信 + 电话)
+- webman 健康检查端点: GET /health (返回 200 或告警)
+- 值班表: 7×24 轮值，至少 2 人备岗
+```
+
+---
+
+## 五、资源开通引擎
 
 ### Provider 插件架构
 
@@ -341,7 +929,7 @@ pending → active → destroyed (保留 30 天) → purged (不可恢复)
 
 ---
 
-## 五、支付系统
+## 六、支付系统
 
 ### 多通道路由
 
@@ -393,7 +981,7 @@ payment_channels 表字段:
 
 ---
 
-## 六、客户端页面结构
+## 七、客户端页面结构
 
 ### Flutter / HarmonyOS 用户端
 
@@ -424,7 +1012,7 @@ payment_channels 表字段:
 
 ---
 
-## 七、消息通知系统
+## 八、消息通知系统
 
 ### 四通道
 
@@ -444,7 +1032,7 @@ Email (SMTP/SendGrid) / SMS (Twilio/阿里短信) / Push (FCM/HMS) / 站内信
 
 ---
 
-## 八、供应商系统
+## 九、供应商系统
 
 ### 入驻流程
 
@@ -463,7 +1051,7 @@ Email (SMTP/SendGrid) / SMS (Twilio/阿里短信) / Push (FCM/HMS) / 站内信
 
 ---
 
-## 九、监控与运维
+## 十、监控与运维
 
 ### 资源监控
 
@@ -486,7 +1074,7 @@ Email (SMTP/SendGrid) / SMS (Twilio/阿里短信) / Push (FCM/HMS) / 站内信
 
 ---
 
-## 十、部署架构
+## 十一、部署架构
 
 ### 生产环境
 
