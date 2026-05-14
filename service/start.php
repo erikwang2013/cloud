@@ -29,3 +29,10 @@ function request_id(): string {
     }
     return $id;
 }
+
+// Global middleware pipeline
+use Webman\Middleware;
+
+Middleware::add(\Common\I18n\Middleware\LocaleMiddleware::class);
+Middleware::add(\Common\Security\CorsMiddleware::class);
+Middleware::add(\Common\Security\WafMiddleware::class);
