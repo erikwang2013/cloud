@@ -83,6 +83,7 @@ Capsule::schema()->create('product_attributes', function (Blueprint $table) {
     $table->string('value', 500);
     $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
     $table->index(['key']);
+    $table->timestamps();
 });
 
 // product_reviews
