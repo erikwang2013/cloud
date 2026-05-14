@@ -12,6 +12,7 @@
         "erikwang2013/encryption": "^1.0",
         "erikwang2013/encryptable": "^1.0",
         "erikwang2013/webman-scout": "^1.0",
+        "erikwang2013/season": "^1.0",
         "vlucas/phpdotenv": "^5.0",
         "monolog/monolog": "^3.0",
         "webman/redis-queue": "^1.0",
