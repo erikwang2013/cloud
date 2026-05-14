@@ -2,10 +2,12 @@
 namespace App\Payment\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 use App\Order\Model\Order;
 
 class PaymentTransaction extends Model
 {
+    use HasSnowflakeId;
     protected $table = 'payment_transactions';
     protected $fillable = [
         'order_id', 'user_id', 'channel_id', 'amount', 'currency',

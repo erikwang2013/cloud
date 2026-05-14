@@ -2,9 +2,11 @@
 namespace App\Product\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 
 class ProductSku extends Model
 {
+    use HasSnowflakeId;
     protected $table = 'product_skus';
     protected $casts = ['specs' => 'array'];
 

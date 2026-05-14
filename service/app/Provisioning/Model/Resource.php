@@ -2,12 +2,14 @@
 namespace App\Provisioning\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 use App\User\Model\User;
 use App\Product\Model\Product;
 use App\Order\Model\OrderItem;
 
 class Resource extends Model
 {
+    use HasSnowflakeId;
     protected $table = 'resources';
     protected $fillable = [
         'order_item_id', 'user_id', 'product_id', 'type',

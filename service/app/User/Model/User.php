@@ -2,10 +2,13 @@
 namespace App\User\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Maize\Encryptable\Encryptable;
 
 class User extends Model
 {
+    use HasSnowflakeId;
     use SoftDeletes;
 
     protected $fillable = [
@@ -14,6 +17,12 @@ class User extends Model
     ];
 
     protected $hidden = ['password_hash', 'deleted_at'];
+
+    protected $casts = [
+        'email'         => Encryptable::class,
+        'phone'         => Encryptable::class,
+        'password_hash' => Encryptable::class,
+    ];
 
     public function profile()
     {

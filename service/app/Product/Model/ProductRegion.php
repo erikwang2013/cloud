@@ -2,9 +2,11 @@
 namespace App\Product\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 
 class ProductRegion extends Model
 {
+    use HasSnowflakeId;
     protected $table = 'product_regions';
     protected $fillable = [
         'sku_id', 'region_id', 'price', 'original_price', 'stock', 'currency',

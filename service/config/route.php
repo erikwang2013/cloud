@@ -1,13 +1,22 @@
 <?php
+/*
+ * Copyright (c) 2026 erik <erik@erik.xyz> — https://erik.xyz
+ *
+ * NOTICE: This copyright notice is immutable. It may not be modified,
+ * removed, or obscured under any circumstances.
+ */
+
 use Webman\Route;
 
 // Health check
 Route::get('/health', [App\Controller\HealthController::class, 'index']);
 
-// Auth routes (with rate limiting)
-Route::post('/api/v1/auth/register', [App\User\Controller\AuthController::class, 'register']);
-Route::post('/api/v1/auth/login', [App\User\Controller\AuthController::class, 'login']);
-Route::post('/api/v1/auth/refresh', [App\User\Controller\AuthController::class, 'refresh']);
+// Auth routes (with encryption + rate limiting)
+Route::group('/api/v1/auth', function () {
+    Route::post('/register', [App\User\Controller\AuthController::class, 'register']);
+    Route::post('/login', [App\User\Controller\AuthController::class, 'login']);
+    Route::post('/refresh', [App\User\Controller\AuthController::class, 'refresh']);
+})->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class]);
 
 // Product routes (public)
 Route::get('/api/v1/products', [App\Product\Controller\ProductController::class, 'index']);
@@ -61,7 +70,7 @@ Route::group('/api/v1', function () {
     Route::post('/supplier/apply', [App\Supplier\Controller\SupplierController::class, 'apply']);
     Route::get('/supplier/settlements', [App\Supplier\Controller\SupplierController::class, 'settlements']);
     Route::post('/supplier/withdraw', [App\Supplier\Controller\SupplierController::class, 'withdraw']);
-})->middleware([Common\Auth\Middleware\AuthMiddleware::class]);
+})->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class]);
 
 // === Admin routes ===
 Route::group('/admin/api/v1', function () {
@@ -124,4 +133,4 @@ Route::group('/admin/api/v1', function () {
     // Monitoring
     Route::get('/monitor/dashboard', [App\Monitor\Controller\MonitorController::class, 'dashboard']);
     Route::get('/monitor/resources/{id}', [App\Monitor\Controller\MonitorController::class, 'resourceMetrics']);
-})->middleware([Common\Auth\Middleware\AuthMiddleware::class]);
+})->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class]);

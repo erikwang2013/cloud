@@ -2,11 +2,13 @@
 namespace App\Ticket\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 use App\User\Model\User;
 use App\Provisioning\Model\Resource;
 
 class Ticket extends Model
 {
+    use HasSnowflakeId;
     protected $table = 'tickets';
     protected $fillable = [
         'ticket_no', 'user_id', 'resource_id', 'category',

@@ -1,6 +1,8 @@
 <?php
 namespace Common\Helper;
 
+use Common\Hashid\HashidService;
+
 class Response
 {
     public static function success($data = null, string $message = 'ok', array $meta = []): array
@@ -8,7 +10,7 @@ class Response
         $body = [
             'code'    => 0,
             'message' => $message,
-            'data'    => $data,
+            'data'    => $data !== null ? HashidService::encodeIds($data) : null,
             'request_id' => request_id(),
         ];
         if ($meta) {

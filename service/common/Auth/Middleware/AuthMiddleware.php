@@ -22,16 +22,12 @@ class AuthMiddleware
             return json(Response::error(401, 'Invalid token'));
         }
 
-        if ($payload->type !== 'access') {
+        if (($payload['type'] ?? '') !== 'access') {
             return json(Response::error(401, 'Invalid token type'));
         }
 
-        if ($jwt->isRevoked($payload->jti)) {
-            return json(Response::error(401, 'Token revoked'));
-        }
-
-        $request->userId = $payload->sub;
-        $request->userRole = $payload->role;
+        $request->userId = $payload['sub'];
+        $request->userRole = $payload['role'] ?? 'user';
 
         return $next($request);
     }
@@ -47,9 +43,9 @@ class OptionalAuthMiddleware
             $jwt = new JwtAuth();
             try {
                 $payload = $jwt->verify($token);
-                if ($payload->type === 'access' && !$jwt->isRevoked($payload->jti)) {
-                    $request->userId = $payload->sub;
-                    $request->userRole = $payload->role;
+                if (($payload['type'] ?? '') === 'access') {
+                    $request->userId = $payload['sub'];
+                    $request->userRole = $payload['role'] ?? 'user';
                 }
             } catch (\Exception $e) {}
         }

@@ -155,6 +155,27 @@ if (class_exists(Illuminate\Support\Facades\Event::class)) {
     );
 }
 
+// Snowflake ID generator
+Common\Snowflake\SnowflakeService::init();
+
+// Encryption
+Common\Encryption\EncryptionService::init();
+
+// Hashids
+Common\Hashid\HashidService::init();
+
+// Global helpers
+if (!function_exists('hashid_encode')) {
+    function hashid_encode(int $id): string {
+        return Common\Hashid\HashidService::encode($id);
+    }
+}
+if (!function_exists('hashid_decode')) {
+    function hashid_decode(string $hash): ?int {
+        return Common\Hashid\HashidService::decode($hash);
+    }
+}
+
 // Request ID helper
 if (!function_exists('request_id')) {
     function request_id(): string {

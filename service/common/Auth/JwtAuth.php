@@ -1,68 +1,54 @@
 <?php
 namespace Common\Auth;
 
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
+use ErikJwt\JWTFactory;
+use ErikJwt\JWT;
 use App\User\Model\RefreshToken;
 
 class JwtAuth
 {
-    private string $privateKey;
-    private string $publicKey;
-    private string $algorithm;
+    private JWT $jwt;
     private int $accessTtl;
     private int $refreshTtl;
 
     public function __construct()
     {
-        $cfg = config('auth.jwt');
-        $this->privateKey = $cfg['private_key'];
-        $this->publicKey  = $cfg['public_key'];
-        $this->algorithm  = $cfg['algorithm'];
-        $this->accessTtl  = $cfg['access_ttl'];
-        $this->refreshTtl = $cfg['refresh_ttl'];
+        $cfg = config('plugin.erikwang2013.jwt.jwt');
+        $this->accessTtl  = (int)($cfg['default_expire'] ?? 900);
+        $this->refreshTtl = (int)($cfg['refresh_expire'] ?? 2592000);
+
+        $this->jwt = JWTFactory::createFromConfig($cfg, null, [
+            'redis' => fn() => \support\Redis::connection(),
+        ]);
     }
 
     public function issueAccessToken(int $userId, string $role): string
     {
-        $payload = [
-            'iss'  => config('auth.jwt.issuer'),
+        return $this->jwt->encode([
             'sub'  => $userId,
             'role' => $role,
-            'iat'  => time(),
-            'exp'  => time() + $this->accessTtl,
-            'jti'  => bin2hex(random_bytes(16)),
             'type' => 'access',
-        ];
-        return JWT::encode($payload, $this->privateKey, $this->algorithm);
+            'exp'  => time() + $this->accessTtl,
+        ]);
     }
 
     public function issueRefreshToken(int $userId): string
     {
-        $payload = [
-            'iss'  => config('auth.jwt.issuer'),
+        return $this->jwt->encode([
             'sub'  => $userId,
-            'iat'  => time(),
-            'exp'  => time() + $this->refreshTtl,
-            'jti'  => bin2hex(random_bytes(16)),
             'type' => 'refresh',
-        ];
-        return JWT::encode($payload, $this->privateKey, $this->algorithm);
+            'exp'  => time() + $this->refreshTtl,
+        ]);
     }
 
-    public function verify(string $token): object
+    public function verify(string $token): array
     {
-        return JWT::decode($token, new Key($this->publicKey, $this->algorithm));
+        return $this->jwt->decode($token);
     }
 
-    public function isRevoked(string $jti): bool
+    public function blacklist(string $token): void
     {
-        return Redis::exists("jwt:revoked:{$jti}");
-    }
-
-    public function revoke(string $jti): void
-    {
-        Redis::setex("jwt:revoked:{$jti}", $this->accessTtl, '1');
+        $this->jwt->blacklist($token);
     }
 
     public function revokeAllUserTokens(int $userId): void

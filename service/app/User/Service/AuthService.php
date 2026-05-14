@@ -78,7 +78,7 @@ class AuthService
             throw new \InvalidArgumentException('Invalid refresh token');
         }
 
-        if (($payload->type ?? '') !== 'refresh') {
+        if (($payload['type'] ?? '') !== 'refresh') {
             throw new \InvalidArgumentException('Invalid token type');
         }
 
@@ -91,13 +91,13 @@ class AuthService
         }
 
         if ($stored->device_fingerprint !== $deviceFingerprint) {
-            $this->jwt->revokeAllUserTokens($payload->sub);
+            $this->jwt->revokeAllUserTokens($payload['sub']);
             throw new \InvalidArgumentException('Device mismatch, all tokens revoked');
         }
 
         $stored->update(['revoked' => true]);
 
-        $user = User::findOrFail($payload->sub);
+        $user = User::findOrFail($payload['sub']);
         return $this->issueTokens($user->id, $user->role, $deviceFingerprint);
     }
 
@@ -110,13 +110,13 @@ class AuthService
             'user_id'            => $userId,
             'token_hash'         => hash('sha256', $refreshToken),
             'device_fingerprint' => $deviceFingerprint,
-            'expires_at'         => date('Y-m-d H:i:s', time() + config('auth.jwt.refresh_ttl', 2592000)),
+            'expires_at'         => date('Y-m-d H:i:s', time() + config('plugin.erikwang2013.jwt.jwt.refresh_expire', 2592000)),
         ]);
 
         return [
             'access_token'  => $accessToken,
             'refresh_token' => $refreshToken,
-            'expires_in'    => config('auth.jwt.access_ttl', 7200),
+            'expires_in'    => config('plugin.erikwang2013.jwt.jwt.default_expire', 900),
             'token_type'    => 'Bearer',
         ];
     }

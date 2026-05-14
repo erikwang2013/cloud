@@ -2,9 +2,12 @@
 namespace App\Payment\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
+use Maize\Encryptable\Encryptable;
 
 class PaymentChannel extends Model
 {
+    use HasSnowflakeId;
     protected $table = 'payment_channels';
     protected $fillable = [
         'name', 'code', 'api_key_encrypted', 'currency_support',
@@ -17,5 +20,7 @@ class PaymentChannel extends Model
         'fee_config'       => 'array',
         'visible_regions'  => 'array',
         'is_visible'       => 'boolean',
+        'api_key_encrypted' => Encryptable::class,
+        'webhook_secret'    => Encryptable::class,
     ];
 }

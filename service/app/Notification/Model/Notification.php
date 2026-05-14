@@ -2,10 +2,12 @@
 namespace App\Notification\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 use App\User\Model\User;
 
 class Notification extends Model
 {
+    use HasSnowflakeId;
     protected $table = 'notifications';
     protected $fillable = [
         'user_id', 'channel', 'template_code', 'content', 'send_status',

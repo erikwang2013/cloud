@@ -2,11 +2,13 @@
 namespace App\Provisioning\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 use App\Order\Model\OrderItem;
 use App\Order\Model\Order;
 
 class ProvisionTask extends Model
 {
+    use HasSnowflakeId;
     protected $table = 'provision_tasks';
     protected $fillable = [
         'order_id', 'order_item_id', 'resource_id', 'product_type',

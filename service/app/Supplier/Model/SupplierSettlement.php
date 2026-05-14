@@ -2,9 +2,11 @@
 namespace App\Supplier\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 
 class SupplierSettlement extends Model
 {
+    use HasSnowflakeId;
     protected $table = 'supplier_settlements';
     protected $fillable = [
         'supplier_id', 'period_start', 'period_end',

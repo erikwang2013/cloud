@@ -2,10 +2,12 @@
 namespace App\Domain\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 use App\User\Model\User;
 
 class DnsZone extends Model
 {
+    use HasSnowflakeId;
     protected $table = 'dns_zones';
     protected $fillable = [
         'user_id', 'domain_name',

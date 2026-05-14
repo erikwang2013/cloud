@@ -2,10 +2,12 @@
 namespace App\Product\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 use Common\I18n\I18n;
 
 class Product extends Model
 {
+    use HasSnowflakeId;
     protected $casts = [
         'name'        => 'array',
         'description' => 'array',

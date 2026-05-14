@@ -2,11 +2,13 @@
 namespace App\Order\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 use App\Product\Model\ProductSku;
 use App\Provisioning\Model\ProvisionTask;
 
 class OrderItem extends Model
 {
+    use HasSnowflakeId;
     protected $table = 'order_items';
     protected $fillable = [
         'order_id', 'sku_id', 'region_id', 'product_id',

@@ -2,9 +2,11 @@
 namespace App\Provisioning\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 
 class Disk extends Model
 {
+    use HasSnowflakeId;
     protected $table = 'disks';
     protected $fillable = [
         'resource_id', 'host_machine_id', 'vm_id', 'size_gb',

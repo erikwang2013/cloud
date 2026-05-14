@@ -2,9 +2,11 @@
 namespace App\Provisioning\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Snowflake\HasSnowflakeId;
 
 class IpPool extends Model
 {
+    use HasSnowflakeId;
     protected $table = 'ip_pools';
     protected $fillable = [
         'host_machine_id', 'ip_start', 'ip_end', 'gateway',
