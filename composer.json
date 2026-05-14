@@ -1,0 +1,7 @@
+{
+    "require": {
+        "illuminate/hashing": "^13.9",
+        "illuminate/events": "^13.9",
+        "illuminate/redis": "^13.9"
+    }
+}
