@@ -7,5 +7,7 @@
  */
 
 return [
+    // 启用 encryptable 插件：提供 Eloquent 模型字段级加密/解密
+    // 使用方式：在模型的 $casts 中添加字段 => Encryptable::class
     'enable' => true,
 ];

@@ -6,4 +6,5 @@
  * removed, or obscured under any circumstances.
  */
 
+// PSR-11 依赖注入容器，webman 框架使用 Webman\Container（基于 illuminate/container）
 return new Webman\Container;
