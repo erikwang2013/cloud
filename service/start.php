@@ -21,3 +21,11 @@ $capsule->bootEloquent();
 
 // Timezone
 date_default_timezone_set(config('app.timezone'));
+
+function request_id(): string {
+    static $id = null;
+    if ($id === null) {
+        $id = bin2hex(random_bytes(8));
+    }
+    return $id;
+}
