@@ -1,15 +1,17 @@
 <?php
 namespace App\Notification\Service;
 
+use App\User\Model\User;
 use App\Notification\Model\Notification;
 use App\Notification\Model\NotificationTemplate;
 use Common\I18n\I18n;
+use Webman\RedisQueue\Client;
 
 class NotificationDispatcher
 {
     public function dispatch(int $userId, string $code, array $data = [], array $channels = []): void
     {
-        $user = \App\User\Model\User::with('profile')->find($userId);
+        $user = User::with('profile')->find($userId);
         if (!$user || $user->status !== 'active') return;
 
         $locale = $user->language ?? 'en';
@@ -36,7 +38,7 @@ class NotificationDispatcher
         }
 
         if (in_array('email', $channels) && $user->email) {
-            \Webman\RedisQueue\Client::send('notification_email', [
+            Client::send('notification_email', [
                 'to'      => $user->email,
                 'title'   => $title,
                 'body'    => $body,
@@ -46,7 +48,7 @@ class NotificationDispatcher
         }
 
         if (in_array('sms', $channels) && $user->phone) {
-            \Webman\RedisQueue\Client::send('notification_sms', [
+            Client::send('notification_sms', [
                 'to'      => $user->phone,
                 'body'    => $body,
                 'user_id' => $userId,
@@ -55,7 +57,7 @@ class NotificationDispatcher
         }
 
         if (in_array('push', $channels)) {
-            \Webman\RedisQueue\Client::send('notification_push', [
+            Client::send('notification_push', [
                 'user_id' => $userId,
                 'title'   => $title,
                 'body'    => $body,

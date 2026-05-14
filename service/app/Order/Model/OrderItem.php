@@ -2,6 +2,8 @@
 namespace App\Order\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Product\Model\ProductSku;
+use App\Provisioning\Model\ProvisionTask;
 
 class OrderItem extends Model
 {
@@ -21,11 +23,11 @@ class OrderItem extends Model
 
     public function sku()
     {
-        return $this->belongsTo(\App\Product\Model\ProductSku::class, 'sku_id');
+        return $this->belongsTo(ProductSku::class, 'sku_id');
     }
 
     public function tasks()
     {
-        return $this->hasMany(\App\Provisioning\Model\ProvisionTask::class, 'order_item_id');
+        return $this->hasMany(ProvisionTask::class, 'order_item_id');
     }
 }

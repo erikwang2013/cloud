@@ -2,6 +2,7 @@
 namespace App\Payment\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Order\Model\Order;
 
 class PaymentTransaction extends Model
 {
@@ -13,7 +14,7 @@ class PaymentTransaction extends Model
 
     public function order()
     {
-        return $this->belongsTo(\App\Order\Model\Order::class);
+        return $this->belongsTo(Order::class);
     }
 
     public function channel()

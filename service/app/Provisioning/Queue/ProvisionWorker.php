@@ -7,6 +7,7 @@ use App\Provisioning\Model\Resource;
 use App\Provisioning\Event\ProvisionFailed;
 use App\Order\Model\Order;
 use App\Order\Model\OrderTimeline;
+use Illuminate\Support\Facades\Event;
 use Webman\RedisQueue\Consumer;
 
 class ProvisionWorker implements Consumer
@@ -106,8 +107,8 @@ class ProvisionWorker implements Consumer
 
     private function alertFailure(ProvisionTask $task): void
     {
-        if (class_exists(\Illuminate\Support\Facades\Event::class)) {
-            \Illuminate\Support\Facades\Event::dispatch(new ProvisionFailed($task));
+        if (class_exists(Event::class)) {
+            Event::dispatch(new ProvisionFailed($task));
         }
     }
 }

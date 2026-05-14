@@ -1,6 +1,8 @@
 <?php
 namespace App\Supplier\Controller;
 
+use App\Supplier\Model\Supplier;
+use App\Supplier\Model\SupplierSettlement;
 use App\Supplier\Service\SupplierService;
 use Common\Helper\Response;
 
@@ -25,8 +27,8 @@ class SupplierController
 
     public function settlements($request)
     {
-        $supplier = \App\Supplier\Model\Supplier::where('user_id', $request->userId)->firstOrFail();
-        $settlements = \App\Supplier\Model\SupplierSettlement::where('supplier_id', $supplier->id)
+        $supplier = Supplier::where('user_id', $request->userId)->firstOrFail();
+        $settlements = SupplierSettlement::where('supplier_id', $supplier->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -36,7 +38,7 @@ class SupplierController
     public function withdraw($request)
     {
         try {
-            $supplier = \App\Supplier\Model\Supplier::where('user_id', $request->userId)->firstOrFail();
+            $supplier = Supplier::where('user_id', $request->userId)->firstOrFail();
             $this->service->requestWithdraw(
                 $supplier->id,
                 $request->input('amount'),

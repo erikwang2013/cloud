@@ -1,6 +1,8 @@
 <?php
 namespace Common\Security;
 
+use Common\Helper\Response;
+
 class WafMiddleware
 {
     public function process($request, callable $next)
@@ -14,7 +16,7 @@ class WafMiddleware
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $input)) {
                 AuditLogger::threat('waf_blocked', $request);
-                return json(\Common\Helper\Response::error(403, 'Request blocked by WAF'));
+                return json(Response::error(403, 'Request blocked by WAF'));
             }
         }
         return $next($request);

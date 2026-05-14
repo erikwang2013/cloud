@@ -2,6 +2,8 @@
 namespace App\Ticket\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\User\Model\User;
+use App\Provisioning\Model\Resource;
 
 class Ticket extends Model
 {
@@ -29,16 +31,16 @@ class Ticket extends Model
 
     public function user()
     {
-        return $this->belongsTo(\App\User\Model\User::class);
+        return $this->belongsTo(User::class);
     }
 
     public function assignee()
     {
-        return $this->belongsTo(\App\User\Model\User::class, 'assigned_to');
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 
     public function resource()
     {
-        return $this->belongsTo(\App\Provisioning\Model\Resource::class);
+        return $this->belongsTo(Resource::class);
     }
 }

@@ -3,6 +3,7 @@ namespace Common\Auth;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use App\User\Model\RefreshToken;
 
 class JwtAuth
 {
@@ -66,6 +67,6 @@ class JwtAuth
 
     public function revokeAllUserTokens(int $userId): void
     {
-        \App\User\Model\RefreshToken::where('user_id', $userId)->update(['revoked' => true]);
+        RefreshToken::where('user_id', $userId)->update(['revoked' => true]);
     }
 }

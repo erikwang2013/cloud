@@ -2,6 +2,8 @@
 namespace App\Provisioning\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Order\Model\OrderItem;
+use App\Order\Model\Order;
 
 class ProvisionTask extends Model
 {
@@ -14,12 +16,12 @@ class ProvisionTask extends Model
 
     public function orderItem()
     {
-        return $this->belongsTo(\App\Order\Model\OrderItem::class, 'order_item_id');
+        return $this->belongsTo(OrderItem::class, 'order_item_id');
     }
 
     public function order()
     {
-        return $this->belongsTo(\App\Order\Model\Order::class);
+        return $this->belongsTo(Order::class);
     }
 
     public function resource()

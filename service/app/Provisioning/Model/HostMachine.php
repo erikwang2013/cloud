@@ -2,6 +2,7 @@
 namespace App\Provisioning\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Product\Model\Region;
 
 class HostMachine extends Model
 {
@@ -15,7 +16,7 @@ class HostMachine extends Model
 
     public function region()
     {
-        return $this->belongsTo(\App\Product\Model\Region::class);
+        return $this->belongsTo(Region::class);
     }
 
     public function ipPools()

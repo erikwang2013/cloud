@@ -2,6 +2,7 @@
 namespace App\Order\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Product\Model\ProductSku;
 
 class Cart extends Model
 {
@@ -10,6 +11,6 @@ class Cart extends Model
 
     public function sku()
     {
-        return $this->belongsTo(\App\Product\Model\ProductSku::class, 'sku_id');
+        return $this->belongsTo(ProductSku::class, 'sku_id');
     }
 }

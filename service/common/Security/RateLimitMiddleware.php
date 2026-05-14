@@ -1,6 +1,8 @@
 <?php
 namespace Common\Security;
 
+use Common\Helper\Response;
+
 class RateLimitMiddleware
 {
     public function process($request, callable $next, string $route = 'default')
@@ -12,7 +14,7 @@ class RateLimitMiddleware
         $current = \Redis::get($key) ?: 0;
 
         if ($current >= $limit['rate']) {
-            return json(\Common\Helper\Response::error(429, 'Too Many Requests', [
+            return json(Response::error(429, 'Too Many Requests', [
                 'retry_after' => $limit['per'],
             ]));
         }

@@ -2,6 +2,7 @@
 namespace App\Admin\Controller;
 
 use App\Supplier\Model\Supplier;
+use App\Supplier\Model\SupplierWithdraw;
 use App\Supplier\Service\SupplierService;
 use Common\Helper\Response;
 
@@ -39,7 +40,7 @@ class SupplierController
 
     public function approveWithdraw($request, int $id)
     {
-        $withdraw = \App\Supplier\Model\SupplierWithdraw::findOrFail($id);
+        $withdraw = SupplierWithdraw::findOrFail($id);
         $withdraw->update(['status' => 'completed']);
         return json(Response::success(null, 'Withdrawal approved'));
     }

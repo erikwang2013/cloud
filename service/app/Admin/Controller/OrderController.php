@@ -3,6 +3,7 @@ namespace App\Admin\Controller;
 
 use App\Order\Model\Order;
 use App\Order\Model\OrderTimeline;
+use App\Order\Model\Refund;
 use Common\Helper\Response;
 
 class OrderController
@@ -35,7 +36,7 @@ class OrderController
             return json(Response::error(422, 'Order cannot be refunded'));
         }
 
-        $refund = \App\Order\Model\Refund::create([
+        $refund = Refund::create([
             'order_id' => $order->id,
             'user_id'  => $order->user_id,
             'amount'   => $request->input('amount'),

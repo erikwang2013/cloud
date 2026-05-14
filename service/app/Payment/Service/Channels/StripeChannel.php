@@ -6,6 +6,7 @@ use App\Payment\Model\PaymentTransaction;
 use App\Order\Model\Order;
 use App\Order\Model\OrderTimeline;
 use App\Payment\Event\OrderPaid;
+use Illuminate\Support\Facades\Event;
 
 class StripeChannel
 {
@@ -70,8 +71,8 @@ class StripeChannel
             'remark'   => 'Payment confirmed via Stripe',
         ]);
 
-        if (class_exists(\Illuminate\Support\Facades\Event::class)) {
-            \Illuminate\Support\Facades\Event::dispatch(new OrderPaid($order));
+        if (class_exists(Event::class)) {
+            Event::dispatch(new OrderPaid($order));
         }
     }
 }

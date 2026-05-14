@@ -2,6 +2,9 @@
 namespace App\Order\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\User\Model\User;
+use App\Payment\Model\PaymentTransaction;
+use App\Provisioning\Model\Resource;
 
 class Order extends Model
 {
@@ -23,17 +26,17 @@ class Order extends Model
 
     public function user()
     {
-        return $this->belongsTo(\App\User\Model\User::class);
+        return $this->belongsTo(User::class);
     }
 
     public function transactions()
     {
-        return $this->hasMany(\App\Payment\Model\PaymentTransaction::class);
+        return $this->hasMany(PaymentTransaction::class);
     }
 
     public function resources()
     {
-        return $this->hasMany(\App\Provisioning\Model\Resource::class);
+        return $this->hasMany(Resource::class);
     }
 
     public function refund()

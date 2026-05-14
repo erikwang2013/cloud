@@ -8,5 +8,5 @@ return [
     'currencies'        => ['USD', 'CNY', 'EUR', 'JPY', 'GBP'],
     'base_currency'     => 'USD',
     'error_reporting'   => E_ALL & ~E_DEPRECATED,
-    'request_class'     => \Webman\Http\Request::class,
+    'request_class'     => Webman\Http\Request::class,
 ];

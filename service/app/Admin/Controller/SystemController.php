@@ -2,13 +2,14 @@
 namespace App\Admin\Controller;
 
 use Common\Helper\Response;
+use Illuminate\Database\Capsule\Manager as DB;
 
 class SystemController
 {
     public function auditLogs($request)
     {
         // In production: query audit database connection
-        $logs = \Illuminate\Database\Capsule\Manager::connection('audit')
+        $logs = DB::connection('audit')
             ->table('audit_logs')
             ->orderBy('created_at', 'desc')
             ->paginate(30);

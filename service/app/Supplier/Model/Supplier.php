@@ -2,6 +2,7 @@
 namespace App\Supplier\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\User\Model\User;
 
 class Supplier extends Model
 {
@@ -16,7 +17,7 @@ class Supplier extends Model
 
     public function user()
     {
-        return $this->belongsTo(\App\User\Model\User::class);
+        return $this->belongsTo(User::class);
     }
 
     public function settlements()

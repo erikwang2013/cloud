@@ -2,6 +2,7 @@
 namespace App\Monitor\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Provisioning\Model\Resource;
 
 class Alert extends Model
 {
@@ -15,6 +16,6 @@ class Alert extends Model
 
     public function resource()
     {
-        return $this->belongsTo(\App\Provisioning\Model\Resource::class);
+        return $this->belongsTo(Resource::class);
     }
 }

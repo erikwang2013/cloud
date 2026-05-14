@@ -2,6 +2,9 @@
 namespace App\Monitor\Service;
 
 use App\Monitor\Model\Alert;
+use App\User\Model\User;
+use App\Notification\Service\NotificationDispatcher;
+use App\Provisioning\Event\ProvisionFailed;
 
 class AlertEngine
 {
@@ -50,7 +53,7 @@ class AlertEngine
             'status'      => 'triggered',
         ]);
 
-        $dispatcher = new \App\Notification\Service\NotificationDispatcher();
+        $dispatcher = new NotificationDispatcher();
         $dispatcher->dispatch(
             $resource->user_id ?? 0,
             'alert_' . $ruleCode,
@@ -65,11 +68,11 @@ class AlertEngine
 
     private function notifyOnCall(string $ruleCode, $resource, array $context): void
     {
-        $oncallStaff = \App\User\Model\User::where('role', 'admin')
+        $oncallStaff = User::where('role', 'admin')
             ->where('status', 'active')
             ->get();
 
-        $dispatcher = new \App\Notification\Service\NotificationDispatcher();
+        $dispatcher = new NotificationDispatcher();
         foreach ($oncallStaff as $staff) {
             $dispatcher->dispatch($staff->id, 'alert_oncall', array_merge($context, [
                 'rule_code'   => $ruleCode,
@@ -78,7 +81,7 @@ class AlertEngine
         }
     }
 
-    public function onProvisionFailed(\App\Provisioning\Event\ProvisionFailed $event): void
+    public function onProvisionFailed(ProvisionFailed $event): void
     {
         $this->trigger('provision_failed', $event->task, [
             'task_id'    => $event->task->id,

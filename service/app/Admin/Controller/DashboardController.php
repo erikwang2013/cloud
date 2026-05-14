@@ -3,7 +3,9 @@ namespace App\Admin\Controller;
 
 use App\Order\Model\Order;
 use App\User\Model\User;
+use App\User\Model\UserKyc;
 use App\Provisioning\Model\Resource;
+use App\Ticket\Model\Ticket;
 use Common\Helper\Response;
 
 class DashboardController
@@ -36,14 +38,14 @@ class DashboardController
             'revenue_trend_30d' => $thirtyDays,
             'region_distribution' => $regionDistribution,
             'pending_orders'    => Order::where('status', 'pending')->count(),
-            'pending_kyc'       => \App\User\Model\UserKyc::where('status', 'pending')->count(),
-            'open_tickets'      => \App\Ticket\Model\Ticket::whereIn('status', ['open', 'in_progress'])->count(),
+            'pending_kyc'       => UserKyc::where('status', 'pending')->count(),
+            'open_tickets'      => Ticket::whereIn('status', ['open', 'in_progress'])->count(),
         ]));
     }
 
     public function kycList()
     {
-        $kycs = \App\User\Model\UserKyc::with('user.profile')
+        $kycs = UserKyc::with('user.profile')
             ->orderBy('created_at')
             ->paginate(20);
         return json(Response::paginated($kycs->items(), $kycs->total(), request()->input('page', 1), 20));
@@ -51,7 +53,7 @@ class DashboardController
 
     public function kycApprove($request, int $id)
     {
-        $kyc = \App\User\Model\UserKyc::findOrFail($id);
+        $kyc = UserKyc::findOrFail($id);
         $kyc->update([
             'status'      => 'approved',
             'verified_by' => $request->userId,
@@ -62,7 +64,7 @@ class DashboardController
 
     public function kycReject($request, int $id)
     {
-        $kyc = \App\User\Model\UserKyc::findOrFail($id);
+        $kyc = UserKyc::findOrFail($id);
         $kyc->update([
             'status'        => 'rejected',
             'verified_by'   => $request->userId,

@@ -5,6 +5,7 @@ use App\Supplier\Model\Supplier;
 use App\Supplier\Model\SupplierSettlement;
 use App\Supplier\Model\SupplierWithdraw;
 use App\Order\Model\OrderItem;
+use App\User\Model\User;
 
 class SupplierService
 {
@@ -34,7 +35,7 @@ class SupplierService
             'approved_at' => date('Y-m-d H:i:s'),
         ]);
 
-        \App\User\Model\User::where('id', $supplier->user_id)->update(['role' => 'supplier']);
+        User::where('id', $supplier->user_id)->update(['role' => 'supplier']);
     }
 
     public function generateSettlement(int $supplierId, string $periodStart, string $periodEnd): SupplierSettlement

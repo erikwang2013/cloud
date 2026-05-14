@@ -1,9 +1,11 @@
 <?php
 namespace App\Ticket\Service;
 
+use App\User\Model\User;
 use App\Ticket\Model\Ticket;
 use App\Ticket\Model\TicketMessage;
 use App\Ticket\Event\TicketCreated;
+use Illuminate\Support\Facades\Event;
 
 class TicketService
 {
@@ -34,8 +36,8 @@ class TicketService
             'content'     => $data['content'],
         ]);
 
-        if (class_exists(\Illuminate\Support\Facades\Event::class)) {
-            \Illuminate\Support\Facades\Event::dispatch(new TicketCreated($ticket));
+        if (class_exists(Event::class)) {
+            Event::dispatch(new TicketCreated($ticket));
         }
 
         return $ticket->load('messages');
@@ -84,7 +86,7 @@ class TicketService
 
     public function autoAssign(Ticket $ticket): void
     {
-        $supportStaff = \App\User\Model\User::where('role', 'support')
+        $supportStaff = User::where('role', 'support')
             ->where('status', 'active')
             ->orderBy('id')
             ->get();

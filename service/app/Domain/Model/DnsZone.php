@@ -2,6 +2,7 @@
 namespace App\Domain\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\User\Model\User;
 
 class DnsZone extends Model
 {
@@ -17,6 +18,6 @@ class DnsZone extends Model
 
     public function user()
     {
-        return $this->belongsTo(\App\User\Model\User::class);
+        return $this->belongsTo(User::class);
     }
 }

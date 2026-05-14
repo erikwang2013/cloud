@@ -4,6 +4,7 @@ namespace App\Monitor\Service;
 use App\Provisioning\Model\Resource;
 use App\Provisioning\Model\ProvisionTask;
 use App\Provisioning\Service\ProviderFactory;
+use App\Notification\Service\NotificationDispatcher;
 use Illuminate\Support\Facades\Redis;
 
 class ResourceMonitor
@@ -70,7 +71,7 @@ class ResourceMonitor
                 ->get();
 
             foreach ($expiring as $resource) {
-                $dispatcher = new \App\Notification\Service\NotificationDispatcher();
+                $dispatcher = new NotificationDispatcher();
                 $dispatcher->dispatch($resource->user_id, 'resource_expiring', [
                     'resource_type' => $resource->type,
                     'days'          => (string)$days,

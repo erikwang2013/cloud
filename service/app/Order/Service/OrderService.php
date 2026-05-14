@@ -7,6 +7,7 @@ use App\Order\Model\OrderTimeline;
 use App\Order\Model\Cart;
 use App\Product\Model\ProductRegion;
 use Illuminate\Database\Capsule\Manager as DB;
+use Illuminate\Support\Facades\Redis;
 
 class OrderService
 {
@@ -112,7 +113,7 @@ class OrderService
     {
         if ($currency === 'USD') return '1.000000';
         try {
-            $rate = \Illuminate\Support\Facades\Redis::get("exchange_rate:{$currency}");
+            $rate = Redis::get("exchange_rate:{$currency}");
             return $rate ?: '1.000000';
         } catch (\Exception $e) {
             return '1.000000';

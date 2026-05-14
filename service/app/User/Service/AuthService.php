@@ -7,6 +7,7 @@ use App\User\Model\UserBalance;
 use App\User\Model\RefreshToken;
 use Common\Auth\JwtAuth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Redis;
 
 class AuthService
 {
@@ -123,7 +124,7 @@ class AuthService
     private function isLoginLocked(int $userId): bool
     {
         try {
-            return \Illuminate\Support\Facades\Redis::exists("login_lock:{$userId}");
+            return Redis::exists("login_lock:{$userId}");
         } catch (\Exception $e) {
             return false;
         }
@@ -133,13 +134,13 @@ class AuthService
     {
         try {
             $key = "login_failed:" . sha1($login);
-            $count = \Illuminate\Support\Facades\Redis::incr($key);
-            \Illuminate\Support\Facades\Redis::expire($key, 900);
+            $count = Redis::incr($key);
+            Redis::expire($key, 900);
 
             if ($count >= 5) {
                 $user = User::where('email', $login)->orWhere('phone', $login)->first();
                 if ($user) {
-                    \Illuminate\Support\Facades\Redis::setex("login_lock:{$user->id}", 900, '1');
+                    Redis::setex("login_lock:{$user->id}", 900, '1');
                 }
             }
         } catch (\Exception $e) {

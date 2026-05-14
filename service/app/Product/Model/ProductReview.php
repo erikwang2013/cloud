@@ -2,6 +2,7 @@
 namespace App\Product\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\User\Model\User;
 
 class ProductReview extends Model
 {
@@ -10,7 +11,7 @@ class ProductReview extends Model
 
     public function user()
     {
-        return $this->belongsTo(\App\User\Model\User::class);
+        return $this->belongsTo(User::class);
     }
 
     public function product()

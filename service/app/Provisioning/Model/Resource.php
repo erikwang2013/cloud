@@ -2,6 +2,9 @@
 namespace App\Provisioning\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\User\Model\User;
+use App\Product\Model\Product;
+use App\Order\Model\OrderItem;
 
 class Resource extends Model
 {
@@ -20,17 +23,17 @@ class Resource extends Model
 
     public function user()
     {
-        return $this->belongsTo(\App\User\Model\User::class);
+        return $this->belongsTo(User::class);
     }
 
     public function product()
     {
-        return $this->belongsTo(\App\Product\Model\Product::class);
+        return $this->belongsTo(Product::class);
     }
 
     public function orderItem()
     {
-        return $this->belongsTo(\App\Order\Model\OrderItem::class, 'order_item_id');
+        return $this->belongsTo(OrderItem::class, 'order_item_id');
     }
 
     public function tasks()
