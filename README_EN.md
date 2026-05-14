@@ -13,8 +13,11 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 | ID Obfuscation | Hashids ([erikwang2013/hashids](https://github.com/erikwang2013/hashids)) |
 | Transport Encryption | AES-256-GCM ([erikwang2013/encryption](https://github.com/erikwang2013/encryption)) |
 | Field Encryption | AES-128-ECB ([erikwang2013/encryptable](https://github.com/erikwang2013/encryptable)) |
+| Full-Text Search | Elasticsearch ([erikwang2013/webman-scout](https://github.com/erikwang2013/webman-scout)) |
+| Country Flags | Unicode Flag Emoji ([erikwang2013/season](https://github.com/erikwang2013/season)) |
 | Queue | webman redis-queue |
 | Database | MySQL 8.0 (main + audit dual connection) |
+| Search Engine | Elasticsearch 8.x |
 | Virtualization | Proxmox VE REST API |
 | Clients | Flutter (iOS / Android / Web PC) + HarmonyOS ArkTS |
 | Deployment | Docker Compose |
@@ -46,8 +49,8 @@ cloud-php/
 │   │   ├── I18n/              # Internationalization
 │   │   ├── Security/          # CORS / WAF / rate limiting / audit logging
 │   │   └── Snowflake/         # Snowflake ID service / Eloquent model trait
-│   ├── config/                # 17 configs: routes / middleware / logging / DB / queue / crypto
-│   └── support/               # Bootstrap (Eloquent / Events / encryption / snowflake / hashids init)
+│   ├── config/                # Routes / middleware / logging / DB / queue / crypto / ES configs
+│   └── support/               # Bootstrap (Eloquent / Events / encryption / snowflake / hashids / scout init)
 ├── apps/
 │   ├── flutter/               # Flutter client (PC-first web layout)
 │   └── harmonyos/             # HarmonyOS client skeleton
@@ -254,6 +257,25 @@ Twitter Snowflake algorithm generates 64-bit globally unique IDs: `timestamp(41b
 - Notification templates support multiple languages and dispatch in the user's preferred language.
 - Flutter client sends locale via an Interceptor.
 
+### 9. Full-Text Search
+
+Product, User, Order, and Ticket models are automatically synced to Elasticsearch via the `Erikwang2013\WebmanScout\Searchable` trait:
+
+- **Multilingual tokenization** — IK Analyzer (ik_max_word / ik_smart)
+- **Chinese full-text search** — product names, descriptions, ticket titles
+- **Precision filtering** — by status, category, price range, time range
+- **Batch sync** — `php webman scout:import "App\Product\Model\Product"`
+- **Search example** — `Product::search('VPS')->where('status', 'published')->get()`
+
+### 10. Country Flags
+
+Unicode flag emoji support via `erikwang2013/season`:
+
+- `country_season_flag('CN')` → 🇨🇳, `country_season_flag('JP')` → 🇯🇵
+- Auto-detects hemisphere and returns current season (EN/ZH)
+- Localized season names in 30+ languages
+- Ready for use in region selectors, user nationality displays, etc.
+
 ## Roadmap
 
 - [x] Database DDL (`docs/database.sql`, 39 tables, erik_ prefix, BigInt non-auto-increment PKs)
@@ -262,6 +284,8 @@ Twitter Snowflake algorithm generates 64-bit globally unique IDs: `timestamp(41b
 - [x] API ID obfuscation (`erikwang2013/hashids`, auto decode requests + auto encode responses)
 - [x] Transport encryption (`erikwang2013/encryption`, AES-256-GCM middleware)
 - [x] Field-level encryption (`erikwang2013/encryptable`, auto encrypt/decrypt sensitive fields)
+- [x] Full-text search (`erikwang2013/webman-scout`, Elasticsearch + IK Analyzer)
+- [x] Country flags (`erikwang2013/season`, Unicode flag emoji)
 - [ ] Database migration scripting (`docs/database.sql` ready, pending migration command)
 - [ ] Stripe production integration (currently mocked)
 - [ ] Twilio / Alibaba Cloud SMS production integration

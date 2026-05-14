@@ -15,8 +15,11 @@
 | ID 混淆 | Hashids ([erikwang2013/hashids](https://github.com/erikwang2013/hashids)) |
 | 传输加密 | AES-256-GCM ([erikwang2013/encryption](https://github.com/erikwang2013/encryption)) |
 | 字段加密 | AES-128-ECB ([erikwang2013/encryptable](https://github.com/erikwang2013/encryptable)) |
+| 全文搜索 | Elasticsearch ([erikwang2013/webman-scout](https://github.com/erikwang2013/webman-scout)) |
+| 国家旗帜 | Unicode Flag Emoji ([erikwang2013/season](https://github.com/erikwang2013/season)) |
 | 队列 | webman redis-queue |
 | 数据库 | MySQL 8.0（主库 + 审计库双连接） |
+| 搜索引擎 | Elasticsearch 8.x |
 | 虚拟化 | Proxmox VE REST API |
 | 客户端 | Flutter (iOS / Android / Web PC) + HarmonyOS ArkTS |
 | 部署 | Docker Compose 一键启动 |
@@ -48,8 +51,8 @@ cloud-php/
 │   │   ├── I18n/              # 多语言支持
 │   │   ├── Security/          # CORS / WAF / 频率限制 / 审计日志
 │   │   └── Snowflake/         # 雪花 ID 生成服务 / Eloquent 模型 Trait
-│   ├── config/                # 路由 / 中间件 / 日志 / 数据库 / 队列 / 加密等 17 项配置
-│   └── support/               # 启动引导 (Eloquent / Event / 加密 / 雪花 ID / Hashids 初始化)
+│   ├── config/                # 路由 / 中间件 / 日志 / 数据库 / 队列 / 加密 / ES 等配置
+│   └── support/               # 启动引导 (Eloquent / Event / 加密 / 雪花 ID / Hashids / Scout 初始化)
 ├── apps/
 │   ├── flutter/               # Flutter 客户端 (PC 优先 Web 布局)
 │   └── harmonyos/             # HarmonyOS 客户端骨架
@@ -256,6 +259,25 @@ ProviderInterface
 - 通知模板同样支持多语言，按用户偏好语言推送
 - Flutter 客户端通过 Interceptor 携带语言标识
 
+### 9. 全文搜索
+
+产品、用户、订单、工单 4 个模型通过 `Erikwang2013\WebmanScout\Searchable` Trait 自动同步到 Elasticsearch，支持：
+
+- **多语言分词** — IK Analyzer（ik_max_word / ik_smart）
+- **中文全文搜索** — 产品名称、描述、工单标题
+- **精确筛选** — 按状态、分类、价格区间、时间范围过滤
+- **批量同步** — `php webman scout:import "App\Product\Model\Product"`
+- **搜索示例** — `Product::search('VPS服务器')->where('status', 'published')->get()`
+
+### 10. 国家旗帜
+
+通过 `erikwang2013/season` 提供全域国家旗帜 emoji 支持：
+
+- `country_season_flag('CN')` → 🇨🇳，`country_season_flag('JP')` → 🇯🇵
+- 自动识别南北半球，返回对应季节（中英文）
+- 支持 30+ 语言的本地化季节名称
+- 前端区域选择、用户国籍展示等场景可直接调用
+
 ## 待办事项
 
 - [x] 数据库 DDL（`docs/database.sql`，39 张表，erik_ 前缀，BigInt 非自增主键）
@@ -264,6 +286,8 @@ ProviderInterface
 - [x] API ID 混淆（`erikwang2013/hashids`，请求自动解码 + 响应自动编码）
 - [x] 传输加密（`erikwang2013/encryption`，AES-256-GCM 中间件）
 - [x] 字段级加密（`erikwang2013/encryptable`，敏感字段自动加解密）
+- [x] 全文搜索（`erikwang2013/webman-scout`，Elasticsearch + IK 分词）
+- [x] 国家旗帜（`erikwang2013/season`，Unicode flag emoji）
 - [ ] 数据库迁移脚本（`docs/database.sql` 已生成，待迁移命令化）
 - [ ] Stripe 真实集成（当前为 mock）
 - [ ] Twilio / 阿里云短信真实集成
