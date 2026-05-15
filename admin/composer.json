@@ -1,0 +1,39 @@
+{
+    "name": "cloud/admin",
+    "type": "project",
+    "require": {
+        "php": ">=8.2",
+        "workerman/webman-framework": "^2.1",
+        "webman/admin": "^2.1",
+        "webman/captcha": "^1.0",
+        "illuminate/database": "^10.0",
+        "illuminate/events": "^10.0",
+        "guzzlehttp/guzzle": "^7.0",
+        "intervention/image": "^2.7",
+        "vlucas/phpdotenv": "^5.0",
+        "erikwang2013/hashids": "^1.0",
+        "erikwang2013/snowflake-php": "^1.0",
+        "erikwang2013/season": "^1.0",
+        "erikwang2013/encryption": "^1.0",
+        "erikwang2013/encryptable": "^1.0",
+        "erikwang2013/webman-scout": "^2.0",
+        "ext-json": "*",
+        "ext-pdo": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "app\\": "app/",
+            "plugin\\admin\\": "./"
+        },
+        "files": [
+            "app/functions.php",
+            "vendor/erikwang2013/season/src/helpers.php",
+            "vendor/erikwang2013/webman-scout/helpers.php"
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "erikwang2013/encryptable": true
+        }
+    }
+}

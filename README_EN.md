@@ -7,6 +7,7 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 | Layer | Technology |
 |-------|------------|
 | Backend | PHP 8.2 + [webman](https://github.com/walkor/webman) (workerman) |
+| Admin Panel | [webman-admin](https://www.workerman.net/plugin/1) (Layui) |
 | ORM | Illuminate/Eloquent 10.x |
 | Auth | JWT HS256 ([erikwang2013/jwt-webman](https://github.com/erikwang2013/jwt-webman)) |
 | Distributed PK | Snowflake ID ([erikwang2013/snowflake-php](https://github.com/erikwang2013/snowflake-php)) |
@@ -26,7 +27,23 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 
 ```
 cloud-php/
-├── service/                   # Backend service
+├── admin/                     # Admin panel (standalone webman instance)
+│   ├── app/                   # Plugin source (PSR-4: app\)
+│   │   ├── controller/        # Controllers (CRUD / table / plugin / install)
+│   │   ├── model/             # Models (admins / roles / rules / users)
+│   │   ├── common/            # Utilities (Auth / Tree / Layui / Util)
+│   │   ├── middleware/        # Access control middleware
+│   │   │   └── view/          # View templates (Layui panel)
+│   ├── api/                   # Public API (PSR-4: plugin\admin\api)
+│   │   ├── Auth.php           # Auth interface
+│   │   ├── Menu.php           # Menu interface
+│   │   └── Middleware.php     # Middleware interface
+│   ├── config/                # Plugin config (routes / menus / middleware / database)
+│   ├── public/                # Document root (static assets / frontend components)
+│   ├── vendor/                # Composer dependencies
+│   ├── start.php              # Entry point (php start.php start)
+│   └── install.sql            # Initial SQL
+├── service/                   # Backend service (standalone webman instance)
 │   ├── app/                   # Business modules (PSR-4: App\)
 │   │   ├── Admin/             # Admin panel controllers
 │   │   ├── Controller/        # Health check
@@ -104,6 +121,23 @@ cp service/.env.example .env
 
 docker compose -f docker/docker-compose.yml up -d
 # API available at http://localhost
+```
+
+### Admin Panel
+
+```bash
+cd admin
+
+# 1. Install dependencies
+composer install
+
+# 2. Configure environment
+cp .env.example .env
+# Edit .env with database password, JWT key, etc.
+
+# 3. Start (dev mode)
+php start.php start
+# Visit http://localhost:8787/app/admin
 ```
 
 ### Daemon Mode

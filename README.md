@@ -9,6 +9,7 @@
 | 层级 | 技术 |
 |------|------|
 | 后端框架 | PHP 8.2 + [webman](https://github.com/walkor/webman) (workerman) |
+| 管理后台 | [webman-admin](https://www.workerman.net/plugin/1) (Layui) |
 | ORM | Illuminate/Eloquent 10.x |
 | 认证 | JWT HS256 ([erikwang2013/jwt-webman](https://github.com/erikwang2013/jwt-webman)) |
 | 分布式主键 | Snowflake 雪花 ID ([erikwang2013/snowflake-php](https://github.com/erikwang2013/snowflake-php)) |
@@ -28,7 +29,23 @@
 
 ```
 cloud-php/
-├── service/                   # 后端服务
+├── admin/                     # 管理后台（独立 webman 实例）
+│   ├── app/                   # 插件源码 (PSR-4: app\)
+│   │   ├── controller/        # 控制器（CRUD / 表格 / 插件管理 / 安装等）
+│   │   ├── model/             # 数据模型（管理员 / 角色 / 规则 / 用户等）
+│   │   ├── common/            # 工具类（Auth / Tree / Layui / Util）
+│   │   ├── middleware/        # 访问控制中间件
+│   │   │   └── view/          # 视图模板（Layui 后台面板）
+│   ├── api/                   # 对外 API (PSR-4: plugin\admin\api)
+│   │   ├── Auth.php           # 鉴权接口
+│   │   ├── Menu.php           # 菜单接口
+│   │   └── Middleware.php     # 中间件接口
+│   ├── config/                # 插件配置（路由 / 菜单 / 中间件 / 数据库等）
+│   ├── public/                # 文档根目录（静态资源 / 前端组件）
+│   ├── vendor/                # Composer 依赖
+│   ├── start.php              # 启动入口 (php start.php start)
+│   └── install.sql            # 初始化 SQL
+├── service/                   # 后端服务（独立 webman 实例）
 │   ├── app/                   # 业务模块 (PSR-4: App\)
 │   │   ├── Admin/             # 管理后台控制器
 │   │   ├── Controller/        # 健康检查
@@ -106,6 +123,23 @@ cp service/.env.example .env
 
 docker compose -f docker/docker-compose.yml up -d
 # API: http://localhost
+```
+
+### 管理后台
+
+```bash
+cd admin
+
+# 1. 安装依赖
+composer install
+
+# 2. 配置环境变量
+cp .env.example .env
+# 编辑 .env 填写数据库密码、JWT 密钥等
+
+# 3. 启动服务（开发模式）
+php start.php start
+# 访问 http://localhost:8787/app/admin
 ```
 
 ### 守护进程模式
