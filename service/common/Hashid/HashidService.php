@@ -24,7 +24,11 @@ class HashidService
         if ($name) {
             return $manager->connection($name);
         }
-        return \support\Container::instance()->get(Hashids::class);
+        $container = \support\Container::instance();
+        if ($container) {
+            return $container->get(Hashids::class);
+        }
+        return $manager->connection();
     }
 
     public static function encode(int $id): string

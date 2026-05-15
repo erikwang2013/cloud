@@ -2,55 +2,49 @@
 
 namespace Tests\Common;
 
-use PHPUnit\Framework\Attributes\DataProvider;
-use Tests\TestCase;
+use Common\Snowflake\SnowflakeService;
+use PHPUnit\Framework\TestCase;
 
 final class SnowflakeTest extends TestCase
 {
-    public function testSnowflakeIdIs64Bit(): void
+    public function testNextIdReturnsPositiveInteger(): void
     {
-        $maxSnowflake = 9223372036854775807;
-        $this->assertLessThanOrEqual($maxSnowflake, PHP_INT_MAX);
-        $this->assertGreaterThan(0, $maxSnowflake);
+        $id = SnowflakeService::nextId();
+        $this->assertIsInt($id);
+        $this->assertGreaterThan(0, $id);
     }
 
-    public function testNewerSnowflakeIsGreater(): void
+    public function testSuccessiveIdsAreMonotonicallyIncreasing(): void
     {
-        $newer = 7823456789123456789;
-        $older = 1000000000000000000;
-        $this->assertGreaterThan($older, $newer);
+        $a = SnowflakeService::nextId();
+        $b = SnowflakeService::nextId();
+        $this->assertGreaterThan($a, $b);
     }
 
-    public function testSameSnowflakeEquals(): void
+    public function testRapidCallsProduceUniqueIds(): void
     {
-        $id = 1000000000000000000;
-        $this->assertSame($id, $id);
-    }
-
-    public function testIdIsPositive(): void
-    {
-        $ids = [7823456789123456789, 1234567890123456789, 1];
-        foreach ($ids as $id) {
-            $this->assertGreaterThan(0, $id);
+        $ids = [];
+        for ($i = 0; $i < 10; $i++) {
+            $ids[] = SnowflakeService::nextId();
         }
+        $this->assertCount(count($ids), array_unique($ids));
     }
 
-    public function testNoAutoIncrement(): void
+    public function testIdFitsIn64BitSignedRange(): void
     {
-        $ids = [
-            7823456789123456789,
-            7823456789123456790,
-            7823456789123456791,
-        ];
-        $this->assertCount(3, array_unique($ids));
+        $id = SnowflakeService::nextId();
+        $this->assertGreaterThan(0, $id);
+        $this->assertLessThanOrEqual(PHP_INT_MAX, $id);
     }
 
-    public function testBigintRange(): void
+    public function testInitReturnsSnowflakeInstance(): void
     {
-        $minBigint = 0;
-        $maxBigint = 18446744073709551615;
-        $id = 7823456789123456789;
-        $this->assertGreaterThanOrEqual($minBigint, $id);
-        $this->assertLessThanOrEqual($maxBigint, $id);
+        $snowflake = SnowflakeService::init();
+        $this->assertInstanceOf(\Snowflake\Snowflake::class, $snowflake);
+    }
+
+    public function testInitReturnsSameInstance(): void
+    {
+        $this->assertSame(SnowflakeService::init(), SnowflakeService::init());
     }
 }

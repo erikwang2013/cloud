@@ -16,9 +16,9 @@ jobs:
         with:
           php-version: '8.2'
       - name: Check admin PHP syntax
-        run: find admin/app admin/api admin/config -name '*.php' -print0 | xargs -0 -n1 php -l
+        run: find admin/app admin/api admin/config admin/database -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Check service PHP syntax
-        run: find service/app service/common service/config service/support -name '*.php' -print0 | xargs -0 -n1 php -l
+        run: find service/app service/common service/config service/support service/database service/tests -name '*.php' -print0 | xargs -0 -n1 php -l
 
   admin-tests:
     name: Admin Tests

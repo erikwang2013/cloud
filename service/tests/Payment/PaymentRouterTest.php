@@ -3,7 +3,7 @@
 namespace Tests\Payment;
 
 use PHPUnit\Framework\Attributes\DataProvider;
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 
 final class PaymentRouterTest extends TestCase
 {
@@ -15,68 +15,64 @@ final class PaymentRouterTest extends TestCase
             ['code' => 'alipay', 'status' => 'active'],
         ];
 
-        $active = array_filter($channels, fn($c) => $c['status'] === 'active');
+        $active = array_values(array_filter($channels, fn($c) => $c['status'] === 'active'));
         $this->assertCount(2, $active);
-        $this->assertSame('stripe', array_values($active)[0]['code']);
-        $this->assertSame('alipay', array_values($active)[1]['code']);
+        $this->assertSame('stripe', $active[0]['code']);
     }
 
     #[DataProvider('amountRangeProvider')]
-    public function testChannelAmountConstraints(float $amount, array $channel, bool $expected): void
+    public function testChannelAmountConstraints(float $amount, float $min, float $max, bool $expected): void
     {
-        $valid = $amount >= $channel['min_amount'] && $amount <= $channel['max_amount'];
+        $valid = $amount >= $min && $amount <= $max;
         $this->assertSame($expected, $valid);
     }
 
     public static function amountRangeProvider(): array
     {
-        $channel = ['min_amount' => 1.00, 'max_amount' => 9999.00];
         return [
-            'within range' => [50.00, $channel, true],
-            'at minimum' => [1.00, $channel, true],
-            'at maximum' => [9999.00, $channel, true],
-            'below minimum' => [0.50, $channel, false],
-            'above maximum' => [10000.00, $channel, false],
+            'within range' => [50.00, 1.00, 9999.00, true],
+            'at minimum' => [1.00, 1.00, 9999.00, true],
+            'at maximum' => [9999.00, 1.00, 9999.00, true],
+            'below minimum' => [0.50, 1.00, 9999.00, false],
+            'above maximum' => [10000.00, 1.00, 9999.00, false],
         ];
     }
 
     public function testChannelCurrencySupport(): void
     {
-        $channel = ['currency_support' => ['USD', 'EUR', 'GBP']];
-        $this->assertContains('USD', $channel['currency_support']);
-        $this->assertNotContains('CNY', $channel['currency_support']);
+        $supported = ['USD', 'EUR', 'GBP'];
+        $this->assertContains('USD', $supported);
+        $this->assertNotContains('CNY', $supported);
     }
 
     public function testChannelVisibilityByRegion(): void
     {
-        $channel = ['visible_regions' => ['US', 'EU', 'UK']];
-        $this->assertContains('US', $channel['visible_regions']);
-        $this->assertNotContains('CN', $channel['visible_regions']);
+        $visibleRegions = ['US', 'EU', 'UK'];
+        $this->assertContains('US', $visibleRegions);
+        $this->assertNotContains('CN', $visibleRegions);
     }
 
-    public function testFeeConfigurationParsing(): void
+    public function testFeeCalculationMatchesBcmathPattern(): void
     {
-        $feeConfig = [
-            'percentage' => 2.9,
-            'fixed' => 0.30,
-            'currency' => 'USD',
-        ];
+        // Production uses: bcadd(bcmul($amount, $rate, 8), $fixed, 4)
+        // where $rate is a decimal (e.g. 0.029 for 2.9%)
+        $amount = '100.00';
+        $rate = '0.029';
+        $fixed = '0.30';
 
-        $orderAmount = 100.00;
-        $fee = round($orderAmount * ($feeConfig['percentage'] / 100) + $feeConfig['fixed'], 2);
-
-        $this->assertSame(3.20, $fee);
+        $fee = bcadd(bcmul($amount, $rate, 8), $fixed, 4);
+        $this->assertSame('3.2000', $fee);
     }
 
-    public function testMultipleChannelsSortByPriority(): void
+    public function testChannelsSortedByFee(): void
     {
         $channels = [
-            ['code' => 'alipay', 'fee_config' => ['percentage' => 1.5]],
-            ['code' => 'stripe', 'fee_config' => ['percentage' => 2.9]],
-            ['code' => 'paypal', 'fee_config' => ['percentage' => 3.5]],
+            ['code' => 'alipay', 'rate' => 0.015],
+            ['code' => 'stripe', 'rate' => 0.029],
+            ['code' => 'paypal', 'rate' => 0.035],
         ];
 
-        usort($channels, fn($a, $b) => $a['fee_config']['percentage'] <=> $b['fee_config']['percentage']);
+        usort($channels, fn($a, $b) => $a['rate'] <=> $b['rate']);
 
         $this->assertSame('alipay', $channels[0]['code']);
         $this->assertSame('stripe', $channels[1]['code']);

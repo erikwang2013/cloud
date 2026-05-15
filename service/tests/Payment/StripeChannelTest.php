@@ -3,69 +3,82 @@
 namespace Tests\Payment;
 
 use PHPUnit\Framework\Attributes\DataProvider;
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 
 final class StripeChannelTest extends TestCase
 {
-    public function testChannelConfigHasRequiredFields(): void
-    {
-        $requiredFields = ['name', 'code', 'api_key_encrypted', 'currency_support',
-            'fee_config', 'webhook_secret', 'status'];
+    private const ZERO_DECIMAL_CURRENCIES = [
+        'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA',
+        'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF',
+    ];
 
-        foreach ($requiredFields as $field) {
-            $this->assertContains($field, [
-                'name', 'code', 'api_key_encrypted', 'currency_support',
-                'fee_config', 'webhook_secret', 'status',
-            ]);
+    #[DataProvider('amountConversionProvider')]
+    public function testAmountToSmallestUnit(float $total, string $currency, int $expected): void
+    {
+        if (in_array(strtoupper($currency), self::ZERO_DECIMAL_CURRENCIES, true)) {
+            $amount = (int) round($total);
+        } else {
+            $amount = (int) round($total * 100);
         }
+        $this->assertSame($expected, $amount);
     }
 
-    public function testPaymentIntentAmountIsInCents(): void
-    {
-        $total = 19.99;
-        $amountInCents = (int) round($total * 100);
-        $this->assertSame(1999, $amountInCents);
-    }
-
-    public function testPaymentIntentAmountRounding(): void
-    {
-        $this->assertSame(1000, (int) round(10.00 * 100));
-        $this->assertSame(1050, (int) round(10.50 * 100));
-        $this->assertSame(999, (int) round(9.99 * 100));
-        $this->assertSame(1, (int) round(0.01 * 100));
-    }
-
-    #[DataProvider('webhookSignatureProvider')]
-    public function testWebhookSignatureStructure(array $payload, bool $hasRequiredFields): void
-    {
-        $hasType = isset($payload['type']);
-        $hasData = isset($payload['data']['object']);
-        $this->assertSame($hasRequiredFields, $hasType && $hasData);
-    }
-
-    public static function webhookSignatureProvider(): array
+    public static function amountConversionProvider(): array
     {
         return [
-            'valid succeeded' => [
-                ['type' => 'payment_intent.succeeded', 'data' => ['object' => ['id' => 'pi_123', 'metadata' => ['order_id' => 1]]]],
-                true,
-            ],
-            'missing type' => [
-                ['data' => ['object' => ['id' => 'pi_123']]],
-                false,
-            ],
-            'missing data object' => [
-                ['type' => 'payment_intent.succeeded', 'data' => []],
-                false,
-            ],
-            'empty payload' => [
-                [],
-                false,
-            ],
-            'failed event' => [
-                ['type' => 'payment_intent.payment_failed', 'data' => ['object' => ['id' => 'pi_456', 'metadata' => ['order_id' => 2]]]],
-                true,
-            ],
+            'USD with cents' => [19.99, 'USD', 1999],
+            'USD whole dollar' => [10.00, 'USD', 1000],
+            'USD rounding up' => [10.505, 'USD', 1051],
+            'USD rounding down' => [10.504, 'USD', 1050],
+            'JPY zero-decimal' => [1000, 'JPY', 1000],
+            'JPY zero-decimal rounded' => [1000.50, 'JPY', 1001],
+            'KRW zero-decimal' => [50000, 'KRW', 50000],
+            'VND zero-decimal' => [100000, 'VND', 100000],
+            'EUR with cents' => [9.99, 'EUR', 999],
+        ];
+    }
+
+    public function testIdempotencySkipsNonPendingTransactions(): void
+    {
+        $transactions = [
+            ['transaction_no' => 'pi_123', 'status' => 'success'],
+            ['transaction_no' => 'pi_456', 'status' => 'pending'],
+            ['transaction_no' => 'pi_789', 'status' => 'failed'],
+        ];
+
+        $processed = [];
+        foreach ($transactions as $txn) {
+            if ($txn['status'] !== 'pending') {
+                continue;
+            }
+            $processed[] = $txn['transaction_no'];
+        }
+
+        $this->assertSame(['pi_456'], $processed);
+    }
+
+    public function testIdempotencyHandlesMissingTransaction(): void
+    {
+        $txn = null;
+        $shouldProcess = $txn !== null && $txn['status'] === 'pending';
+        $this->assertFalse($shouldProcess);
+    }
+
+    #[DataProvider('webhookEventProvider')]
+    public function testWebhookEventTypeRouting(string $eventType, bool $isProcessable): void
+    {
+        $processable = in_array($eventType, ['payment_intent.succeeded', 'payment_intent.payment_failed'], true);
+        $this->assertSame($isProcessable, $processable);
+    }
+
+    public static function webhookEventProvider(): array
+    {
+        return [
+            'succeeded' => ['payment_intent.succeeded', true],
+            'failed' => ['payment_intent.payment_failed', true],
+            'processing' => ['payment_intent.processing', false],
+            'canceled' => ['payment_intent.canceled', false],
+            'created' => ['payment_intent.created', false],
         ];
     }
 
@@ -79,37 +92,30 @@ final class StripeChannelTest extends TestCase
             'refunding' => ['refunded'],
         ];
 
-        $this->assertArrayHasKey('pending', $validTransitions);
         $this->assertContains('paid', $validTransitions['pending']);
         $this->assertContains('completed', $validTransitions['provisioning']);
         $this->assertNotContains('pending', $validTransitions['completed']);
+        $this->assertNotContains('pending', $validTransitions['paid']);
     }
 
     public function testTransactionStatusFlow(): void
     {
-        $validStatuses = ['pending', 'success', 'failed', 'refunded'];
-
-        $this->assertContains('pending', $validStatuses);
-        $this->assertContains('success', $validStatuses);
-        $this->assertContains('failed', $validStatuses);
+        $terminalStatuses = ['success', 'failed', 'refunded'];
+        $this->assertContains('success', $terminalStatuses);
+        $this->assertContains('failed', $terminalStatuses);
+        $this->assertNotContains('pending', $terminalStatuses);
     }
 
-    public function testIdempotencyCheckPreventsDuplicateProcessing(): void
+    public function testChannelConfigHasRequiredFields(): void
     {
-        // Verify that a non-pending transaction is skipped
-        $transactions = [
-            ['transaction_no' => 'pi_123', 'status' => 'success'],
-            ['transaction_no' => 'pi_456', 'status' => 'pending'],
-        ];
+        $requiredFields = ['name', 'code', 'api_key_encrypted', 'currency_support',
+            'fee_config', 'webhook_secret', 'status'];
 
-        $processedIds = [];
-        foreach ($transactions as $txn) {
-            if ($txn['status'] !== 'pending') {
-                continue;
-            }
-            $processedIds[] = $txn['transaction_no'];
+        $channelFields = ['name', 'code', 'api_key_encrypted', 'currency_support',
+            'fee_config', 'webhook_secret', 'status'];
+
+        foreach ($requiredFields as $field) {
+            $this->assertContains($field, $channelFields);
         }
-
-        $this->assertSame(['pi_456'], $processedIds);
     }
 }

@@ -2,48 +2,71 @@
 
 namespace Tests\Common;
 
+use Common\Hashid\HashidService;
+use Erikwang2013\Hashids\HashidsFactory;
+use Erikwang2013\Hashids\HashidsManager;
 use Hashids\Hashids;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 
 final class HashidServiceTest extends TestCase
 {
-    private Hashids $hashids;
+    private HashidsManager $manager;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->hashids = new Hashids('test-salt', 12);
+
+        $config = [
+            'default' => 'main',
+            'connections' => [
+                'main' => [
+                    'salt' => getenv('HASHIDS_SALT') ?: 'test-salt',
+                    'length' => (int)(getenv('HASHIDS_LENGTH') ?: 12),
+                    'alphabet' => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890',
+                ],
+            ],
+        ];
+
+        $this->manager = new HashidsManager($config, new HashidsFactory());
+        $this->injectManager($this->manager);
+    }
+
+    private function injectManager(HashidsManager $manager): void
+    {
+        $ref = new \ReflectionClass(HashidService::class);
+        $prop = $ref->getProperty('manager');
+        $prop->setValue(null, $manager);
     }
 
     public function testEncodeReturnsString(): void
     {
-        $hash = $this->hashids->encode(1);
+        $hash = HashidService::encode(1);
         $this->assertIsString($hash);
         $this->assertNotEmpty($hash);
     }
 
     public function testEncodeIsDeterministic(): void
     {
-        $a = $this->hashids->encode(42);
-        $b = $this->hashids->encode(42);
+        $a = HashidService::encode(42);
+        $b = HashidService::encode(42);
         $this->assertSame($a, $b);
     }
 
     public function testDifferentIdsYieldDifferentHashes(): void
     {
-        $a = $this->hashids->encode(1);
-        $b = $this->hashids->encode(2);
+        $a = HashidService::encode(1);
+        $b = HashidService::encode(2);
         $this->assertNotSame($a, $b);
     }
 
     #[DataProvider('roundtripProvider')]
     public function testEncodeDecodeRoundtrip(int $id): void
     {
-        $hash = $this->hashids->encode($id);
-        $decoded = $this->hashids->decode($hash);
-        $this->assertNotEmpty($decoded);
-        $this->assertSame($id, $decoded[0]);
+        $hash = HashidService::encode($id);
+        $decoded = HashidService::decode($hash);
+        $this->assertNotNull($decoded);
+        $this->assertSame($id, $decoded);
     }
 
     public static function roundtripProvider(): array
@@ -57,42 +80,54 @@ final class HashidServiceTest extends TestCase
         ];
     }
 
-    public function testDecodeInvalidStringReturnsEmpty(): void
+    public function testDecodeInvalidStringReturnsNull(): void
     {
-        $result = $this->hashids->decode('invalid_hash');
-        $this->assertEmpty($result);
+        $result = HashidService::decode('invalid_hash');
+        $this->assertNull($result);
     }
 
-    public function testDecodeEmptyStringReturnsEmpty(): void
+    public function testDecodeEmptyStringReturnsNull(): void
     {
-        $result = $this->hashids->decode('');
-        $this->assertEmpty($result);
+        $result = HashidService::decode('');
+        $this->assertNull($result);
     }
 
     public function testEncodeZeroReturnsNonEmpty(): void
     {
-        $hash = $this->hashids->encode(0);
+        $hash = HashidService::encode(0);
         $this->assertIsString($hash);
         $this->assertNotEmpty($hash);
     }
 
     public function testHashLengthIsConsistent(): void
     {
-        $a = $this->hashids->encode(1);
-        $b = $this->hashids->encode(9999999999);
+        $a = HashidService::encode(1);
+        $b = HashidService::encode(9999999999);
         $this->assertGreaterThanOrEqual(12, strlen($a));
         $this->assertGreaterThanOrEqual(12, strlen($b));
     }
 
-    public function testSameSaltProducesDifferentHashes(): void
+    public function testDifferentSaltProducesDifferentHashes(): void
     {
-        $otherHashids = new Hashids('different-salt', 12);
-        $a = $this->hashids->encode(123);
-        $b = $otherHashids->encode(123);
-        $this->assertNotSame($a, $b);
+        $config = [
+            'default' => 'main',
+            'connections' => [
+                'main' => [
+                    'salt' => 'different-salt',
+                    'length' => 12,
+                    'alphabet' => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890',
+                ],
+            ],
+        ];
+        $otherManager = new HashidsManager($config, new HashidsFactory());
+        $otherHashids = $otherManager->connection();
+
+        $hashServiceHash = HashidService::encode(123);
+        $otherHash = $otherHashids->encode(123);
+        $this->assertNotSame($hashServiceHash, $otherHash);
     }
 
-    public function testRecursiveIdWalk(): void
+    public function testEncodeIdsRecursivelyTransformsIdFields(): void
     {
         $data = [
             'id' => 1,
@@ -102,36 +137,31 @@ final class HashidServiceTest extends TestCase
             ],
         ];
 
-        $encoded = $this->walkIds($data, $this->hashids);
+        $encoded = HashidService::encodeIds($data);
         $this->assertIsString($encoded['id']);
         $this->assertIsString($encoded['items'][0]['id']);
         $this->assertSame('test', $encoded['name']);
     }
 
-    public function testWalkSkipsNonIntIds(): void
+    public function testEncodeIdsSkipsNonIntIds(): void
     {
         $data = ['id' => 'already_a_string', 'name' => 'test'];
-        $encoded = $this->walkIds($data, $this->hashids);
+        $encoded = HashidService::encodeIds($data);
         $this->assertSame('already_a_string', $encoded['id']);
     }
 
-    public function testWalkHandlesNonIdFields(): void
+    public function testEncodeIdsHandlesNonIdFields(): void
     {
         $data = ['username' => 'john', 'email' => 'john@example.com'];
-        $encoded = $this->walkIds($data, $this->hashids);
+        $encoded = HashidService::encodeIds($data);
         $this->assertSame('john', $encoded['username']);
         $this->assertSame('john@example.com', $encoded['email']);
     }
 
-    private function walkIds(array $data, Hashids $hashids): array
+    public function testEncodeIdsWithNullReturnsEmptyArray(): void
     {
-        foreach ($data as $key => $value) {
-            if ($key === 'id' && is_int($value)) {
-                $data[$key] = $hashids->encode($value);
-            } elseif (is_array($value)) {
-                $data[$key] = $this->walkIds($value, $hashids);
-            }
-        }
-        return $data;
+        $result = HashidService::encodeIds(null);
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
     }
 }

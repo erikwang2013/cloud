@@ -1,26 +1,28 @@
 <?php
 
-use support\Migration;
+use Illuminate\Database\Capsule\Manager as Capsule;
+use app\common\Migration;
 
 return new class extends Migration {
     public function up(): void
     {
         $sql = file_get_contents(__DIR__ . '/../../install.sql');
-        if ($sql === false) {
+        if ($sql === false || $sql === '') {
             throw new \RuntimeException('Failed to read install.sql');
         }
-        \Illuminate\Database\Capsule\Manager::unprepared($sql);
+        Capsule::unprepared($sql);
     }
 
     public function down(): void
     {
-        \Illuminate\Database\Capsule\Manager::statement('SET FOREIGN_KEY_CHECKS = 0');
-        $tables = \Illuminate\Database\Capsule\Manager::select(
-            "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'"
-        );
-        foreach ($tables as $table) {
-            \Illuminate\Database\Capsule\Manager::schema()->dropIfExists($table->TABLE_NAME);
+        preg_match_all('/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?(\w+)`?/i',
+            file_get_contents(__DIR__ . '/../../install.sql') ?: '', $matches);
+        $tables = $matches[1] ?? [];
+
+        Capsule::statement('SET FOREIGN_KEY_CHECKS = 0');
+        foreach (array_reverse($tables) as $table) {
+            Capsule::schema()->dropIfExists($table);
         }
-        \Illuminate\Database\Capsule\Manager::statement('SET FOREIGN_KEY_CHECKS = 1');
+        Capsule::statement('SET FOREIGN_KEY_CHECKS = 1');
     }
 };

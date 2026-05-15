@@ -3,7 +3,6 @@
 namespace app\common;
 
 use Illuminate\Database\Capsule\Manager as Capsule;
-use Illuminate\Database\Schema\Blueprint;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class MigrationRunner
@@ -25,57 +24,93 @@ class MigrationRunner
     public function migrate(): array
     {
         $this->ensureTable();
-        $files = $this->pendingFiles();
-        if (empty($files)) {
-            $this->info('Nothing to migrate.');
+
+        if (!$this->acquireLock()) {
+            $this->warn('Migration is already running. Skipping.');
             return [];
         }
 
-        $batch = $this->nextBatch();
-        $ran = [];
+        try {
+            $files = $this->pendingFiles();
+            if (empty($files)) {
+                $this->info('Nothing to migrate.');
+                return [];
+            }
 
-        foreach ($files as $file) {
-            $this->info("Migrating: {$file['name']}");
-            $instance = $this->resolve($file['path']);
-            $instance->up();
-            $this->record($file['name'], $batch);
-            $ran[] = $file['name'];
+            $batch = $this->nextBatch();
+            $ran = [];
+
+            foreach ($files as $file) {
+                $this->info("Migrating: {$file['name']}");
+                $instance = $this->resolve($file['path']);
+
+                Capsule::connection()->beginTransaction();
+                try {
+                    $instance->up();
+                    $this->record($file['name'], $batch);
+                    Capsule::connection()->commit();
+                    $ran[] = $file['name'];
+                } catch (\Throwable $e) {
+                    Capsule::connection()->rollBack();
+                    throw $e;
+                }
+            }
+
+            $this->info('Migrated: ' . count($ran) . ' file(s)');
+            return $ran;
+        } finally {
+            $this->releaseLock();
         }
-
-        $this->info('Migrated: ' . count($ran) . ' file(s)');
-        return $ran;
     }
 
     public function rollback(): array
     {
         $this->ensureTable();
-        $lastBatch = Capsule::table($this->table)->max('batch');
-        if (!$lastBatch) {
-            $this->info('Nothing to rollback.');
+
+        if (!$this->acquireLock()) {
+            $this->warn('Rollback is already running. Skipping.');
             return [];
         }
 
-        $rows = Capsule::table($this->table)
-            ->where('batch', $lastBatch)
-            ->orderBy('id', 'desc')
-            ->get();
-
-        $rolled = [];
-        foreach ($rows as $row) {
-            $filePath = $this->path . '/' . $row->migration . '.php';
-            if (!is_file($filePath)) {
-                $this->warn("Migration file not found: {$row->migration}");
-                continue;
+        try {
+            $lastBatch = Capsule::table($this->table)->max('batch');
+            if (!$lastBatch) {
+                $this->info('Nothing to rollback.');
+                return [];
             }
-            $this->info("Rolling back: {$row->migration}");
-            $instance = $this->resolve($filePath);
-            $instance->down();
-            Capsule::table($this->table)->where('id', $row->id)->delete();
-            $rolled[] = $row->migration;
-        }
 
-        $this->info('Rolled back: ' . count($rolled) . ' file(s)');
-        return $rolled;
+            $rows = Capsule::table($this->table)
+                ->where('batch', $lastBatch)
+                ->orderBy('id', 'desc')
+                ->get();
+
+            $rolled = [];
+            foreach ($rows as $row) {
+                $filePath = $this->path . '/' . $row->migration . '.php';
+                if (!is_file($filePath)) {
+                    $this->warn("Migration file not found: {$row->migration}");
+                    continue;
+                }
+                $this->info("Rolling back: {$row->migration}");
+                $instance = $this->resolve($filePath);
+
+                Capsule::connection()->beginTransaction();
+                try {
+                    $instance->down();
+                    Capsule::table($this->table)->where('id', $row->id)->delete();
+                    Capsule::connection()->commit();
+                    $rolled[] = $row->migration;
+                } catch (\Throwable $e) {
+                    Capsule::connection()->rollBack();
+                    throw $e;
+                }
+            }
+
+            $this->info('Rolled back: ' . count($rolled) . ' file(s)');
+            return $rolled;
+        } finally {
+            $this->releaseLock();
+        }
     }
 
     public function status(): array
@@ -94,14 +129,27 @@ class MigrationRunner
         return $result;
     }
 
+    private function acquireLock(): bool
+    {
+        $name = 'migration_lock_' . crc32($this->path);
+        $result = Capsule::select("SELECT GET_LOCK(?, 0) AS acquired", [$name]);
+        return !empty($result) && (int) $result[0]->acquired === 1;
+    }
+
+    private function releaseLock(): void
+    {
+        $name = 'migration_lock_' . crc32($this->path);
+        Capsule::select("SELECT RELEASE_LOCK(?)", [$name]);
+    }
+
     private function ensureTable(): void
     {
         if (Capsule::schema()->hasTable($this->table)) {
             return;
         }
-        Capsule::schema()->create($this->table, function (Blueprint $table) {
+        Capsule::schema()->create($this->table, function ($table) {
             $table->bigIncrements('id');
-            $table->string('migration');
+            $table->string('migration', 512);
             $table->integer('batch');
         });
     }

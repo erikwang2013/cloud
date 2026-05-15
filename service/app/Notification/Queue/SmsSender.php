@@ -23,8 +23,8 @@ class SmsSender implements Consumer
                 'user_id' => $data['user_id'],
                 'channel' => 'sms',
                 'template_code' => $data['code'],
-                'content' => json_encode(['body' => $data['body']]),
-                'send_status' => 'sent',
+                'content' => ['body' => $data['body']],
+                'send_status' => 'dev-stub',
             ]);
             return;
         }
@@ -40,10 +40,10 @@ class SmsSender implements Consumer
                 'user_id' => $data['user_id'],
                 'channel' => 'sms',
                 'template_code' => $data['code'],
-                'content' => json_encode([
+                'content' => [
                     'body' => $data['body'],
                     'provider_message_id' => $message->sid,
-                ]),
+                ],
                 'send_status' => 'sent',
             ]);
         } catch (RestException $e) {
@@ -51,13 +51,12 @@ class SmsSender implements Consumer
                 'user_id' => $data['user_id'],
                 'channel' => 'sms',
                 'template_code' => $data['code'],
-                'content' => json_encode([
+                'content' => [
                     'to' => $data['to'],
                     'error' => $e->getMessage(),
-                ]),
+                ],
                 'send_status' => 'failed',
             ]);
-            throw $e;
         }
     }
 }

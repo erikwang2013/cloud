@@ -39,7 +39,8 @@ cloud-php/
 │   │   ├── middleware/        # Access control middleware
 │   │   ├── bootstrap/         # Process bootstraps (Snowflake / Encryptable / Encryption)
 │   │   ├── exception/        # Exception handling
-│   │   └── view/              # View templates (Layui panel)
+│   │   ├── view/              # View templates (Layui panel)
+│   │   └── command/           # Console commands (database migration)
 │   ├── api/                   # Public API (PSR-4: plugin\admin\api)
 │   │   ├── Auth.php           # Auth interface
 │   │   ├── Menu.php           # Menu interface
@@ -55,7 +56,9 @@ cloud-php/
 │   │   │       ├── webman-scout/   # Elasticsearch sync
 │   │   │       └── season/         # Country flags
 │   │   ├── hashids.php        # Hashids connection config
-│   │   └── encryption.php     # Transport encryption config
+│   │   ├── encryption.php     # Transport encryption config
+│   │   └── command.php        # Console command registration
+│   ├── database/migrations/   # Database migration files
 │   ├── tests/                 # Unit tests (PHPUnit 11, 48 tests, 81 assertions)
 │   │   ├── HashidsTest.php    # hashids encode/decode tests
 │   │   ├── BaseJsonTest.php   # Base::json() ID encoding tests
@@ -81,7 +84,8 @@ cloud-php/
 │   │   ├── Report/            # Revenue / supplier / regional reports
 │   │   ├── Supplier/          # Supplier onboarding / settlement / withdrawal
 │   │   ├── Ticket/            # Support tickets / SLA auto-assignment
-│   │   └── User/              # Users / auth / KYC / balances
+│   │   ├── User/              # Users / auth / KYC / balances
+│   │   └── Command/           # Console commands (database migration)
 │   ├── common/                # Shared libraries (PSR-4: Common\)
 │   │   ├── Auth/              # JWT authentication / middleware
 │   │   ├── Encryption/        # Transport encryption middleware (AES-256-GCM) / service
@@ -91,7 +95,13 @@ cloud-php/
 │   │   ├── Security/          # CORS / WAF / rate limiting / audit logging
 │   │   └── Snowflake/         # Snowflake ID service / Eloquent model trait
 │   ├── config/                # Routes / middleware / logging / DB / queue / crypto / ES configs
-│   └── support/               # Bootstrap (Eloquent / Events / encryption / snowflake / hashids / scout init)
+│   ├── database/migrations/   # Database migration files (12 migrations)
+│   ├── tests/                 # Unit tests (PHPUnit 10, 79 tests, 149 assertions)
+│   │   ├── Common/            # Hashid / Response / Snowflake
+│   │   ├── Payment/           # Stripe channel / payment routing
+│   │   ├── Notification/      # Notification dispatch
+│   │   └── Provisioning/      # Retry logic
+│   └── support/               # Bootstrap (Eloquent / Events / encryption / snowflake / hashids / scout init + MigrationRunner)
 ├── apps/
 │   ├── flutter/               # Flutter client (PC-first web layout)
 │   └── harmonyos/             # HarmonyOS client skeleton

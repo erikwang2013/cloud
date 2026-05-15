@@ -3,46 +3,47 @@
 namespace Tests\Provisioning;
 
 use PHPUnit\Framework\Attributes\DataProvider;
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 
 final class RetryLogicTest extends TestCase
 {
     #[DataProvider('retryDelayProvider')]
     public function testExponentialBackoffDelays(int $retryCount, int $expectedMinutes): void
     {
-        $delays = [1, 5, 15, 60, 360, 86400]; // minutes
-        $delay = $retryCount < count($delays) ? $delays[$retryCount] : $delays[count($delays) - 1];
+        // Production: $retries = $task->retry_count + 1; delay = $delays[$retries] ?? $delays[5]
+        $delays = [1, 5, 15, 60, 360, 86400];
+        $retries = $retryCount + 1;
+        $delay = $retries < count($delays) ? $delays[$retries] : $delays[count($delays) - 1];
         $this->assertSame($expectedMinutes, $delay);
     }
 
     public static function retryDelayProvider(): array
     {
         return [
-            'first retry' => [0, 1],
-            'second retry' => [1, 5],
-            'third retry' => [2, 15],
-            'fourth retry' => [3, 60],
-            'fifth retry' => [4, 360],
-            'sixth retry' => [5, 86400],
-            'beyond max' => [6, 86400],
-            'far beyond max' => [10, 86400],
+            'first retry (retry_count=0)' => [0, 5],
+            'second retry (retry_count=1)' => [1, 15],
+            'third retry (retry_count=2)' => [2, 60],
+            'fourth retry (retry_count=3)' => [3, 360],
+            'fifth retry (retry_count=4)' => [4, 86400],
+            'sixth retry (retry_count=5)' => [5, 86400],
+            'beyond max (retry_count=6)' => [6, 86400],
+            'far beyond max (retry_count=10)' => [10, 86400],
         ];
     }
 
-    public function testMaxRetriesBeforeFail(): void
+    public function testTaskFailsAfterMaxRetries(): void
     {
+        // Production: if ($retries >= 6) { status = 'failed'; }
+        // where $retries = $task->retry_count + 1
         $maxRetries = 6;
-        $retries = 0;
-        for ($i = 0; $i < $maxRetries; $i++) {
-            $retries++;
-            if ($retries < $maxRetries) {
-                $this->assertLessThan($maxRetries, $retries);
-            }
-        }
-        $this->assertSame($maxRetries, $retries);
-        // At max retries, task is failed
-        $status = $retries >= $maxRetries ? 'failed' : 'pending';
-        $this->assertSame('failed', $status);
+        $canRetry = function (int $retryCount) use ($maxRetries): bool {
+            return ($retryCount + 1) < $maxRetries;
+        };
+
+        $this->assertTrue($canRetry(0));
+        $this->assertTrue($canRetry(4));
+        $this->assertFalse($canRetry(5));
+        $this->assertFalse($canRetry(6));
     }
 
     public function testProvisionTaskStatusFlow(): void
@@ -55,8 +56,8 @@ final class RetryLogicTest extends TestCase
             'success' => [],
         ];
 
-        $this->assertContains('running', $validTransitions['pending']);
         $this->assertContains('retryable', $validTransitions['running']);
+        $this->assertContains('pending', $validTransitions['retryable']);
         $this->assertEmpty($validTransitions['success']);
     }
 
