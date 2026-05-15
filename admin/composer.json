@@ -31,6 +31,12 @@
             "vendor/erikwang2013/webman-scout/helpers.php"
         ]
     },
+    "autoload-dev": {
+        "psr-4": {
+            "tests\\": "tests/",
+            "tests\\Support\\": "tests/Support/"
+        }
+    },
     "config": {
         "allow-plugins": {
             "erikwang2013/encryptable": true
