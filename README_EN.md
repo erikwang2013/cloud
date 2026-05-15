@@ -33,16 +33,36 @@ cloud-php/
 │   │   ├── model/             # Models (admins / roles / rules / users)
 │   │   ├── common/            # Utilities (Auth / Tree / Layui / Util)
 │   │   ├── middleware/        # Access control middleware
-│   │   │   └── view/          # View templates (Layui panel)
+│   │   ├── bootstrap/         # Process bootstraps (Snowflake / Encryptable / Encryption)
+│   │   ├── exception/        # Exception handling
+│   │   └── view/              # View templates (Layui panel)
 │   ├── api/                   # Public API (PSR-4: plugin\admin\api)
 │   │   ├── Auth.php           # Auth interface
 │   │   ├── Menu.php           # Menu interface
+│   │   ├── Install.php        # Installation interface
 │   │   └── Middleware.php     # Middleware interface
-│   ├── config/                # Plugin config (routes / menus / middleware / database)
+│   ├── config/                # Application config (routes / menus / middleware / database)
+│   │   ├── plugin/            # Plugin configs (6 erikwang2013 packages)
+│   │   │   └── erikwang2013/
+│   │   │       ├── snowflake-php/  # Snowflake distributed IDs
+│   │   │       ├── hashids/        # Hashids ID obfuscation
+│   │   │       ├── encryptable/    # Field-level encryption
+│   │   │       ├── encryption/     # Transport encryption (reserved)
+│   │   │       ├── webman-scout/   # Elasticsearch sync
+│   │   │       └── season/         # Country flags
+│   │   ├── hashids.php        # Hashids connection config
+│   │   └── encryption.php     # Transport encryption config
+│   ├── tests/                 # Unit tests (PHPUnit 11, 48 tests, 81 assertions)
+│   │   ├── HashidsTest.php    # hashids encode/decode tests
+│   │   ├── BaseJsonTest.php   # Base::json() ID encoding tests
+│   │   ├── CrudHashidsTest.php # Crud input decoding tests
+│   │   └── Support/           # Test helpers (RequestMock / TestableCrud)
 │   ├── public/                # Document root (static assets / frontend components)
 │   ├── vendor/                # Composer dependencies
+│   ├── composer.json          # Dependency manifest (6 erikwang2013 packages)
+│   ├── phpunit.xml            # PHPUnit config
 │   ├── start.php              # Entry point (php start.php start)
-│   └── install.sql            # Initial SQL
+│   └── install.sql            # Initial SQL (bigint PKs, no auto-increment)
 ├── service/                   # Backend service (standalone webman instance)
 │   ├── app/                   # Business modules (PSR-4: App\)
 │   │   ├── Admin/             # Admin panel controllers
@@ -207,6 +227,46 @@ php start.php stop              # Stop
 | GET | `/admin/api/v1/audit-logs` | Audit logs |
 | PUT | `/admin/api/v1/system/config` | System config update |
 
+## Admin Panel Architecture
+
+### Technology Integration
+
+The admin panel is a standalone webman instance integrating 6 erikwang2013 packages:
+
+| Package | Purpose | Implementation |
+|---------|---------|---------------|
+| snowflake-php | 64-bit distributed PKs | `Base::boot()` creating event auto-generates IDs |
+| hashids | API ID obfuscation | `Base::json()` encodes on response, `Crud::selectInput/updateInput/deleteInput` decode on request |
+| encryptable | DB field encryption | Eloquent `Encryptable` cast on Admin (password/email/mobile) and User (6 fields), transparent encrypt/decrypt |
+| encryption | API transport encryption | Reserved `encrypt_data()`/`decrypt_data()` helpers |
+| webman-scout | ES full-text search | User model `Searchable` trait, auto index sync |
+| season | Country flag emoji | `country_season_flag()` global helper |
+
+### Security Layers
+
+```
+Request → Hashids decode (Crud::selectInput/updateInput/deleteInput)
+  → ACL auth (api/Auth.php, per-controller noNeedLogin/noNeedAuth)
+  → Business logic (CRUD / model events)
+  → Encryptable field encryption (Eloquent casts set)
+  → Database write
+Response ← Hashids encode (Base::json → hashids_encode_ids)
+```
+
+### Data Flow
+
+- **Write path**: Request ID (hashid) → decode to int → CRUD op → Snowflake generates new ID → Encryptable encrypts sensitive fields → DB
+- **Read path**: DB → Encryptable decrypts → Hashids encodes IDs → JSON response
+
+### Test Coverage
+
+```
+phpunit.xml (PHPUnit 11)
+├── HashidsTest        (21 tests) encode/decode/encode_ids
+├── BaseJsonTest       (13 tests) Base::json/success/fail encoding
+└── CrudHashidsTest    (14 tests) Crud input decoding (select/update/delete)
+```
+
 ## Design Philosophy
 
 ### 1. Modular Monolith
@@ -320,11 +380,13 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] Field-level encryption (`erikwang2013/encryptable`, auto encrypt/decrypt sensitive fields)
 - [x] Full-text search (`erikwang2013/webman-scout`, Elasticsearch + IK Analyzer)
 - [x] Country flags (`erikwang2013/season`, Unicode flag emoji)
+- [x] Admin panel (`admin/`, webman-admin + 6 package integrations, 48 unit tests)
+- [x] Code review (2 critical + 4 important fixes applied)
 - [ ] Database migration scripting (`docs/database.sql` ready, pending migration command)
 - [ ] Stripe production integration (currently mocked)
 - [ ] Twilio / Alibaba Cloud SMS production integration
 - [ ] FCM push notification production integration
-- [ ] Unit and integration tests
+- [ ] Service-layer unit and integration tests (admin/ already has 48 tests)
 - [ ] CI/CD pipeline
 
 ## License

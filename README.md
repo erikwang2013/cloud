@@ -35,16 +35,36 @@ cloud-php/
 │   │   ├── model/             # 数据模型（管理员 / 角色 / 规则 / 用户等）
 │   │   ├── common/            # 工具类（Auth / Tree / Layui / Util）
 │   │   ├── middleware/        # 访问控制中间件
-│   │   │   └── view/          # 视图模板（Layui 后台面板）
+│   │   ├── bootstrap/         # 进程启动引导（Snowflake / Encryptable / Encryption）
+│   │   ├── exception/        # 异常处理
+│   │   └── view/              # 视图模板（Layui 后台面板）
 │   ├── api/                   # 对外 API (PSR-4: plugin\admin\api)
 │   │   ├── Auth.php           # 鉴权接口
 │   │   ├── Menu.php           # 菜单接口
+│   │   ├── Install.php        # 安装接口
 │   │   └── Middleware.php     # 中间件接口
-│   ├── config/                # 插件配置（路由 / 菜单 / 中间件 / 数据库等）
+│   ├── config/                # 应用配置（路由 / 菜单 / 中间件 / 数据库等）
+│   │   ├── plugin/            # 插件配置 (6 个 erikwang2013 包)
+│   │   │   └── erikwang2013/
+│   │   │       ├── snowflake-php/  # Snowflake 分布式 ID
+│   │   │       ├── hashids/        # Hashids ID 混淆
+│   │   │       ├── encryptable/    # 字段级加密
+│   │   │       ├── encryption/     # 传输加密（预留）
+│   │   │       ├── webman-scout/   # Elasticsearch 同步
+│   │   │       └── season/         # 国家旗帜
+│   │   ├── hashids.php        # Hashids 连接配置
+│   │   └── encryption.php     # 传输加密配置
+│   ├── tests/                 # 单元测试（PHPUnit 11, 48 tests, 81 assertions）
+│   │   ├── HashidsTest.php    # hashids 编解码测试
+│   │   ├── BaseJsonTest.php   # Base::json() ID 编码测试
+│   │   ├── CrudHashidsTest.php # Crud 输入解码测试
+│   │   └── Support/           # 测试辅助类（RequestMock / TestableCrud）
 │   ├── public/                # 文档根目录（静态资源 / 前端组件）
 │   ├── vendor/                # Composer 依赖
+│   ├── composer.json          # 依赖声明（6 个 erikwang2013 包）
+│   ├── phpunit.xml            # PHPUnit 配置
 │   ├── start.php              # 启动入口 (php start.php start)
-│   └── install.sql            # 初始化 SQL
+│   └── install.sql            # 初始化 SQL（bigint 主键，无自增）
 ├── service/                   # 后端服务（独立 webman 实例）
 │   ├── app/                   # 业务模块 (PSR-4: App\)
 │   │   ├── Admin/             # 管理后台控制器
@@ -209,6 +229,46 @@ php start.php stop              # 停止
 | GET | `/admin/api/v1/audit-logs` | 审计日志 |
 | PUT | `/admin/api/v1/system/config` | 系统配置 |
 
+## 管理后台架构
+
+### 技术集成
+
+管理后台是一个独立的 webman 实例，集成了 6 个 erikwang2013 包：
+
+| 包 | 用途 | 实现方式 |
+|---|------|---------|
+| snowflake-php | 64 位分布式主键 | `Base::boot()` creating 事件自动生成 |
+| hashids | API ID 混淆 | `Base::json()` 响应编码，`Crud::selectInput/updateInput/deleteInput` 请求解码 |
+| encryptable | 数据库字段加密 | Eloquent `Encryptable` cast，Admin（password/email/mobile）、User（6 字段）透明加解密 |
+| encryption | API 传输加密 | 预留 `encrypt_data()`/`decrypt_data()` 辅助函数 |
+| webman-scout | ES 全文搜索 | User 模型 `Searchable` trait，自动同步索引 |
+| season | 国家旗帜 emoji | `country_season_flag()` 全局辅助函数 |
+
+### 安全分层
+
+```
+请求 → Hashids 解码 (Crud::selectInput/updateInput/deleteInput)
+  → ACL 鉴权 (api/Auth.php, 控制器 noNeedLogin/noNeedAuth)
+  → 业务处理 (CRUD / 模型事件)
+  → Encryptable 字段加密 (Eloquent casts set)
+  → 数据库写入
+响应 ← Hashids 编码 (Base::json → hashids_encode_ids)
+```
+
+### 数据流
+
+- **写入路径**: 请求 ID (hashid) → 解码为 int → CRUD 操作 → Snowflake 生成新 ID → Encryptable 加密敏感字段 → DB
+- **读取路径**: DB → Encryptable 解密 → Hashids 编码 ID → JSON 响应
+
+### 测试覆盖
+
+```
+phpunit.xml (PHPUnit 11)
+├── HashidsTest        (21 tests) encode/decode/encode_ids
+├── BaseJsonTest       (13 tests) Base::json/success/fail 编码
+└── CrudHashidsTest    (14 tests) Crud 输入解码 (select/update/delete)
+```
+
 ## 设计思路
 
 ### 1. 模块化单体
@@ -322,11 +382,13 @@ ProviderInterface
 - [x] 字段级加密（`erikwang2013/encryptable`，敏感字段自动加解密）
 - [x] 全文搜索（`erikwang2013/webman-scout`，Elasticsearch + IK 分词）
 - [x] 国家旗帜（`erikwang2013/season`，Unicode flag emoji）
+- [x] 管理后台（`admin/`，webman-admin + 6 包集成，48 单元测试）
+- [x] 代码审查（2 个关键修复 + 4 个重要修复已应用）
 - [ ] 数据库迁移脚本（`docs/database.sql` 已生成，待迁移命令化）
 - [ ] Stripe 真实集成（当前为 mock）
 - [ ] Twilio / 阿里云短信真实集成
 - [ ] FCM 推送真实集成
-- [ ] 单元测试与集成测试
+- [ ] 服务端单元测试与集成测试（admin/ 已完成 48 tests）
 - [ ] CI/CD 流水线
 
 ## License
