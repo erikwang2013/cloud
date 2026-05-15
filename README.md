@@ -19,6 +19,9 @@
 | 全文搜索 | Elasticsearch ([erikwang2013/webman-scout](https://github.com/erikwang2013/webman-scout)) |
 | 国家旗帜 | Unicode Flag Emoji ([erikwang2013/season](https://github.com/erikwang2013/season)) |
 | 表格导出 | PhpSpreadsheet ^2.0 |
+| 支付 SDK | Stripe PHP ^15.0 |
+| 短信 SDK | Twilio PHP ^8.0 |
+| 推送 SDK | Firebase PHP ^7.0 |
 | 队列 | webman redis-queue |
 | 数据库 | MySQL 8.0（主库 + 审计库双连接） |
 | 搜索引擎 | Elasticsearch 8.x |
@@ -38,7 +41,8 @@ cloud-php/
 │   │   ├── middleware/        # 访问控制中间件
 │   │   ├── bootstrap/         # 进程启动引导（Snowflake / Encryptable / Encryption）
 │   │   ├── exception/        # 异常处理
-│   │   └── view/              # 视图模板（Layui 后台面板）
+│   │   ├── view/              # 视图模板（Layui 后台面板）
+│   │   └── command/           # 控制台命令（数据库迁移）
 │   ├── api/                   # 对外 API (PSR-4: plugin\admin\api)
 │   │   ├── Auth.php           # 鉴权接口
 │   │   ├── Menu.php           # 菜单接口
@@ -54,7 +58,9 @@ cloud-php/
 │   │   │       ├── webman-scout/   # Elasticsearch 同步
 │   │   │       └── season/         # 国家旗帜
 │   │   ├── hashids.php        # Hashids 连接配置
-│   │   └── encryption.php     # 传输加密配置
+│   │   ├── encryption.php     # 传输加密配置
+│   │   └── command.php        # 控制台命令注册
+│   ├── database/migrations/   # 数据库迁移文件
 │   ├── tests/                 # 单元测试（PHPUnit 11, 48 tests, 81 assertions）
 │   │   ├── HashidsTest.php    # hashids 编解码测试
 │   │   ├── BaseJsonTest.php   # Base::json() ID 编码测试
@@ -80,7 +86,8 @@ cloud-php/
 │   │   ├── Report/            # 营收 / 供应商 / 区域报表
 │   │   ├── Supplier/          # 供应商入驻 / 结算 / 提现
 │   │   ├── Ticket/            # 工单系统 / SLA 自动分配
-│   │   └── User/              # 用户 / 认证 / KYC / 余额
+│   │   ├── User/              # 用户 / 认证 / KYC / 余额
+│   │   └── Command/           # 控制台命令（数据库迁移）
 │   ├── common/                # 公共库 (PSR-4: Common\)
 │   │   ├── Auth/              # JWT 认证 / 中间件
 │   │   ├── Encryption/        # 传输加密中间件 (AES-256-GCM) / 加密服务
@@ -90,7 +97,13 @@ cloud-php/
 │   │   ├── Security/          # CORS / WAF / 频率限制 / 审计日志
 │   │   └── Snowflake/         # 雪花 ID 生成服务 / Eloquent 模型 Trait
 │   ├── config/                # 路由 / 中间件 / 日志 / 数据库 / 队列 / 加密 / ES 等配置
-│   └── support/               # 启动引导 (Eloquent / Event / 加密 / 雪花 ID / Hashids / Scout 初始化)
+│   ├── database/migrations/   # 数据库迁移文件（12 个迁移）
+│   ├── tests/                 # 单元测试（PHPUnit 10, 79 tests, 149 assertions）
+│   │   ├── Common/            # Hashid / Response / Snowflake
+│   │   ├── Payment/           # Stripe 通道 / 支付路由
+│   │   ├── Notification/      # 通知分发
+│   │   └── Provisioning/      # 重试逻辑
+│   └── support/               # 启动引导 (Eloquent / Event / 加密 / 雪花 ID / Hashids / Scout 初始化 + MigrationRunner)
 ├── apps/
 │   ├── flutter/               # Flutter 客户端 (PC 优先 Web 布局)
 │   └── harmonyos/             # HarmonyOS 客户端骨架

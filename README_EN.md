@@ -17,6 +17,9 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 | Full-Text Search | Elasticsearch ([erikwang2013/webman-scout](https://github.com/erikwang2013/webman-scout)) |
 | Country Flags | Unicode Flag Emoji ([erikwang2013/season](https://github.com/erikwang2013/season)) |
 | Spreadsheet Export | PhpSpreadsheet ^2.0 |
+| Payment SDK | Stripe PHP ^15.0 |
+| SMS SDK | Twilio PHP ^8.0 |
+| Push SDK | Firebase PHP ^7.0 |
 | Queue | webman redis-queue |
 | Database | MySQL 8.0 (main + audit dual connection) |
 | Search Engine | Elasticsearch 8.x |

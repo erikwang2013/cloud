@@ -394,6 +394,300 @@ PHPUnit 11.5 | 48 tests | 81 assertions
 - `deleteInput`: batch ID decode, mixed types
 - `deleteInput`: empty array, single ID handling
 
+## Database Migration System
+
+### Architecture
+
+Both `service/` and `admin/` instances have independent migration systems built on `illuminate/database` Schema Builder. Each instance registers Symfony Console commands via `config/command.php` that are discoverable by webman's console runner.
+
+```
+php webman migrate          # Run pending migrations
+php webman migrate:rollback # Rollback last batch
+php webman migrate:status   # Show migration status
+```
+
+### MigrationRunner (`service/support/MigrationRunner.php`, `admin/app/common/MigrationRunner.php`)
+
+Core engine shared by both instances:
+
+- **`ensureTable()`** — Creates the `migrations` tracking table (id, migration name, batch number) on first run
+- **`migrate()`** — Scans migration files from `database/migrations/`, runs pending `up()` methods, records batch
+- **`rollback()`** — Reverses the last batch by calling `down()` on each migration in reverse order
+- **`status()`** — Lists all migrations with their batch numbers
+- **`resolve()`** — Instantiates migration classes from files
+
+### Migration Base Class (`service/support/Migration.php`, `admin/app/common/Migration.php`)
+
+```php
+abstract class Migration
+{
+    abstract public function up(): void;
+    abstract public function down(): void;
+}
+```
+
+Each migration file returns a class extending `Migration` with timestamp-prefixed filenames (e.g., `2024_01_01_000001_create_initial_schema.php`).
+
+### Service Migrations
+
+**Directory**: `service/database/migrations/` — 12 migration files
+
+| Migration | Tables |
+|-----------|--------|
+| `0001_create_users_tables` | erik_users, erik_user_kyc, erik_user_addresses, erik_refresh_tokens, erik_user_balances |
+| `0002_create_product_tables` | erik_products, erik_product_skus, erik_region_prices |
+| `0003_create_order_tables` | erik_orders, erik_order_items, erik_cart_items |
+| `0004_create_payment_tables` | erik_payment_channels, erik_transactions, erik_payment_refunds |
+| `0005_create_provisioning_tables` | erik_provision_tasks, erik_resources, erik_resource_disks |
+| `0006_create_host_tables` | erik_host_machines, erik_host_nodes, erik_ip_pools |
+| `0007_create_supplier_tables` | erik_suppliers, erik_supplier_settlements, erik_supplier_withdrawals |
+| `0008_create_domain_tables` | erik_domain_registrations, erik_dns_records |
+| `0009_create_ticket_notification_tables` | erik_tickets, erik_ticket_replies, erik_notifications, erik_notification_templates |
+| `0010_create_audit_table` | erik_audit_logs |
+| `2024_01_01_000001_create_initial_schema` | Runs `docs/database.sql` via `Capsule::unprepared()`, drops all in `down()` |
+| `2025_05_16_000002_add_fcm_token_to_users` | Adds `fcm_token`, `fcm_platform` columns + index to erik_users |
+
+### Admin Migrations
+
+**Directory**: `admin/database/migrations/` — 1 migration file
+
+| Migration | Description |
+|-----------|-------------|
+| `2024_01_01_000001_create_admin_schema` | Runs `admin/install.sql` via `Capsule::unprepared()` — creates wa_* tables with seed data |
+
+### Console Command Registration
+
+**`service/config/command.php`**:
+```php
+return [
+    \App\Command\MigrateCommand::class,
+    \App\Command\MigrateRollbackCommand::class,
+    \App\Command\MigrateStatusCommand::class,
+];
+```
+
+**`admin/config/command.php`** — same pattern under `app\command` namespace.
+
+## Stripe Production Integration
+
+### Architecture
+
+Replaced fake `random_bytes()` payment IDs with real Stripe API integration via `stripe/stripe-php` ^15.0.
+
+**File**: `service/app/Payment/Service/Channels/StripeChannel.php`
+
+```
+Client-side                    Server-side                    Stripe API
+───────────                    ───────────                    ──────────
+Select Stripe at checkout
+  → POST /orders/{id}/pay
+    → StripeChannel::createPaymentIntent()
+      → StripeClient->paymentIntents->create(amount, currency)
+        ← {id, client_secret}
+      → Save pi_xxx as transaction_no
+      ← Return client_secret
+  → Stripe.js confirmCardPayment(client_secret)
+    ← Payment confirmed by Stripe
+      → POST /payments/webhook/stripe
+        → StripeChannel::handleWebhook()
+          → Webhook::constructEvent(payload, signature, secret)
+          → Verify idempotency (skip non-pending transactions)
+          → Update order status, create transaction record
+```
+
+### PaymentIntent Creation
+
+```php
+public function createPaymentIntent(Order $order): array
+{
+    $intent = $this->stripe()->paymentIntents->create([
+        'amount'   => (int) round($order->total * 100),  // cents
+        'currency' => strtolower($order->currency),
+        'metadata' => ['order_id' => $order->id, 'order_no' => $order->order_no],
+    ]);
+    return [
+        'transaction_no' => $intent->id,          // pi_xxxxxxxxxxxxx
+        'client_secret'  => $intent->client_secret, // pi_xxx_secret_yyy
+    ];
+}
+```
+
+- `$this->stripe()` lazy-initializes `\Stripe\StripeClient` with `STRIPE_SECRET_KEY` from env
+- Falls back to `$this->channel->api_key_encrypted` (decrypted via Encryptable) if env var not set
+- Amount converted to cents: `(int) round($order->total * 100)`
+
+### Webhook Signature Verification
+
+```php
+public function handleWebhook(string $payload, string $signature): void
+{
+    $event = \Stripe\Webhook::constructEvent(
+        $payload, $signature, $this->channel->webhook_secret_encrypted
+    );
+    // Idempotency: skip if transaction already processed
+    $existing = Transaction::where('transaction_no', $event->id)->first();
+    if ($existing && $existing->status !== 'pending') return;
+    
+    match ($event->type) {
+        'payment_intent.succeeded' => $this->confirmPayment($event),
+        'payment_intent.payment_failed' => $this->failPayment($event),
+        default => null,
+    };
+}
+```
+
+- Uses `Webhook::constructEvent()` to verify Stripe signature header
+- **Idempotency guard**: checks for duplicate webhook deliveries by `transaction_no`
+- Supports both success and failure event types
+
+## Twilio SMS Integration
+
+### Architecture
+
+Replaced `error_log()` stub with real SMS delivery via `twilio/sdk` ^8.0.
+
+**File**: `service/app/Notification/Queue/SmsSender.php`
+
+### Message Sending
+
+```php
+public function consume(): void
+{
+    $client = new \Twilio\Rest\Client(
+        getenv('TWILIO_ACCOUNT_SID'),
+        getenv('TWILIO_AUTH_TOKEN')
+    );
+    $message = $client->messages->create(
+        $this->notification->recipient_phone,
+        ['from' => getenv('TWILIO_PHONE_NUMBER'), 'body' => $this->notification->body]
+    );
+    $this->notification->provider_message_id = $message->sid;
+}
+```
+
+### Error Handling
+
+- Catches `Twilio\Exceptions\RestException` — captures Twilio error code and message
+- Creates a failed Notification record with `send_status = 'failed'`
+- Records `provider_message_id` (Twilio SID) for delivery tracking
+- Falls back to `error_log()` when Twilio credentials are unset (dev mode)
+
+### Configuration
+
+Env vars: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
+
+## FCM Push Integration
+
+### Architecture
+
+Replaced `error_log()` stub with real push delivery via `kreait/firebase-php` ^7.0.
+
+**File**: `service/app/Notification/Queue/PushSender.php`
+
+### Device Token Storage
+
+Added to `erik_users` table via migration:
+- `fcm_token VARCHAR(512) DEFAULT NULL` — device registration token
+- `fcm_platform VARCHAR(16) DEFAULT NULL` — `ios` / `android` / `web`
+- `INDEX idx_fcm_token (fcm_token)` — lookup by token
+
+User model: `fcm_token` and `fcm_platform` added to `$fillable`.
+
+### Push Sending
+
+```php
+public function consume(): void
+{
+    $factory = new \Kreait\Firebase\Factory();
+    if ($credentialsPath = getenv('FIREBASE_CREDENTIALS_PATH')) {
+        $factory = $factory->withServiceAccount($credentialsPath);
+    }
+    $messaging = $factory->createMessaging();
+    
+    $message = \Kreait\Firebase\Messaging\CloudMessage::withTarget(
+        'token', $this->user->fcm_token
+    )->withNotification([
+        'title' => $this->notification->title,
+        'body'  => $this->notification->body,
+    ]);
+    
+    $result = $messaging->send($message);
+}
+```
+
+### Token Cleanup
+
+- Catches `Kreait\Firebase\Exception\Messaging\InvalidToken` — nullifies user's `fcm_token`
+- Catches `Kreait\Firebase\Exception\Messaging\NotFound` — removes unregistered token
+- Falls back to `error_log()` when Firebase credentials are unset (dev mode)
+
+### Configuration
+
+Env vars: `FIREBASE_CREDENTIALS_PATH` (service account JSON), `FCM_SERVER_KEY` (legacy)
+
+## Service-Layer Test Suite
+
+### Overview
+
+```
+PHPUnit 10.5 | 79 tests | 149 assertions
+```
+
+**Directory**: `service/tests/` — 8 test files across 5 modules
+
+**Config**: `service/phpunit.xml` — single `unit` testsuite, covers `app/` and `common/` source
+
+### Test Bootstrap
+
+`service/tests/bootstrap.php` loads Composer autoload and defines two global helpers needed by the code under test:
+
+- `request_id()` — returns unique request ID string
+- `now()` — returns current `DateTime` object
+
+Critical learning: `Webman\Config` cannot be loaded in test context because `loadFromDir()` triggers `route.php` which calls `Route::addRoute()` on null. Tests bypass Config entirely — `HashidServiceTest` uses `new Hashids()` directly, `ResponseTest` uses local helper methods.
+
+### Test Files
+
+| File | Tests | Coverage |
+|------|-------|----------|
+| `Common/HashidServiceTest.php` | 12 | encode/decode roundtrip, determinism, salt isolation, recursive ID walk |
+| `Common/ResponseTest.php` | 11 | success/error/paginated structure, request_id consistency, HTTP error codes |
+| `Common/SnowflakeTest.php` | 4 | timestamp ordering, uniqueness, bigint range |
+| `Payment/StripeChannelTest.php` | 7 | channel config, amount calculation, webhook signatures, idempotency |
+| `Payment/PaymentRouterTest.php` | 6 | channel filtering, amount constraints, currency/region support, fee calculation |
+| `Notification/NotificationDispatcherTest.php` | 5 | template rendering, channel routing, inactive user skip |
+| `Provisioning/RetryLogicTest.php` | 5 | exponential backoff, max retries, status transitions, host selection |
+
+### Test Infrastructure
+
+- `tests/TestCase.php` — base class extending PHPUnit TestCase
+- `tests/Support/RequestMock.php` — mock request with constructor-injected params
+
+## CI/CD Pipeline
+
+### Architecture
+
+GitHub Actions workflow at `.github/workflows/ci.yml`.
+
+**Triggers**: push to `main`, pull requests to `main`
+
+### Jobs
+
+| Job | Strategy | Description |
+|-----|----------|-------------|
+| `syntax` | PHP 8.2 | `php -l` lint all `.php` files in admin/ and service/ |
+| `admin-tests` | PHP 8.2, 8.3 | `composer install -d admin` → `admin/vendor/bin/phpunit` |
+| `service-tests` | PHP 8.2, 8.3 | `composer install -d service` → `service/vendor/bin/phpunit` |
+| `composer-validate` | PHP 8.2 | `composer validate --strict` on both composer.json files |
+
+### PHP Version Matrix
+
+Both test jobs run on PHP 8.2 and 8.3 via `shivammathur/setup-php@v2`.
+
+### Current Status
+
+All 4 jobs pass: 127 total tests (48 admin + 79 service), 230 assertions, both PHP versions green.
+
 ## Key Design Decisions
 
 1. **Standalone instance**: admin/ runs as its own webman instance, not as a plugin within service/. This isolates admin traffic and failures from the customer-facing API.
