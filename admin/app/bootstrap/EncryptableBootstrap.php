@@ -27,7 +27,7 @@ class EncryptableBootstrap implements Bootstrap
         Encryption::setResolver(function (string $abstract) use ($config) {
             return match ($abstract) {
                 PHPEncrypter::class => new PHPEncrypter($config),
-                DBEncrypter::class => new DBEncrypter($config, new IlluminateDbDriverDetector('mysql')),
+                DBEncrypter::class => new DBEncrypter($config, new IlluminateDbDriverDetector(config('database.default', 'mysql'))),
                 default => throw new \RuntimeException("Unknown encryptable abstract: {$abstract}"),
             };
         });

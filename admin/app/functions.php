@@ -125,8 +125,8 @@ function hashids_encode_ids(array $data): array
     foreach ($data as $key => $value) {
         if (is_array($value)) {
             $data[$key] = hashids_encode_ids($value);
-        } elseif (($key === 'id' || str_ends_with($key, '_id') || str_ends_with($key, '_ids')) && is_int($value) && $value > 0) {
-            $data[$key] = hashids_encode($value);
+        } elseif (($key === 'id' || str_ends_with($key, '_id') || str_ends_with($key, '_ids')) && is_numeric($value) && (int) $value > 0 && $value == (int) $value) {
+            $data[$key] = hashids_encode((int) $value);
         }
     }
     return $data;
@@ -137,7 +137,11 @@ function hashids_encode_ids(array $data): array
  */
 function encrypt_data(string $plaintext): string
 {
-    return \support\Container::instance()->get(\Erikwang2013\Encryption\EncryptionManager::class)->encrypt($plaintext);
+    $container = \support\Container::instance();
+    if (!$container->has(\Erikwang2013\Encryption\EncryptionManager::class)) {
+        throw new \RuntimeException('Encryption not configured: set ENCRYPTION_MASTER_KEY in .env');
+    }
+    return $container->get(\Erikwang2013\Encryption\EncryptionManager::class)->encrypt($plaintext);
 }
 
 /**
@@ -145,5 +149,9 @@ function encrypt_data(string $plaintext): string
  */
 function decrypt_data(string $ciphertext): string
 {
-    return \support\Container::instance()->get(\Erikwang2013\Encryption\EncryptionManager::class)->decrypt($ciphertext);
+    $container = \support\Container::instance();
+    if (!$container->has(\Erikwang2013\Encryption\EncryptionManager::class)) {
+        throw new \RuntimeException('Encryption not configured: set ENCRYPTION_MASTER_KEY in .env');
+    }
+    return $container->get(\Erikwang2013\Encryption\EncryptionManager::class)->decrypt($ciphertext);
 }

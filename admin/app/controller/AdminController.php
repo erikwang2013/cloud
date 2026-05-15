@@ -77,17 +77,17 @@ class AdminController extends Crud
         }
         $paginator = $query->paginate($limit);
         $items = $paginator->items();
-        $admin_ids = array_column($items, 'id');
-        $roles = AdminRole::whereIn('admin_id', $admin_ids)->get();
+        $ids = array_column($items, 'id');
+        $roles = AdminRole::whereIn('admin_id', $ids)->get();
         $roles_map = [];
         foreach ($roles as $role) {
             $roles_map[$role['admin_id']][] = $role['role_id'];
         }
         $login_admin_id = admin_id();
         foreach ($items as $index => $item) {
-            $admin_id = $item['id'];
-            $items[$index]['roles'] = isset($roles_map[$admin_id]) ? implode(',', $roles_map[$admin_id]) : '';
-            $items[$index]['show_toolbar'] = $admin_id != $login_admin_id;
+            $id = $item['id'];
+            $items[$index]['roles'] = isset($roles_map[$id]) ? implode(',', $roles_map[$id]) : '';
+            $items[$index]['show_toolbar'] = $id != $login_admin_id;
         }
         return json(['code' => 0, 'msg' => 'ok', 'count' => $paginator->total(), 'data' => $items]);
     }
@@ -103,7 +103,7 @@ class AdminController extends Crud
         if ($request->method() === 'POST') {
             $data = $this->insertInput($request);
             unset($data['id']);
-            $admin_id = $this->doInsert($data);
+            $id = $this->doInsert($data);
             $role_ids = $request->post('roles');
             $role_ids = $role_ids ? explode(',', $role_ids) : [];
             if (!$role_ids) {
@@ -112,14 +112,14 @@ class AdminController extends Crud
             if (!Auth::isSuperAdmin() && array_diff($role_ids, Auth::getScopeRoleIds())) {
                 return $this->json(1, '角色超出权限范围');
             }
-            AdminRole::where('admin_id', $admin_id)->delete();
-            foreach ($role_ids as $id) {
+            AdminRole::where('admin_id', $id)->delete();
+            foreach ($role_ids as $role_id) {
                 $admin_role = new AdminRole;
-                $admin_role->admin_id = $admin_id;
-                $admin_role->role_id = $id;
+                $admin_role->admin_id = $id;
+                $admin_role->role_id = $role_id;
                 $admin_role->save();
             }
-            return $this->json(0, 'ok', ['id' => $admin_id]);
+            return $this->json(0, 'ok', ['id' => $id]);
         }
         return raw_view('admin/insert');
     }
@@ -135,9 +135,7 @@ class AdminController extends Crud
         if ($request->method() === 'POST') {
 
             [$id, $data] = $this->updateInput($request);
-            $admin_id = $request->post('id');
-            $admin_id = is_string($admin_id) && !is_numeric($admin_id) ? hashids_decode($admin_id) : (int) $admin_id;
-            if (!$admin_id) {
+            if (!$id) {
                 return $this->json(1, '缺少参数');
             }
 
@@ -155,7 +153,7 @@ class AdminController extends Crud
                 $role_ids = explode(',', $role_ids);
 
                 $is_supper_admin = Auth::isSuperAdmin();
-                $exist_role_ids = AdminRole::where('admin_id', $admin_id)->pluck('role_id')->toArray();
+                $exist_role_ids = AdminRole::where('admin_id', $id)->pluck('role_id')->toArray();
                 $scope_role_ids = Auth::getScopeRoleIds();
                 if (!$is_supper_admin && !array_intersect($exist_role_ids, $scope_role_ids)) {
                     return $this->json(1, '无权限更改该记录');
@@ -166,12 +164,12 @@ class AdminController extends Crud
 
                 // 删除账户角色
                 $delete_ids = array_diff($exist_role_ids, $role_ids);
-                AdminRole::whereIn('role_id', $delete_ids)->where('admin_id', $admin_id)->delete();
+                AdminRole::whereIn('role_id', $delete_ids)->where('admin_id', $id)->delete();
                 // 添加账户角色
                 $add_ids = array_diff($role_ids, $exist_role_ids);
                 foreach ($add_ids as $role_id) {
                     $admin_role = new AdminRole;
-                    $admin_role->admin_id = $admin_id;
+                    $admin_role->admin_id = $id;
                     $admin_role->role_id = $role_id;
                     $admin_role->save();
                 }

@@ -153,11 +153,14 @@ class AccountController extends Crud
                 $update_data[$column] = $data[$key];
             }
         }
-        if (isset($update_data['password'])) {
-            $update_data['password'] = Util::passwordHash($update_data['password']);
-        }
-        Admin::where('id', admin_id())->update($update_data);
         $admin = admin();
+        $adminModel = Admin::find(admin_id());
+        if ($adminModel) {
+            foreach ($update_data as $key => $value) {
+                $adminModel->$key = $value;
+            }
+            $adminModel->save();
+        }
         unset($update_data['password']);
         foreach ($update_data as $key => $value) {
             $admin[$key] = $value;
@@ -184,10 +187,9 @@ class AccountController extends Crud
         if (!Util::passwordVerify($request->post('old_password'), $hash)) {
             return $this->json(1, '原始密码不正确');
         }
-        $update_data = [
-            'password' => Util::passwordHash($password)
-        ];
-        Admin::where('id', admin_id())->update($update_data);
+        $adminModel = Admin::find(admin_id());
+        $adminModel->password = Util::passwordHash($password);
+        $adminModel->save();
         return $this->json(0);
     }
 

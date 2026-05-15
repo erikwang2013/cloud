@@ -457,7 +457,9 @@ class Crud extends Base
      */
     protected function formatNormal($items, $total): Response
     {
-        return json(['code' => 0, 'msg' => 'ok', 'count' => $total, 'data' => $items]);
+        $data = array_map(fn($item) => $item instanceof \Illuminate\Database\Eloquent\Model ? $item->toArray() : (array) $item, is_array($items) ? $items : $items->toArray());
+        $data = hashids_encode_ids($data);
+        return json(['code' => 0, 'msg' => 'ok', 'count' => $total, 'data' => $data]);
     }
 
     /**
