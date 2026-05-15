@@ -10,6 +10,7 @@ namespace app\controller;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use app\common\Auth;
+use app\common\ExcelExport;
 use app\common\Tree;
 use app\common\Util;
 use support\exception\BusinessException;
@@ -200,6 +201,40 @@ class Crud extends Base
         }
         $format_function = $methods[$format] ?? 'formatNormal';
         return call_user_func([$this, $format_function], $items, $total);
+    }
+
+    /**
+     * Excel导出
+     * @param Request $request
+     * @return Response
+     * @throws BusinessException
+     */
+    public function export(Request $request): Response
+    {
+        [$where, $format, $limit, $field, $order] = $this->selectInput($request);
+        $query = $this->doSelect($where, $field, $order);
+
+        $maxRows = 10000;
+        $total = min($query->count(), $maxRows);
+        $items = $query->limit($maxRows)->get();
+
+        if (method_exists($this, 'afterQuery')) {
+            $items = call_user_func([$this, 'afterQuery'], $items);
+        }
+
+        $data = array_map(fn($item) => $item instanceof \Illuminate\Database\Eloquent\Model ? $item->toArray() : (array) $item, $items->toArray());
+        $data = hashids_encode_ids($data);
+
+        $table = $this->model->getTable();
+        $schema = Util::getSchema($table);
+        $columns = array_keys($schema['columns']);
+        $labels = [];
+        foreach ($schema['columns'] as $col => $info) {
+            $labels[$col] = $info['comment'] ?: $col;
+        }
+
+        $path = ExcelExport::export($table, $columns, $data, $labels);
+        return response()->download($path, $table . '_' . date('YmdHis') . '.xlsx');
     }
 
     /**

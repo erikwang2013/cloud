@@ -78,6 +78,7 @@ Route::group('/admin/api/v1', function () {
 
     // Users
     Route::get('/users', [App\Admin\Controller\UserController::class, 'index']);
+    Route::get('/users/export', [App\Admin\Controller\UserController::class, 'export']);
     Route::get('/users/{id}', [App\Admin\Controller\UserController::class, 'show']);
     Route::put('/users/{id}/status', [App\Admin\Controller\UserController::class, 'updateStatus']);
     Route::get('/kyc', [App\Admin\Controller\DashboardController::class, 'kycList']);
@@ -94,6 +95,7 @@ Route::group('/admin/api/v1', function () {
 
     // Orders
     Route::get('/orders', [App\Admin\Controller\OrderController::class, 'index']);
+    Route::get('/orders/export', [App\Admin\Controller\OrderController::class, 'export']);
     Route::get('/orders/{id}', [App\Admin\Controller\OrderController::class, 'show']);
     Route::post('/orders/{id}/refund', [App\Admin\Controller\OrderController::class, 'refund']);
 
@@ -112,6 +114,7 @@ Route::group('/admin/api/v1', function () {
 
     // Supplier management
     Route::get('/suppliers', [App\Admin\Controller\SupplierController::class, 'index']);
+    Route::get('/suppliers/export', [App\Admin\Controller\SupplierController::class, 'export']);
     Route::post('/suppliers/{id}/approve', [App\Admin\Controller\SupplierController::class, 'approve']);
     Route::post('/suppliers/{id}/settle', [App\Admin\Controller\SupplierController::class, 'generateSettlement']);
     Route::post('/suppliers/withdraws/{id}/approve', [App\Admin\Controller\SupplierController::class, 'approveWithdraw']);

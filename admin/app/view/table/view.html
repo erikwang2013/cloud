@@ -66,6 +66,8 @@
             const INSERT_URL = "/app/admin/table/insert?table=" + TABLE_NAME;
             const UPDATE_URL = "/app/admin/table/update?table=" + TABLE_NAME;
 
+            const EXPORT_API = "/app/admin/table/export?table=" + TABLE_NAME;
+
             <?=$form->js(3)?>
 
             layui.use(["table", "form","common", "popup", "util"], function() {
@@ -182,7 +184,11 @@
                                     title: "刷新",
                                     layEvent: "refresh",
                                     icon: "layui-icon-refresh",
-                                }, "filter", "print", "exports"],
+                                }, "filter", "print", {
+                                    title: "导出",
+                                    layEvent: "export",
+                                    icon: "layui-icon-export",
+                                }],
                                 done: function () {
                                     layer.photos({photos: 'div[lay-id="data-table"]', anim: 5});
                                 }
@@ -240,6 +246,8 @@
                         window.refreshTable();
                     } else if (obj.event === "batchRemove") {
                         window.batchRemove(obj);
+                    } else if (obj.event === "export") {
+                        window.exportExcel();
                     }
                 });
 
@@ -360,6 +368,13 @@
                             }
                         }
                     });
+                }
+
+                window.exportExcel = function() {
+                    let where = table.getOptions("data-table").where || {};
+                    let params = $.param(where);
+                    let url = EXPORT_API + (params ? "&" + params : "");
+                    window.open(url);
                 }
             })
 

@@ -17,6 +17,7 @@
         "erikwang2013/encryption": "^1.0",
         "erikwang2013/encryptable": "^1.0",
         "erikwang2013/webman-scout": "^2.0",
+        "phpoffice/phpspreadsheet": "^2.0",
         "ext-json": "*",
         "ext-pdo": "*"
     },

@@ -40,6 +40,12 @@ Route::any('/app/admin/account/captcha/{type}', [AccountController::class, 'capt
 /** Dictionary lookup by name — returns key-value pairs as JSON. */
 Route::any('/app/admin/dict/get/{name}', [DictController::class, 'get']);
 
+/** Dashboard data API — returns JSON for stat cards and ECharts. */
+Route::any('/app/admin/dashboard/data', [app\controller\DashboardController::class, 'index']);
+
+/** Excel export for generic tables — downloads filtered data as .xlsx. */
+Route::any('/app/admin/table/export', [app\controller\TableController::class, 'export']);
+
 /** Fallback: return 404 for all un-matched requests within this scope. */
 Route::fallback(function (Request $request) {
     return response('', 404);

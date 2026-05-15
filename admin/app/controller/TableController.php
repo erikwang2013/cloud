@@ -9,6 +9,7 @@ namespace app\controller;
 
 use Doctrine\Inflector\InflectorFactory;
 use Illuminate\Database\Schema\Blueprint;
+use app\common\ExcelExport;
 use app\common\Layui;
 use app\common\Util;
 use app\model\Role;
@@ -834,6 +835,7 @@ EOF
             const DELETE_API = "$url_path_base/delete";
             const INSERT_URL = "$url_path_base/insert";
             const UPDATE_URL = "$url_path_base/update";
+            const EXPORT_API = "$url_path_base/export";
             $js
             // 表格渲染
             layui.use(["table", "form", "common", "popup", "util"], function() {
@@ -860,6 +862,8 @@ EOF
                         refreshTable();
                     } else if (obj.event === "batchRemove") {
                         batchRemove(obj);
+                    } else if (obj.event === "export") {
+                        exportExcel();
                     }
                 });
 
@@ -984,6 +988,14 @@ EOF
                             }
                         }
                     });
+                }
+
+                // Excel导出
+                let exportExcel = function() {
+                    let where = table.getOptions("data-table").where || {};
+                    let params = $.param(where);
+                    let url = EXPORT_API + (params ? "?" + params : "");
+                    window.open(url);
                 }
             })
 
@@ -1637,6 +1649,62 @@ EOF;
 
         echo "$sql\n";
         Util::db()->statement($sql);
+    }
+
+    /**
+     * Excel导出
+     * @param Request $request
+     * @return Response
+     */
+    public function export(Request $request): Response
+    {
+        $table = Util::filterAlphaNum($request->get('table', ''));
+        $field = $request->get('field');
+        $order = $request->get('order', 'asc');
+
+        $allow_column = Util::db()->select("desc `$table`");
+        if (!$allow_column) {
+            return $this->json(2, '表不存在');
+        }
+        $allow_column = array_column($allow_column, 'Field', 'Field');
+        if (!in_array($field, $allow_column)) {
+            $field = current($allow_column);
+        }
+        $order = $order === 'asc' ? 'asc' : 'desc';
+
+        $query = Util::db()->table($table);
+        foreach ($request->get() as $column => $value) {
+            if ($value === '' || in_array($column, ['table', 'page', 'limit', 'format', 'field', 'order'], true)) {
+                continue;
+            }
+            if (isset($allow_column[$column])) {
+                if (is_array($value)) {
+                    if ($value[0] === 'like') {
+                        $query = $query->where($column, 'like', "%$value[1]%");
+                    } elseif (in_array($value[0], ['>', '=', '<', '<>', 'not like'], true)) {
+                        $query = $query->where($column, $value[0], $value[1]);
+                    } elseif ($value[0] !== '' || $value[1] !== '') {
+                        $query = $query->whereBetween($column, $value);
+                    }
+                } else {
+                    $query = $query->where($column, $value);
+                }
+            }
+        }
+
+        $maxRows = 10000;
+        $items = $query->orderBy($field, $order)->limit($maxRows)->get()->toArray();
+        $items = hashids_encode_ids($items);
+
+        $schema = Util::getSchema($table);
+        $columns = array_keys($schema['columns']);
+        $labels = [];
+        foreach ($schema['columns'] as $col => $info) {
+            $labels[$col] = $info['comment'] ?: $col;
+        }
+
+        $path = ExcelExport::export($table, $columns, $items, $labels);
+        return response()->download($path, $table . '_' . date('YmdHis') . '.xlsx');
     }
 
     /**

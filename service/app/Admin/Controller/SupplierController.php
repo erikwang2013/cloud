@@ -4,6 +4,7 @@ namespace App\Admin\Controller;
 use App\Supplier\Model\Supplier;
 use App\Supplier\Model\SupplierWithdraw;
 use App\Supplier\Service\SupplierService;
+use Common\ExcelExport;
 use Common\Helper\Response;
 
 class SupplierController
@@ -18,6 +19,26 @@ class SupplierController
 
         $suppliers = $query->orderBy('created_at', 'desc')->paginate(30);
         return json(Response::paginated($suppliers->items(), $suppliers->total(), $request->input('page', 1), 30));
+    }
+
+    public function export($request)
+    {
+        $query = Supplier::with('user');
+
+        if ($status = $request->input('status')) $query->where('status', $status);
+
+        $maxRows = 10000;
+        $items = $query->orderBy('created_at', 'desc')->limit($maxRows)->get()->toArray();
+
+        $columns = ['id', 'user_id', 'status', 'contact_name', 'contact_email', 'contact_phone', 'created_at'];
+        $labels = [
+            'id' => 'ID', 'user_id' => '用户ID', 'status' => '状态',
+            'contact_name' => '联系人', 'contact_email' => '联系邮箱',
+            'contact_phone' => '联系电话', 'created_at' => '申请时间',
+        ];
+
+        $path = ExcelExport::export('suppliers', $columns, $items, $labels);
+        return response()->download($path, 'suppliers_' . date('YmdHis') . '.xlsx');
     }
 
     public function approve($request, int $id)

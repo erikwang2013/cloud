@@ -19,6 +19,7 @@
         "illuminate/redis": "^10.0",
         "guzzlehttp/guzzle": "^7.0",
         "erikwang2013/snowflake-php": "^1.0",
+        "phpoffice/phpspreadsheet": "^2.0",
         "ext-json": "*",
         "ext-pdo": "*",
         "ext-redis": "*"

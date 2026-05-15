@@ -1189,7 +1189,7 @@ function render()
             title: "刷新",
             layEvent: "refresh",
             icon: "layui-icon-refresh",
-        }, "filter", "print", "exports"],
+        }, "filter", "print", {title: "导出", layEvent: "export", icon: "layui-icon-export"}],
         done: function () {
             layer.photos({photos: 'div[lay-id="data-table"]', anim: 5});
         }
@@ -1248,7 +1248,7 @@ table.render({
         title: "刷新",
         layEvent: "refresh",
         icon: "layui-icon-refresh",
-    }, "filter", "print", "exports"],
+    }, "filter", "print", {title: "导出", layEvent: "export", icon: "layui-icon-export"}],
     done: function () {
         layer.photos({photos: 'div[lay-id="data-table"]', anim: 5});
     }
