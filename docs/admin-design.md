@@ -36,19 +36,20 @@ admin/
 │   │   ├── SnowflakeBootstrap.php
 │   │   ├── EncryptableBootstrap.php
 │   │   └── EncryptionBootstrap.php
-│   ├── controller/       # 15 controllers
+│   ├── controller/       # 16 controllers
 │   │   ├── Base.php     # json() with hashids_encode_ids
-│   │   ├── Crud.php     # Select/Insert/Update/Delete with hashids decode
-│   │   ├── AccountController.php  # Login/logout/profile/password
-│   │   ├── AdminController.php    # Admin CRUD + roles
-│   │   ├── RoleController.php     # Role CRUD + rule tree
+│   │   ├── Crud.php     # Select/Insert/Update/Delete/Export with hashids decode
+│   │   ├── DashboardController.php  # Dashboard data API (user stats + trends)
+│   │   ├── AccountController.php    # Login/logout/profile/password
+│   │   ├── AdminController.php      # Admin CRUD + roles
+│   │   ├── RoleController.php       # Role CRUD + rule tree
 │   │   └── ...
 │   ├── model/            # 8 Eloquent models
 │   │   ├── Base.php     # Snowflake PK + Encryptable support
 │   │   ├── Admin.php    # Encryptable: password, email, mobile
 │   │   ├── User.php     # Encryptable: 6 fields + Searchable trait
 │   │   └── ...
-│   ├── common/           # Auth, Tree, Layui, Util
+│   ├── common/           # Auth, Tree, Layui, Util, ExcelExport
 │   ├── middleware/        # AccessControl
 │   ├── exception/        # Handler
 │   └── functions.php     # hashids_encode/decode, encrypt_data/decrypt_data
@@ -213,6 +214,155 @@ During review of the initial commit, the following were found and fixed:
 4. **AdminController duplicate ID decode**: `update()` decoded the same PK twice. Deduped, fixed loop variable shadowing in `insert()`.
 5. **Dead password code in AccountController::update()**: Password field not in allow list. Removed.
 6. **Hardcoded MySQL driver**: Changed to `config('database.default')`.
+
+## Excel Export
+
+### Architecture
+
+Excel export uses PhpSpreadsheet ^2.0 to generate .xlsx files server-side. The admin panel has two separate export paths because there are two CRUD mechanisms:
+
+```
+Export request (with current table filters)
+  ├── Crud-based controllers (User, Admin, Role, etc.)
+  │     → Crud::export()
+  │       → selectInput() reuses query parsing (hashids decode, WHERE, ORDER)
+  │       → doSelect() builds Eloquent query
+  │       → 10,000 row cap
+  │       → hashids_encode_ids() applied to result data
+  │       → ExcelExport::export() generates .xlsx
+  │
+  └── TableController (generic tables like wa_dict, wa_rules)
+        → TableController::export()
+          → Builds query from table schema + request params
+          → hashids_encode_ids() applied
+          → ExcelExport::export() generates .xlsx
+```
+
+### ExcelExport Utility (`app/common/ExcelExport.php`)
+
+Fluent wrapper around PhpSpreadsheet:
+
+- `setColumns(array $columns)` — define column order
+- `setLabels(array $labels)` — set human-readable column headers
+- `addRow(array $row)` / `addRows(array $rows)` — populate data
+- `save(string $title): string` — write .xlsx to `runtime/exports/`, return file path
+- Static helper: `ExcelExport::export($title, $columns, $data, $labels)` — one-shot export
+- Auto-sizes columns via `Worksheet::getColumnDimension()`
+
+### Crud::export()
+
+```php
+public function export(Request $request): Response
+{
+    [$where, $format, $limit, $field, $order] = $this->selectInput($request);
+    $query = $this->doSelect($where, $field, $order);
+    $maxRows = 10000;
+    $total = min($query->count(), $maxRows);
+    $items = $query->limit($maxRows)->get();
+    if (method_exists($this, 'afterQuery')) {
+        $items = call_user_func([$this, 'afterQuery'], $items);
+    }
+    $data = array_map(fn($item) => ...toArray(), $items->toArray());
+    $data = hashids_encode_ids($data);
+    // Derive column labels from table schema comments
+    $path = ExcelExport::export($table, $columns, $data, $labels);
+    return response()->download($path, $table . '_' . date('YmdHis') . '.xlsx');
+}
+```
+
+All Crud-based controllers (Admin, User, Role, etc.) inherit `export()` automatically.
+
+### Frontend Wiring
+
+- Layui's built-in `"exports"` toolbar item (client-side CSV) is replaced with a custom `{title: "导出", layEvent: "export"}` button
+- The `export` event handler calls `window.exportExcel()` which collects current table filter params and opens the download URL
+- `Layui::buildTable()` generates the toolbar with the custom export button for all CRUD pages
+
+### Service Admin API Export
+
+The service backend (`service/`) also has Excel export via its own `Common\ExcelExport` wrapper:
+
+| Endpoint | Controller | Exported Data |
+|----------|-----------|---------------|
+| `GET /admin/api/v1/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
+| `GET /admin/api/v1/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
+| `GET /admin/api/v1/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
+
+Export routes are placed BEFORE `/{id}` parameter routes to avoid conflicts.
+
+## Dashboard Visualization
+
+### Architecture
+
+The admin dashboard (`/app/admin/dashboard`) displays real-time operational metrics with ECharts visualizations. Data is served by `DashboardController::index()` as JSON and rendered client-side.
+
+### DashboardController (`app/controller/DashboardController.php`)
+
+Extends `Base`, `$noNeedAuth = ['index']`. Returns JSON with:
+
+```php
+[
+    'stats' => [
+        'today_users'   => ...,  // Users registered today
+        'week_users'    => ...,  // Users registered in last 7 days
+        'month_users'   => ...,  // Users registered in last 30 days
+        'total_users'   => ...,  // Total registered users
+    ],
+    'user_trend_7d'  => [...],   // Daily registration count, last 7 days
+    'user_trend_30d' => [...],   // Daily registration count, last 30 days
+    'system' => [
+        'php_version'       => ...,
+        'workerman_version' => ...,
+        'webman_version'    => ...,
+        'admin_version'     => ...,
+        'mysql_version'     => ...,
+        'os'                => ...,
+    ],
+]
+```
+
+### Dashboard View (`app/view/index/dashboard.html`)
+
+- **8 animated stat cards**: today/week/month/total users + today orders + today revenue + pending orders + active resources — each with count-up animation via Layui `count` module
+- **3 ECharts charts**:
+  1. 7-day user registration trend — area line chart
+  2. 30-day user registration trend — bar chart
+  3. User summary — donut/pie chart (today / week / month)
+- **System info table**: dynamically populated with PHP/Workerman/Webman/Admin/MySQL/OS versions
+- **Toolbar**: PDF export and refresh buttons
+- All data fetched via AJAX from `/app/admin/dashboard/data`
+
+### Route
+
+```
+Route::any('/app/admin/dashboard/data', [DashboardController::class, 'index']);
+```
+
+## PDF Export
+
+Client-side PDF generation on the dashboard page:
+
+- Uses **html2canvas 1.4.1** (CDN) to capture the dashboard DOM as a canvas
+- Uses **jsPDF 2.5.1** (CDN) to create a downloadable A4 PDF
+- Captures stat cards and ECharts charts (rendered as canvas elements)
+- Includes title, timestamp, and branding in the PDF
+- Triggered by the "Export PDF" button in the dashboard toolbar
+
+```
+Dashboard DOM → html2canvas screenshot → jsPDF document → browser download
+```
+
+### Implementation
+
+```javascript
+// In dashboard.html
+html2canvas(document.querySelector('.layui-body'), {scale: 2}).then(canvas => {
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const imgData = canvas.toDataURL('image/png');
+    pdf.addImage(imgData, 'PNG', 10, 10, 190, 0);
+    pdf.save('dashboard_' + new Date().toISOString().slice(0, 10) + '.pdf');
+});
+```
 
 ## Test Suite
 

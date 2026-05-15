@@ -16,6 +16,7 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 | Field Encryption | AES-128-ECB ([erikwang2013/encryptable](https://github.com/erikwang2013/encryptable)) |
 | Full-Text Search | Elasticsearch ([erikwang2013/webman-scout](https://github.com/erikwang2013/webman-scout)) |
 | Country Flags | Unicode Flag Emoji ([erikwang2013/season](https://github.com/erikwang2013/season)) |
+| Spreadsheet Export | PhpSpreadsheet ^2.0 |
 | Queue | webman redis-queue |
 | Database | MySQL 8.0 (main + audit dual connection) |
 | Search Engine | Elasticsearch 8.x |
@@ -29,9 +30,9 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 cloud-php/
 ├── admin/                     # Admin panel (standalone webman instance)
 │   ├── app/                   # Plugin source (PSR-4: app\)
-│   │   ├── controller/        # Controllers (CRUD / table / plugin / install)
+│   │   ├── controller/        # Controllers (CRUD / export / table / plugin / install)
 │   │   ├── model/             # Models (admins / roles / rules / users)
-│   │   ├── common/            # Utilities (Auth / Tree / Layui / Util)
+│   │   ├── common/            # Utilities (Auth / Tree / Layui / Util / ExcelExport)
 │   │   ├── middleware/        # Access control middleware
 │   │   ├── bootstrap/         # Process bootstraps (Snowflake / Encryptable / Encryption)
 │   │   ├── exception/        # Exception handling
@@ -218,6 +219,9 @@ php start.php stop              # Stop
 | POST | `/admin/api/v1/products/{productId}/skus` | Create SKU |
 | POST | `/admin/api/v1/skus/{skuId}/region-price` | Set regional price |
 | GET/POST | `/admin/api/v1/orders` | Order management (incl. refunds) |
+| GET | `/admin/api/v1/orders/export` | Export orders (.xlsx) |
+| GET | `/admin/api/v1/users/export` | Export users (.xlsx) |
+| GET | `/admin/api/v1/suppliers/export` | Export suppliers (.xlsx) |
 | GET/PUT | `/admin/api/v1/payments/*` | Channels / transactions / reconciliation |
 | GET/POST | `/admin/api/v1/provisioning/*` | Provisioning tasks / host management |
 | GET/POST | `/admin/api/v1/suppliers/*` | Supplier approval / settlement / withdrawal |
@@ -382,6 +386,9 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] Country flags (`erikwang2013/season`, Unicode flag emoji)
 - [x] Admin panel (`admin/`, webman-admin + 6 package integrations, 48 unit tests)
 - [x] Code review (2 critical + 4 important fixes applied)
+- [x] Excel export (PhpSpreadsheet ^2.0, admin Crud/Table + service admin API)
+- [x] Dashboard visualization (ECharts charts + animated stat cards + system info panel)
+- [x] PDF export (html2canvas + jsPDF, dashboard screenshot export)
 - [ ] Database migration scripting (`docs/database.sql` ready, pending migration command)
 - [ ] Stripe production integration (currently mocked)
 - [ ] Twilio / Alibaba Cloud SMS production integration

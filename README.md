@@ -18,6 +18,7 @@
 | 字段加密 | AES-128-ECB ([erikwang2013/encryptable](https://github.com/erikwang2013/encryptable)) |
 | 全文搜索 | Elasticsearch ([erikwang2013/webman-scout](https://github.com/erikwang2013/webman-scout)) |
 | 国家旗帜 | Unicode Flag Emoji ([erikwang2013/season](https://github.com/erikwang2013/season)) |
+| 表格导出 | PhpSpreadsheet ^2.0 |
 | 队列 | webman redis-queue |
 | 数据库 | MySQL 8.0（主库 + 审计库双连接） |
 | 搜索引擎 | Elasticsearch 8.x |
@@ -31,9 +32,9 @@
 cloud-php/
 ├── admin/                     # 管理后台（独立 webman 实例）
 │   ├── app/                   # 插件源码 (PSR-4: app\)
-│   │   ├── controller/        # 控制器（CRUD / 表格 / 插件管理 / 安装等）
+│   │   ├── controller/        # 控制器（CRUD / 导出 / 表格 / 插件管理 / 安装等）
 │   │   ├── model/             # 数据模型（管理员 / 角色 / 规则 / 用户等）
-│   │   ├── common/            # 工具类（Auth / Tree / Layui / Util）
+│   │   ├── common/            # 工具类（Auth / Tree / Layui / Util / ExcelExport）
 │   │   ├── middleware/        # 访问控制中间件
 │   │   ├── bootstrap/         # 进程启动引导（Snowflake / Encryptable / Encryption）
 │   │   ├── exception/        # 异常处理
@@ -220,6 +221,9 @@ php start.php stop              # 停止
 | POST | `/admin/api/v1/products/{productId}/skus` | 创建 SKU |
 | POST | `/admin/api/v1/skus/{skuId}/region-price` | 设置区域价格 |
 | GET/POST | `/admin/api/v1/orders` | 订单管理（含退款） |
+| GET | `/admin/api/v1/orders/export` | 订单导出 (.xlsx) |
+| GET | `/admin/api/v1/users/export` | 用户导出 (.xlsx) |
+| GET | `/admin/api/v1/suppliers/export` | 供应商导出 (.xlsx) |
 | GET/PUT | `/admin/api/v1/payments/*` | 支付通道 / 交易 / 对账 |
 | GET/POST | `/admin/api/v1/provisioning/*` | 交付任务 / 主机管理 |
 | GET/POST | `/admin/api/v1/suppliers/*` | 供应商审批 / 结算 / 提现 |
@@ -384,6 +388,9 @@ ProviderInterface
 - [x] 国家旗帜（`erikwang2013/season`，Unicode flag emoji）
 - [x] 管理后台（`admin/`，webman-admin + 6 包集成，48 单元测试）
 - [x] 代码审查（2 个关键修复 + 4 个重要修复已应用）
+- [x] Excel 导出（PhpSpreadsheet ^2.0，管理后台 Crud/Table + 服务端管理 API）
+- [x] 仪表板可视化（ECharts 图表 + 动画统计卡片 + 系统信息面板）
+- [x] PDF 导出（html2canvas + jsPDF，仪表板截图导出）
 - [ ] 数据库迁移脚本（`docs/database.sql` 已生成，待迁移命令化）
 - [ ] Stripe 真实集成（当前为 mock）
 - [ ] Twilio / 阿里云短信真实集成
