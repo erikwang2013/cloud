@@ -1,13 +1,11 @@
-/runtime
+/admin/runtime
 /service/runtime
 /.idea
 /.vscode
-/vendor
 *.log
 .env
 /tests/tmp
 /tests/.phpunit.result.cache
-/composer.lock
 /.cursor
 /.claude
 /service/vendor

@@ -19,13 +19,16 @@ CREATE TABLE erik_users (
     timezone        VARCHAR(64)     NOT NULL DEFAULT 'UTC',
     status          VARCHAR(32)     NOT NULL DEFAULT 'active',
     role            VARCHAR(32)     NOT NULL DEFAULT 'user',
+    fcm_token       VARCHAR(512)    DEFAULT NULL,
+    fcm_platform    VARCHAR(16)     DEFAULT NULL,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at      DATETIME        DEFAULT NULL,
     UNIQUE INDEX uk_email (email),
     UNIQUE INDEX uk_phone (phone),
     INDEX idx_status (status),
-    INDEX idx_role (role)
+    INDEX idx_role (role),
+    INDEX idx_fcm_token (fcm_token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE erik_user_profiles (

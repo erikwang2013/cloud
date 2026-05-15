@@ -128,6 +128,9 @@ mysql -u root -p -e "CREATE DATABASE cloud_platform_audit CHARACTER SET utf8mb4 
 mysql -u root -p cloud_platform < ../docs/database.sql
 mysql -u root -p cloud_platform_audit < ../docs/database_audit.sql
 
+# Or use migration command (recommended)
+php webman migrate
+
 # 5. Start (dev mode)
 php start.php start
 # Visit http://localhost:8787
@@ -159,6 +162,9 @@ cp .env.example .env
 # 3. Start (dev mode)
 php start.php start
 # Visit http://localhost:8787/app/admin
+
+# Optional: run database migrations
+php webman migrate
 ```
 
 ### Daemon Mode
@@ -389,12 +395,12 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] Excel export (PhpSpreadsheet ^2.0, admin Crud/Table + service admin API)
 - [x] Dashboard visualization (ECharts charts + animated stat cards + system info panel)
 - [x] PDF export (html2canvas + jsPDF, dashboard screenshot export)
-- [ ] Database migration scripting (`docs/database.sql` ready, pending migration command)
-- [ ] Stripe production integration (currently mocked)
-- [ ] Twilio / Alibaba Cloud SMS production integration
-- [ ] FCM push notification production integration
-- [ ] Service-layer unit and integration tests (admin/ already has 48 tests)
-- [ ] CI/CD pipeline
+- [x] Database migration scripting (`docs/database.sql` ready, `php webman migrate` command)
+- [x] Stripe production integration (stripe-php SDK, PaymentIntent + webhook signature verification)
+- [x] Twilio SMS production integration (twilio/sdk, with send failure handling)
+- [x] FCM push notification production integration (kreait/firebase-php, with invalid token cleanup)
+- [x] Service-layer unit tests (79 tests, 149 assertions)
+- [x] CI/CD pipeline (GitHub Actions, syntax check + dual PHPUnit + Composer validate)
 
 ## License
 

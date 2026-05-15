@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  syntax:
+    name: PHP Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      - name: Check admin PHP syntax
+        run: find admin/app admin/api admin/config -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Check service PHP syntax
+        run: find service/app service/common service/config service/support -name '*.php' -print0 | xargs -0 -n1 php -l
+
+  admin-tests:
+    name: Admin Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.2', '8.3']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+      - name: Install admin dependencies
+        run: composer install -d admin --no-interaction
+      - name: Run admin tests
+        run: admin/vendor/bin/phpunit -c admin/phpunit.xml
+
+  service-tests:
+    name: Service Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.2', '8.3']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+      - name: Install service dependencies
+        run: composer install -d service --no-interaction
+      - name: Run service tests
+        run: service/vendor/bin/phpunit -c service/phpunit.xml
+
+  composer-validate:
+    name: Composer Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      - name: Validate admin composer.json
+        run: composer validate -d admin --strict
+      - name: Validate service composer.json
+        run: composer validate -d service --strict

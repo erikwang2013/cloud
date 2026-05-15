@@ -16,6 +16,7 @@ class User extends Model
     protected $fillable = [
         'email', 'phone', 'password_hash', 'language',
         'currency', 'timezone', 'status', 'role',
+        'fcm_token', 'fcm_platform',
     ];
 
     protected $hidden = ['password_hash', 'deleted_at'];

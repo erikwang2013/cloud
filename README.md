@@ -130,6 +130,9 @@ mysql -u root -p -e "CREATE DATABASE cloud_platform_audit CHARACTER SET utf8mb4 
 mysql -u root -p cloud_platform < ../docs/database.sql
 mysql -u root -p cloud_platform_audit < ../docs/database_audit.sql
 
+# 或使用迁移命令（推荐）
+php webman migrate
+
 # 5. 启动服务（开发模式）
 php start.php start
 # 访问 http://localhost:8787
@@ -161,6 +164,9 @@ cp .env.example .env
 # 3. 启动服务（开发模式）
 php start.php start
 # 访问 http://localhost:8787/app/admin
+
+# 可选：运行数据库迁移
+php webman migrate
 ```
 
 ### 守护进程模式
@@ -391,12 +397,12 @@ ProviderInterface
 - [x] Excel 导出（PhpSpreadsheet ^2.0，管理后台 Crud/Table + 服务端管理 API）
 - [x] 仪表板可视化（ECharts 图表 + 动画统计卡片 + 系统信息面板）
 - [x] PDF 导出（html2canvas + jsPDF，仪表板截图导出）
-- [ ] 数据库迁移脚本（`docs/database.sql` 已生成，待迁移命令化）
-- [ ] Stripe 真实集成（当前为 mock）
-- [ ] Twilio / 阿里云短信真实集成
-- [ ] FCM 推送真实集成
-- [ ] 服务端单元测试与集成测试（admin/ 已完成 48 tests）
-- [ ] CI/CD 流水线
+- [x] 数据库迁移脚本（`docs/database.sql` 已生成，`php webman migrate` 命令化）
+- [x] Stripe 真实集成（stripe-php SDK，PaymentIntent + Webhook 签名校验）
+- [x] Twilio 短信真实集成（twilio/sdk，含发送失败处理）
+- [x] FCM 推送真实集成（kreait/firebase-php，含无效 token 清理）
+- [x] 服务端单元测试（79 tests, 149 assertions）
+- [x] CI/CD 流水线（GitHub Actions，语法检查 + 双端 PHPUnit + Composer 校验）
 
 ## License
 

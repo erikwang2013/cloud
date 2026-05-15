@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         cacheDirectory=".phpunit.cache"
+         colors="true">
+    <php>
+        <env name="HASHIDS_SALT" value="test-salt-for-unit-tests"/>
+        <env name="HASHIDS_LENGTH" value="12"/>
+        <env name="ENCRYPTION_MASTER_KEY" value="dGVzdC1tYXN0ZXIta2V5LWZvci11bml0LXRlc3RzLXRlc3Rz"/>
+    </php>
+    <testsuites>
+        <testsuite name="unit">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+            <directory>common</directory>
+        </include>
+    </source>
+</phpunit>
