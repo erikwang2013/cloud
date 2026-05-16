@@ -60,8 +60,8 @@ class Crud extends Base
      */
     public function update(Request $request): Response
     {
-        [$id, $data] = $this->updateInput($request);
-        $this->doUpdate($id, $data);
+        [$id, $data, $model] = $this->updateInput($request);
+        $this->doUpdate($id, $data, $model);
         return $this->json(0);
     }
 
@@ -93,9 +93,9 @@ class Crud extends Base
         $limit = $limit <= 0 ? 10 : $limit;
         $order = $order === 'asc' ? 'asc' : 'desc';
         $where = $request->get();
-        // Decode hashids for any id/*_id fields
+        // Decode hashids for any id/*_id/*_ids fields
         foreach ($where as $column => $value) {
-            if (is_string($value) && !is_numeric($value) && ($column === 'id' || str_ends_with($column, '_id'))) {
+            if (is_string($value) && !is_numeric($value) && ($column === 'id' || str_ends_with($column, '_id') || str_ends_with($column, '_ids'))) {
                 $where[$column] = hashids_decode($value);
             }
         }
@@ -246,9 +246,9 @@ class Crud extends Base
     protected function insertInput(Request $request): array
     {
         $data = $this->inputFilter($request->post());
-        $password_filed = 'password';
-        if (isset($data[$password_filed])) {
-            $data[$password_filed] = Util::passwordHash($data[$password_filed]);
+        $password_field = 'password';
+        if (isset($data[$password_field])) {
+            $data[$password_field] = Util::passwordHash($data[$password_field]);
         }
 
         if (!Auth::isSuperAdmin()) {
@@ -322,28 +322,32 @@ class Crud extends Base
                 }
             }
         }
-        $password_filed = 'password';
-        if (isset($data[$password_filed])) {
+        $password_field = 'password';
+        if (isset($data[$password_field])) {
             // 密码为空，则不更新密码
-            if ($data[$password_filed] === '') {
-                unset($data[$password_filed]);
+            if ($data[$password_field] === '') {
+                unset($data[$password_field]);
             } else {
-                $data[$password_filed] = Util::passwordHash($data[$password_filed]);
+                $data[$password_field] = Util::passwordHash($data[$password_field]);
             }
         }
         unset($data[$primary_key]);
-        return [$id, $data];
+        return [$id, $data, $model];
     }
 
     /**
      * 执行更新
      * @param $id
      * @param $data
+     * @param $existingModel  updateInputで取得済みのモデル (nullの場合は再取得)
      * @return void
      */
-    protected function doUpdate($id, $data)
+    protected function doUpdate($id, $data, $existingModel = null)
     {
-        $model = $this->model->find($id);
+        $model = $existingModel ?: $this->model->find($id);
+        if (!$model) {
+            throw new BusinessException('记录不存在', 2);
+        }
         foreach ($data as $key => $val) {
             $model->{$key} = $val;
         }
@@ -368,6 +372,11 @@ class Crud extends Base
             if (!isset($columns[$col])) {
                 unset($data[$col]);
                 continue;
+            }
+            // Decode hashids for id/*_id/*_ids fields before type check
+            if (is_string($item) && !is_numeric($item) && ($col === 'id' || str_ends_with($col, '_id') || str_ends_with($col, '_ids'))) {
+                $data[$col] = hashids_decode($item);
+                $item = $data[$col];
             }
             // 非字符串类型传空则为null
             if ($item === '' && strpos(strtolower($columns[$col]), 'varchar') === false && strpos(strtolower($columns[$col]), 'text') === false) {
@@ -400,6 +409,9 @@ class Crud extends Base
         }
         $ids = (array)$request->post($primary_key, []);
         $ids = array_map(fn($v) => is_string($v) && !is_numeric($v) ? hashids_decode($v) : (int) $v, $ids);
+        if (!$ids) {
+            return [];
+        }
         if (!Auth::isSuperAdmin()){
             $admin_ids = [];
             if ($this->dataLimit) {

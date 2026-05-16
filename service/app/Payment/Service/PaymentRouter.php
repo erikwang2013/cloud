@@ -40,7 +40,7 @@ class PaymentRouter
     {
         $fixed = $feeConfig['fixed'] ?? '0';
         $rate  = $feeConfig['rate'] ?? '0';
-        $fee   = bcadd(bcmul($amount, $rate, 8), $fixed, 4);
-        return max($fee, '0');
+        $fee = bcadd(bcmul($amount, $rate, 8), $fixed, 4);
+        return bccomp($fee, '0', 4) < 0 ? '0' : $fee;
     }
 }

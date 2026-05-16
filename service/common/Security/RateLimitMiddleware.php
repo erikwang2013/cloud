@@ -11,18 +11,23 @@ class RateLimitMiddleware
         $limit = $limits[$route] ?? $limits['default'];
 
         $key = "ratelimit:" . $request->getRealIp() . ":{$route}";
-        $current = \Redis::get($key) ?: 0;
 
-        if ($current >= $limit['rate']) {
-            return json(Response::error(429, 'Too Many Requests', [
-                'retry_after' => $limit['per'],
-            ]));
-        }
+        try {
+            $current = \Redis::get($key) ?: 0;
 
-        if ($current == 0) {
-            \Redis::setex($key, $limit['per'], 1);
-        } else {
-            \Redis::incr($key);
+            if ($current >= $limit['rate']) {
+                return json(Response::error(429, 'Too Many Requests', [
+                    'retry_after' => $limit['per'],
+                ]));
+            }
+
+            if ($current == 0) {
+                \Redis::setex($key, $limit['per'], 1);
+            } else {
+                \Redis::incr($key);
+            }
+        } catch (\Exception $e) {
+            // Redis unavailable — allow request through
         }
 
         return $next($request);

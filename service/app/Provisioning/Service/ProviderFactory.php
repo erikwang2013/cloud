@@ -32,6 +32,11 @@ class ProviderFactory
             throw new \RuntimeException("No provider registered for: {$key}");
         }
 
-        return call_user_func($this->providers[$key], null);
+        // Create a synthetic task for provider factories that expect ProvisionTask
+        $task = new ProvisionTask([
+            'product_type' => $resource->type,
+            'provider'     => $resource->provider,
+        ]);
+        return call_user_func($this->providers[$key], $task);
     }
 }

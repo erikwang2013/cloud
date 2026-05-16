@@ -3,6 +3,7 @@ namespace App\User\Controller;
 
 use App\User\Service\AuthService;
 use Common\Helper\Response;
+use Common\Helper\Validator;
 use Common\I18n\I18n;
 use Common\Security\AuditLogger;
 
@@ -20,6 +21,13 @@ class AuthController
         $data = $request->all();
         if (empty($data['password']) || (empty($data['email']) && empty($data['phone']))) {
             return json(Response::error(422, 'Email or phone required, and password required'));
+        }
+
+        if (!empty($data['email']) && !Validator::email($data['email'])) {
+            return json(Response::error(422, 'Invalid email format'));
+        }
+        if (!Validator::minLength($data['password'], 8)) {
+            return json(Response::error(422, 'Password must be at least 8 characters'));
         }
 
         try {
@@ -43,11 +51,12 @@ class AuthController
 
         try {
             $tokens = $this->auth->login($login, $password, $deviceFp);
-            AuditLogger::record('user_login', ['user_id' => null], $request);
+            $payload = (new \Common\Auth\JwtAuth())->verify($tokens['access_token']);
+            AuditLogger::record('user_login', ['user_id' => $payload['sub'] ?? null], $request);
             return json(Response::success($tokens, I18n::trans('auth.login_success')));
         } catch (\InvalidArgumentException $e) {
             $this->auth->recordFailedLogin($login);
-            AuditLogger::record('login_failed', ['input' => json_encode(['login' => $login])], $request);
+            AuditLogger::record('login_failed', ['input' => ['login_hash' => sha1($login)]], $request);
             return json(Response::error(401, $e->getMessage()));
         }
     }

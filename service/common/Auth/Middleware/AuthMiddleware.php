@@ -26,6 +26,15 @@ class AuthMiddleware
             return json(Response::error(401, 'Invalid token type'));
         }
 
+        // Check if token is blacklisted
+        try {
+            if (\Redis::exists('jwt_blacklist:' . hash('sha256', $token))) {
+                return json(Response::error(401, 'Token revoked'));
+            }
+        } catch (\Exception $e) {
+            // Redis unavailable — allow through (blacklist check is best-effort)
+        }
+
         $request->userId = $payload['sub'];
         $request->userRole = $payload['role'] ?? 'user';
 

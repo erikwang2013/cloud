@@ -4,6 +4,7 @@ namespace App\Ticket\Controller;
 use App\Ticket\Service\TicketService;
 use App\Ticket\Model\Ticket;
 use Common\Helper\Response;
+use Common\Helper\Validator;
 
 class TicketController
 {
@@ -17,6 +18,14 @@ class TicketController
     public function create($request)
     {
         $data = $request->only(['resource_id', 'category', 'priority', 'title', 'content']);
+
+        if ($missing = Validator::required($data, ['category', 'title', 'content'])) {
+            return json(Response::error(422, "Missing required field: {$missing}"));
+        }
+        if (!empty($data['priority']) && !in_array($data['priority'], ['low', 'normal', 'high', 'urgent'], true)) {
+            return json(Response::error(422, 'Invalid priority'));
+        }
+
         $ticket = $this->service->create($request->userId, $data);
         return json(Response::success($ticket, 'Ticket created'));
     }

@@ -51,7 +51,8 @@ class ProvisionWorker implements Consumer
 
                 } elseif ($result->status === 'retryable') {
                     $retries = $task->retry_count + 1;
-                    $delays  = [1, 5, 15, 60, 360, 86400];
+                    // Delays in minutes: 1, 5, 15, 60 (1h), 360 (6h), 1440 (24h)
+                    $delays  = [1, 5, 15, 60, 360, 1440];
                     $delay   = $delays[$retries] ?? $delays[5];
 
                     $task->update([

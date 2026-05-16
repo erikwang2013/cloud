@@ -50,6 +50,7 @@ class OrderService
                 $regionPrice = ProductRegion::where('sku_id', $cart->sku_id)
                     ->where('region_id', $cart->region_id)
                     ->where('currency', $currency)
+                    ->lockForUpdate()
                     ->firstOrFail();
 
                 if ($regionPrice->stock < $cart->quantity) {

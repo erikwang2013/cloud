@@ -62,9 +62,11 @@ class ProvisioningService
     private function resolveProvider(OrderItem $item): string
     {
         $product = $item->sku->product;
-        if (!empty($product->supplier_id)) {
-            return 'aliyun';
+        // Check for explicit provider override on the product
+        if (!empty($product->provider)) {
+            return $product->provider;
         }
+        // Default to proxmox — the only provider currently implemented
         return 'proxmox';
     }
 }

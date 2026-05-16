@@ -96,16 +96,16 @@ final class TestableCrud extends Crud
         $id = is_string($raw_id) && !is_numeric($raw_id) ? hashids_decode($raw_id) : (int) $raw_id;
         $data = $this->inputFilter($request->post());
 
-        $password_filed = 'password';
-        if (isset($data[$password_filed])) {
-            if ($data[$password_filed] === '') {
-                unset($data[$password_filed]);
+        $password_field = 'password';
+        if (isset($data[$password_field])) {
+            if ($data[$password_field] === '') {
+                unset($data[$password_field]);
             } else {
-                $data[$password_filed] = password_hash($data[$password_filed], PASSWORD_BCRYPT);
+                $data[$password_field] = password_hash($data[$password_field], PASSWORD_BCRYPT);
             }
         }
         unset($data[$primary_key]);
-        return [$id, $data];
+        return [$id, $data, null];
     }
 
     /**

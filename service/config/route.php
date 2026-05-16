@@ -136,4 +136,4 @@ Route::group('/admin/api/v1', function () {
     // Monitoring
     Route::get('/monitor/dashboard', [App\Monitor\Controller\MonitorController::class, 'dashboard']);
     Route::get('/monitor/resources/{id}', [App\Monitor\Controller\MonitorController::class, 'resourceMetrics']);
-})->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class]);
+})->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class]);

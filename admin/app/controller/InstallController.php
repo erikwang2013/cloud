@@ -50,6 +50,11 @@ class InstallController extends Base
         $port = (int)$request->post('port') ?: 3306;
         $overwrite = $request->post('overwrite');
 
+        // Validate database name to prevent SQL injection (DDL don't support prepared statements)
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $database)) {
+            return $this->json(1, '数据库名只能包含字母、数字和下划线');
+        }
+
         try {
             $db = $this->getPdo($host, $user, $password, $port);
             $smt = $db->query("show databases like '$database'");

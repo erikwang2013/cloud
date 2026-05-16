@@ -94,12 +94,22 @@ class StripeChannel
         if ($type === 'payment_intent.succeeded') {
             $intentId = $paymentIntent->id ?? '';
             $orderId = (int) ($paymentIntent->metadata->order_id ?? 0);
+            $amountReceived = (int) ($paymentIntent->amount_received ?? 0);
+            $stripeCurrency = strtoupper($paymentIntent->currency ?? '');
 
             $txn = PaymentTransaction::where('transaction_no', $intentId)
                 ->where('order_id', $orderId)
                 ->first();
 
             if (!$txn || $txn->status !== 'pending') {
+                return;
+            }
+
+            // Verify webhook amount matches stored transaction amount
+            $expectedSmallest = $this->toSmallestUnit($txn->amount, $txn->currency);
+            if ($amountReceived !== $expectedSmallest || strtoupper($txn->currency) !== $stripeCurrency) {
+                Log::error("Stripe amount mismatch: txn={$txn->id} expected={$expectedSmallest} received={$amountReceived}");
+                $txn->update(['status' => 'failed']);
                 return;
             }
 
@@ -145,11 +155,11 @@ class StripeChannel
         }
     }
 
-    private function toSmallestUnit(float $total, string $currency): int
+    private function toSmallestUnit(string $total, string $currency): int
     {
         if (in_array(strtoupper($currency), self::ZERO_DECIMAL_CURRENCIES, true)) {
-            return (int) round($total);
+            return (int) round((float) $total);
         }
-        return (int) round($total * 100);
+        return (int) round((float) bcmul($total, '100', 2));
     }
 }
