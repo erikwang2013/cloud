@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+    <head>
+        <meta charset="UTF-8">
+        <title>新增按年</title>
+        <link rel="stylesheet" href="/app/admin/component/pear/css/pear.css" />
+        <link rel="stylesheet" href="/app/admin/admin/css/reset.css" />
+    </head>
+    <body>
+
+        <form class="layui-form" action="">
+            <div class="mainBox">
+                <div class="main-container mr-5">
+                    
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">用户ID</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="user_id" value="0" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">SKU ID</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="sku_id" value="0" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">区域ID</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="region_id" value="0" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">数量</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="quantity" value="0" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">周期</label>
+                        <div class="layui-input-block">
+                            <select name="cycle" class="layui-input">
+                                <option value="">请选择</option>
+                                <option value="hourly">按小时</option>
+                                <option value="daily">按天</option>
+                                <option value="monthly">按月</option>
+                                <option value="quarterly">按季</option>
+                                <option value="yearly">按年</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom">
+                <div class="button-container">
+                    <button type="submit" class="pear-btn pear-btn-primary pear-btn-md" lay-submit="" lay-filter="save">
+                        提交
+                    </button>
+                    <button type="reset" class="pear-btn pear-btn-md">
+                        重置
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <script src="/app/admin/component/layui/layui.js?v=2.8.12"></script>
+        <script src="/app/admin/component/pear/pear.js"></script>
+        <script src="/app/admin/admin/js/permission.js"></script>
+        <script>
+            const INSERT_API = "/app/admin/cart/insert";
+            
+            layui.use(["form", "popup"], function () {
+                layui.form.on("submit(save)", function (data) {
+                    layui.$.ajax({
+                        url: INSERT_API,
+                        type: "POST",
+                        dateType: "json",
+                        data: data.field,
+                        success: function (res) {
+                            if (res.code) { return layui.popup.failure(res.msg); }
+                            return layui.popup.success("操作成功", function () {
+                                parent.refreshTable();
+                                parent.layer.close(parent.layer.getFrameIndex(window.name));
+                            });
+                        }
+                    });
+                    return false;
+                });
+            });
+        </script>
+    </body>
+</html>

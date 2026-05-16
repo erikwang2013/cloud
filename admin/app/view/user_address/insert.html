@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+    <head>
+        <meta charset="UTF-8">
+        <title>新增附加IP</title>
+        <link rel="stylesheet" href="/app/admin/component/pear/css/pear.css" />
+        <link rel="stylesheet" href="/app/admin/admin/css/reset.css" />
+    </head>
+    <body>
+
+        <form class="layui-form" action="">
+            <div class="mainBox">
+                <div class="main-container mr-5">
+                    
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">用户ID</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="user_id" value="0" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">类型</label>
+                        <div class="layui-input-block">
+                            <select name="type" class="layui-input">
+                                <option value="">请选择</option>
+                                <option value="new">新购</option>
+                                <option value="renew">续费</option>
+                                <option value="upgrade">升级</option>
+                                <option value="downgrade">降级</option>
+                                <option value="billing">账单</option>
+                                <option value="shipping">配送</option>
+                                <option value="primary">主IP</option>
+                                <option value="secondary">附加IP</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">名称</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="name" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">手机</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="phone" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">国家</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="country" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">州/省</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="state" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">城市</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="city" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">地址</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="address" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">邮编</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="postcode" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">默认</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="is_default" value="0" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom">
+                <div class="button-container">
+                    <button type="submit" class="pear-btn pear-btn-primary pear-btn-md" lay-submit="" lay-filter="save">
+                        提交
+                    </button>
+                    <button type="reset" class="pear-btn pear-btn-md">
+                        重置
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <script src="/app/admin/component/layui/layui.js?v=2.8.12"></script>
+        <script src="/app/admin/component/pear/pear.js"></script>
+        <script src="/app/admin/admin/js/permission.js"></script>
+        <script>
+            const INSERT_API = "/app/admin/user_address/insert";
+            
+            layui.use(["form", "popup"], function () {
+                layui.form.on("submit(save)", function (data) {
+                    layui.$.ajax({
+                        url: INSERT_API,
+                        type: "POST",
+                        dateType: "json",
+                        data: data.field,
+                        success: function (res) {
+                            if (res.code) { return layui.popup.failure(res.msg); }
+                            return layui.popup.success("操作成功", function () {
+                                parent.refreshTable();
+                                parent.layer.close(parent.layer.getFrameIndex(window.name));
+                            });
+                        }
+                    });
+                    return false;
+                });
+            });
+        </script>
+    </body>
+</html>

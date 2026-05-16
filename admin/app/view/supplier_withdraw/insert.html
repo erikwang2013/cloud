@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+    <head>
+        <meta charset="UTF-8">
+        <title>新增队列中</title>
+        <link rel="stylesheet" href="/app/admin/component/pear/css/pear.css" />
+        <link rel="stylesheet" href="/app/admin/admin/css/reset.css" />
+    </head>
+    <body>
+
+        <form class="layui-form" action="">
+            <div class="mainBox">
+                <div class="main-container mr-5">
+                    
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">供应商ID</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="supplier_id" value="0" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">金额</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="amount" value="0" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">方式</label>
+                        <div class="layui-input-block">
+                            <select name="method" class="layui-input">
+                                <option value="">请选择</option>
+                                <option value="bank">银行转账</option>
+                                <option value="paypal">PayPal</option>
+                                <option value="stripe">Stripe</option>
+                                <option value="alipay">支付宝</option>
+                                <option value="wechat">微信支付</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">账户信息</label>
+                        <div class="layui-input-block">
+                            <textarea name="account_info" class="layui-textarea"></textarea>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">状态</label>
+                        <div class="layui-input-block">
+                            <select name="status" class="layui-input">
+                                <option value="">请选择</option>
+                                <option value="active">启用</option>
+                                <option value="inactive">禁用</option>
+                                <option value="pending">待处理</option>
+                                <option value="draft">草稿</option>
+                                <option value="suspended">停用</option>
+                                <option value="deleted">已删除</option>
+                                <option value="banned">封禁</option>
+                                <option value="open">打开</option>
+                                <option value="closed">关闭</option>
+                                <option value="running">运行中</option>
+                                <option value="success">成功</option>
+                                <option value="failed">失败</option>
+                                <option value="retryable">可重试</option>
+                                <option value="provisioning">交付中</option>
+                                <option value="completed">已完成</option>
+                                <option value="creating">创建中</option>
+                                <option value="cancelled">已取消</option>
+                                <option value="refunding">退款中</option>
+                                <option value="refunded">已退款</option>
+                                <option value="paid">已支付</option>
+                                <option value="triggered">已触发</option>
+                                <option value="queued">队列中</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom">
+                <div class="button-container">
+                    <button type="submit" class="pear-btn pear-btn-primary pear-btn-md" lay-submit="" lay-filter="save">
+                        提交
+                    </button>
+                    <button type="reset" class="pear-btn pear-btn-md">
+                        重置
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <script src="/app/admin/component/layui/layui.js?v=2.8.12"></script>
+        <script src="/app/admin/component/pear/pear.js"></script>
+        <script src="/app/admin/admin/js/permission.js"></script>
+        <script>
+            const INSERT_API = "/app/admin/supplier_withdraw/insert";
+            
+            layui.use(["form", "popup"], function () {
+                layui.form.on("submit(save)", function (data) {
+                    layui.$.ajax({
+                        url: INSERT_API,
+                        type: "POST",
+                        dateType: "json",
+                        data: data.field,
+                        success: function (res) {
+                            if (res.code) { return layui.popup.failure(res.msg); }
+                            return layui.popup.success("操作成功", function () {
+                                parent.refreshTable();
+                                parent.layer.close(parent.layer.getFrameIndex(window.name));
+                            });
+                        }
+                    });
+                    return false;
+                });
+            });
+        </script>
+    </body>
+</html>

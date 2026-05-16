@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+    <head>
+        <meta charset="UTF-8">
+        <title>新增刷新令牌</title>
+        <link rel="stylesheet" href="/app/admin/component/pear/css/pear.css" />
+        <link rel="stylesheet" href="/app/admin/admin/css/reset.css" />
+    </head>
+    <body>
+
+        <form class="layui-form" action="">
+            <div class="mainBox">
+                <div class="main-container mr-5">
+                    
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">用户ID</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="user_id" value="0" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">token_hash</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="token_hash" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">device_fingerprint</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="device_fingerprint" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">expires_at</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="expires_at" id="expires_at" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">revoked</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="revoked" value="0" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom">
+                <div class="button-container">
+                    <button type="submit" class="pear-btn pear-btn-primary pear-btn-md" lay-submit="" lay-filter="save">
+                        提交
+                    </button>
+                    <button type="reset" class="pear-btn pear-btn-md">
+                        重置
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <script src="/app/admin/component/layui/layui.js?v=2.8.12"></script>
+        <script src="/app/admin/component/pear/pear.js"></script>
+        <script src="/app/admin/admin/js/permission.js"></script>
+        <script>
+            const INSERT_API = "/app/admin/refresh_token/insert";
+            
+            layui.use(["laydate"], function() {
+                layui.laydate.render({ elem: "#expires_at", type: "datetime" });
+            });
+            layui.use(["form", "popup"], function () {
+                layui.form.on("submit(save)", function (data) {
+                    layui.$.ajax({
+                        url: INSERT_API,
+                        type: "POST",
+                        dateType: "json",
+                        data: data.field,
+                        success: function (res) {
+                            if (res.code) { return layui.popup.failure(res.msg); }
+                            return layui.popup.success("操作成功", function () {
+                                parent.refreshTable();
+                                parent.layer.close(parent.layer.getFrameIndex(window.name));
+                            });
+                        }
+                    });
+                    return false;
+                });
+            });
+        </script>
+    </body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+    <head>
+        <meta charset="utf-8">
+        <title>SKU管理</title>
+        <link rel="stylesheet" href="/app/admin/component/pear/css/pear.css" />
+        <link rel="stylesheet" href="/app/admin/admin/css/reset.css" />
+    </head>
+    <body class="pear-container">
+
+        <div class="layui-card">
+            <div class="layui-card-body">
+                <form class="layui-form top-search-from">
+                    
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">产品ID</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="product_id" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">SKU编码</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="sku_code" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">状态</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="status" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-inline">
+                        <label class="layui-form-label"></label>
+                        <button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="table-query">
+                            <i class="layui-icon layui-icon-search"></i>查询
+                        </button>
+                        <button type="reset" class="pear-btn pear-btn-md" lay-submit lay-filter="table-reset">
+                            <i class="layui-icon layui-icon-refresh"></i>重置
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="layui-card">
+            <div class="layui-card-body">
+                <table id="data-table" lay-filter="data-table"></table>
+            </div>
+        </div>
+
+        <script type="text/html" id="table-toolbar">
+            <button class="pear-btn pear-btn-primary pear-btn-md" lay-event="add" permission="app.admin.product_sku.insert">
+                <i class="layui-icon layui-icon-add-1"></i>新增
+            </button>
+            <button class="pear-btn pear-btn-danger pear-btn-md" lay-event="batchRemove" permission="app.admin.product_sku.delete">
+                <i class="layui-icon layui-icon-delete"></i>删除
+            </button>
+        </script>
+
+                <script type="text/html" id="table-bar">
+            <button class="pear-btn pear-btn-xs tool-btn" lay-event="edit" permission="app.admin.product_sku.update">编辑</button>
+            <button class="pear-btn pear-btn-xs tool-btn" lay-event="remove" permission="app.admin.product_sku.delete">删除</button>
+        </script>
+
+        <script src="/app/admin/component/layui/layui.js?v=2.8.12"></script>
+        <script src="/app/admin/component/pear/pear.js"></script>
+        <script src="/app/admin/admin/js/permission.js"></script>
+        <script src="/app/admin/admin/js/common.js"></script>
+        <script>
+            const PRIMARY_KEY = "id";
+            const SELECT_API = "/app/admin/product_sku/select";
+            const UPDATE_API = "/app/admin/product_sku/update";
+            const DELETE_API = "/app/admin/product_sku/delete";
+            const INSERT_URL = "/app/admin/product_sku/insert";
+            const UPDATE_URL = "/app/admin/product_sku/update";
+
+            layui.use(["table", "form", "common", "popup", "util"], function() {
+                let table = layui.table;
+                let form = layui.form;
+                let $ = layui.$;
+                let common = layui.common;
+                let util = layui.util;
+
+                let cols = [{
+                    type: "checkbox"
+                },{
+                    title: "ID",
+                    field: "id",
+                    sort: true
+                },{
+                    title: "产品ID",
+                    field: "product_id",
+                        sort: true
+                },{
+                    title: "SKU编码",
+                    field: "sku_code"
+                },{
+                    title: "规格",
+                    field: "specs"
+                },{
+                    title: "状态",
+                    field: "status"
+                },{
+                    title: "创建时间",
+                    field: "created_at",
+                        hide: true
+                },{
+                    title: "更新时间",
+                    field: "updated_at",
+                        hide: true
+                },{
+                    title: "操作",
+                    toolbar: "#table-bar",
+                    align: "center",
+                    fixed: "right",
+                    width: 130,                }];
+
+                function render() {
+                    table.render({
+                        elem: "#data-table",
+                        url: SELECT_API,
+                        page: true,
+                        cols: [cols],
+                        skin: "line",
+                        size: "lg",
+                        toolbar: "#table-toolbar",
+                        autoSort: false,
+                        defaultToolbar: [{
+                            title: "刷新",
+                            layEvent: "refresh",
+                            icon: "layui-icon-refresh",
+                        }, "filter", "print", "exports"],
+                        done: function () {
+                            layer.photos({photos: 'div[lay-id="data-table"]', anim: 5});
+                        }
+                    });
+                }
+                render();
+
+                table.on("tool(data-table)", function(obj) {
+                    if (obj.event === "remove") { remove(obj); }
+                    else if (obj.event === "edit") { edit(obj); }
+                });
+
+                table.on("toolbar(data-table)", function(obj) {
+                    if (obj.event === "add") { add(); }
+                    else if (obj.event === "refresh") { refreshTable(); }
+                    else if (obj.event === "batchRemove") { batchRemove(obj); }
+                });
+
+                form.on("submit(table-query)", function(data) {
+                    table.reload("data-table", { page: { curr: 1 }, where: data.field });
+                    return false;
+                });
+
+                form.on("submit(table-reset)", function(data) {
+                    table.reload("data-table", { where: [] });
+                });
+
+                table.on("sort(data-table)", function(obj){
+                    table.reload("data-table", {
+                        initSort: obj,
+                        scrollPos: "fixed",
+                        where: { field: obj.field, order: obj.type }
+                    });
+                });
+
+                let add = function() {
+                    layer.open({
+                        type: 2,
+                        title: "新增",
+                        shade: 0.1,
+                        area: [common.isModile()?"100%":"600px", common.isModile()?"100%":"500px"],
+                        content: INSERT_URL
+                    });
+                }
+
+                let edit = function(obj) {
+                    let value = obj.data[PRIMARY_KEY];
+                    layer.open({
+                        type: 2,
+                        title: "修改",
+                        shade: 0.1,
+                        area: [common.isModile()?"100%":"600px", common.isModile()?"100%":"500px"],
+                        content: UPDATE_URL + "?" + PRIMARY_KEY + "=" + value
+                    });
+                }
+
+                let remove = function(obj) { return doRemove(obj.data[PRIMARY_KEY]); }
+
+                let batchRemove = function(obj) {
+                    let checkIds = common.checkField(obj, PRIMARY_KEY);
+                    if (checkIds === "") { layui.popup.warning("未选中数据"); return false; }
+                    doRemove(checkIds.split(","));
+                }
+
+                let doRemove = function (ids) {
+                    let data = {};
+                    data[PRIMARY_KEY] = ids;
+                    layer.confirm("确定删除?", { icon: 3, title: "提示" }, function(index) {
+                        layer.close(index);
+                        let loading = layer.load();
+                        $.ajax({
+                            url: DELETE_API, data: data, dataType: "json", type: "post",
+                            success: function(res) {
+                                layer.close(loading);
+                                if (res.code) { return layui.popup.failure(res.msg); }
+                                return layui.popup.success("操作成功", refreshTable);
+                            }
+                        });
+                    });
+                }
+
+                window.refreshTable = function() {
+                    table.reloadData("data-table", {
+                        scrollPos: "fixed",
+                        done: function (res, curr) {
+                            if (curr > 1 && res.data && !res.data.length) {
+                                curr = curr - 1;
+                                table.reloadData("data-table", { page: { curr: curr } });
+                            }
+                        }
+                    });
+                }
+            });
+        </script>
+    </body>
+</html>

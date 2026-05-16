@@ -7,7 +7,9 @@
 
 
 
-return [
+$businessMenu = file_exists(__DIR__ . '/business_menu.php') ? require __DIR__ . '/business_menu.php' : [];
+
+return array_merge($businessMenu, [
     [
         'title' => '数据库',
         'key' => 'database',
@@ -437,4 +439,4 @@ return [
             ]
         ]
     ]
-];
+]);

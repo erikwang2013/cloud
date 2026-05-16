@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+    <head>
+        <meta charset="UTF-8">
+        <title>更新开发桩</title>
+        <link rel="stylesheet" href="/app/admin/component/pear/css/pear.css" />
+        <link rel="stylesheet" href="/app/admin/admin/css/reset.css" />
+    </head>
+    <body>
+
+        <form class="layui-form">
+            <div class="mainBox">
+                <div class="main-container mr-5">
+                    
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">用户ID</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="user_id" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">渠道</label>
+                        <div class="layui-input-block">
+                            <select name="channel" class="layui-input">
+                                <option value="">请选择</option>
+                                <option value="in_app">站内信</option>
+                                <option value="email">邮件</option>
+                                <option value="sms">短信</option>
+                                <option value="push">推送</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">模板编码</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="template_code" value="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">内容</label>
+                        <div class="layui-input-block">
+                            <textarea name="content" class="layui-textarea"></textarea>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">发送状态</label>
+                        <div class="layui-input-block">
+                            <select name="send_status" class="layui-input">
+                                <option value="">请选择</option>
+                                <option value="queued">队列中</option>
+                                <option value="sent">已发送</option>
+                                <option value="failed">失败</option>
+                                <option value="dev-stub">开发桩</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom">
+                <div class="button-container">
+                    <button type="submit" class="pear-btn pear-btn-primary pear-btn-md" lay-submit="" lay-filter="save">
+                        提交
+                    </button>
+                    <button type="reset" class="pear-btn pear-btn-md">
+                        重置
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <script src="/app/admin/component/layui/layui.js?v=2.8.12"></script>
+        <script src="/app/admin/component/pear/pear.js"></script>
+        <script src="/app/admin/admin/js/permission.js"></script>
+        <script>
+            const PRIMARY_KEY = "id";
+            const SELECT_API = "/app/admin/notification/select" + location.search;
+            const UPDATE_API = "/app/admin/notification/update";
+
+            layui.use(["form", "util", "popup"], function () {
+                let $ = layui.$;
+                $.ajax({
+                    url: SELECT_API,
+                    dataType: "json",
+                    success: function (res) {
+                        layui.each(res.data[0], function (key, value) {
+                            let obj = $('*[name="'+key+'"]');
+                            if (typeof obj[0] === "undefined" || !obj[0].nodeName) return;
+                            let tag = obj[0].nodeName.toLowerCase();
+                            if (tag === "textarea" || tag === "select") {
+                                obj.val(layui.util.escape(value));
+                            } else {
+                                obj.attr("value", value);
+                            }
+                        });
+                        
+                        if (res.code) { layui.popup.failure(res.msg); }
+                    }
+                });
+            });
+
+            layui.use(["form", "popup"], function () {
+                layui.form.on("submit(save)", function (data) {
+                    data.field[PRIMARY_KEY] = layui.url().search[PRIMARY_KEY];
+                    layui.$.ajax({
+                        url: UPDATE_API,
+                        type: "POST",
+                        dateType: "json",
+                        data: data.field,
+                        success: function (res) {
+                            if (res.code) { return layui.popup.failure(res.msg); }
+                            return layui.popup.success("操作成功", function () {
+                                parent.refreshTable();
+                                parent.layer.close(parent.layer.getFrameIndex(window.name));
+                            });
+                        }
+                    });
+                    return false;
+                });
+            });
+        </script>
+    </body>
+</html>
