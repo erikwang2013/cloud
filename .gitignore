@@ -12,3 +12,4 @@
 /admin/vendor
 /service/composer.lock
 /admin/composer.lock
+/.github
