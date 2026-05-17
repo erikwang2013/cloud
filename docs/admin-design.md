@@ -27,6 +27,85 @@
               └───────────────────┘
 ```
 
+### Module Dependency Map
+
+```mermaid
+graph TB
+    subgraph Clients["Entry Points"]
+        UserAPI["User API"]
+        AdminAPI["Admin API"]
+        Webhook["Webhooks"]
+    end
+
+    subgraph Middleware["Middleware Stack"]
+        EncMiddleware["Encryption"]
+        AuthMiddleware["Auth JWT"]
+        AdminRole["AdminRole"]
+        ConfirmMiddleware["Confirmation"]
+    end
+
+    subgraph Business["Business Modules"]
+        User["User<br/>Auth/KYC/Balance"]
+        Product["Product<br/>Catalog/SKU/Pricing"]
+        Order["Order<br/>Cart/Order/Refund"]
+        Payment["Payment<br/>Router/Stripe"]
+        Provisioning["Provisioning<br/>Task/Resource/Disk/IP"]
+        Domain["Domain<br/>Registration/DNS"]
+        Supplier["Supplier<br/>Onboarding/Settlement"]
+        Ticket["Ticket<br/>CRUD/SLA/Assignment"]
+        Notification["Notification<br/>Email/SMS/Push/InApp"]
+        Monitor["Monitor<br/>Metrics/Alerts/Cron"]
+        Report["Report<br/>Revenue/Supplier/Region"]
+    end
+
+    subgraph CommonLayers["Common Layers"]
+        Snowflake["Snowflake<br/>ID Generation"]
+        Hashid["Hashid<br/>ID Obfuscation"]
+        Encryptable["Encryptable<br/>Field Encryption"]
+        Audit["AuditLogger<br/>Audit Trail"]
+    end
+
+    subgraph QueueSystem["Queue System"]
+        RedisQ["Redis Queue"]
+        ProvisionWorker["ProvisionWorker"]
+        SmsSender["SmsSender"]
+        PushSender["PushSender"]
+    end
+
+    UserAPI --> EncMiddleware
+    AdminAPI --> EncMiddleware
+    Webhook --> Payment
+
+    EncMiddleware --> AuthMiddleware
+    AuthMiddleware --> AdminRole
+    AdminRole --> ConfirmMiddleware
+
+    Payment -->|"OrderPaid Event"| Provisioning
+    Payment -->|"Webhook"| Webhook
+    Order --> Payment
+    Provisioning --> RedisQ
+    RedisQ --> ProvisionWorker
+    ProvisionWorker --> Provisioning
+    Ticket -->|"TicketCreated Event"| Notification
+    Notification --> RedisQ
+    RedisQ --> SmsSender
+    RedisQ --> PushSender
+
+    User --> Snowflake
+    Order --> Snowflake
+    Payment --> Snowflake
+    Provisioning --> Snowflake
+    Ticket --> Snowflake
+
+    User --> Encryptable
+    Payment --> Encryptable
+    Supplier --> Encryptable
+
+    Payment --> Audit
+    Provisioning --> Audit
+    Supplier --> Audit
+```
+
 ## Directory Layout
 
 ```
@@ -719,6 +798,173 @@ public function consume(): void
 
 Env vars: `FIREBASE_CREDENTIALS_PATH` (service account JSON), `FCM_SERVER_KEY` (legacy)
 
+## Business Flow Diagrams
+
+### Order → Payment → Provisioning (Core Business Flow)
+
+```mermaid
+sequenceDiagram
+    actor User as User
+    participant OrderCtrl as OrderController
+    participant PayRouter as PaymentRouter
+    participant StripeCh as StripeChannel
+    participant StripeAPI as Stripe API
+    participant Webhook as WebhookController
+    participant Event as OrderPaid Event
+    participant ProvSvc as ProvisioningService
+
+    User->>OrderCtrl: POST /orders (create)
+    OrderCtrl-->>User: order_id, total
+
+    User->>OrderCtrl: POST /orders/{id}/pay
+    OrderCtrl->>PayRouter: getChannels(order)
+    PayRouter-->>OrderCtrl: [Stripe]
+    OrderCtrl->>StripeCh: createPaymentIntent(order)
+    StripeCh->>StripeAPI: paymentIntents.create(amount, currency)
+    StripeAPI-->>StripeCh: {id, client_secret}
+    StripeCh-->>OrderCtrl: client_secret
+    OrderCtrl-->>User: client_secret
+
+    User->>StripeAPI: confirmCardPayment(client_secret)
+    StripeAPI-->>User: Payment confirmed
+
+    StripeAPI->>Webhook: POST /payments/webhook/stripe
+    Webhook->>Webhook: Verify signature + idempotency
+    Webhook->>Event: dispatch OrderPaid
+    Event->>ProvSvc: handleOrderPaid(order)
+    ProvSvc->>ProvSvc: Create ProvisionTask per OrderItem
+    ProvSvc->>ProvSvc: Push to Redis Queue
+
+    Note over ProvSvc: ProvisionWorker processes tasks
+    ProvSvc-->>OrderCtrl: Order status → completed
+```
+
+### Event-Driven Provisioning Detail
+
+```mermaid
+sequenceDiagram
+    participant ProvSvc as ProvisioningService
+    participant RedisQ as Redis Queue
+    participant ProvWorker as ProvisionWorker
+    participant Factory as ProviderFactory
+    participant Proxmox as ProxmoxProvider
+    participant HostSel as HostSelector
+    participant PveAPI as Proxmox VE API
+    participant DB as MySQL
+
+    ProvSvc->>ProvSvc: handleOrderPaid(order)
+    loop Each OrderItem
+        ProvSvc->>DB: INSERT erik_provision_tasks (status=pending)
+    end
+    ProvSvc->>RedisQ: LPUSH provision_queue
+
+    RedisQ->>ProvWorker: RPOP (blocking)
+    ProvWorker->>Factory: create(task)
+    Factory->>Proxmox: new ProxmoxProvider(host)
+    Proxmox->>HostSel: selectHost(resourceType, region)
+    HostSel->>DB: SELECT least-loaded host
+    HostSel-->>Proxmox: hostMachine
+
+    alt VM Provisioning
+        Proxmox->>PveAPI: POST /nodes/{node}/qemu (create VM)
+        PveAPI-->>Proxmox: {vmid, status}
+    else Disk Provisioning
+        Proxmox->>PveAPI: POST /nodes/{node}/storage (create disk)
+        PveAPI-->>Proxmox: {disk_id}
+    else IP Allocation
+        Proxmox->>DB: SELECT available IP from pool
+    end
+
+    Proxmox->>DB: INSERT erik_resources (vm_id, ip, status=active)
+    Proxmox->>DB: UPDATE erik_provision_tasks SET status=completed
+    Proxmox->>DB: UPDATE erik_orders SET status=completed
+
+    Note over ProvWorker,Proxmox: Retry on failure:<br/>1min → 5min → 15min → 1h → 6h → 24h<br/>6 retries → marked failed + alert triggered
+```
+
+### Notification Dispatch
+
+```mermaid
+flowchart TB
+    Event["Event Triggered<br/>OrderPaid / TicketCreated / KYCSubmitted"]
+    Dispatcher["NotificationDispatcher"]
+    Template["Template Renderer<br/>i18n + variable substitution"]
+
+    Event --> Dispatcher
+    Dispatcher --> Template
+    Template --> Router{"Channel Router<br/>by user preference"}
+
+    Router -->|"InApp"| InApp["InAppSender<br/>erik_notifications INSERT"]
+    Router -->|"Email"| Email["EmailSender<br/>PHPMailer SMTP"]
+    Router -->|"SMS"| Sms["SmsSender<br/>Twilio API"]
+    Router -->|"Push"| Push["PushSender<br/>FCM HTTP v1"]
+
+    InApp --> DB["MySQL<br/>erik_notifications"]
+    Email --> SMTP["SMTP Server"]
+    Sms --> TwilioAPI["Twilio REST API"]
+    Push --> FCMAPI["Firebase Cloud Messaging"]
+
+    Sms -.->|"Failed"| Fallback["Mark send_status=failed<br/>log provider_message_id"]
+    Push -.->|"InvalidToken"| Cleanup["Nullify user.fcm_token"]
+    Push -.->|"NotFound"| Remove["Remove unregistered token"]
+```
+
+### Supplier Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Applied: User submits application
+    Applied --> Approved: Admin approves
+    Applied --> Rejected: Admin rejects
+    Rejected --> [*]
+
+    Approved --> Active: First product listed
+    Active --> Selling: Receives orders
+
+    Selling --> Settlement: End of billing period
+    Settlement --> Paid: Admin approves settlement
+    Settlement --> Disputed: Supplier disputes
+    Disputed --> Paid: Admin resolves
+
+    Selling --> WithdrawPending: Supplier requests withdrawal
+    WithdrawPending --> WithdrawApproved: Admin approves
+    WithdrawApproved --> [*]: Funds transferred
+    WithdrawPending --> WithdrawRejected: Admin rejects
+    WithdrawRejected --> Selling
+
+    Active --> Suspended: Violation detected
+    Suspended --> Active: Admin reinstates
+    Suspended --> [*]: Account closed
+
+    note right of Settlement: Auto-calculated from<br/>completed orders × fee rate
+    note right of WithdrawPending: Requires password<br/>confirmation
+```
+
+### Ticket Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Open: User creates ticket
+    Open --> Assigned: Auto round-robin assign
+    Open --> Assigned: Admin manually assigns
+
+    Assigned --> InProgress: Staff replies
+    InProgress --> WaitingOnUser: Staff asks for info
+    WaitingOnUser --> InProgress: User replies
+    InProgress --> WaitingOnThirdParty: Depends on supplier/vendor
+    WaitingOnThirdParty --> InProgress: Third party responds
+
+    InProgress --> Resolved: Staff resolves
+    Resolved --> Open: User reopens (within 7 days)
+    Resolved --> Closed: Auto-close after 7 days
+    Resolved --> Closed: User accepts resolution
+
+    Closed --> [*]
+
+    note right of Assigned: SLA timer starts<br/>priority-based deadline
+    note right of Open: TicketCreated event<br/>triggers notification
+```
+
 ## Service-Layer Test Suite
 
 ### Overview
@@ -786,6 +1032,109 @@ Both test jobs run on PHP 8.2 and 8.3 via `shivammathur/setup-php@v2`.
 ### Current Status
 
 All 4 jobs pass: 243 total tests (67 admin + 176 service), 400 assertions, both PHP versions green.
+
+## Database Entity Relationship
+
+```mermaid
+erDiagram
+    erik_users ||--o{ erik_user_kyc : "submits"
+    erik_users ||--o{ erik_user_addresses : "has"
+    erik_users ||--o{ erik_user_balances : "has"
+    erik_users ||--o{ erik_orders : "places"
+    erik_users ||--o{ erik_cart_items : "has"
+    erik_users ||--o{ erik_tickets : "creates"
+    erik_users ||--o{ erik_refresh_tokens : "has"
+    erik_users ||--o| erik_suppliers : "becomes"
+
+    erik_products ||--o{ erik_product_skus : "has variants"
+    erik_products ||--o{ erik_product_images : "gallery"
+    erik_products ||--o{ erik_region_prices : "priced by region"
+
+    erik_product_skus ||--o{ erik_order_items : "ordered as"
+    erik_product_skus ||--o{ erik_cart_items : "added to cart"
+    erik_product_skus ||--o{ erik_region_prices : "priced by region"
+
+    erik_orders ||--o{ erik_order_items : "contains"
+    erik_orders ||--o{ erik_order_timeline : "tracked by"
+    erik_orders ||--o| erik_payment_refunds : "refunded via"
+
+    erik_order_items ||--o{ erik_provision_tasks : "provisions"
+
+    erik_payment_channels ||--o{ erik_transactions : "processes"
+    erik_orders ||--o{ erik_transactions : "paid by"
+
+    erik_provision_tasks ||--o| erik_resources : "creates"
+    erik_resources ||--o{ erik_resource_disks : "attached"
+    erik_host_machines ||--o{ erik_resources : "hosts"
+    erik_ip_pools ||--o| erik_resources : "allocated to"
+
+    erik_suppliers ||--o{ erik_supplier_settlements : "receives"
+    erik_suppliers ||--o{ erik_supplier_withdrawals : "requests"
+
+    erik_domain_registrations ||--o{ erik_dns_records : "manages"
+
+    erik_tickets ||--o{ erik_ticket_replies : "has"
+    erik_users ||--o{ erik_ticket_replies : "replies"
+
+    erik_notification_templates ||--o{ erik_notifications : "renders"
+    erik_users ||--o{ erik_notifications : "receives"
+
+    erik_users {
+        BIGINT id PK
+        VARCHAR username
+        VARCHAR email
+        VARCHAR phone
+        VARCHAR password_hash
+        VARCHAR role
+        VARCHAR status
+        VARCHAR language
+        VARCHAR fcm_token
+        VARCHAR fcm_platform
+        DATETIME created_at
+    }
+
+    erik_products {
+        BIGINT id PK
+        VARCHAR name
+        VARCHAR slug
+        TEXT description
+        VARCHAR category
+        VARCHAR status
+        VARCHAR type
+    }
+
+    erik_orders {
+        BIGINT id PK
+        BIGINT user_id FK
+        VARCHAR order_no
+        VARCHAR status
+        DECIMAL total
+        VARCHAR currency
+        DATETIME paid_at
+        DATETIME created_at
+    }
+
+    erik_resources {
+        BIGINT id PK
+        BIGINT user_id FK
+        BIGINT host_id FK
+        BIGINT ip_id FK
+        VARCHAR type
+        VARCHAR status
+        VARCHAR vm_id
+        DATETIME expires_at
+    }
+
+    erik_transactions {
+        BIGINT id PK
+        BIGINT order_id FK
+        BIGINT channel_id FK
+        VARCHAR transaction_no
+        VARCHAR status
+        DECIMAL amount
+        VARCHAR currency
+    }
+```
 
 ## Key Design Decisions
 
