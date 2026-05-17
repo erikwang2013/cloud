@@ -8,7 +8,7 @@
 namespace app\model;
 
 use DateTimeInterface;
-use Snowflake\Snowflake;
+use Erikwang2013\Snowflake\Snowflake;
 use support\Model;
 
 class Base extends Model

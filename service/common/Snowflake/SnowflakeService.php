@@ -1,7 +1,7 @@
 <?php
 namespace Common\Snowflake;
 
-use Snowflake\Snowflake;
+use Erikwang2013\Snowflake\Snowflake;
 
 class SnowflakeService
 {

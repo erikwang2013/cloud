@@ -40,7 +40,7 @@ final class SnowflakeTest extends TestCase
     public function testInitReturnsSnowflakeInstance(): void
     {
         $snowflake = SnowflakeService::init();
-        $this->assertInstanceOf(\Snowflake\Snowflake::class, $snowflake);
+        $this->assertInstanceOf(\Erikwang2013\Snowflake\Snowflake::class, $snowflake);
     }
 
     public function testInitReturnsSameInstance(): void

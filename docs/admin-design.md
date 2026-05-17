@@ -753,7 +753,7 @@ Env vars: `FIREBASE_CREDENTIALS_PATH` (service account JSON), `FCM_SERVER_KEY` (
 PHPUnit 10.5 | 176 tests | 276 assertions
 ```
 
-**Directory**: `service/tests/` — 11 test files across 7 modules
+**Directory**: `service/tests/` — 12 test files across 7 modules
 
 **Config**: `service/phpunit.xml` — single `unit` testsuite, covers `app/` and `common/` source
 
@@ -772,16 +772,16 @@ Critical learning: `Webman\Config` cannot be loaded in test context because `loa
 |------|-------|----------|
 | `Captcha/CaptchaServiceTest.php` | 9 | create structure, difficulty levels, verify pass/fail, one-time use, unique keys |
 | `Confirmation/ConfirmationMiddlewareTest.php` | 11 | auth required, missing password, wrong password, success pass-through, rate limit key format, lock key format, max failure thresholds |
-| `Common/HashidServiceTest.php` | 12 | encode/decode roundtrip, determinism, salt isolation, recursive ID walk |
-| `Common/ResponseTest.php` | 11 | success/error/paginated structure, request_id consistency, HTTP error codes |
-| `Common/SnowflakeTest.php` | 4 | timestamp ordering, uniqueness, bigint range |
-| `Common/ValidatorTest.php` | 17 | required(), email(), minLength() validation rules |
-| `Common/LogSanitizerTest.php` | 18 | PII redaction, nested arrays, case-insensitive matching, 20 sensitive field types |
-| `Payment/StripeChannelTest.php` | 7 | channel config, amount calculation, webhook signatures, idempotency |
-| `Payment/PaymentRouterTest.php` | 6 | channel filtering, amount constraints, currency/region support, fee calculation |
-| `Notification/NotificationDispatcherTest.php` | 5 | template rendering, channel routing, inactive user skip |
-| `Provisioning/ProviderFactoryTest.php` | 10 | register, create, createFromResource, error cases |
-| `Provisioning/RetryLogicTest.php` | 5 | exponential backoff, max retries, status transitions, host selection |
+| `Common/HashidServiceTest.php` | 17 | encode/decode roundtrip, determinism, salt isolation, recursive ID walk |
+| `Common/ResponseTest.php` | 16 | success/error/paginated structure, request_id consistency, HTTP error codes |
+| `Common/SnowflakeTest.php` | 6 | timestamp ordering, uniqueness, bigint range, init pattern |
+| `Common/ValidatorTest.php` | 22 | required(), email(), minLength() validation rules |
+| `Common/LogSanitizerTest.php` | 34 | PII redaction, nested arrays, case-insensitive matching, 20 sensitive field types |
+| `Payment/StripeChannelTest.php` | 19 | channel config, amount calculation, webhook signatures, idempotency |
+| `Payment/PaymentRouterTest.php` | 10 | channel filtering, amount constraints, currency/region support, fee calculation |
+| `Notification/NotificationDispatcherTest.php` | 8 | template rendering, channel routing, inactive user skip |
+| `Provisioning/ProviderFactoryTest.php` | 12 | register, create, createFromResource, error cases |
+| `Provisioning/RetryLogicTest.php` | 12 | exponential backoff, max retries, status transitions, host selection |
 
 ### Test Infrastructure
 

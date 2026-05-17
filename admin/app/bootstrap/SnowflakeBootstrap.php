@@ -7,7 +7,7 @@
 
 namespace app\bootstrap;
 
-use Snowflake\Snowflake;
+use Erikwang2013\Snowflake\Snowflake;
 use Webman\Bootstrap;
 use Workerman\Worker;
 
