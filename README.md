@@ -33,9 +33,9 @@
 ## 系统架构
 
 ```mermaid
-graph TB
+flowchart TB
     subgraph Clients["客户端"]
-        Flutter["Flutter<br/>iOS/Android/Web/PC"]
+        Flutter["Flutter - iOS Android Web PC"]
         HarmonyOS["HarmonyOS ArkTS"]
     end
 
@@ -43,26 +43,26 @@ graph TB
         Nginx["Nginx 反向代理"]
     end
 
-    subgraph Backend["后端服务 — webman :8787"]
-        API["API 端点 — 14 个业务模块<br/>User/Product/Order/Payment<br/>Provisioning/Domain/Supplier<br/>Ticket/Notification/Monitor<br/>Report/Admin/Captcha"]
-        Common["公共库 Common<br/>Auth · Encryption · Hashid<br/>Captcha · Confirmation<br/>Security · Snowflake · I18n"]
+    subgraph Backend["后端服务 webman 8787端口"]
+        API["API 端点 - 14 个业务模块"]
+        Common["公共库 Common"]
     end
 
-    subgraph AdminPanel["管理后台 — webman :8788"]
-        AdminUI["Layui 面板<br/>CRUD · Dashboard · 导出"]
-        AdminLib["公共组件<br/>Auth · Tree · ExcelExport"]
+    subgraph AdminPanel["管理后台 webman 8788端口"]
+        AdminUI["Layui 管理面板"]
+        AdminLib["公共组件"]
     end
 
     subgraph Queue["消息队列"]
-        RedisQ["Redis Queue<br/>ProvisionWorker<br/>SmsSender · PushSender"]
+        RedisQ["Redis Queue 消息队列"]
     end
 
     subgraph Infrastructure["基础设施"]
-        MySQL["MySQL 8.0 主库<br/>cloud_platform"]
-        MySQLAudit["MySQL 8.0 审计库<br/>cloud_platform_audit"]
-        Redis["Redis 7<br/>Session · Cache · Queue · Lock"]
-        ES["Elasticsearch 8.x<br/>全文搜索"]
-        Proxmox["Proxmox VE<br/>虚拟化交付"]
+        MySQL["MySQL 8.0 主库"]
+        MySQLAudit["MySQL 8.0 审计库"]
+        Redis["Redis 7"]
+        ES["Elasticsearch 8.x"]
+        Proxmox["Proxmox VE 虚拟化"]
     end
 
     subgraph External["外部服务"]
@@ -421,25 +421,25 @@ flowchart LR
     LOCALE --> HASHID["HashidRequest"]
     HASHID --> ROUTE{"Route"}
 
-    ROUTE -->|"Public"| PUB["GET products/health..."]
-    ROUTE -->|"Captcha"| ENC1["Encryption"]
+    ROUTE -->|Public| PUB["GET products, health"]
+    ROUTE -->|Captcha| ENC1["Encryption"]
     ENC1 --> CAP["Captcha"]
-    CAP --> AUTH_REG["Auth 注册/登录"]
+    CAP --> AUTH_REG["Auth Register/Login"]
 
-    ROUTE -->|"User"| ENC2["Encryption"]
+    ROUTE -->|User| ENC2["Encryption"]
     ENC2 --> AUTH2["Auth JWT"]
     AUTH2 --> SAFE{"Sensitive?"}
-    SAFE -->|"No"| USER["Profile/Cart/Orders..."]
-    SAFE -->|"Yes"| CONF1["Confirmation"]
-    CONF1 --> USER_SEN["Pay/Withdraw/DNS Delete"]
+    SAFE -->|No| USER["Profile, Cart, Orders"]
+    SAFE -->|Yes| CONF1["Confirmation"]
+    CONF1 --> USER_SEN["Pay, Withdraw, DNS Delete"]
 
-    ROUTE -->|"Admin"| ENC3["Encryption"]
+    ROUTE -->|Admin| ENC3["Encryption"]
     ENC3 --> AUTH3["Auth JWT"]
     AUTH3 --> ROLE["AdminRole"]
     ROLE --> SAFE2{"Sensitive?"}
-    SAFE2 -->|"No"| ADMIN["Dashboard/Users/Products..."]
-    SAFE2 -->|"Yes"| CONF2["Confirmation"]
-    CONF2 --> ADMIN_SEN["Delete/Refund/Approve/Config"]
+    SAFE2 -->|No| ADMIN["Dashboard, Users, Products"]
+    SAFE2 -->|Yes| CONF2["Confirmation"]
+    CONF2 --> ADMIN_SEN["Delete, Refund, Approve, Config"]
 ```
 
 - **CORS** — 跨域请求头处理

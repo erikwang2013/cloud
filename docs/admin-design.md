@@ -30,7 +30,7 @@
 ### Module Dependency Map
 
 ```mermaid
-graph TB
+flowchart TB
     subgraph Clients["Entry Points"]
         UserAPI["User API"]
         AdminAPI["Admin API"]
@@ -45,24 +45,24 @@ graph TB
     end
 
     subgraph Business["Business Modules"]
-        User["User<br/>Auth/KYC/Balance"]
-        Product["Product<br/>Catalog/SKU/Pricing"]
-        Order["Order<br/>Cart/Order/Refund"]
-        Payment["Payment<br/>Router/Stripe"]
-        Provisioning["Provisioning<br/>Task/Resource/Disk/IP"]
-        Domain["Domain<br/>Registration/DNS"]
-        Supplier["Supplier<br/>Onboarding/Settlement"]
-        Ticket["Ticket<br/>CRUD/SLA/Assignment"]
-        Notification["Notification<br/>Email/SMS/Push/InApp"]
-        Monitor["Monitor<br/>Metrics/Alerts/Cron"]
-        Report["Report<br/>Revenue/Supplier/Region"]
+        User["User - Auth KYC Balance"]
+        Product["Product - Catalog SKU Pricing"]
+        Order["Order - Cart Order Refund"]
+        Payment["Payment - Router Stripe"]
+        Provisioning["Provisioning - Task Resource Disk IP"]
+        Domain["Domain - Registration DNS"]
+        Supplier["Supplier - Onboarding Settlement"]
+        Ticket["Ticket - CRUD SLA Assignment"]
+        Notification["Notification - Email SMS Push InApp"]
+        Monitor["Monitor - Metrics Alerts Cron"]
+        Report["Report - Revenue Supplier Region"]
     end
 
     subgraph CommonLayers["Common Layers"]
-        Snowflake["Snowflake<br/>ID Generation"]
-        Hashid["Hashid<br/>ID Obfuscation"]
-        Encryptable["Encryptable<br/>Field Encryption"]
-        Audit["AuditLogger<br/>Audit Trail"]
+        Snowflake["Snowflake - ID Generation"]
+        Hashid["Hashid - ID Obfuscation"]
+        Encryptable["Encryptable - Field Encryption"]
+        Audit["AuditLogger - Audit Trail"]
     end
 
     subgraph QueueSystem["Queue System"]
@@ -80,13 +80,13 @@ graph TB
     AuthMiddleware --> AdminRole
     AdminRole --> ConfirmMiddleware
 
-    Payment -->|"OrderPaid Event"| Provisioning
-    Payment -->|"Webhook"| Webhook
+    Payment -->|OrderPaid Event| Provisioning
+    Payment -->|Webhook| Webhook
     Order --> Payment
     Provisioning --> RedisQ
     RedisQ --> ProvisionWorker
     ProvisionWorker --> Provisioning
-    Ticket -->|"TicketCreated Event"| Notification
+    Ticket -->|TicketCreated Event| Notification
     Notification --> RedisQ
     RedisQ --> SmsSender
     RedisQ --> PushSender
@@ -879,34 +879,35 @@ sequenceDiagram
     Proxmox->>DB: UPDATE erik_provision_tasks SET status=completed
     Proxmox->>DB: UPDATE erik_orders SET status=completed
 
-    Note over ProvWorker,Proxmox: Retry on failure:<br/>1min → 5min → 15min → 1h → 6h → 24h<br/>6 retries → marked failed + alert triggered
+    Note over ProvWorker,Proxmox: Retry backoff - 1min, 5min, 15min, 1h, 6h, 24h
+    Note over ProvWorker,Proxmox: After 6 retries, marked failed and alert triggered
 ```
 
 ### Notification Dispatch
 
 ```mermaid
 flowchart TB
-    Event["Event Triggered<br/>OrderPaid / TicketCreated / KYCSubmitted"]
+    Event["Event Triggered - OrderPaid, TicketCreated, KYCSubmitted"]
     Dispatcher["NotificationDispatcher"]
-    Template["Template Renderer<br/>i18n + variable substitution"]
+    Template["Template Renderer - i18n and variable substitution"]
 
     Event --> Dispatcher
     Dispatcher --> Template
-    Template --> Router{"Channel Router<br/>by user preference"}
+    Template --> Router{"Channel Router - by user preference"}
 
-    Router -->|"InApp"| InApp["InAppSender<br/>erik_notifications INSERT"]
-    Router -->|"Email"| Email["EmailSender<br/>PHPMailer SMTP"]
-    Router -->|"SMS"| Sms["SmsSender<br/>Twilio API"]
-    Router -->|"Push"| Push["PushSender<br/>FCM HTTP v1"]
+    Router -->|InApp| InApp["InAppSender - INSERT notifications"]
+    Router -->|Email| Email["EmailSender - PHPMailer SMTP"]
+    Router -->|SMS| Sms["SmsSender - Twilio API"]
+    Router -->|Push| Push["PushSender - FCM HTTP v1"]
 
-    InApp --> DB["MySQL<br/>erik_notifications"]
+    InApp --> DB["MySQL erik_notifications"]
     Email --> SMTP["SMTP Server"]
     Sms --> TwilioAPI["Twilio REST API"]
     Push --> FCMAPI["Firebase Cloud Messaging"]
 
-    Sms -.->|"Failed"| Fallback["Mark send_status=failed<br/>log provider_message_id"]
-    Push -.->|"InvalidToken"| Cleanup["Nullify user.fcm_token"]
-    Push -.->|"NotFound"| Remove["Remove unregistered token"]
+    Sms -.->|Failed| Fallback["Mark send_status as failed"]
+    Push -.->|InvalidToken| Cleanup["Nullify user.fcm_token"]
+    Push -.->|NotFound| Remove["Remove unregistered token"]
 ```
 
 ### Supplier Lifecycle
@@ -936,8 +937,8 @@ stateDiagram-v2
     Suspended --> Active: Admin reinstates
     Suspended --> [*]: Account closed
 
-    note right of Settlement: Auto-calculated from<br/>completed orders × fee rate
-    note right of WithdrawPending: Requires password<br/>confirmation
+    note right of Settlement: Auto-calculated from completed orders x fee rate
+    note right of WithdrawPending: Requires password confirmation
 ```
 
 ### Ticket Lifecycle
@@ -961,8 +962,8 @@ stateDiagram-v2
 
     Closed --> [*]
 
-    note right of Assigned: SLA timer starts<br/>priority-based deadline
-    note right of Open: TicketCreated event<br/>triggers notification
+    note right of Assigned: SLA timer starts, priority-based deadline
+    note right of Open: TicketCreated event triggers notification
 ```
 
 ## Service-Layer Test Suite
@@ -1037,47 +1038,47 @@ All 4 jobs pass: 243 total tests (67 admin + 176 service), 400 assertions, both 
 
 ```mermaid
 erDiagram
-    erik_users ||--o{ erik_user_kyc : "submits"
-    erik_users ||--o{ erik_user_addresses : "has"
-    erik_users ||--o{ erik_user_balances : "has"
-    erik_users ||--o{ erik_orders : "places"
-    erik_users ||--o{ erik_cart_items : "has"
-    erik_users ||--o{ erik_tickets : "creates"
-    erik_users ||--o{ erik_refresh_tokens : "has"
-    erik_users ||--o| erik_suppliers : "becomes"
+    erik_users ||--o{ erik_user_kyc : submits
+    erik_users ||--o{ erik_user_addresses : has
+    erik_users ||--o{ erik_user_balances : has
+    erik_users ||--o{ erik_orders : places
+    erik_users ||--o{ erik_cart_items : has
+    erik_users ||--o{ erik_tickets : creates
+    erik_users ||--o{ erik_refresh_tokens : has
+    erik_users ||--o| erik_suppliers : becomes
 
-    erik_products ||--o{ erik_product_skus : "has variants"
-    erik_products ||--o{ erik_product_images : "gallery"
-    erik_products ||--o{ erik_region_prices : "priced by region"
+    erik_products ||--o{ erik_product_skus : has_variants
+    erik_products ||--o{ erik_product_images : gallery
+    erik_products ||--o{ erik_region_prices : priced_by_region
 
-    erik_product_skus ||--o{ erik_order_items : "ordered as"
-    erik_product_skus ||--o{ erik_cart_items : "added to cart"
-    erik_product_skus ||--o{ erik_region_prices : "priced by region"
+    erik_product_skus ||--o{ erik_order_items : ordered_as
+    erik_product_skus ||--o{ erik_cart_items : added_to_cart
+    erik_product_skus ||--o{ erik_region_prices : priced_by_region
 
-    erik_orders ||--o{ erik_order_items : "contains"
-    erik_orders ||--o{ erik_order_timeline : "tracked by"
-    erik_orders ||--o| erik_payment_refunds : "refunded via"
+    erik_orders ||--o{ erik_order_items : contains
+    erik_orders ||--o{ erik_order_timeline : tracked_by
+    erik_orders ||--o| erik_payment_refunds : refunded_via
 
-    erik_order_items ||--o{ erik_provision_tasks : "provisions"
+    erik_order_items ||--o{ erik_provision_tasks : provisions
 
-    erik_payment_channels ||--o{ erik_transactions : "processes"
-    erik_orders ||--o{ erik_transactions : "paid by"
+    erik_payment_channels ||--o{ erik_transactions : processes
+    erik_orders ||--o{ erik_transactions : paid_by
 
-    erik_provision_tasks ||--o| erik_resources : "creates"
-    erik_resources ||--o{ erik_resource_disks : "attached"
-    erik_host_machines ||--o{ erik_resources : "hosts"
-    erik_ip_pools ||--o| erik_resources : "allocated to"
+    erik_provision_tasks ||--o| erik_resources : creates
+    erik_resources ||--o{ erik_resource_disks : attached
+    erik_host_machines ||--o{ erik_resources : hosts
+    erik_ip_pools ||--o| erik_resources : allocated_to
 
-    erik_suppliers ||--o{ erik_supplier_settlements : "receives"
-    erik_suppliers ||--o{ erik_supplier_withdrawals : "requests"
+    erik_suppliers ||--o{ erik_supplier_settlements : receives
+    erik_suppliers ||--o{ erik_supplier_withdrawals : requests
 
-    erik_domain_registrations ||--o{ erik_dns_records : "manages"
+    erik_domain_registrations ||--o{ erik_dns_records : manages
 
-    erik_tickets ||--o{ erik_ticket_replies : "has"
-    erik_users ||--o{ erik_ticket_replies : "replies"
+    erik_tickets ||--o{ erik_ticket_replies : has
+    erik_users ||--o{ erik_ticket_replies : replies
 
-    erik_notification_templates ||--o{ erik_notifications : "renders"
-    erik_users ||--o{ erik_notifications : "receives"
+    erik_notification_templates ||--o{ erik_notifications : renders
+    erik_users ||--o{ erik_notifications : receives
 
     erik_users {
         BIGINT id PK

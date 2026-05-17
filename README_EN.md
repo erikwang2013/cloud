@@ -31,9 +31,9 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 ## System Architecture
 
 ```mermaid
-graph TB
+flowchart TB
     subgraph Clients["Clients"]
-        Flutter["Flutter<br/>iOS/Android/Web/PC"]
+        Flutter["Flutter - iOS Android Web PC"]
         HarmonyOS["HarmonyOS ArkTS"]
     end
 
@@ -41,26 +41,26 @@ graph TB
         Nginx["Nginx Reverse Proxy"]
     end
 
-    subgraph Backend["Backend Service — webman :8787"]
-        API["API Endpoints — 14 Business Modules<br/>User/Product/Order/Payment<br/>Provisioning/Domain/Supplier<br/>Ticket/Notification/Monitor<br/>Report/Admin/Captcha"]
-        Common["Shared Library Common<br/>Auth · Encryption · Hashid<br/>Captcha · Confirmation<br/>Security · Snowflake · I18n"]
+    subgraph Backend["Backend Service webman 8787"]
+        API["API Endpoints - 14 Business Modules"]
+        Common["Shared Library Common"]
     end
 
-    subgraph AdminPanel["Admin Panel — webman :8788"]
-        AdminUI["Layui Panel<br/>CRUD · Dashboard · Export"]
-        AdminLib["Shared Components<br/>Auth · Tree · ExcelExport"]
+    subgraph AdminPanel["Admin Panel webman 8788"]
+        AdminUI["Layui Admin Panel"]
+        AdminLib["Shared Components"]
     end
 
     subgraph Queue["Message Queue"]
-        RedisQ["Redis Queue<br/>ProvisionWorker<br/>SmsSender · PushSender"]
+        RedisQ["Redis Queue"]
     end
 
     subgraph Infrastructure["Infrastructure"]
-        MySQL["MySQL 8.0 Main DB<br/>cloud_platform"]
-        MySQLAudit["MySQL 8.0 Audit DB<br/>cloud_platform_audit"]
-        Redis["Redis 7<br/>Session · Cache · Queue · Lock"]
-        ES["Elasticsearch 8.x<br/>Full-Text Search"]
-        Proxmox["Proxmox VE<br/>Virtualization"]
+        MySQL["MySQL 8.0 Main DB"]
+        MySQLAudit["MySQL 8.0 Audit DB"]
+        Redis["Redis 7"]
+        ES["Elasticsearch 8.x"]
+        Proxmox["Proxmox VE Virtualization"]
     end
 
     subgraph External["External Services"]
@@ -419,25 +419,25 @@ flowchart LR
     LOCALE --> HASHID["HashidRequest"]
     HASHID --> ROUTE{"Route"}
 
-    ROUTE -->|"Public"| PUB["GET products/health..."]
-    ROUTE -->|"Captcha"| ENC1["Encryption"]
+    ROUTE -->|Public| PUB["GET products, health"]
+    ROUTE -->|Captcha| ENC1["Encryption"]
     ENC1 --> CAP["Captcha"]
     CAP --> AUTH_REG["Auth Register/Login"]
 
-    ROUTE -->|"User"| ENC2["Encryption"]
+    ROUTE -->|User| ENC2["Encryption"]
     ENC2 --> AUTH2["Auth JWT"]
     AUTH2 --> SAFE{"Sensitive?"}
-    SAFE -->|"No"| USER["Profile/Cart/Orders..."]
-    SAFE -->|"Yes"| CONF1["Confirmation"]
-    CONF1 --> USER_SEN["Pay/Withdraw/DNS Delete"]
+    SAFE -->|No| USER["Profile, Cart, Orders"]
+    SAFE -->|Yes| CONF1["Confirmation"]
+    CONF1 --> USER_SEN["Pay, Withdraw, DNS Delete"]
 
-    ROUTE -->|"Admin"| ENC3["Encryption"]
+    ROUTE -->|Admin| ENC3["Encryption"]
     ENC3 --> AUTH3["Auth JWT"]
     AUTH3 --> ROLE["AdminRole"]
     ROLE --> SAFE2{"Sensitive?"}
-    SAFE2 -->|"No"| ADMIN["Dashboard/Users/Products..."]
-    SAFE2 -->|"Yes"| CONF2["Confirmation"]
-    CONF2 --> ADMIN_SEN["Delete/Refund/Approve/Config"]
+    SAFE2 -->|No| ADMIN["Dashboard, Users, Products"]
+    SAFE2 -->|Yes| CONF2["Confirmation"]
+    CONF2 --> ADMIN_SEN["Delete, Refund, Approve, Config"]
 ```
 
 - **CORS** — Cross-origin request headers
