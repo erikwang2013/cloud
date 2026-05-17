@@ -32,61 +32,7 @@
 
 ## 系统架构
 
-```mermaid
-flowchart TB
-    subgraph Clients["客户端"]
-        Flutter["Flutter - iOS Android Web PC"]
-        HarmonyOS["HarmonyOS ArkTS"]
-    end
-
-    subgraph Gateway["网关"]
-        Nginx["Nginx 反向代理"]
-    end
-
-    subgraph Backend["后端服务 webman 8787端口"]
-        API["API 端点 - 14 个业务模块"]
-        Common["公共库 Common"]
-    end
-
-    subgraph AdminPanel["管理后台 webman 8788端口"]
-        AdminUI["Layui 管理面板"]
-        AdminLib["公共组件"]
-    end
-
-    subgraph Queue["消息队列"]
-        RedisQ["Redis Queue 消息队列"]
-    end
-
-    subgraph Infrastructure["基础设施"]
-        MySQL["MySQL 8.0 主库"]
-        MySQLAudit["MySQL 8.0 审计库"]
-        Redis["Redis 7"]
-        ES["Elasticsearch 8.x"]
-        Proxmox["Proxmox VE 虚拟化"]
-    end
-
-    subgraph External["外部服务"]
-        Stripe["Stripe 支付"]
-        Twilio["Twilio 短信"]
-        FCM["FCM 推送"]
-    end
-
-    Clients --> Nginx
-    Nginx --> Backend
-    Nginx --> AdminPanel
-    Backend --> Common
-    Backend --> Queue
-    Queue --> RedisQ
-    Backend --> MySQL
-    Backend --> MySQLAudit
-    Backend --> Redis
-    Backend --> ES
-    Backend --> Proxmox
-    Backend --> External
-    AdminPanel --> MySQL
-    AdminPanel --> Redis
-    AdminPanel --> ES
-```
+![系统架构](docs/diagrams/system-architecture-zh.svg)
 
 ## 目录结构
 
@@ -413,34 +359,7 @@ ProviderInterface
 
 全局中间件链：`CORS → WAF → Locale → HashidRequest → [路由: Encryption → Captcha → Auth → Confirmation]`
 
-```mermaid
-flowchart LR
-    REQ["Request"] --> CORS["CORS"]
-    CORS --> WAF["WAF"]
-    WAF --> LOCALE["Locale"]
-    LOCALE --> HASHID["HashidRequest"]
-    HASHID --> ROUTE{"Route"}
-
-    ROUTE -->|Public| PUB["GET products, health"]
-    ROUTE -->|Captcha| ENC1["Encryption"]
-    ENC1 --> CAP["Captcha"]
-    CAP --> AUTH_REG["Auth Register/Login"]
-
-    ROUTE -->|User| ENC2["Encryption"]
-    ENC2 --> AUTH2["Auth JWT"]
-    AUTH2 --> SAFE{"Sensitive?"}
-    SAFE -->|No| USER["Profile, Cart, Orders"]
-    SAFE -->|Yes| CONF1["Confirmation"]
-    CONF1 --> USER_SEN["Pay, Withdraw, DNS Delete"]
-
-    ROUTE -->|Admin| ENC3["Encryption"]
-    ENC3 --> AUTH3["Auth JWT"]
-    AUTH3 --> ROLE["AdminRole"]
-    ROLE --> SAFE2{"Sensitive?"}
-    SAFE2 -->|No| ADMIN["Dashboard, Users, Products"]
-    SAFE2 -->|Yes| CONF2["Confirmation"]
-    CONF2 --> ADMIN_SEN["Delete, Refund, Approve, Config"]
-```
+![安全中间件管道](docs/diagrams/security-middleware-zh.svg)
 
 - **CORS** — 跨域请求头处理
 - **WAF** — 拦截 SQL 注入 / XSS / 路径遍历
