@@ -16,7 +16,7 @@ class RequestMock extends Request
         parent::__construct('');
     }
 
-    public function get($name = null, $default = null)
+    public function get(?string $name = null, mixed $default = null): mixed
     {
         if ($name === null) {
             return $this->getParams;
@@ -24,7 +24,7 @@ class RequestMock extends Request
         return $this->getParams[$name] ?? $default;
     }
 
-    public function post($name = null, $default = null)
+    public function post(?string $name = null, mixed $default = null): mixed
     {
         if ($name === null) {
             return $this->postParams;

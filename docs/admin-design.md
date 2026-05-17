@@ -2,7 +2,7 @@
 
 ## Overview
 
-`admin/` is a standalone webman v2.1 instance providing a Layui-based management dashboard. It runs independently from the `service/` backend, sharing only the MySQL database and the 6 erikwang2013 packages.
+`admin/` is a standalone webman v2.1 instance providing a Layui-based management dashboard. It runs independently from the `service/` backend, sharing only the MySQL database and the 7 erikwang2013 packages.
 
 ## Architecture
 
@@ -15,9 +15,9 @@
 │  └────┬─────┘  └────┬─────┘  └───────┬───────┘ │
 │       │             │               │          │
 │  ┌────┴─────────────┴───────────────┴─────────┐ │
-│  │         6 erikwang2013 Packages             │ │
+│  │         7 erikwang2013 Packages             │ │
 │  │  Snowflake │ Hashids │ Encryptable          │ │
-│  │  Encryption│ Scout   │ Season              │ │
+│  │  Encryption│ Scout   │ Season │ Poster     │ │
 │  └────────────────────┬───────────────────────┘ │
 └───────────────────────┼─────────────────────────┘
                         │
@@ -56,13 +56,14 @@ admin/
 ├── api/                  # Public API (plugin\admin\api)
 │   └── Auth.php          # canAccess() ACL
 ├── config/
-│   ├── plugin/erikwang2013/  # 6 plugin configs
+│   ├── plugin/erikwang2013/  # 7 plugin configs
 │   ├── hashids.php       # Hashids connections (main + alternative)
 │   └── encryption.php    # Encryption config (master key, cipher)
-├── tests/                # PHPUnit 11 test suite
+├── tests/                # PHPUnit 11 test suite (67 tests, 124 assertions)
 │   ├── HashidsTest.php   # 21 tests
 │   ├── BaseJsonTest.php  # 13 tests
 │   ├── CrudHashidsTest.php # 14 tests
+│   ├── TreeTest.php      # 19 tests
 │   └── Support/          # RequestMock, TestableCrud
 ├── install.sql           # DDL (bigint unsigned PKs, no auto-increment)
 └── phpunit.xml
@@ -173,6 +174,42 @@ Global helper: `country_season_flag(string $code): string`
 - `country_season_flag('US')` → 🇺🇸
 
 Also provides localized season names via `CountrySeason` class.
+
+### 7. Poster-PHP (Click CAPTCHA)
+
+**Config**: `config/poster.php` + `config/plugin/erikwang2013/poster/app.php`
+**Bootstrap**: `config/plugin/erikwang2013/poster/bootstrap.php` → `CaptchaPlugin`
+
+Provides click-based CAPTCHA verification for login and registration:
+
+```
+Client                         Server
+──────                         ──────
+POST /api/v1/captcha/create
+  → CaptchaService::create()
+    → captcha_create('click')
+      → ClickCaptcha::generate()
+        → GD renders image with n randomly-placed Chinese words
+        → Stores targets + key in Redis/File storage
+      ← {key, image (base64), target_count, expires_in}
+
+POST /api/v1/auth/login (with captcha_key + captcha_points)
+  → AuthController::verifyCaptcha()
+    → CaptchaService::verify(key, [[x1,y1], [x2,y2], ...])
+      → captcha_verify(key, 'click', points)
+        → CaptchaManager checks Euclidean distance ≤ 18px tolerance
+      ← true/false
+```
+
+**Security features**:
+- One-time keys: deleted after successful verification
+- Brute-force protection: max 3 failed attempts per key, then deleted
+- 300-second TTL (configurable via `CAPTCHA_TTL`)
+- Click tolerance: 18px radius (configurable)
+- Difficulty levels: easy (2 targets), medium (3), hard (4)
+- Storage: auto-detect Redis → file fallback, configurable via `CAPTCHA_STORAGE`
+
+**Wrapper**: `Common\Captcha\CaptchaService` loads custom config from `config/poster.php`, provides `create()` (strips targets from response for security) and `verify()` methods. Used by `AuthController::register()` and `AuthController::login()`.
 
 ## ACL System
 
@@ -367,7 +404,7 @@ html2canvas(document.querySelector('.layui-body'), {scale: 2}).then(canvas => {
 ## Test Suite
 
 ```
-PHPUnit 11.5 | 48 tests | 81 assertions
+PHPUnit 11.5 | 67 tests | 124 assertions
 ```
 
 ### HashidsTest (21 tests)
@@ -630,10 +667,10 @@ Env vars: `FIREBASE_CREDENTIALS_PATH` (service account JSON), `FCM_SERVER_KEY` (
 ### Overview
 
 ```
-PHPUnit 10.5 | 79 tests | 149 assertions
+PHPUnit 10.5 | 165 tests | 256 assertions
 ```
 
-**Directory**: `service/tests/` — 8 test files across 5 modules
+**Directory**: `service/tests/` — 9 test files across 6 modules
 
 **Config**: `service/phpunit.xml` — single `unit` testsuite, covers `app/` and `common/` source
 
@@ -650,12 +687,16 @@ Critical learning: `Webman\Config` cannot be loaded in test context because `loa
 
 | File | Tests | Coverage |
 |------|-------|----------|
+| `Captcha/CaptchaServiceTest.php` | 9 | create structure, difficulty levels, verify pass/fail, one-time use, unique keys |
 | `Common/HashidServiceTest.php` | 12 | encode/decode roundtrip, determinism, salt isolation, recursive ID walk |
 | `Common/ResponseTest.php` | 11 | success/error/paginated structure, request_id consistency, HTTP error codes |
 | `Common/SnowflakeTest.php` | 4 | timestamp ordering, uniqueness, bigint range |
+| `Common/ValidatorTest.php` | 17 | required(), email(), minLength() validation rules |
+| `Common/LogSanitizerTest.php` | 18 | PII redaction, nested arrays, case-insensitive matching, 20 sensitive field types |
 | `Payment/StripeChannelTest.php` | 7 | channel config, amount calculation, webhook signatures, idempotency |
 | `Payment/PaymentRouterTest.php` | 6 | channel filtering, amount constraints, currency/region support, fee calculation |
 | `Notification/NotificationDispatcherTest.php` | 5 | template rendering, channel routing, inactive user skip |
+| `Provisioning/ProviderFactoryTest.php` | 10 | register, create, createFromResource, error cases |
 | `Provisioning/RetryLogicTest.php` | 5 | exponential backoff, max retries, status transitions, host selection |
 
 ### Test Infrastructure
@@ -686,7 +727,7 @@ Both test jobs run on PHP 8.2 and 8.3 via `shivammathur/setup-php@v2`.
 
 ### Current Status
 
-All 4 jobs pass: 127 total tests (48 admin + 79 service), 230 assertions, both PHP versions green.
+All 4 jobs pass: 232 total tests (67 admin + 165 service), 380 assertions, both PHP versions green.
 
 ## Key Design Decisions
 

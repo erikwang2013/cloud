@@ -16,6 +16,7 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 | Field Encryption | AES-128-ECB ([erikwang2013/encryptable](https://github.com/erikwang2013/encryptable)) |
 | Full-Text Search | Elasticsearch ([erikwang2013/webman-scout](https://github.com/erikwang2013/webman-scout)) |
 | Country Flags | Unicode Flag Emoji ([erikwang2013/season](https://github.com/erikwang2013/season)) |
+| Click CAPTCHA | ([erikwang2013/poster-php](https://github.com/erikwang2013/poster-php)) |
 | Spreadsheet Export | PhpSpreadsheet ^2.0 |
 | Payment SDK | Stripe PHP ^15.0 |
 | SMS SDK | Twilio PHP ^8.0 |
@@ -47,19 +48,20 @@ cloud-php/
 │   │   ├── Install.php        # Installation interface
 │   │   └── Middleware.php     # Middleware interface
 │   ├── config/                # Application config (routes / menus / middleware / database)
-│   │   ├── plugin/            # Plugin configs (6 erikwang2013 packages)
+│   │   ├── plugin/            # Plugin configs (7 erikwang2013 packages)
 │   │   │   └── erikwang2013/
 │   │   │       ├── snowflake-php/  # Snowflake distributed IDs
 │   │   │       ├── hashids/        # Hashids ID obfuscation
 │   │   │       ├── encryptable/    # Field-level encryption
 │   │   │       ├── encryption/     # Transport encryption (reserved)
 │   │   │       ├── webman-scout/   # Elasticsearch sync
-│   │   │       └── season/         # Country flags
+│   │   │       ├── season/         # Country flags
+│   │   │       └── poster/         # Click CAPTCHA
 │   │   ├── hashids.php        # Hashids connection config
 │   │   ├── encryption.php     # Transport encryption config
 │   │   └── command.php        # Console command registration
 │   ├── database/migrations/   # Database migration files
-│   ├── tests/                 # Unit tests (PHPUnit 11, 48 tests, 81 assertions)
+│   ├── tests/                 # Unit tests (PHPUnit 11, 67 tests, 124 assertions)
 │   │   ├── HashidsTest.php    # hashids encode/decode tests
 │   │   ├── BaseJsonTest.php   # Base::json() ID encoding tests
 │   │   ├── CrudHashidsTest.php # Crud input decoding tests
@@ -84,10 +86,12 @@ cloud-php/
 │   │   ├── Report/            # Revenue / supplier / regional reports
 │   │   ├── Supplier/          # Supplier onboarding / settlement / withdrawal
 │   │   ├── Ticket/            # Support tickets / SLA auto-assignment
-│   │   ├── User/              # Users / auth / KYC / balances
-│   │   └── Command/           # Console commands (database migration)
+│   │   ├── User/              # Users / auth / KYC / balances / captcha
+│   │   ├── Command/           # Console commands (database migration)
+│   │   └── Captcha/           # Click captcha generation
 │   ├── common/                # Shared libraries (PSR-4: Common\)
 │   │   ├── Auth/              # JWT authentication / middleware
+│   │   ├── Captcha/           # Click captcha service
 │   │   ├── Encryption/        # Transport encryption middleware (AES-256-GCM) / service
 │   │   ├── Hashid/            # Hashids request middleware / encode-decode service
 │   │   ├── Helper/            # Response formatting (auto hashid encoding)
@@ -96,11 +100,12 @@ cloud-php/
 │   │   └── Snowflake/         # Snowflake ID service / Eloquent model trait
 │   ├── config/                # Routes / middleware / logging / DB / queue / crypto / ES configs
 │   ├── database/migrations/   # Database migration files (12 migrations)
-│   ├── tests/                 # Unit tests (PHPUnit 10, 79 tests, 149 assertions)
-│   │   ├── Common/            # Hashid / Response / Snowflake
+│   ├── tests/                 # Unit tests (PHPUnit 10, 165 tests, 256 assertions)
+│   │   ├── Captcha/           # Click CAPTCHA create/verify
+│   │   ├── Common/            # Response / Hashid / Snowflake / Validator / LogSanitizer
 │   │   ├── Payment/           # Stripe channel / payment routing
 │   │   ├── Notification/      # Notification dispatch
-│   │   └── Provisioning/      # Retry logic
+│   │   └── Provisioning/      # ProviderFactory / retry logic
 │   └── support/               # Bootstrap (Eloquent / Events / encryption / snowflake / hashids / scout init + MigrationRunner)
 ├── apps/
 │   ├── flutter/               # Flutter client (PC-first web layout)
@@ -198,6 +203,7 @@ php start.php stop              # Stop
 | POST | `/api/v1/auth/register` | Register (body AES-256-GCM encrypted) |
 | POST | `/api/v1/auth/login` | Login (body AES-256-GCM encrypted) |
 | POST | `/api/v1/auth/refresh` | Refresh token (body AES-256-GCM encrypted) |
+| POST | `/api/v1/captcha/create` | Generate click CAPTCHA (required before login/register) |
 | GET | `/api/v1/products` | Product listing (filterable by category/region/keyword) |
 | GET | `/api/v1/products/{id}` | Product detail (id is a hashid string) |
 | GET | `/api/v1/regions` | Available regions |
@@ -254,7 +260,7 @@ php start.php stop              # Stop
 
 ### Technology Integration
 
-The admin panel is a standalone webman instance integrating 6 erikwang2013 packages:
+The admin panel is a standalone webman instance integrating 7 erikwang2013 packages:
 
 | Package | Purpose | Implementation |
 |---------|---------|---------------|
@@ -264,6 +270,7 @@ The admin panel is a standalone webman instance integrating 6 erikwang2013 packa
 | encryption | API transport encryption | Reserved `encrypt_data()`/`decrypt_data()` helpers |
 | webman-scout | ES full-text search | User model `Searchable` trait, auto index sync |
 | season | Country flag emoji | `country_season_flag()` global helper |
+| poster-php | Click CAPTCHA | `CaptchaPlugin` bootstrap, `captcha_create()`/`captcha_verify()` global helpers |
 
 ### Security Layers
 
@@ -274,6 +281,8 @@ Request → Hashids decode (Crud::selectInput/updateInput/deleteInput)
   → Encryptable field encryption (Eloquent casts set)
   → Database write
 Response ← Hashids encode (Base::json → hashids_encode_ids)
+
+Login/Register: Captcha verify → Auth → Business logic
 ```
 
 ### Data Flow
@@ -287,7 +296,8 @@ Response ← Hashids encode (Base::json → hashids_encode_ids)
 phpunit.xml (PHPUnit 11)
 ├── HashidsTest        (21 tests) encode/decode/encode_ids
 ├── BaseJsonTest       (13 tests) Base::json/success/fail encoding
-└── CrudHashidsTest    (14 tests) Crud input decoding (select/update/delete)
+├── CrudHashidsTest    (14 tests) Crud input decoding (select/update/delete)
+└── TreeTest           (19 tests) tree construction / descendants / ancestors / orphans
 ```
 
 ## Design Philosophy
@@ -339,13 +349,14 @@ ProviderInterface
 
 ### 5. Security Architecture
 
-Global middleware pipeline: `CORS → WAF → Locale → HashidRequest → [Route: Encryption → Auth]`
+Global middleware pipeline: `CORS → WAF → Locale → HashidRequest → [Route: Encryption → Captcha → Auth]`
 
 - **CORS** — Cross-origin request headers
 - **WAF** — Blocks SQL injection / XSS / path traversal attacks
 - **Locale** — Parses Accept-Language, sets locale
 - **HashidRequest** — Auto-decodes hashid strings in requests to real integer IDs
 - **Encryption** — AES-256-GCM transport encryption (auth + admin routes), prevents MITM eavesdropping and tampering
+- **Captcha** — Click CAPTCHA verified before login/register (GD rendering + Redis storage, one-time keys, 300s TTL, 3 attempts)
 - **Auth** — JWT HS256, Access Token 15 min, Refresh Token 30 days, Redis blacklist
 - **Rate Limiting** — Default 60/min, login 5/min, register 3/min, payment 10/min
 - **Audit Logging** — All sensitive operations written to a separate audit database
@@ -403,7 +414,7 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] Field-level encryption (`erikwang2013/encryptable`, auto encrypt/decrypt sensitive fields)
 - [x] Full-text search (`erikwang2013/webman-scout`, Elasticsearch + IK Analyzer)
 - [x] Country flags (`erikwang2013/season`, Unicode flag emoji)
-- [x] Admin panel (`admin/`, webman-admin + 6 package integrations, 48 unit tests)
+- [x] Admin panel (`admin/`, webman-admin + 7 package integrations, 67 unit tests)
 - [x] Code review (2 critical + 4 important fixes applied)
 - [x] Excel export (PhpSpreadsheet ^2.0, admin Crud/Table + service admin API)
 - [x] Dashboard visualization (ECharts charts + animated stat cards + system info panel)
@@ -412,7 +423,8 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] Stripe production integration (stripe-php SDK, PaymentIntent + webhook signature verification)
 - [x] Twilio SMS production integration (twilio/sdk, with send failure handling)
 - [x] FCM push notification production integration (kreait/firebase-php, with invalid token cleanup)
-- [x] Service-layer unit tests (79 tests, 149 assertions)
+- [x] Click CAPTCHA (erikwang2013/poster-php, login/register verification)
+- [x] Service-layer unit tests (165 tests, 256 assertions)
 - [x] CI/CD pipeline (GitHub Actions, syntax check + dual PHPUnit + Composer validate)
 
 ## License

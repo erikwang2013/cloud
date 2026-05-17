@@ -20,7 +20,7 @@ class AuditLogger
                 'user_agent' => $request ? $request->header('User-Agent', '') : '',
                 'created_at' => date('Y-m-d H:i:s'),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Don't let audit failure break the request
         }
     }
