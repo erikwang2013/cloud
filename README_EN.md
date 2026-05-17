@@ -30,61 +30,7 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 
 ## System Architecture
 
-```mermaid
-flowchart TB
-    subgraph Clients["Clients"]
-        Flutter["Flutter - iOS Android Web PC"]
-        HarmonyOS["HarmonyOS ArkTS"]
-    end
-
-    subgraph Gateway["Gateway"]
-        Nginx["Nginx Reverse Proxy"]
-    end
-
-    subgraph Backend["Backend Service webman 8787"]
-        API["API Endpoints - 14 Business Modules"]
-        Common["Shared Library Common"]
-    end
-
-    subgraph AdminPanel["Admin Panel webman 8788"]
-        AdminUI["Layui Admin Panel"]
-        AdminLib["Shared Components"]
-    end
-
-    subgraph Queue["Message Queue"]
-        RedisQ["Redis Queue"]
-    end
-
-    subgraph Infrastructure["Infrastructure"]
-        MySQL["MySQL 8.0 Main DB"]
-        MySQLAudit["MySQL 8.0 Audit DB"]
-        Redis["Redis 7"]
-        ES["Elasticsearch 8.x"]
-        Proxmox["Proxmox VE Virtualization"]
-    end
-
-    subgraph External["External Services"]
-        Stripe["Stripe Payment"]
-        Twilio["Twilio SMS"]
-        FCM["FCM Push"]
-    end
-
-    Clients --> Nginx
-    Nginx --> Backend
-    Nginx --> AdminPanel
-    Backend --> Common
-    Backend --> Queue
-    Queue --> RedisQ
-    Backend --> MySQL
-    Backend --> MySQLAudit
-    Backend --> Redis
-    Backend --> ES
-    Backend --> Proxmox
-    Backend --> External
-    AdminPanel --> MySQL
-    AdminPanel --> Redis
-    AdminPanel --> ES
-```
+![System Architecture](docs/diagrams/system-architecture-en.svg)
 
 ## Directory Structure
 
@@ -411,34 +357,7 @@ ProviderInterface
 
 Global middleware pipeline: `CORS → WAF → Locale → HashidRequest → [Route: Encryption → Captcha → Auth → Confirmation]`
 
-```mermaid
-flowchart LR
-    REQ["Request"] --> CORS["CORS"]
-    CORS --> WAF["WAF"]
-    WAF --> LOCALE["Locale"]
-    LOCALE --> HASHID["HashidRequest"]
-    HASHID --> ROUTE{"Route"}
-
-    ROUTE -->|Public| PUB["GET products, health"]
-    ROUTE -->|Captcha| ENC1["Encryption"]
-    ENC1 --> CAP["Captcha"]
-    CAP --> AUTH_REG["Auth Register/Login"]
-
-    ROUTE -->|User| ENC2["Encryption"]
-    ENC2 --> AUTH2["Auth JWT"]
-    AUTH2 --> SAFE{"Sensitive?"}
-    SAFE -->|No| USER["Profile, Cart, Orders"]
-    SAFE -->|Yes| CONF1["Confirmation"]
-    CONF1 --> USER_SEN["Pay, Withdraw, DNS Delete"]
-
-    ROUTE -->|Admin| ENC3["Encryption"]
-    ENC3 --> AUTH3["Auth JWT"]
-    AUTH3 --> ROLE["AdminRole"]
-    ROLE --> SAFE2{"Sensitive?"}
-    SAFE2 -->|No| ADMIN["Dashboard, Users, Products"]
-    SAFE2 -->|Yes| CONF2["Confirmation"]
-    CONF2 --> ADMIN_SEN["Delete, Refund, Approve, Config"]
-```
+![Security Middleware Pipeline](docs/diagrams/security-middleware-en.svg)
 
 - **CORS** — Cross-origin request headers
 - **WAF** — Blocks SQL injection / XSS / path traversal attacks
