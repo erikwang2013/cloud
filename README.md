@@ -94,6 +94,7 @@ cloud-php/
 │   ├── common/                # 公共库 (PSR-4: Common\)
 │   │   ├── Auth/              # JWT 认证 / 中间件
 │   │   ├── Captcha/           # 点击验证码服务
+│   │   ├── Confirmation/      # 二次确认中间件（密码复核）
 │   │   ├── Encryption/        # 传输加密中间件 (AES-256-GCM) / 加密服务
 │   │   ├── Hashid/            # Hashids 请求中间件 / ID 编解码服务
 │   │   ├── Helper/            # Response 格式化（自动 hashid 编码）
@@ -102,8 +103,9 @@ cloud-php/
 │   │   └── Snowflake/         # 雪花 ID 生成服务 / Eloquent 模型 Trait
 │   ├── config/                # 路由 / 中间件 / 日志 / 数据库 / 队列 / 加密 / ES 等配置
 │   ├── database/migrations/   # 数据库迁移文件（12 个迁移）
-│   ├── tests/                 # 单元测试（PHPUnit 10, 165 tests, 256 assertions）
+│   ├── tests/                 # 单元测试（PHPUnit 10, 176 tests, 276 assertions）
 │   │   ├── Captcha/           # 点击验证码 create/verify
+│   │   ├── Confirmation/      # 二次确认中间件（密码复核/锁定/成功）
 │   │   ├── Common/            # Response / Hashid / Snowflake / Validator / LogSanitizer
 │   │   ├── Payment/           # Stripe 通道 / 支付路由
 │   │   ├── Notification/      # 通知分发
@@ -351,7 +353,7 @@ ProviderInterface
 
 ### 5. 安全架构
 
-全局中间件链：`CORS → WAF → Locale → HashidRequest → [路由: Encryption → Captcha → Auth]`
+全局中间件链：`CORS → WAF → Locale → HashidRequest → [路由: Encryption → Captcha → Auth → Confirmation]`
 
 - **CORS** — 跨域请求头处理
 - **WAF** — 拦截 SQL 注入 / XSS / 路径遍历
@@ -360,6 +362,7 @@ ProviderInterface
 - **Encryption** — AES-256-GCM 传输加密（认证接口和管理后台），防中间人窃听和篡改
 - **Captcha** — 点击验证码，登录/注册前验证（GD 绘图 + Redis 存储，一次性密钥，300s 有效期，3 次尝试限制）
 - **Auth** — JWT HS256 认证，Access Token 15 分钟，Refresh Token 30 天，Redis 黑名单
+- **Confirmation** — 敏感操作（支付/删除/退款/审批等）需重新输入密码复核，5次失败锁定15分钟
 - **频率限制** — 默认 60次/分，登录 5次/分，注册 3次/分，支付 10次/分
 - **审计日志** — 所有敏感操作写入独立审计库
 
@@ -426,7 +429,8 @@ ProviderInterface
 - [x] Twilio 短信真实集成（twilio/sdk，含发送失败处理）
 - [x] FCM 推送真实集成（kreait/firebase-php，含无效 token 清理）
 - [x] 点击验证码（erikwang2013/poster-php，登录/注册敏感操作验证）
-- [x] 服务端单元测试（165 tests, 256 assertions）
+- [x] 二次确认（ConfirmationMiddleware，敏感操作密码复核，5次失败锁定15分钟）
+- [x] 服务端单元测试（176 tests, 276 assertions）
 - [x] CI/CD 流水线（GitHub Actions，语法检查 + 双端 PHPUnit + Composer 校验）
 
 ## License

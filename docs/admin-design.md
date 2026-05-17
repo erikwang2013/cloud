@@ -211,6 +211,63 @@ POST /api/v1/auth/login (with captcha_key + captcha_points)
 
 **Wrapper**: `Common\Captcha\CaptchaService` loads custom config from `config/poster.php`, provides `create()` (strips targets from response for security) and `verify()` methods. Used by `AuthController::register()` and `AuthController::login()`.
 
+### 8. ConfirmationMiddleware (Password Re-verification)
+
+**Config**: Route group middleware in `config/route.php`
+
+Protects destructive and sensitive operations by requiring the user to re-enter their password. Applied as a middleware on 12 sensitive route endpoints:
+
+```
+Client                              Server
+──────                              ──────
+POST /api/v1/orders/{id}/pay
+  (with confirm_password field)
+    → ConfirmationMiddleware::process()
+      → Checks userId present (401 if missing)
+      → Checks Redis lock key (429 if locked out)
+      → Validates password non-empty (422 if missing)
+      → User::find() + Hash::check() verifies bcrypt
+      → On failure:
+        → Redis INCR confirm_failed:{userId} counter
+        → If count ≥ 5, SETEX confirm_lock:{userId} for 900s
+        → AuditLogger::record('confirm_failed', ...)
+        → Returns 403
+      → On success:
+        → DEL confirm_failed:{userId} counter
+        → AuditLogger::record('confirm_success', ...)
+        → Calls $next($request)
+```
+
+**Sensitive user endpoints** (Auth + Confirmation):
+| Method | Path | Operation |
+|--------|------|-----------|
+| POST | `/api/v1/orders/{id}/pay` | Initiate payment |
+| POST | `/api/v1/supplier/withdraw` | Request withdrawal |
+| DELETE | `/api/v1/dns/{domain}/records/{id}` | Delete DNS record |
+
+**Sensitive admin endpoints** (Auth + AdminRole + Confirmation):
+| Method | Path | Operation |
+|--------|------|-----------|
+| DELETE | `/admin/api/v1/products/{id}` | Delete product |
+| POST | `/admin/api/v1/orders/{id}/refund` | Refund order |
+| POST | `/admin/api/v1/provisioning/resources/{id}/destroy` | Destroy resource |
+| POST | `/admin/api/v1/kyc/{id}/approve` | Approve KYC |
+| POST | `/admin/api/v1/kyc/{id}/reject` | Reject KYC |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | Approve supplier |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | Generate settlement |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | Approve withdrawal |
+| PUT | `/admin/api/v1/system/config` | Update system config |
+
+**Security features**:
+- bcrypt password verification via `Hash::check()`
+- Rate limiting: 5 failed attempts triggers 15-minute lock (900s TTL)
+- Lock applies per-user via Redis keys (`confirm_lock:{userId}`, `confirm_failed:{userId}`)
+- Success resets failure counter
+- All attempts logged to audit database (success, failed, locked)
+- `verifyPassword()` is a protected method, enabling testability via anonymous subclass override
+
+**Testability**: `ConfirmationMiddlewareTest` (11 tests) uses an anonymous subclass that overrides `verifyPassword()` to return a fixed boolean, avoiding Eloquent/DB dependency. Tests cover: 401 unauthenticated, 422 missing/empty password, 403 wrong password, success pass-through, rate limit key format, lock key format, and max failure threshold boundary (4→no lock, 5→locked, 6→locked).
+
 ## ACL System
 
 ### Controller-level
@@ -667,10 +724,10 @@ Env vars: `FIREBASE_CREDENTIALS_PATH` (service account JSON), `FCM_SERVER_KEY` (
 ### Overview
 
 ```
-PHPUnit 10.5 | 165 tests | 256 assertions
+PHPUnit 10.5 | 176 tests | 276 assertions
 ```
 
-**Directory**: `service/tests/` — 9 test files across 6 modules
+**Directory**: `service/tests/` — 11 test files across 7 modules
 
 **Config**: `service/phpunit.xml` — single `unit` testsuite, covers `app/` and `common/` source
 
@@ -688,6 +745,7 @@ Critical learning: `Webman\Config` cannot be loaded in test context because `loa
 | File | Tests | Coverage |
 |------|-------|----------|
 | `Captcha/CaptchaServiceTest.php` | 9 | create structure, difficulty levels, verify pass/fail, one-time use, unique keys |
+| `Confirmation/ConfirmationMiddlewareTest.php` | 11 | auth required, missing password, wrong password, success pass-through, rate limit key format, lock key format, max failure thresholds |
 | `Common/HashidServiceTest.php` | 12 | encode/decode roundtrip, determinism, salt isolation, recursive ID walk |
 | `Common/ResponseTest.php` | 11 | success/error/paginated structure, request_id consistency, HTTP error codes |
 | `Common/SnowflakeTest.php` | 4 | timestamp ordering, uniqueness, bigint range |
@@ -727,7 +785,7 @@ Both test jobs run on PHP 8.2 and 8.3 via `shivammathur/setup-php@v2`.
 
 ### Current Status
 
-All 4 jobs pass: 232 total tests (67 admin + 165 service), 380 assertions, both PHP versions green.
+All 4 jobs pass: 243 total tests (67 admin + 176 service), 400 assertions, both PHP versions green.
 
 ## Key Design Decisions
 

@@ -92,6 +92,7 @@ cloud-php/
 │   ├── common/                # Shared libraries (PSR-4: Common\)
 │   │   ├── Auth/              # JWT authentication / middleware
 │   │   ├── Captcha/           # Click captcha service
+│   │   ├── Confirmation/      # Password confirmation middleware
 │   │   ├── Encryption/        # Transport encryption middleware (AES-256-GCM) / service
 │   │   ├── Hashid/            # Hashids request middleware / encode-decode service
 │   │   ├── Helper/            # Response formatting (auto hashid encoding)
@@ -100,8 +101,9 @@ cloud-php/
 │   │   └── Snowflake/         # Snowflake ID service / Eloquent model trait
 │   ├── config/                # Routes / middleware / logging / DB / queue / crypto / ES configs
 │   ├── database/migrations/   # Database migration files (12 migrations)
-│   ├── tests/                 # Unit tests (PHPUnit 10, 165 tests, 256 assertions)
+│   ├── tests/                 # Unit tests (PHPUnit 10, 176 tests, 276 assertions)
 │   │   ├── Captcha/           # Click CAPTCHA create/verify
+│   │   ├── Confirmation/      # Password confirmation middleware (verify/lockout/success)
 │   │   ├── Common/            # Response / Hashid / Snowflake / Validator / LogSanitizer
 │   │   ├── Payment/           # Stripe channel / payment routing
 │   │   ├── Notification/      # Notification dispatch
@@ -349,7 +351,7 @@ ProviderInterface
 
 ### 5. Security Architecture
 
-Global middleware pipeline: `CORS → WAF → Locale → HashidRequest → [Route: Encryption → Captcha → Auth]`
+Global middleware pipeline: `CORS → WAF → Locale → HashidRequest → [Route: Encryption → Captcha → Auth → Confirmation]`
 
 - **CORS** — Cross-origin request headers
 - **WAF** — Blocks SQL injection / XSS / path traversal attacks
@@ -358,6 +360,7 @@ Global middleware pipeline: `CORS → WAF → Locale → HashidRequest → [Rout
 - **Encryption** — AES-256-GCM transport encryption (auth + admin routes), prevents MITM eavesdropping and tampering
 - **Captcha** — Click CAPTCHA verified before login/register (GD rendering + Redis storage, one-time keys, 300s TTL, 3 attempts)
 - **Auth** — JWT HS256, Access Token 15 min, Refresh Token 30 days, Redis blacklist
+- **Confirmation** — Sensitive ops (pay/delete/refund/approve) require password re-entry; 5 failures locks for 15 min
 - **Rate Limiting** — Default 60/min, login 5/min, register 3/min, payment 10/min
 - **Audit Logging** — All sensitive operations written to a separate audit database
 
@@ -424,7 +427,8 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] Twilio SMS production integration (twilio/sdk, with send failure handling)
 - [x] FCM push notification production integration (kreait/firebase-php, with invalid token cleanup)
 - [x] Click CAPTCHA (erikwang2013/poster-php, login/register verification)
-- [x] Service-layer unit tests (165 tests, 256 assertions)
+- [x] Password confirmation (ConfirmationMiddleware, sensitive ops password re-entry, 5 fails → 15 min lock)
+- [x] Service-layer unit tests (176 tests, 276 assertions)
 - [x] CI/CD pipeline (GitHub Actions, syntax check + dual PHPUnit + Composer validate)
 
 ## License
