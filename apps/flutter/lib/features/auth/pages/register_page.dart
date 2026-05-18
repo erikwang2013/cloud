@@ -11,6 +11,7 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   bool _agree = false;
+  String _password = '';
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +81,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         helperText: 'Min 8 characters',
                       ),
                       textInputAction: TextInputAction.next,
+                      onChanged: (v) => _password = v,
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Password is required';
                         if (v.length < 8) return 'Min 8 characters';
@@ -99,6 +101,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       onFieldSubmitted: (_) => _submit(),
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Please confirm your password';
+                        if (v != _password) return 'Passwords do not match';
                         return null;
                       },
                     ),
@@ -137,7 +140,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('Already have an account?', style: TextStyle(fontSize: 13)),
+                        const Flexible(child: Text('Already have an account?', style: TextStyle(fontSize: 13))),
                         TextButton(onPressed: () {}, child: const Text('Sign in')),
                       ],
                     ),

@@ -43,10 +43,9 @@ class _CartPageState extends State<CartPage> {
         Expanded(
           flex: 3,
           child: Card(
-            child: Column(
-              children: [
-                DataTable(
-                  dataRowMinHeight: 52,
+            child: SingleChildScrollView(
+              child: DataTable(
+                  dataRowMinHeight: 44,
                   columns: const [
                     DataColumn(label: Text('Product')),
                     DataColumn(label: Text('Region')),
@@ -72,8 +71,7 @@ class _CartPageState extends State<CartPage> {
                       )),
                     ]);
                   }),
-                ),
-              ],
+              ),
             ),
           ),
         ),

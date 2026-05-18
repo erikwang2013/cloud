@@ -91,8 +91,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Text('Remember me', style: TextStyle(fontSize: 13)),
-                        const Spacer(),
+                        const Flexible(child: Text('Remember me', style: TextStyle(fontSize: 13))),
                         TextButton(
                           onPressed: () {},
                           child: const Text('Forgot password?'),
@@ -112,7 +111,7 @@ class _LoginPageState extends State<LoginPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Don't have an account?", style: TextStyle(fontSize: 13)),
+                        const Flexible(child: Text("Don't have an account?", style: TextStyle(fontSize: 13))),
                         TextButton(onPressed: () {}, child: const Text('Create one')),
                       ],
                     ),

@@ -14,6 +14,7 @@ class _ProductListPageState extends State<ProductListPage> {
   bool _tableView = false;
   final _selected = <int>{};
   String _region = 'all';
+  String _typeFilter = 'all';
 
   static const _names = [
     'Cloud VPS Basic', 'Cloud VPS Pro', 'Dedicated Server',
@@ -24,6 +25,17 @@ class _ProductListPageState extends State<ProductListPage> {
   static const _regions = ['US East', 'Europe', 'Asia Pacific', 'Global', 'US East', 'Global', 'US East', 'Europe', 'Asia Pacific', 'Global', 'US East', 'Europe'];
   static const _prices = ['\$5.00', '\$20.00', '\$99.00', '\$3.00', '\$10.00', '\$12.99', '\$25.00', '\$15.00', '\$8.00', '\$120.00', '\$45.00', '\$30.00'];
   static const _types = ['vps', 'vps', 'server', 'ip', 'disk', 'domain', 'lb', 'cdn', 'storage', 'k8s', 'db', 'fw'];
+
+  List<int> get _filteredIndices {
+    final all = List.generate(12, (i) => i);
+    return all.where((i) {
+      if (_typeFilter != 'all' && _types[i] != _typeFilter) return false;
+      if (_region == 'us' && !_regions[i].contains('US')) return false;
+      if (_region == 'eu' && !_regions[i].contains('Europe')) return false;
+      if (_region == 'ap' && !_regions[i].contains('Asia')) return false;
+      return true;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,21 +63,22 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 
   Widget _buildToolbar(bool isDesktop) {
-    return Row(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
       children: [
         const Text('Products', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
-        const SizedBox(width: 16),
+        const SizedBox(width: 24),
         if (isDesktop) ...[
-          const Spacer(),
-          _FilterChip(label: 'All', selected: true),
+          ChoiceChip(label: const Text('All'), selected: _typeFilter == 'all', onSelected: (_) => setState(() => _typeFilter = 'all')),
           const SizedBox(width: 8),
-          _FilterChip(label: 'Server', selected: false),
+          ChoiceChip(label: const Text('Server'), selected: _typeFilter == 'server', onSelected: (_) => setState(() => _typeFilter = 'server')),
           const SizedBox(width: 8),
-          _FilterChip(label: 'IP', selected: false),
+          ChoiceChip(label: const Text('IP'), selected: _typeFilter == 'ip', onSelected: (_) => setState(() => _typeFilter = 'ip')),
           const SizedBox(width: 8),
-          _FilterChip(label: 'Disk', selected: false),
+          ChoiceChip(label: const Text('Disk'), selected: _typeFilter == 'disk', onSelected: (_) => setState(() => _typeFilter = 'disk')),
           const SizedBox(width: 8),
-          _FilterChip(label: 'Domain', selected: false),
+          ChoiceChip(label: const Text('Domain'), selected: _typeFilter == 'domain', onSelected: (_) => setState(() => _typeFilter = 'domain')),
           const SizedBox(width: 16),
           DropdownButton<String>(
             value: _region,
@@ -94,7 +107,7 @@ class _ProductListPageState extends State<ProductListPage> {
           ),
         ],
       ],
-    );
+    ));
   }
 
   Widget _buildGrid(BuildContext context, bool isDesktop) {
@@ -105,16 +118,19 @@ class _ProductListPageState extends State<ProductListPage> {
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
-      itemCount: 12,
-      itemBuilder: (_, i) => _ProductCard(
-        index: i,
-        selected: _selected.contains(i),
-        compact: !isDesktop,
-        onTap: () => setState(() {
-          if (_selected.contains(i)) { _selected.remove(i); } else { _selected.add(i); }
-        }),
-        onContextMenu: () => _showContextMenu(context, i),
-      ),
+      itemCount: _filteredIndices.length,
+      itemBuilder: (_, idx) {
+        final i = _filteredIndices[idx];
+        return _ProductCard(
+          index: i,
+          selected: _selected.contains(i),
+          compact: !isDesktop,
+          onTap: () => setState(() {
+            if (_selected.contains(i)) { _selected.remove(i); } else { _selected.add(i); }
+          }),
+          onSecondaryTapDown: (d) => _showContextMenu(context, d.globalPosition, i),
+        );
+      },
     );
   }
 
@@ -131,7 +147,8 @@ class _ProductListPageState extends State<ProductListPage> {
           DataColumn(label: Text('Price'), numeric: true),
           DataColumn(label: Text('')),
         ],
-        rows: List.generate(12, (i) => DataRow(
+        rows: _filteredIndices.map((i) => DataRow(
+          key: ValueKey(i),
           selected: _selected.contains(i),
           onSelectChanged: (v) => setState(() {
             if (v == true) { _selected.add(i); } else { _selected.remove(i); }
@@ -158,14 +175,18 @@ class _ProductListPageState extends State<ProductListPage> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.more_horiz, size: 18),
-                  onPressed: () => _showContextMenu(context, i),
+                  onPressed: () {
+                    final renderBox = context.findRenderObject() as RenderBox;
+                    final pos = renderBox.localToGlobal(Offset.zero);
+                    _showContextMenu(context, pos, i);
+                  },
                   tooltip: 'More actions',
                   visualDensity: VisualDensity.compact,
                 ),
               ],
             )),
           ],
-        )),
+        )).toList(),
       ),
     );
   }
@@ -205,10 +226,10 @@ class _ProductListPageState extends State<ProductListPage> {
     );
   }
 
-  void _showContextMenu(BuildContext context, int index) {
+  void _showContextMenu(BuildContext context, Offset position, int index) {
     showMenu<String>(
       context: context,
-      position: RelativeRect.fromLTRB(200, 200, 0, 0),
+      position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx + 1, position.dy + 1),
       items: <PopupMenuEntry<String>>[
         PopupMenuItem<String>(value: 'view', child: _MenuRow(Icons.info_outline, 'View Details')),
         PopupMenuItem<String>(value: 'cart', child: _MenuRow(Icons.shopping_cart_outlined, 'Add to Cart')),
@@ -237,34 +258,19 @@ class _MenuRow extends StatelessWidget {
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  const _FilterChip({required this.label, required this.selected});
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) {},
-    );
-  }
-}
-
 class _ProductCard extends StatefulWidget {
   final int index;
   final bool selected;
   final bool compact;
   final VoidCallback onTap;
-  final VoidCallback onContextMenu;
+  final void Function(TapDownDetails) onSecondaryTapDown;
 
   const _ProductCard({
     required this.index,
     required this.selected,
     required this.compact,
     required this.onTap,
-    required this.onContextMenu,
+    required this.onSecondaryTapDown,
   });
 
   @override
@@ -276,15 +282,16 @@ class _ProductCardState extends State<_ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    final names = ['Cloud VPS Basic', 'Cloud VPS Pro', 'Dedicated Server', 'IPv4 Address', 'SSD Block Storage', 'com'];
-    final regions = ['US East', 'Europe', 'Asia Pacific', 'Global', 'US East', 'Global'];
-    final prices = ['\$5.00', '\$20.00', '\$99.00', '\$3.00', '\$10.00', '\$12.99'];
+    final i = widget.index % _ProductListPageState._names.length;
+    final name = _ProductListPageState._names[i];
+    final region = _ProductListPageState._regions[i];
+    final price = _ProductListPageState._prices[i];
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onSecondaryTap: widget.onContextMenu,
+        onSecondaryTapDown: widget.onSecondaryTapDown,
         child: Card(
           clipBehavior: Clip.antiAlias,
           elevation: _hovered ? 2 : 0,
@@ -318,7 +325,7 @@ class _ProductCardState extends State<_ProductCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        names[widget.index % names.length],
+                        name,
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -328,8 +335,7 @@ class _ProductCardState extends State<_ProductCard> {
                         children: [
                           Icon(Icons.location_on_outlined, size: 13, color: Colors.grey[500]),
                           const SizedBox(width: 4),
-                          Text(regions[widget.index % regions.length],
-                               style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                          Text(region, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -337,7 +343,7 @@ class _ProductCardState extends State<_ProductCard> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            prices[widget.index % prices.length],
+                            price,
                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.primaryColor),
                           ),
                           Text('/mo', style: TextStyle(color: Colors.grey[400], fontSize: 12)),

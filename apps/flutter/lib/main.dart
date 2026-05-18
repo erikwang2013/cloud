@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:window_manager/window_manager.dart';
 import 'core/theme/app_theme.dart';
+import 'core/i18n/app_localizations.dart';
 import 'shared/widgets/responsive_scaffold.dart';
 import 'shared/widgets/command_palette.dart';
 import 'shared/shortcuts/keyboard_shortcuts.dart';
@@ -19,7 +20,6 @@ void main() async {
     await windowManager.setMinimumSize(minSize);
 
     if (Platform.isMacOS) {
-      // Frameless with custom title bar (like VS Code)
       await windowManager.setTitleBarStyle(
         TitleBarStyle.hidden,
         windowButtonVisibility: true,
@@ -38,8 +38,21 @@ void main() async {
 bool get _isDesktopPlatform =>
     Platform.isMacOS || Platform.isWindows || Platform.isLinux;
 
-class CloudPlatformApp extends StatelessWidget {
+class CloudPlatformApp extends StatefulWidget {
   const CloudPlatformApp({super.key});
+
+  @override
+  State<CloudPlatformApp> createState() => _CloudPlatformAppState();
+}
+
+class _CloudPlatformAppState extends State<CloudPlatformApp> {
+  final _navNotifier = ValueNotifier<int>(0);
+
+  @override
+  void dispose() {
+    _navNotifier.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +60,13 @@ class CloudPlatformApp extends StatelessWidget {
       title: 'CloudPlatform',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      home: const _ShortcutWrapper(child: ResponsiveScaffold()),
+      home: _ShortcutWrapper(
+        navNotifier: _navNotifier,
+        child: ResponsiveScaffold(navNotifier: _navNotifier),
+      ),
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -64,7 +81,8 @@ class CloudPlatformApp extends StatelessWidget {
 
 class _ShortcutWrapper extends StatelessWidget {
   final Widget child;
-  const _ShortcutWrapper({required this.child});
+  final ValueNotifier<int> navNotifier;
+  const _ShortcutWrapper({required this.child, required this.navNotifier});
 
   @override
   Widget build(BuildContext context) {
@@ -73,9 +91,8 @@ class _ShortcutWrapper extends StatelessWidget {
       child: Actions(
         actions: {
           NavigateIntent: CallbackAction<NavigateIntent>(
-            onInvoke: (_) {
-              // Navigation is handled inside ResponsiveScaffold; this is a no-op here
-              // In a real app, this would trigger a router.
+            onInvoke: (intent) {
+              navNotifier.value = intent.index;
               return null;
             },
           ),

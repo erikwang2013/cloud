@@ -23,6 +23,11 @@ class _ResourceListPageState extends State<ResourceListPage> {
     ['domain-1004-1', 'Domain', 'Global', 'Active', '-', '2027-05-14'],
   ];
 
+  List<List<String>> get _filteredData {
+    if (_statusFilter == 'all') return _data.toList();
+    return _data.where((r) => r[3] == _statusFilter).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDesktop = AppTheme.isDesktop(context);
@@ -33,24 +38,27 @@ class _ResourceListPageState extends State<ResourceListPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Toolbar
-          Row(
-            children: [
-              const Text('My Resources', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
-              const Spacer(),
-              if (isDesktop) ...[
-                _StatusChip(label: 'All', value: 'all', current: _statusFilter, onTap: () => setState(() => _statusFilter = 'all')),
-                const SizedBox(width: 8),
-                _StatusChip(label: 'Running', value: 'Running', current: _statusFilter, onTap: () => setState(() => _statusFilter = 'Running')),
-                const SizedBox(width: 8),
-                _StatusChip(label: 'Active', value: 'Active', current: _statusFilter, onTap: () => setState(() => _statusFilter = 'Active')),
-                const SizedBox(width: 16),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                const Text('My Resources', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+                const SizedBox(width: 24),
+                if (isDesktop) ...[
+                  _StatusChip(label: 'All', value: 'all', current: _statusFilter, onTap: () => setState(() => _statusFilter = 'all')),
+                  const SizedBox(width: 8),
+                  _StatusChip(label: 'Running', value: 'Running', current: _statusFilter, onTap: () => setState(() => _statusFilter = 'Running')),
+                  const SizedBox(width: 8),
+                  _StatusChip(label: 'Active', value: 'Active', current: _statusFilter, onTap: () => setState(() => _statusFilter = 'Active')),
+                  const SizedBox(width: 16),
+                ],
+                FilledButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('New Resource'),
+                ),
               ],
-              FilledButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('New Resource'),
-              ),
-            ],
+            ),
           ),
           const SizedBox(height: 20),
 
@@ -83,8 +91,9 @@ class _ResourceListPageState extends State<ResourceListPage> {
           DataColumn(label: const Text('Expires'), numeric: true, onSort: (c, _) => setState(() { _sortColumn = c; _sortAsc = !_sortAsc; })),
           const DataColumn(label: Text('Actions')),
         ],
-        rows: List.generate(_data.length, (i) {
-          final row = _data[i];
+        rows: _filteredData.asMap().entries.map((e) {
+          final i = e.key;
+          final row = e.value;
           final statusColor = _statusColor(row[3]);
           final selected = _selected.contains(i);
           return DataRow(
@@ -122,7 +131,11 @@ class _ResourceListPageState extends State<ResourceListPage> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.more_horiz, size: 18),
-                    onPressed: () => _showContextMenu(context, i),
+                    onPressed: () {
+                      final renderBox = context.findRenderObject() as RenderBox;
+                      final pos = renderBox.localToGlobal(Offset.zero);
+                      _showContextMenu(context, pos, i);
+                    },
                     tooltip: 'More',
                     visualDensity: VisualDensity.compact,
                   ),
@@ -130,19 +143,19 @@ class _ResourceListPageState extends State<ResourceListPage> {
               )),
             ],
           );
-        }),
+        }).toList(),
       ),
     );
   }
 
   Widget _buildMobileCards() {
     return ListView.builder(
-      itemCount: _data.length,
+      itemCount: _filteredData.length,
       itemBuilder: (_, i) => Card(
         child: ListTile(
           leading: const Icon(Icons.dns_outlined),
-          title: Text(_data[i][0]),
-          subtitle: Text('${_data[i][2]} • ${_data[i][3]}'),
+          title: Text(_filteredData[i][0]),
+          subtitle: Text('${_filteredData[i][2]} • ${_filteredData[i][3]}'),
           trailing: const Icon(Icons.chevron_right),
           onTap: () {},
         ),
@@ -179,10 +192,10 @@ class _ResourceListPageState extends State<ResourceListPage> {
     );
   }
 
-  void _showContextMenu(BuildContext context, int index) {
+  void _showContextMenu(BuildContext context, Offset position, int index) {
     showMenu<String>(
       context: context,
-      position: RelativeRect.fromLTRB(400, 300, 0, 0),
+      position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx + 1, position.dy + 1),
       items: <PopupMenuEntry<String>>[
         PopupMenuItem<String>(value: 'console', child: _menuRow(Icons.terminal, 'Open Console')),
         PopupMenuItem<String>(value: 'details', child: _menuRow(Icons.info_outline, 'View Details')),

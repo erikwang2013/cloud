@@ -19,6 +19,7 @@ class SidebarNav extends StatefulWidget {
 
 class _SidebarNavState extends State<SidebarNav> with SingleTickerProviderStateMixin {
   bool _collapsed = false;
+  bool _autoExpanded = false;
   late AnimationController _anim;
   late Animation<double> _widthAnim;
 
@@ -43,6 +44,7 @@ class _SidebarNavState extends State<SidebarNav> with SingleTickerProviderStateM
   }
 
   void _toggle() {
+    _autoExpanded = false;
     setState(() {
       _collapsed = !_collapsed;
       _collapsed ? _anim.forward() : _anim.reverse();
@@ -56,8 +58,14 @@ class _SidebarNavState extends State<SidebarNav> with SingleTickerProviderStateM
       builder: (context, _) {
         return MouseRegion(
           onEnter: _collapsed ? (_) {
+            _autoExpanded = true;
             setState(() => _collapsed = false);
             _anim.reverse();
+          } : null,
+          onExit: _autoExpanded ? (_) {
+            _autoExpanded = false;
+            setState(() => _collapsed = true);
+            _anim.forward();
           } : null,
           child: Container(
             width: _collapsed ? 56 : _widthAnim.value,

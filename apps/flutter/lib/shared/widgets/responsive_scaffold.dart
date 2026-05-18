@@ -4,12 +4,15 @@ import 'sidebar_nav.dart';
 import 'mobile_nav.dart';
 import 'top_header.dart';
 import 'desktop_title_bar.dart';
+import 'desktop_menu_bar.dart';
 import '../../features/products/pages/product_list_page.dart';
 import '../../features/orders/pages/cart_page.dart';
 import '../../features/resources/pages/resource_list_page.dart';
 
 class ResponsiveScaffold extends StatefulWidget {
-  const ResponsiveScaffold({super.key});
+  final ValueNotifier<int>? navNotifier;
+
+  const ResponsiveScaffold({super.key, this.navNotifier});
 
   @override
   State<ResponsiveScaffold> createState() => _ResponsiveScaffoldState();
@@ -35,6 +38,30 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    widget.navNotifier?.addListener(_onNavNotifierChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.navNotifier?.removeListener(_onNavNotifierChanged);
+    super.dispose();
+  }
+
+  void _onNavNotifierChanged() {
+    final i = widget.navNotifier?.value ?? _currentIndex;
+    if (i >= 0 && i < _pages.length && i != _currentIndex) {
+      setState(() => _currentIndex = i);
+    }
+  }
+
+  void _switchTo(int index) {
+    setState(() => _currentIndex = index);
+    widget.navNotifier?.value = index;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final useDesktop = ResponsiveBreakpoints.useDesktopLayout(context);
 
@@ -48,16 +75,14 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
     return Scaffold(
       body: Column(
         children: [
-          // macOS: custom title bar; other platforms: skip
           const DesktopTitleBar(),
-
-          // Main content area
+          DesktopMenuBar(menus: DesktopMenuBar.defaultMenus()),
           Expanded(
             child: Row(
               children: [
                 SidebarNav(
                   currentIndex: _currentIndex,
-                  onTap: (i) => setState(() => _currentIndex = i),
+                  onTap: _switchTo,
                 ),
                 Expanded(
                   child: Column(
@@ -81,7 +106,7 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
       body: _pages[_currentIndex],
       bottomNavigationBar: MobileNav(
         currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
+        onTap: _switchTo,
       ),
     );
   }

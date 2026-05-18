@@ -95,15 +95,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ),
               )),
             ] else if (_step == 1) ...[
-              ListTile(
-                leading: const Radio<int>(value: 0, groupValue: 0, onChanged: null),
-                title: const Text('Credit Card'),
-                subtitle: const Text('Visa, Mastercard'),
-              ),
-              ListTile(
-                leading: const Radio<int>(value: 1, groupValue: 0, onChanged: null),
-                title: const Text('PayPal'),
-                subtitle: const Text('Pay with PayPal'),
+              RadioGroup<int>(
+                groupValue: 0,
+                onChanged: (_) {},
+                child: Column(
+                  children: [
+                    RadioListTile<int>(value: 0, title: const Text('Credit Card'), subtitle: const Text('Visa, Mastercard')),
+                    RadioListTile<int>(value: 1, title: const Text('PayPal'), subtitle: const Text('Pay with PayPal')),
+                  ],
+                ),
               ),
             ] else ...[
               const ListTile(leading: Icon(Icons.check_circle, color: Colors.green), title: Text('Order confirmed'), subtitle: Text('Your resources will be provisioned shortly')),
