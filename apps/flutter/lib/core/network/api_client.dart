@@ -15,7 +15,7 @@ class ApiClient {
       headers: {'Content-Type': 'application/json'},
     ));
 
-    dio.interceptors.add(AuthInterceptor(_storage));
+    dio.interceptors.add(AuthInterceptor(_storage, dio));
     dio.interceptors.add(LocaleInterceptor());
     dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
   }
@@ -23,8 +23,9 @@ class ApiClient {
 
 class AuthInterceptor extends Interceptor {
   final FlutterSecureStorage _storage;
+  final Dio _dio;
 
-  AuthInterceptor(this._storage);
+  AuthInterceptor(this._storage, this._dio);
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
@@ -40,7 +41,7 @@ class AuthInterceptor extends Interceptor {
     if (err.response?.statusCode == 401) {
       final refreshed = await _tryRefresh();
       if (refreshed) {
-        final response = await dio.fetch(err.requestOptions);
+        final response = await _dio.fetch(err.requestOptions);
         handler.resolve(response);
         return;
       }
@@ -54,7 +55,7 @@ class AuthInterceptor extends Interceptor {
     if (refreshToken == null) return false;
 
     try {
-      final response = await Dio().post('$baseUrl/auth/refresh', data: {
+      final response = await Dio().post('${ApiClient.baseUrl}/auth/refresh', data: {
         'refresh_token': refreshToken,
       });
       await _storage.write(key: 'access_token', value: response.data['data']['access_token']);

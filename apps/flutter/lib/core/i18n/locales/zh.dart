@@ -1,6 +1,67 @@
-Map<String, Map<String, String>> zhTranslations = {
-  'app_name': {'label': '云平台'},
-  'login': {'label': '登录'},
-  'register': {'label': '注册'},
-  // Add all translation keys
+const Map<String, String> zh = {
+  'app_name': '云平台',
+  'login': '登录',
+  'register': '注册',
+  'email': '邮箱',
+  'password': '密码',
+  'sign_in': '登录',
+  'sign_out': '退出',
+  'create_account': '创建账户',
+  'forgot_password': '忘记密码？',
+  'remember_me': '记住我',
+  'full_name': '全名',
+  'confirm_password': '确认密码',
+  'agree_terms': '我同意服务条款',
+
+  'products': '产品',
+  'cart': '购物车',
+  'resources': '资源',
+  'tickets': '工单',
+  'profile': '个人中心',
+  'settings': '设置',
+
+  'new_resource': '新建资源',
+  'search': '搜索...',
+  'command_palette': '命令面板',
+  'notifications': '通知',
+  'language': '语言',
+
+  'checkout': '结算',
+  'order_summary': '订单摘要',
+  'subtotal': '小计',
+  'tax': '税费',
+  'total': '合计',
+  'continue': '继续',
+  'back': '返回',
+  'confirm_order': '确认订单',
+
+  'review': '审核',
+  'payment': '支付',
+  'confirm': '确认',
+
+  'specifications': '规格',
+  'pricing': '价格',
+  'monthly': '月付',
+  'quarterly': '季付',
+  'yearly': '年付',
+
+  'add_to_cart': '加入购物车',
+  'remove': '移除',
+  'quantity': '数量',
+  'region': '区域',
+  'status': '状态',
+  'actions': '操作',
+
+  'running': '运行中',
+  'active': '已激活',
+  'stopped': '已停止',
+
+  'minimize': '最小化',
+  'maximize': '最大化',
+  'close': '关闭',
+  'navigate': '导航',
+  'select': '选择',
+
+  'no_results': '无结果',
+  'type_command': '输入命令...',
 };

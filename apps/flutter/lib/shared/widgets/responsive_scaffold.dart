@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/responsive.dart';
 import 'sidebar_nav.dart';
 import 'mobile_nav.dart';
 import 'top_header.dart';
+import 'desktop_title_bar.dart';
 import '../../features/products/pages/product_list_page.dart';
 import '../../features/orders/pages/cart_page.dart';
 import '../../features/resources/pages/resource_list_page.dart';
-import '../../features/auth/pages/login_page.dart';
 
 class ResponsiveScaffold extends StatefulWidget {
   const ResponsiveScaffold({super.key});
@@ -22,15 +22,23 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
     ProductListPage(),
     CartPage(),
     ResourceListPage(),
-    Center(child: Text('Tickets')),
-    Center(child: Text('Profile')),
+    Center(child: Text('Support Tickets', style: TextStyle(fontSize: 18))),
+    Center(child: Text('Profile Settings', style: TextStyle(fontSize: 18))),
+  ];
+
+  static const _titles = [
+    'Products',
+    'Shopping Cart',
+    'My Resources',
+    'Support Tickets',
+    'Profile Settings',
   ];
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = AppTheme.isDesktop(context);
+    final useDesktop = ResponsiveBreakpoints.useDesktopLayout(context);
 
-    if (isDesktop) {
+    if (useDesktop) {
       return _buildDesktopLayout();
     }
     return _buildMobileLayout();
@@ -38,18 +46,26 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
 
   Widget _buildDesktopLayout() {
     return Scaffold(
-      body: Row(
+      body: Column(
         children: [
-          SidebarNav(
-            currentIndex: _currentIndex,
-            onTap: (index) => setState(() => _currentIndex = index),
-          ),
+          // macOS: custom title bar; other platforms: skip
+          const DesktopTitleBar(),
+
+          // Main content area
           Expanded(
-            child: Column(
+            child: Row(
               children: [
-                const TopHeader(),
+                SidebarNav(
+                  currentIndex: _currentIndex,
+                  onTap: (i) => setState(() => _currentIndex = i),
+                ),
                 Expanded(
-                  child: _pages[_currentIndex],
+                  child: Column(
+                    children: [
+                      TopHeader(pageTitle: _titles[_currentIndex]),
+                      Expanded(child: _pages[_currentIndex]),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -61,11 +77,11 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
 
   Widget _buildMobileLayout() {
     return Scaffold(
-      appBar: AppBar(title: const Text('CloudPlatform')),
+      appBar: AppBar(title: Text(_titles[_currentIndex])),
       body: _pages[_currentIndex],
       bottomNavigationBar: MobileNav(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: (i) => setState(() => _currentIndex = i),
       ),
     );
   }

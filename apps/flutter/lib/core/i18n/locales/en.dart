@@ -1,6 +1,67 @@
-Map<String, Map<String, String>> enTranslations = {
-  'app_name': {'label': 'CloudPlatform'},
-  'login': {'label': 'Login'},
-  'register': {'label': 'Register'},
-  // Add all translation keys
+const Map<String, String> en = {
+  'app_name': 'CloudPlatform',
+  'login': 'Login',
+  'register': 'Register',
+  'email': 'Email',
+  'password': 'Password',
+  'sign_in': 'Sign In',
+  'sign_out': 'Sign Out',
+  'create_account': 'Create Account',
+  'forgot_password': 'Forgot password?',
+  'remember_me': 'Remember me',
+  'full_name': 'Full Name',
+  'confirm_password': 'Confirm Password',
+  'agree_terms': 'I agree to the Terms of Service',
+
+  'products': 'Products',
+  'cart': 'Shopping Cart',
+  'resources': 'My Resources',
+  'tickets': 'Support Tickets',
+  'profile': 'Profile',
+  'settings': 'Settings',
+
+  'new_resource': 'New Resource',
+  'search': 'Search...',
+  'command_palette': 'Command Palette',
+  'notifications': 'Notifications',
+  'language': 'Language',
+
+  'checkout': 'Checkout',
+  'order_summary': 'Order Summary',
+  'subtotal': 'Subtotal',
+  'tax': 'Tax',
+  'total': 'Total',
+  'continue': 'Continue',
+  'back': 'Back',
+  'confirm_order': 'Confirm Order',
+
+  'review': 'Review',
+  'payment': 'Payment',
+  'confirm': 'Confirm',
+
+  'specifications': 'Specifications',
+  'pricing': 'Pricing',
+  'monthly': 'Monthly',
+  'quarterly': 'Quarterly',
+  'yearly': 'Yearly',
+
+  'add_to_cart': 'Add to Cart',
+  'remove': 'Remove',
+  'quantity': 'Quantity',
+  'region': 'Region',
+  'status': 'Status',
+  'actions': 'Actions',
+
+  'running': 'Running',
+  'active': 'Active',
+  'stopped': 'Stopped',
+
+  'minimize': 'Minimize',
+  'maximize': 'Maximize',
+  'close': 'Close',
+  'navigate': 'navigate',
+  'select': 'select',
+
+  'no_results': 'No results',
+  'type_command': 'Type a command...',
 };
