@@ -51,7 +51,7 @@ class AuthService
 
         // Send verification email if email provided
         if (!empty($data['email']) && $user->email_verify_token) {
-            $verifyUrl = getenv('APP_URL') . '/api/v1/auth/verify-email?token=' . $user->email_verify_token;
+            $verifyUrl = getenv('APP_URL') . '/api/auth/verify-email?token=' . $user->email_verify_token;
             \Common\Notification\NotificationDispatcher::send($user, 'email_verify', [
                 'verify_url' => $verifyUrl,
             ], ['email']);

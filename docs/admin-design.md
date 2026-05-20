@@ -908,13 +908,30 @@ All 4 jobs pass: 243 total tests (67 admin + 176 service), 400 assertions, both 
 
 ## Documentation Index
 
+### 核心文档
+
 | Document | Path | Description |
 |----------|------|-------------|
-| System Design Spec | `docs/superpowers/specs/2026-05-14-cloud-resource-platform-design.md` | Full architecture, data model, API design, security |
-| Admin Panel Design | `docs/admin-design.md` | Admin panel architecture, packages, ACL, test suite |
-| Supplier API Docs | `docs/supplier-api.md` | Supplier REST API reference with SDK examples |
-| Deployment Checklist | `docs/deployment.md` | Server setup, env config, migrations, Nginx, HTTPS, cron |
-| API Smoke Test | `docs/api-test.sh` | Automated curl-based API endpoint smoke test |
+| 系统设计规格 | `docs/superpowers/specs/2026-05-14-cloud-resource-platform-design.md` | 完整架构、数据模型、API 设计、安全策略 |
+| 管理后台设计 | `docs/admin-design.md` | Admin 面板架构、包集成、ACL 权限、测试套件 |
+| 供应商 API 文档 | `docs/supplier-api.md` | 供应商 API 参考（内部 API + 外部 API 设计规格）、SDK 示例 |
+| 部署清单 | `docs/deployment.md` | 服务器配置、环境变量、数据库迁移、Nginx、HTTPS、定时任务 |
+
+### 实现计划
+
+| Document | Path | Description |
+|----------|------|-------------|
+| Phase 0 — 基础框架 | `docs/superpowers/plans/2026-05-14-cloud-resource-platform-phase0.md` | 项目骨架、目录结构、核心基础设施 |
+| Phase 1 — 用户与商城 | `docs/superpowers/plans/2026-05-14-cloud-resource-platform-phase1.md` | 用户认证、商品管理、购物车、订单 |
+| Phase 2 — 资源与供应商 | `docs/superpowers/plans/2026-05-14-cloud-resource-platform-phase2.md` | 资源开通、DNS、供应商入驻 |
+| Phase 3 — 客户端与交付 | `docs/superpowers/plans/2026-05-14-cloud-resource-platform-phase3.md` | Flutter 客户端、多平台适配、CI/CD |
+
+### 工具与资源
+
+| Document | Path | Description |
+|----------|------|-------------|
+| API 冒烟测试 | `docs/api-test.sh` | 基于 curl 的 API 端点自动化测试脚本 |
+| 数据库 DDL | `docs/database.sql` | 数据库建表语句 |
 
 ## Final Test Stats
 

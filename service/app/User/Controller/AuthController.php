@@ -211,7 +211,7 @@ class AuthController
     public function googleOauthRedirect($request)
     {
         $clientId     = getenv('GOOGLE_OAUTH_CLIENT_ID');
-        $redirectUri  = getenv('GOOGLE_OAUTH_REDIRECT_URI') ?: url('/api/v1/auth/google/callback');
+        $redirectUri  = getenv('GOOGLE_OAUTH_REDIRECT_URI') ?: url('/api/auth/google/callback');
         $state        = bin2hex(random_bytes(16));
 
         \Illuminate\Support\Facades\Redis::setex("oauth_state:{$state}", 300, $request->input('redirect', '/'));
@@ -234,7 +234,7 @@ class AuthController
         $state = $request->input('state');
         $clientId     = getenv('GOOGLE_OAUTH_CLIENT_ID');
         $clientSecret = getenv('GOOGLE_OAUTH_CLIENT_SECRET');
-        $redirectUri  = getenv('GOOGLE_OAUTH_REDIRECT_URI') ?: url('/api/v1/auth/google/callback');
+        $redirectUri  = getenv('GOOGLE_OAUTH_REDIRECT_URI') ?: url('/api/auth/google/callback');
 
         if (empty($code)) {
             return json(Response::error(422, 'Authorization code required'));
@@ -301,7 +301,7 @@ class AuthController
     public function appleOauthRedirect($request)
     {
         $clientId    = getenv('APPLE_OAUTH_CLIENT_ID');
-        $redirectUri = getenv('APPLE_OAUTH_REDIRECT_URI') ?: url('/api/v1/auth/apple/callback');
+        $redirectUri = getenv('APPLE_OAUTH_REDIRECT_URI') ?: url('/api/auth/apple/callback');
         $state       = bin2hex(random_bytes(16));
 
         \Illuminate\Support\Facades\Redis::setex("oauth_state:{$state}", 300, $request->input('redirect', '/'));
@@ -338,7 +338,7 @@ class AuthController
                 'client_secret' => $clientSecret,
                 'code'          => $code,
                 'grant_type'    => 'authorization_code',
-                'redirect_uri'  => getenv('APPLE_OAUTH_REDIRECT_URI') ?: url('/api/v1/auth/apple/callback'),
+                'redirect_uri'  => getenv('APPLE_OAUTH_REDIRECT_URI') ?: url('/api/auth/apple/callback'),
             ],
         ]);
         $tokenData = json_decode((string) $resp->getBody(), true);
@@ -475,7 +475,7 @@ class AuthController
         }
 
         $user->update(['email_verify_token' => bin2hex(random_bytes(32))]);
-        $verifyUrl = getenv('APP_URL') . '/api/v1/auth/verify-email?token=' . $user->email_verify_token;
+        $verifyUrl = getenv('APP_URL') . '/api/auth/verify-email?token=' . $user->email_verify_token;
         \Common\Notification\NotificationDispatcher::send($user, 'email_verify', [
             'verify_url' => $verifyUrl,
         ], ['email']);

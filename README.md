@@ -38,89 +38,145 @@
 
 ```
 cloud-php/
-├── admin/                     # 管理后台（独立 webman 实例）
-│   ├── app/                   # 插件源码 (PSR-4: app\)
-│   │   ├── controller/        # 控制器（CRUD / 导出 / 表格 / 插件管理 / 安装等）
-│   │   ├── model/             # 数据模型（管理员 / 角色 / 规则 / 用户等）
-│   │   ├── common/            # 工具类（Auth / Tree / Layui / Util / ExcelExport）
-│   │   ├── middleware/        # 访问控制中间件
-│   │   ├── bootstrap/         # 进程启动引导（Snowflake / Encryptable / Encryption）
-│   │   ├── exception/        # 异常处理
-│   │   ├── view/              # 视图模板（Layui 后台面板）
-│   │   └── command/           # 控制台命令（数据库迁移）
-│   ├── api/                   # 对外 API (PSR-4: plugin\admin\api)
-│   │   ├── Auth.php           # 鉴权接口
-│   │   ├── Menu.php           # 菜单接口
-│   │   ├── Install.php        # 安装接口
-│   │   └── Middleware.php     # 中间件接口
-│   ├── config/                # 应用配置（路由 / 菜单 / 中间件 / 数据库等）
-│   │   ├── plugin/            # 插件配置 (7 个 erikwang2013 包)
-│   │   │   └── erikwang2013/
-│   │   │       ├── snowflake-php/  # Snowflake 分布式 ID
-│   │   │       ├── hashids/        # Hashids ID 混淆
-│   │   │       ├── encryptable/    # 字段级加密
-│   │   │       ├── encryption/     # 传输加密（预留）
-│   │   │       ├── webman-scout/   # Elasticsearch 同步
-│   │   │       ├── season/         # 国家旗帜
-│   │   │       └── poster/         # 点击验证码
-│   │   ├── hashids.php        # Hashids 连接配置
-│   │   ├── encryption.php     # 传输加密配置
-│   │   └── command.php        # 控制台命令注册
-│   ├── database/migrations/   # 数据库迁移文件
-│   ├── tests/                 # 单元测试（PHPUnit 11, 67 tests, 124 assertions）
-│   │   ├── HashidsTest.php    # hashids 编解码测试
-│   │   ├── BaseJsonTest.php   # Base::json() ID 编码测试
-│   │   ├── CrudHashidsTest.php # Crud 输入解码测试
-│   │   └── Support/           # 测试辅助类（RequestMock / TestableCrud）
-│   ├── public/                # 文档根目录（静态资源 / 前端组件）
-│   ├── vendor/                # Composer 依赖
-│   ├── composer.json          # 依赖声明（6 个 erikwang2013 包）
-│   ├── phpunit.xml            # PHPUnit 配置
-│   ├── start.php              # 启动入口 (php start.php start)
-│   └── install.sql            # 初始化 SQL（bigint 主键，无自增）
-├── service/                   # 后端服务（独立 webman 实例）
-│   ├── app/                   # 业务模块 (PSR-4: App\)
-│   │   ├── Admin/             # 管理后台控制器
-│   │   ├── Controller/        # 健康检查
-│   │   ├── Domain/            # 域名注册 / DNS 管理
-│   │   ├── Monitor/           # 资源监控 / 告警引擎 / 定时任务
-│   │   ├── Notification/      # 消息通知（站内信 / 邮件 / 短信 / 推送）
-│   │   ├── Order/             # 购物车 / 订单
-│   │   ├── Payment/           # 支付路由 / Stripe 通道 / Webhook
-│   │   ├── Product/           # 产品 / SKU / 区域定价
-│   │   ├── Provisioning/      # 资源交付引擎 / Proxmox Provider
-│   │   ├── Report/            # 营收 / 供应商 / 区域报表
-│   │   ├── Supplier/          # 供应商入驻 / 结算 / 提现
-│   │   ├── Ticket/            # 工单系统 / SLA 自动分配
-│   │   ├── User/              # 用户 / 认证 / KYC / 余额 / 验证码
-│   │   ├── Command/           # 控制台命令（数据库迁移）
-│   │   └── Captcha/           # 点击验证码生成
-│   ├── common/                # 公共库 (PSR-4: Common\)
-│   │   ├── Auth/              # JWT 认证 / 中间件
-│   │   ├── Captcha/           # 点击验证码服务
-│   │   ├── Confirmation/      # 二次确认中间件（密码复核）
-│   │   ├── Encryption/        # 传输加密中间件 (AES-256-GCM) / 加密服务
-│   │   ├── Hashid/            # Hashids 请求中间件 / ID 编解码服务
-│   │   ├── Helper/            # Response 格式化（自动 hashid 编码）
-│   │   ├── I18n/              # 多语言支持
-│   │   ├── Security/          # CORS / WAF / 频率限制 / 审计日志
-│   │   └── Snowflake/         # 雪花 ID 生成服务 / Eloquent 模型 Trait
-│   ├── config/                # 路由 / 中间件 / 日志 / 数据库 / 队列 / 加密 / ES 等配置
-│   ├── database/migrations/   # 数据库迁移文件（12 个迁移）
-│   ├── tests/                 # 单元测试（PHPUnit 10, 176 tests, 276 assertions）
-│   │   ├── Captcha/           # 点击验证码 create/verify
-│   │   ├── Confirmation/      # 二次确认中间件（密码复核/锁定/成功）
-│   │   ├── Common/            # Response / Hashid / Snowflake / Validator / LogSanitizer
-│   │   ├── Payment/           # Stripe 通道 / 支付路由
-│   │   ├── Notification/      # 通知分发
-│   │   └── Provisioning/      # ProviderFactory / 重试逻辑
-│   └── support/               # 启动引导 (Eloquent / Event / 加密 / 雪花 ID / Hashids / Scout 初始化 + MigrationRunner)
+├── .claude/                    # Claude Code 配置（settings / skills）
+├── .github/workflows/          # CI/CD 流水线（语法检查 + 双端 PHPUnit）
+├── admin/                      # 管理后台（独立 webman 实例）
+│   ├── app/                    # 插件源码 (PSR-4: app\)
+│   │   ├── bootstrap/          # 进程启动引导（Snowflake / Encryptable / Encryption）
+│   │   ├── command/            # 控制台命令（Migrate / Rollback / Status）
+│   │   ├── common/             # 工具类（Auth / Tree / Layui / Util / ExcelExport / Migration）
+│   │   ├── controller/         # 53 个控制器（Base / Crud 基类 + 各业务 CRUD）
+│   │   ├── exception/          # 异常处理
+│   │   ├── middleware/          # 访问控制中间件（AccessControl）
+│   │   ├── model/              # 45 个 Eloquent 模型（Base 基类含 Snowflake PK + Encryptable）
+│   │   ├── view/               # 视图模板（Layui 后台面板）
+│   │   └── functions.php       # 全局辅助函数（hashids / encrypt / decrypt）
+│   ├── api/                    # 对外接口 (PSR-4: plugin\admin\api)
+│   │   ├── Auth.php            # 鉴权接口
+│   │   ├── Menu.php            # 菜单接口
+│   │   ├── Install.php         # 安装接口
+│   │   └── Middleware.php      # 中间件接口
+│   ├── config/                 # 应用配置
+│   │   ├── plugin/erikwang2013/ # 6 个 erikwang2013 包配置
+│   │   │   ├── snowflake-php/  # 雪花 ID 生成
+│   │   │   ├── hashids/        # ID 混淆
+│   │   │   ├── encryptable/    # 字段级加密
+│   │   │   ├── encryption/     # 传输加密
+│   │   │   ├── webman-scout/   # Elasticsearch 同步
+│   │   │   └── season/         # 国家旗帜
+│   │   ├── route.php           # 路由定义
+│   │   ├── middleware.php       # 中间件配置
+│   │   ├── database.php        # 数据库连接
+│   │   └── ...                 # 18 个配置文件
+│   ├── database/migrations/    # 数据库迁移文件
+│   ├── tests/                  # 单元测试（PHPUnit 11, 67 tests）
+│   │   ├── HashidsTest.php     # hashids 编解码（21 tests）
+│   │   ├── BaseJsonTest.php    # Base::json() ID 编码（13 tests）
+│   │   ├── CrudHashidsTest.php # Crud 输入解码（14 tests）
+│   │   ├── TreeTest.php        # 树形结构（19 tests）
+│   │   └── Support/            # 测试辅助类
+│   ├── public/                 # 文档根目录（静态资源）
+│   ├── vendor/                 # Composer 依赖
+│   ├── .env.example            # 环境变量模板
+│   ├── composer.json           # 依赖声明
+│   ├── generate.php            # 代码生成器
+│   ├── phpunit.xml             # PHPUnit 配置
+│   ├── start.php               # 启动入口
+│   └── install.sql             # 初始化 DDL
+├── service/                    # 后端服务（独立 webman 实例）
+│   ├── app/                    # 业务模块 (PSR-4: App\)，每个模块含 Controller / Model / Service 等分层
+│   │   ├── Admin/Controller/   # 管理后台 API（15 个控制器：Dashboard / User / Product / Order / Payment / Supplier / Coupon / Invoice / Domain / Webhook 等）
+│   │   ├── Captcha/Controller/ # 点击验证码
+│   │   ├── Command/            # 控制台命令（Migrate / Rollback / Status / DbBackup）
+│   │   ├── Controller/         # 公共控制器（Health / Status / Help / Upload）
+│   │   ├── Cron/               # 定时任务（ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck）
+│   │   ├── Domain/             # 域名注册 / DNS 管理（Controller / Model / Service）
+│   │   ├── Model/              # 公共模型（HelpArticle / Role / Permission）
+│   │   ├── Monitor/            # 资源监控 / 告警（Controller / Cron / Model / Service）
+│   │   ├── Notification/       # 消息通知（Controller / Model / Queue / Service）
+│   │   ├── Order/              # 购物车 / 订单 / 优惠券 / 发票（Controller / Model / Service）
+│   │   ├── Payment/            # 支付路由 / Stripe 通道（Controller / Event / Model / Service）
+│   │   ├── Product/            # 产品 / SKU / 区域定价 / 评价（Controller / Model / Service）
+│   │   ├── Provisioning/       # 资源交付引擎（Controller / Event / Listener / Model / Provider / Queue / Service）
+│   │   ├── Report/             # 营收 / 供应商 / 区域报表（Controller / Service）
+│   │   ├── Supplier/           # 供应商入驻 / 结算 / 提现（Controller / Model / Service）
+│   │   ├── Ticket/             # 工单系统（Controller / Event / Listener / Model / Service）
+│   │   └── User/               # 用户 / 认证 / KYC / 余额 / 地址（Controller / Model / Service）
+│   ├── common/                 # 公共库 (PSR-4: Common\)
+│   │   ├── Auth/Middleware/     # AuthMiddleware / AdminRoleMiddleware / RbacMiddleware / RoleMiddleware
+│   │   ├── Captcha/            # 点击验证码服务
+│   │   ├── Confirmation/       # 二次确认中间件（密码复核）
+│   │   ├── Encryption/Middleware/ # AES-256-GCM 传输加密中间件
+│   │   ├── Hashid/Middleware/   # Hashids 请求自动解码中间件 + 编解码服务
+│   │   ├── Helper/             # Response 格式化（自动 hashid 编码）
+│   │   ├── Http/               # HTTP 客户端工具（ApiRequest）
+│   │   ├── I18n/Middleware/     # 多语言中间件（Locale）
+│   │   ├── Security/           # CORS / WAF / 频率限制 / 地域封锁 / 维护模式 / 审计日志
+│   │   ├── Snowflake/          # 雪花 ID 生成服务 / Eloquent HasSnowflakeId Trait
+│   │   ├── Version/Middleware/  # API 版本中间件（X-Api-Version 头校验）
+│   │   └── Webhook/            # Webhook 事件分发器
+│   ├── config/                 # 17 个配置文件（route / middleware / database / redis / cron / auth / security / i18n / ...）
+│   │   └── plugin/             # 插件配置
+│   │       ├── erikwang2013/   # encryptable / hashids / jwt / poster / season / webman-scout
+│   │       └── webman/         # event / redis-queue
+│   ├── database/migrations/    # 数据库迁移文件（12 个迁移）
+│   ├── i18n/                   # 多语言资源（en-US / zh-CN）
+│   ├── support/                # Bootstrap 引导（Eloquent / Redis / Event / 加密 / 雪花ID / Hashids / Scout / MigrationRunner）
+│   ├── tests/                  # 单元测试（PHPUnit 10, 178 tests）
+│   │   ├── Admin/              # ImportExport
+│   │   ├── Captcha/            # CaptchaService
+│   │   ├── Common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
+│   │   ├── Confirmation/       # ConfirmationMiddleware
+│   │   ├── Notification/       # NotificationDispatcher
+│   │   ├── Order/              # Coupon / Invoice
+│   │   ├── Payment/            # StripeChannel / PaymentRouter
+│   │   ├── Provisioning/       # ProviderFactory / RetryLogic
+│   │   ├── Security/           # RateLimit / Maintenance / UploadSecurity
+│   │   ├── User/               # AddressController
+│   │   ├── Version/            # VersionMiddleware
+│   │   ├── Webhook/            # WebhookDispatcher
+│   │   ├── Support/            # RequestMock
+│   │   ├── bootstrap.php       # 测试引导
+│   │   └── TestCase.php        # 测试基类
+│   ├── runtime/                # 运行时文件（日志 / 缓存）
+│   ├── vendor/                 # Composer 依赖
+│   ├── .env.example            # 环境变量模板
+│   ├── .env                    # 本地环境变量（gitignore）
+│   ├── composer.json           # 依赖声明
+│   ├── phpunit.xml             # PHPUnit 配置
+│   └── start.php               # 启动入口
 ├── apps/
-│   ├── flutter/               # Flutter 客户端 (PC 优先 Web 布局)
-│   └── harmonyos/             # HarmonyOS 客户端骨架
-├── docker/                    # Dockerfile / docker-compose / nginx / supervisor
-├── docs/                      # 数据库 DDL / 设计文档 / 实施计划
-└── README*.md                 # 项目说明文档
+│   ├── flutter/                # Flutter 客户端（iOS / macOS / Windows / Linux / Web）
+│   │   ├── lib/                # Dart 源码（core / features）
+│   │   ├── ios/                # iOS 工程
+│   │   ├── macos/              # macOS 工程
+│   │   ├── windows/            # Windows 工程
+│   │   ├── linux/              # Linux 工程
+│   │   ├── web/                # Web 工程
+│   │   ├── test/               # Flutter 测试
+│   │   ├── pubspec.yaml        # 依赖声明
+│   │   └── analysis_options.yaml # Dart 静态分析配置
+│   └── harmonyos/              # HarmonyOS 客户端骨架
+│       └── entry/src/          # ArkTS 源码
+├── docker/                     # Docker 部署
+│   ├── Dockerfile              # PHP 8.2 镜像
+│   ├── docker-compose.yml      # 服务编排
+│   ├── nginx.conf              # Nginx 配置
+│   └── supervisor.conf         # Supervisor 进程守护
+├── docs/                       # 文档
+│   ├── admin-design.md         # 管理后台设计文档
+│   ├── supplier-api.md         # 供应商 API 文档
+│   ├── deployment.md           # 部署清单
+│   ├── api-test.sh             # API 冒烟测试脚本
+│   ├── database.sql            # 数据库 DDL
+│   ├── alipay.png / weixinpay.png  # 打赏二维码
+│   ├── diagrams/               # 10 个 SVG 架构图（系统架构 / 安全管道 / ER 图 / 业务流程等）
+│   └── superpowers/            # 设计规格与实施计划
+│       ├── specs/              # 系统设计规格文档
+│       └── plans/              # Phase 0~3 分阶段实施计划
+├── .gitignore
+├── README.md                   # 项目说明（中文）
+└── README_EN.md                # 项目说明（英文）
 ```
 
 ## 快速开始
@@ -208,61 +264,61 @@ php start.php stop              # 停止
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/health` | 健康检查 |
-| POST | `/api/v1/auth/register` | 用户注册（请求体需 AES-256-GCM 加密） |
-| POST | `/api/v1/auth/login` | 用户登录（请求体需 AES-256-GCM 加密） |
-| POST | `/api/v1/auth/refresh` | 刷新 Token（请求体需 AES-256-GCM 加密） |
-| POST | `/api/v1/captcha/create` | 生成点击验证码（登录/注册前获取） |
-| GET | `/api/v1/products` | 产品列表（支持分类/区域/关键词筛选） |
-| GET | `/api/v1/products/{id}` | 产品详情（id 为 hashid 字符串） |
-| GET | `/api/v1/regions` | 可用区域 |
-| GET | `/api/v1/domain/check/{domain}/{tld}` | 域名可用性查询 |
-| GET | `/api/v1/domain/tlds` | 可注册后缀列表 |
-| POST | `/api/v1/payments/webhook/stripe` | Stripe 回调（签名校验，无需加密） |
+| POST | `/api/auth/register` | 用户注册（请求体需 AES-256-GCM 加密） |
+| POST | `/api/auth/login` | 用户登录（请求体需 AES-256-GCM 加密） |
+| POST | `/api/auth/refresh` | 刷新 Token（请求体需 AES-256-GCM 加密） |
+| POST | `/api/captcha/create` | 生成点击验证码（登录/注册前获取） |
+| GET | `/api/products` | 产品列表（支持分类/区域/关键词筛选） |
+| GET | `/api/products/{id}` | 产品详情（id 为 hashid 字符串） |
+| GET | `/api/regions` | 可用区域 |
+| GET | `/api/domain/check/{domain}/{tld}` | 域名可用性查询 |
+| GET | `/api/domain/tlds` | 可注册后缀列表 |
+| POST | `/api/payments/webhook/stripe` | Stripe 回调（签名校验，无需加密） |
 
 ### 认证接口（需 Bearer Token）
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/v1/user/profile` | 个人信息 |
-| PUT | `/api/v1/user/profile` | 更新信息 |
-| POST | `/api/v1/user/kyc` | 提交实名认证 |
-| GET | `/api/v1/user/balance` | 账户余额 |
-| GET/POST | `/api/v1/cart` | 购物车 |
-| POST/GET | `/api/v1/orders` | 订单 |
-| GET | `/api/v1/orders/{id}/payment-methods` | 可用支付方式 |
-| POST | `/api/v1/orders/{id}/pay` | 发起支付 |
-| GET/POST | `/api/v1/resources` | 我的资源 |
-| GET | `/api/v1/resources/{id}/status` | 资源状态 |
-| GET | `/api/v1/resources/{id}/console` | VNC 控制台链接 |
-| GET/POST | `/api/v1/tickets` | 工单 |
-| POST | `/api/v1/tickets/{id}/reply` | 工单回复 |
-| GET/POST | `/api/v1/dns/{domain}` | DNS 管理 |
-| POST | `/api/v1/supplier/apply` | 供应商申请 |
-| GET | `/api/v1/supplier/settlements` | 供应商结算记录 |
-| POST | `/api/v1/supplier/withdraw` | 供应商提现 |
+| GET | `/api/user/profile` | 个人信息 |
+| PUT | `/api/user/profile` | 更新信息 |
+| POST | `/api/user/kyc` | 提交实名认证 |
+| GET | `/api/user/balance` | 账户余额 |
+| GET/POST | `/api/cart` | 购物车 |
+| POST/GET | `/api/orders` | 订单 |
+| GET | `/api/orders/{id}/payment-methods` | 可用支付方式 |
+| POST | `/api/orders/{id}/pay` | 发起支付 |
+| GET/POST | `/api/resources` | 我的资源 |
+| GET | `/api/resources/{id}/status` | 资源状态 |
+| GET | `/api/resources/{id}/console` | VNC 控制台链接 |
+| GET/POST | `/api/tickets` | 工单 |
+| POST | `/api/tickets/{id}/reply` | 工单回复 |
+| GET/POST | `/api/dns/{domain}` | DNS 管理 |
+| POST | `/api/supplier/apply` | 供应商申请 |
+| GET | `/api/supplier/settlements` | 供应商结算记录 |
+| POST | `/api/supplier/withdraw` | 供应商提现 |
 
-> **说明：** 认证接口和管理员接口的请求/响应均经过 `EncryptionMiddleware` 处理。客户端设置 `X-Encrypted: 1` 请求头，请求体格式为 `{"payload": "<base64(AES-256-GCM)>"}`，响应体同样加密后包裹于 `payload` 字段。所有整数 ID 在 API 响应中自动转为 12 位 Hashid 字符串，请求中的 Hashid 字符串由 `HashidRequestMiddleware` 自动解码回整数 ID。
+> **说明：** 所有 API 请求需携带 `X-Api-Version: v1` 请求头（缺失默认 `v1`，由 `VersionMiddleware` 校验）。认证接口和管理员接口的请求/响应均经过 `EncryptionMiddleware` 处理。客户端设置 `X-Encrypted: 1` 请求头，请求体格式为 `{"payload": "<base64(AES-256-GCM)>"}`，响应体同样加密后包裹于 `payload` 字段。所有整数 ID 在 API 响应中自动转为 12 位 Hashid 字符串，请求中的 Hashid 字符串由 `HashidRequestMiddleware` 自动解码回整数 ID。
 
 ### 管理员接口
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/admin/api/v1/dashboard` | 运营仪表盘 |
-| GET/PUT | `/admin/api/v1/users` | 用户管理 |
-| GET/POST | `/admin/api/v1/kyc` | KYC 审核 |
-| GET/POST/PUT/DELETE | `/admin/api/v1/products` | 产品管理 |
-| POST | `/admin/api/v1/products/{productId}/skus` | 创建 SKU |
-| POST | `/admin/api/v1/skus/{skuId}/region-price` | 设置区域价格 |
-| GET/POST | `/admin/api/v1/orders` | 订单管理（含退款） |
-| GET | `/admin/api/v1/orders/export` | 订单导出 (.xlsx) |
-| GET | `/admin/api/v1/users/export` | 用户导出 (.xlsx) |
-| GET | `/admin/api/v1/suppliers/export` | 供应商导出 (.xlsx) |
-| GET/PUT | `/admin/api/v1/payments/*` | 支付通道 / 交易 / 对账 |
-| GET/POST | `/admin/api/v1/provisioning/*` | 交付任务 / 主机管理 |
-| GET/POST | `/admin/api/v1/suppliers/*` | 供应商审批 / 结算 / 提现 |
-| GET/POST | `/admin/api/v1/tickets` | 工单分配 / 关闭 |
-| GET | `/admin/api/v1/reports/*` | 营收 / 区域 / 供应商报表 |
-| GET | `/admin/api/v1/monitor/*` | 监控面板 / 资源指标 |
-| GET | `/admin/api/v1/audit-logs` | 审计日志 |
-| PUT | `/admin/api/v1/system/config` | 系统配置 |
+| GET | `/admin/api/dashboard` | 运营仪表盘 |
+| GET/PUT | `/admin/api/users` | 用户管理 |
+| GET/POST | `/admin/api/kyc` | KYC 审核 |
+| GET/POST/PUT/DELETE | `/admin/api/products` | 产品管理 |
+| POST | `/admin/api/products/{productId}/skus` | 创建 SKU |
+| POST | `/admin/api/skus/{skuId}/region-price` | 设置区域价格 |
+| GET/POST | `/admin/api/orders` | 订单管理（含退款） |
+| GET | `/admin/api/orders/export` | 订单导出 (.xlsx) |
+| GET | `/admin/api/users/export` | 用户导出 (.xlsx) |
+| GET | `/admin/api/suppliers/export` | 供应商导出 (.xlsx) |
+| GET/PUT | `/admin/api/payments/*` | 支付通道 / 交易 / 对账 |
+| GET/POST | `/admin/api/provisioning/*` | 交付任务 / 主机管理 |
+| GET/POST | `/admin/api/suppliers/*` | 供应商审批 / 结算 / 提现 |
+| GET/POST | `/admin/api/tickets` | 工单分配 / 关闭 |
+| GET | `/admin/api/reports/*` | 营收 / 区域 / 供应商报表 |
+| GET | `/admin/api/monitor/*` | 监控面板 / 资源指标 |
+| GET | `/admin/api/audit-logs` | 审计日志 |
+| PUT | `/admin/api/system/config` | 系统配置 |
 
 ## 管理后台架构
 
@@ -357,7 +413,7 @@ ProviderInterface
 
 ### 5. 安全架构
 
-全局中间件链：`CORS → WAF → Locale → HashidRequest → [路由: Encryption → Captcha → Auth → Confirmation]`
+全局中间件链：`CORS → WAF → Locale → HashidRequest → Version → [路由: Encryption → Captcha → Auth → Confirmation]`
 
 ![安全中间件管道](docs/diagrams/security-middleware-zh.svg)
 
@@ -365,6 +421,7 @@ ProviderInterface
 - **WAF** — 拦截 SQL 注入 / XSS / 路径遍历
 - **Locale** — 解析 Accept-Language，设置多语言
 - **HashidRequest** — 自动解码请求中的 hashid 字符串为真实整数 ID
+- **Version** — 校验 `X-Api-Version` 请求头，缺失默认 `v1`，不支持的版本返回 `400`
 - **Encryption** — AES-256-GCM 传输加密（认证接口和管理后台），防中间人窃听和篡改
 - **Captcha** — 点击验证码，登录/注册前验证（GD 绘图 + Redis 存储，一次性密钥，300s 有效期，3 次尝试限制）
 - **Auth** — JWT HS256 认证，Access Token 15 分钟，Refresh Token 30 天，Redis 黑名单

@@ -2,17 +2,354 @@
 
 ## 概述
 
-供应商 API 允许供应商通过编程方式管理订单、资源和结算。所有请求需要 API Key 认证。
+供应商功能提供两套 API：
 
-**Base URL**: `https://api.example.com/api`
+| 类型 | 认证方式 | 前缀 | 状态 |
+|------|---------|------|------|
+| **内部 API** | 用户 Bearer Token | `/api/supplier/` | 可用 |
+| **外部 API** | API Key (`sk_xxx`) | `/api/supplier/` | 设计规格，待实现 |
 
-**版本控制**: 通过 HTTP 头 `X-Api-Version: v1` 指定
+**Base URL**: `https://api.example.com`
+
+**版本控制**: 通过 HTTP 头 `X-Api-Version: v1` 指定。缺失时默认 `v1`，不支持的版本返回 `400`。仅对 `/api/*` 和 `/admin/api/*` 路径生效，由 `VersionMiddleware` 统一处理。
 
 ---
 
-## 认证
+## 内部 API（当前可用）
 
-所有请求必须包含 API Key 头：
+内部 API 使用与平台其他接口相同的用户 Bearer Token 认证，适用于已登录的供应商用户在客户端/前端调用。
+
+### 认证
+
+```
+Authorization: Bearer <user_access_token>
+X-Api-Version: v1
+```
+
+用户需先通过 `/api/auth/login` 登录获取 Token，且账号角色须为 `supplier`（由管理员审批供应商申请后设置）。
+
+---
+
+### 响应格式
+
+#### 成功响应
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": { ... }
+}
+```
+
+#### 分页响应
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": [ ... ],
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total": 45
+  }
+}
+```
+
+#### 错误响应
+
+```json
+{
+  "code": 422,
+  "message": "You already have a supplier application",
+  "data": null
+}
+```
+
+| code | 说明 |
+|------|------|
+| 0 | 成功 |
+| 400 | 请求参数错误 / 不支持的 API 版本 |
+| 401 | 未登录或 Token 已过期 |
+| 403 | 无权访问（非供应商角色 / 密码确认失败） |
+| 404 | 资源不存在 |
+| 422 | 参数校验失败 |
+| 429 | 请求频率超限 |
+
+---
+
+### 端点
+
+#### 1. 供应商入驻
+
+```
+POST /api/supplier/apply
+```
+
+申请成为供应商。每个用户只能提交一次申请。
+
+**请求体**:
+
+```json
+{
+  "company_name": "示例科技有限公司",
+  "contact_name": "张三",
+  "contact_phone": "13800138000",
+  "contact_email": "zhangsan@example.com",
+  "settlement_method": "bank"
+}
+```
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| company_name | string | 是 | 公司名称 |
+| contact_name | string | 是 | 联系人姓名 |
+| contact_phone | string | 是 | 联系电话 |
+| contact_email | string | 是 | 联系邮箱 |
+| settlement_method | string | 否 | 结算方式，默认 `bank` |
+
+**响应**: 供应商对象，状态为 `pending`
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": "aBc123XyZ",
+    "user_id": "UsEr456AbC",
+    "company_name": "示例科技有限公司",
+    "contact_name": "张三",
+    "contact_phone": "138****8000",
+    "contact_email": "zha***@example.com",
+    "status": "pending",
+    "settlement_method": "bank",
+    "created_at": "2026-05-20T10:30:00Z"
+  }
+}
+```
+
+> 敏感字段（联系人姓名、电话、邮箱）在数据库中加密存储，API 返回时部分脱敏。
+
+**错误**:
+
+| code | 场景 |
+|------|------|
+| 422 | 已提交过供应商申请 |
+
+```bash
+curl -X POST "https://api.example.com/api/supplier/apply" \
+  -H "Authorization: Bearer <token>" \
+  -H "X-Api-Version: v1" \
+  -H "Content-Type: application/json" \
+  -d '{"company_name":"示例科技","contact_name":"张三","contact_phone":"13800138000","contact_email":"zhangsan@example.com"}'
+```
+
+---
+
+#### 2. 商品管理
+
+##### 获取已分配商品
+
+```
+GET /api/supplier/products
+```
+
+**Query 参数**:
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| page | int | 否 | 页码，默认 1 |
+
+**响应**: 分页列表，每项含商品信息和佣金比例
+
+```json
+{
+  "code": 0,
+  "data": [{
+    "id": "SpAbC123",
+    "supplier_id": "aBc123XyZ",
+    "product_id": "PrOdEfG456",
+    "commission_rate": 0.1,
+    "approved_at": "2026-05-20T10:30:00Z",
+    "product": {
+      "id": "PrOdEfG456",
+      "name": "高性能云服务器",
+      "status": "active"
+    }
+  }],
+  "meta": { "page": 1, "page_size": 20, "total": 5 }
+}
+```
+
+##### 添加商品
+
+```
+POST /api/supplier/products
+```
+
+将已有商品关联到当前供应商。
+
+**请求体**:
+
+```json
+{
+  "product_id": "PrOdEfG456",
+  "commission_rate": 0.15
+}
+```
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| product_id | string | 是 | 商品 ID（Hashid） |
+| commission_rate | float | 否 | 佣金比例，默认 0.1 |
+
+**响应**: 创建的 SupplierProduct 对象
+
+**错误**:
+
+| code | 场景 |
+|------|------|
+| 422 | 商品已分配给该供应商 |
+
+##### 移除商品
+
+```
+DELETE /api/supplier/products/{id}
+```
+
+取消商品与供应商的关联。
+
+**响应**:
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": null
+}
+```
+
+---
+
+#### 3. 结算管理
+
+##### 获取结算单列表
+
+```
+GET /api/supplier/settlements
+```
+
+**响应**: 当前供应商的所有结算单，按创建时间倒序
+
+```json
+{
+  "code": 0,
+  "data": [{
+    "id": "SeTtLe123",
+    "supplier_id": "aBc123XyZ",
+    "period_start": "2026-05-01",
+    "period_end": "2026-05-31",
+    "total_sales": "15000.00",
+    "commission": "1500.0000",
+    "payable": "13500.0000",
+    "status": "pending",
+    "created_at": "2026-06-01T02:17:00Z"
+  }]
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| total_sales | 周期内已完成订单的总销售额 |
+| commission | 平台佣金总额 |
+| payable | 应付供应商金额（total_sales - commission） |
+| status | `pending` / `paid` |
+
+---
+
+#### 4. 提现
+
+##### 申请提现
+
+```
+POST /api/supplier/withdraw
+```
+
+> 此操作需要密码二次确认（`confirm_password` 字段），由 `ConfirmationMiddleware` 校验。
+> 5 次失败后锁定 15 分钟。
+
+**请求体**:
+
+```json
+{
+  "amount": "5000.00",
+  "confirm_password": "user_password_here",
+  "account_info": {
+    "method": "bank_transfer",
+    "bank_name": "中国工商银行",
+    "account_number": "6222021234567890",
+    "account_holder": "张三"
+  }
+}
+```
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| amount | string | 是 | 提现金额（字符串避免浮点精度问题） |
+| confirm_password | string | 是 | 用户登录密码（二次确认） |
+| account_info | object | 是 | 收款账户信息 |
+| account_info.method | string | 是 | 提现方式：`bank_transfer` / `alipay` / `wechat` |
+
+**可提现余额计算**: 所有已完成的结算单 `payable` 之和 - 所有处理中的提现 `amount` 之和
+
+**响应**:
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": null
+}
+```
+
+**错误**:
+
+| code | 场景 |
+|------|------|
+| 422 | 可提现余额不足 |
+| 403 | 密码确认失败 |
+
+```bash
+curl -X POST "https://api.example.com/api/supplier/withdraw" \
+  -H "Authorization: Bearer <token>" \
+  -H "X-Api-Version: v1" \
+  -H "Content-Type: application/json" \
+  -d '{"amount":"5000.00","confirm_password":"mypassword","account_info":{"method":"bank_transfer","bank_name":"ICBC","account_number":"6222021234567890"}}'
+```
+
+---
+
+### 内部 API 端点汇总
+
+| 方法 | 路径 | 认证 | 密码确认 | 说明 |
+|------|------|------|---------|------|
+| POST | `/api/supplier/apply` | Token | - | 申请成为供应商 |
+| GET | `/api/supplier/products` | Token | - | 查看已分配商品 |
+| POST | `/api/supplier/products` | Token | - | 添加商品关联 |
+| DELETE | `/api/supplier/products/{id}` | Token | - | 移除商品关联 |
+| GET | `/api/supplier/settlements` | Token | - | 查看结算单 |
+| POST | `/api/supplier/withdraw` | Token | 需要 | 申请提现 |
+
+---
+
+## 外部 API（设计规格，待实现）
+
+外部 API 允许供应商通过编程方式管理订单、资源和结算。所有请求需要 API Key 认证。
+
+**Base URL**: `https://api.example.com/api`
+
+### 认证
 
 ```
 Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -28,9 +365,9 @@ API Key 由平台管理员在管理后台 `供应商管理 → API Keys` 中生�
 
 ---
 
-## 响应格式
+### 响应格式
 
-### 成功响应
+与内部 API 一致，额外包含 `request_id` 用于追踪：
 
 ```json
 {
@@ -41,50 +378,13 @@ API Key 由平台管理员在管理后台 `供应商管理 → API Keys` 中生�
 }
 ```
 
-### 分页响应
-
-```json
-{
-  "code": 0,
-  "message": "ok",
-  "data": [ ... ],
-  "meta": {
-    "page": 1,
-    "page_size": 20,
-    "total": 1523
-  },
-  "request_id": "req_abc123"
-}
-```
-
-### 错误响应
-
-```json
-{
-  "code": 401,
-  "message": "Invalid API key",
-  "data": null,
-  "request_id": "req_abc123"
-}
-```
-
-| code | 说明 |
-|------|------|
-| 0 | 成功 |
-| 400 | 请求参数错误 |
-| 401 | API Key 无效或已撤销 |
-| 403 | 无权访问该资源 |
-| 404 | 资源不存在 |
-| 422 | 参数校验失败 |
-| 429 | 请求频率超限 (限流: 120 req/min) |
-
 ---
 
-## 端点
+### 端点
 
-### 1. 订单管理
+#### 1. 订单管理
 
-#### 获取订单列表
+##### 获取订单列表
 
 ```
 GET /api/supplier/orders
@@ -100,92 +400,41 @@ GET /api/supplier/orders
 | from | date | 否 | 起始日期 YYYY-MM-DD |
 | to | date | 否 | 截止日期 YYYY-MM-DD |
 
-**响应**: 分页的订单列表，每个订单包含订单号、金额、币种、状态、创建时间
-
-```bash
-curl -H "Authorization: Bearer sk_xxx" \
-     -H "X-Api-Version: v1" \
-     "https://api.example.com/api/supplier/orders?status=paid&page=1"
-```
-
-#### 获取订单详情
+##### 获取订单详情
 
 ```
 GET /api/supplier/orders/{id}
 ```
 
-**响应**: 订单完整信息，含订单项、客户信息（脱敏）、资源详情
-
 ---
 
-### 2. 资源管理
+#### 2. 资源管理
 
-#### 获取资源列表
+##### 获取资源列表
 
 ```
 GET /api/supplier/resources
 ```
 
-**Query 参数**:
+**Query 参数**: page, status (active/provisioning/stopped/destroyed), type (server/ip/disk/domain)
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| page | int | 否 | 页码 |
-| status | string | 否 | active/provisioning/stopped/destroyed |
-| type | string | 否 | server/ip/disk/domain |
-
-**响应示例**:
-
-```json
-{
-  "code": 0,
-  "data": [{
-    "id": "abc123",
-    "type": "server",
-    "status": "active",
-    "provisioned_at": "2026-05-15T10:30:00Z",
-    "expired_at": "2026-06-15T10:30:00Z",
-    "specs": {
-      "cpu": 4,
-      "ram": 8192,
-      "disk": 100,
-      "os": "Ubuntu 22.04"
-    }
-  }],
-  "meta": { "page": 1, "page_size": 20, "total": 45 }
-}
-```
-
-#### 获取资源状态
+##### 获取资源状态
 
 ```
 GET /api/supplier/resources/{id}/status
 ```
 
-**响应**: 资源当前状态、IP 地址、带宽使用量等
-
 ---
 
-### 3. 结算管理
+#### 3. 结算管理
 
-#### 获取结算单列表
+##### 获取结算单列表
 
 ```
 GET /api/supplier/settlements
 ```
 
-**Query 参数**:
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| page | int | 否 | 页码 |
-| status | string | 否 | pending/paid |
-| period_start | date | 否 | 结算周期起始 |
-| period_end | date | 否 | 结算周期截止 |
-
-**响应**: 结算单列表，每项含周期、销售额、佣金、应付金额、状态
-
-#### 获取结算单详情
+##### 获取结算单详情
 
 ```
 GET /api/supplier/settlements/{id}
@@ -193,32 +442,15 @@ GET /api/supplier/settlements/{id}
 
 ---
 
-### 4. 提现
+#### 4. 提现
 
-#### 申请提现
+##### 申请提现
 
 ```
 POST /api/supplier/withdraw
 ```
 
-**请求体**:
-
-```json
-{
-  "amount": 500.00,
-  "currency": "USD",
-  "method": "bank_transfer",
-  "account_info": {
-    "bank_name": "Bank of America",
-    "account_number": "****1234",
-    "routing_number": "****5678"
-  }
-}
-```
-
-**响应**: 提现记录，状态 pending
-
-#### 提现记录列表
+##### 提现记录
 
 ```
 GET /api/supplier/withdraws
@@ -226,59 +458,40 @@ GET /api/supplier/withdraws
 
 ---
 
-### 5. 商品管理
+#### 5. 商品管理
 
-#### 获取我的商品
+##### 获取我的商品
 
 ```
 GET /api/supplier/products
 ```
 
-**响应**: 供应商已上架的商品列表，含审核状态
-
-#### 提交商品上架申请
+##### 提交商品上架申请
 
 ```
 POST /api/supplier/products
 ```
 
-**请求体**:
+---
 
-```json
-{
-  "name": "高性能云服务器",
-  "category_id": 1,
-  "description": "E5-2680 v4, DDR4 ECC, SSD RAID10",
-  "skus": [{
-    "specs": { "cpu": 4, "ram": 8192, "disk": 100, "bandwidth": 100 },
-    "cycle": "monthly",
-    "prices": [
-      { "region_id": 1, "price": 29.99, "original_price": 49.99, "stock": 50 }
-    ]
-  }]
-}
-```
+### 外部 API 端点汇总
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/supplier/orders` | 订单列表 |
+| GET | `/api/supplier/orders/{id}` | 订单详情 |
+| GET | `/api/supplier/resources` | 资源列表 |
+| GET | `/api/supplier/resources/{id}/status` | 资源状态 |
+| GET | `/api/supplier/settlements` | 结算单列表 |
+| GET | `/api/supplier/settlements/{id}` | 结算单详情 |
+| POST | `/api/supplier/withdraw` | 申请提现 |
+| GET | `/api/supplier/withdraws` | 提现记录 |
+| GET | `/api/supplier/products` | 商品列表 |
+| POST | `/api/supplier/products` | 提交商品 |
 
 ---
 
-## 限流
-
-| 端点 | 限制 |
-|------|------|
-| 全部 | 120 req/min 每 API Key |
-| 提现 | 10 req/min |
-
-限流头:
-
-```
-X-RateLimit-Limit: 120
-X-RateLimit-Remaining: 98
-X-RateLimit-Reset: 1680000000
-```
-
----
-
-## Webhook (接收平台事件)
+## Webhook（接收平台事件）
 
 供应商可以注册 Webhook URL 接收实时事件。在管理后台配置。
 
@@ -317,34 +530,65 @@ X-Webhook-Event: order.paid
 
 ---
 
+## 限流
+
+| 端点 | 限制 |
+|------|------|
+| 内部 API | 60 req/min 每用户（默认） |
+| 内部 API 登录 | 5 req/min |
+| 外部 API | 120 req/min 每 API Key（设计值） |
+| 外部 API 提现 | 10 req/min（设计值） |
+
+限流头:
+
+```
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 58
+X-RateLimit-Reset: 1680000000
+```
+
+---
+
 ## SDK 示例
 
 ### PHP
 
 ```php
-$apiKey = 'sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+$token = 'user_access_token_here';
 $client = new GuzzleHttp\Client([
     'base_uri' => 'https://api.example.com/api/',
     'headers' => [
-        'Authorization' => "Bearer {$apiKey}",
+        'Authorization' => "Bearer {$token}",
         'X-Api-Version' => 'v1',
         'Accept'        => 'application/json',
     ],
 ]);
 
-// 获取订单列表
-$response = $client->get('supplier/orders', [
-    'query' => ['status' => 'paid', 'page' => 1],
+// 申请成为供应商
+$response = $client->post('supplier/apply', [
+    'json' => [
+        'company_name'  => '示例科技有限公司',
+        'contact_name'  => '张三',
+        'contact_phone' => '13800138000',
+        'contact_email' => 'zhangsan@example.com',
+    ],
 ]);
-$orders = json_decode($response->getBody(), true);
+$result = json_decode($response->getBody(), true);
+
+// 获取结算单
+$response = $client->get('supplier/settlements');
+$settlements = json_decode($response->getBody(), true);
 
 // 申请提现
 $response = $client->post('supplier/withdraw', [
     'json' => [
-        'amount'   => 500.00,
-        'currency' => 'USD',
-        'method'   => 'bank_transfer',
-        'account_info' => ['bank_name' => 'BOA', 'account_number' => '****1234'],
+        'amount'           => '5000.00',
+        'confirm_password' => 'mypassword',
+        'account_info'     => [
+            'method'          => 'bank_transfer',
+            'bank_name'       => '中国工商银行',
+            'account_number'  => '6222021234567890',
+        ],
     ],
 ]);
 ```
@@ -355,13 +599,28 @@ $response = $client->post('supplier/withdraw', [
 import requests
 
 headers = {
-    'Authorization': 'Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    'Authorization': 'Bearer <user_access_token>',
     'X-Api-Version': 'v1',
 }
-resp = requests.get('https://api.example.com/api/supplier/orders',
-                     headers=headers,
-                     params={'status': 'paid', 'page': 1})
-orders = resp.json()
+
+# 获取已分配商品
+resp = requests.get('https://api.example.com/api/supplier/products',
+                     headers=headers)
+products = resp.json()
+
+# 申请提现
+resp = requests.post('https://api.example.com/api/supplier/withdraw',
+                      headers=headers,
+                      json={
+                          'amount': '5000.00',
+                          'confirm_password': 'mypassword',
+                          'account_info': {
+                              'method': 'bank_transfer',
+                              'bank_name': 'ICBC',
+                              'account_number': '6222021234567890',
+                          },
+                      })
+print(resp.json())
 ```
 
 ---
@@ -369,6 +628,24 @@ orders = resp.json()
 ## 错误处理建议
 
 1. **429 限流**: 等待 `Retry-After` 秒后重试
-2. **401 未授权**: 检查 API Key 是否有效，是否被撤销
-3. **5xx 服务端错误**: 指数退避重试 (1s → 5s → 25s)
-4. **幂等性**: 提现等写操作建议客户端生成幂等键 `X-Idempotency-Key`
+2. **401 未授权**: 检查 Token 是否有效，是否已过期
+3. **403 禁止**: 检查账号角色是否为 `supplier`；密码确认失败需等待锁定解除
+4. **422 校验失败**: 根据 `message` 字段修正请求参数
+5. **5xx 服务端错误**: 指数退避重试 (1s -> 5s -> 25s)
+
+---
+
+## 管理后台端点参考
+
+以下是管理员管理供应商的相关端点（仅供后台使用，需 Admin 角色）：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/admin/api/suppliers` | 供应商列表（支持 status 筛选） |
+| GET | `/admin/api/suppliers/export` | 导出供应商 Excel |
+| POST | `/admin/api/suppliers/{id}/approve` | 审批通过供应商 |
+| POST | `/admin/api/suppliers/{id}/settle` | 生成结算单 |
+| POST | `/admin/api/suppliers/withdraws/{id}/approve` | 批准提现 |
+| GET | `/admin/api/suppliers/{id}/api-keys` | 查看供应商 API Key 列表 |
+| POST | `/admin/api/suppliers/{id}/api-keys` | 创建 API Key（仅返回一次原始 Key） |
+| DELETE | `/admin/api/suppliers/api-keys/{id}` | 吊销 API Key |

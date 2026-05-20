@@ -1053,7 +1053,7 @@ git commit -m "feat: implement supplier system (apply, approve, settlement, with
 
 ```php
 // Provisioning routes (admin only)
-Route::group('/admin/api/v1/provisioning', function () {
+Route::group('/admin/api/provisioning', function () {
     Route::get('/tasks', [\App\Provisioning\Controller\TaskController::class, 'index']);
     Route::post('/tasks/{id}/retry', [\App\Provisioning\Controller\TaskController::class, 'retry']);
     Route::post('/resources/{id}/upgrade', [\App\Provisioning\Controller\ResourceController::class, 'upgrade']);
@@ -1062,7 +1062,7 @@ Route::group('/admin/api/v1/provisioning', function () {
 })->middleware([AuthMiddleware::class, RbacMiddleware::class . ':resource.view']);
 
 // User resource routes
-Route::group('/api/v1/user/resources', function () {
+Route::group('/api/user/resources', function () {
     Route::get('', [\App\Provisioning\Controller\ResourceController::class, 'myResources']);
     Route::get('/{id}', [\App\Provisioning\Controller\ResourceController::class, 'show']);
     Route::get('/{id}/status', [\App\Provisioning\Controller\ResourceController::class, 'status']);
@@ -1070,18 +1070,18 @@ Route::group('/api/v1/user/resources', function () {
 })->middleware([AuthMiddleware::class]);
 
 // Domain routes
-Route::get('/api/v1/domain/check/{domain}/{tld}', [\App\Domain\Controller\DomainController::class, 'check']);
-Route::get('/api/v1/domain/tlds', [\App\Domain\Controller\DomainController::class, 'tlds']);
-Route::group('/api/v1/user/dns', function () {
+Route::get('/api/domain/check/{domain}/{tld}', [\App\Domain\Controller\DomainController::class, 'check']);
+Route::get('/api/domain/tlds', [\App\Domain\Controller\DomainController::class, 'tlds']);
+Route::group('/api/user/dns', function () {
     Route::get('/{domain}', [\App\Domain\Controller\DomainController::class, 'listRecords']);
     Route::post('/{domain}/records', [\App\Domain\Controller\DomainController::class, 'addRecord']);
     Route::delete('/{domain}/records/{id}', [\App\Domain\Controller\DomainController::class, 'deleteRecord']);
 })->middleware([AuthMiddleware::class]);
 
 // Supplier routes
-Route::post('/api/v1/supplier/apply', [\App\Supplier\Controller\SupplierController::class, 'apply'])
+Route::post('/api/supplier/apply', [\App\Supplier\Controller\SupplierController::class, 'apply'])
     ->middleware([AuthMiddleware::class]);
-Route::get('/api/v1/supplier/settlements', [\App\Supplier\Controller\SupplierController::class, 'settlements'])
+Route::get('/api/supplier/settlements', [\App\Supplier\Controller\SupplierController::class, 'settlements'])
     ->middleware([AuthMiddleware::class]);
 ```
 

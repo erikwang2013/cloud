@@ -47,10 +47,6 @@ cloud-php/
 │   │   ├── view/              # View templates (Layui panel)
 │   │   └── command/           # Console commands (database migration)
 │   ├── api/                   # Public API (PSR-4: plugin\admin\api)
-│   │   ├── Auth.php           # Auth interface
-│   │   ├── Menu.php           # Menu interface
-│   │   ├── Install.php        # Installation interface
-│   │   └── Middleware.php     # Middleware interface
 │   ├── config/                # Application config (routes / menus / middleware / database)
 │   │   ├── plugin/            # Plugin configs (7 erikwang2013 packages)
 │   │   │   └── erikwang2013/
@@ -66,58 +62,87 @@ cloud-php/
 │   │   └── command.php        # Console command registration
 │   ├── database/migrations/   # Database migration files
 │   ├── tests/                 # Unit tests (PHPUnit 11, 67 tests, 124 assertions)
-│   │   ├── HashidsTest.php    # hashids encode/decode tests
-│   │   ├── BaseJsonTest.php   # Base::json() ID encoding tests
-│   │   ├── CrudHashidsTest.php # Crud input decoding tests
-│   │   └── Support/           # Test helpers (RequestMock / TestableCrud)
-│   ├── public/                # Document root (static assets / frontend components)
+│   ├── public/                # Document root (static assets)
 │   ├── vendor/                # Composer dependencies
-│   ├── composer.json          # Dependency manifest (6 erikwang2013 packages)
+│   ├── composer.json          # Dependency manifest
 │   ├── phpunit.xml            # PHPUnit config
 │   ├── start.php              # Entry point (php start.php start)
 │   └── install.sql            # Initial SQL (bigint PKs, no auto-increment)
 ├── service/                   # Backend service (standalone webman instance)
 │   ├── app/                   # Business modules (PSR-4: App\)
-│   │   ├── Admin/             # Admin panel controllers
-│   │   ├── Controller/        # Health check
+│   │   ├── Admin/             # Admin API controllers
+│   │   ├── Captcha/           # Click captcha generation
+│   │   ├── Command/           # Console commands (migration / DB backup)
+│   │   ├── Controller/        # Health check / status page / help center / file upload
+│   │   ├── Cron/              # Scheduled tasks (exchange rate / reconciliation / expiration / SSL / settlement)
 │   │   ├── Domain/            # Domain registration / DNS management
-│   │   ├── Monitor/           # Resource monitoring / alert engine / cron jobs
+│   │   ├── Model/             # Shared models (HelpArticle / Role / Permission)
+│   │   ├── Monitor/           # Resource monitoring / alert engine
 │   │   ├── Notification/      # Notifications (in-app / email / SMS / push)
-│   │   ├── Order/             # Shopping cart / orders
+│   │   ├── Order/             # Shopping cart / orders / coupons / invoices
 │   │   ├── Payment/           # Payment routing / Stripe channel / webhooks
-│   │   ├── Product/           # Products / SKUs / regional pricing
-│   │   ├── Provisioning/      # Resource delivery engine / Proxmox provider
+│   │   ├── Product/           # Products / SKUs / regional pricing / reviews
+│   │   ├── Provisioning/      # Resource delivery engine / Proxmox provider / batch ops
 │   │   ├── Report/            # Revenue / supplier / regional reports
 │   │   ├── Supplier/          # Supplier onboarding / settlement / withdrawal
 │   │   ├── Ticket/            # Support tickets / SLA auto-assignment
-│   │   ├── User/              # Users / auth / KYC / balances / captcha
-│   │   ├── Command/           # Console commands (database migration)
-│   │   └── Captcha/           # Click captcha generation
+│   │   └── User/              # Users / auth / KYC / balances / addresses
 │   ├── common/                # Shared libraries (PSR-4: Common\)
 │   │   ├── Auth/              # JWT authentication / middleware
 │   │   ├── Captcha/           # Click captcha service
 │   │   ├── Confirmation/      # Password confirmation middleware
-│   │   ├── Encryption/        # Transport encryption middleware (AES-256-GCM) / service
+│   │   ├── Encryption/        # Transport encryption middleware (AES-256-GCM)
 │   │   ├── Hashid/            # Hashids request middleware / encode-decode service
 │   │   ├── Helper/            # Response formatting (auto hashid encoding)
+│   │   ├── Http/              # HTTP client utility
 │   │   ├── I18n/              # Internationalization
-│   │   ├── Security/          # CORS / WAF / rate limiting / audit logging
-│   │   └── Snowflake/         # Snowflake ID service / Eloquent model trait
-│   ├── config/                # Routes / middleware / logging / DB / queue / crypto / ES configs
-│   ├── database/migrations/   # Database migration files (12 migrations)
-│   ├── tests/                 # Unit tests (PHPUnit 10, 176 tests, 276 assertions)
+│   │   ├── Security/          # CORS / WAF / rate limiting / geo-blocking / maintenance / audit logging
+│   │   ├── Snowflake/         # Snowflake ID service / Eloquent model trait
+│   │   ├── Version/           # API version middleware (X-Api-Version header validation)
+│   │   └── Webhook/           # Webhook event dispatcher
+│   ├── config/                # Routes / middleware / logging / DB / queue / crypto / ES / cron configs
+│   ├── database/migrations/   # Database migration files
+│   ├── i18n/                  # Internationalization resources (en-US / zh-CN)
+│   ├── support/               # Bootstrap helpers + MigrationRunner
+│   ├── tests/                 # Unit tests (PHPUnit 10)
+│   │   ├── Admin/             # Import/export tests
 │   │   ├── Captcha/           # Click CAPTCHA create/verify
+│   │   ├── Common/            # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
 │   │   ├── Confirmation/      # Password confirmation middleware (verify/lockout/success)
-│   │   ├── Common/            # Response / Hashid / Snowflake / Validator / LogSanitizer
-│   │   ├── Payment/           # Stripe channel / payment routing
 │   │   ├── Notification/      # Notification dispatch
-│   │   └── Provisioning/      # ProviderFactory / retry logic
-│   └── support/               # Bootstrap (Eloquent / Events / encryption / snowflake / hashids / scout init + MigrationRunner)
+│   │   ├── Order/             # Coupon / Invoice
+│   │   ├── Payment/           # Stripe channel / payment routing
+│   │   ├── Provisioning/      # ProviderFactory / retry logic
+│   │   ├── Security/          # Rate limiting / maintenance / upload security
+│   │   ├── User/              # Address management
+│   │   ├── Version/           # API version middleware
+│   │   └── Webhook/           # Webhook dispatch
+│   ├── runtime/               # Runtime files (logs / cache)
+│   ├── vendor/                # Composer dependencies
+│   ├── composer.json          # Dependency manifest
+│   ├── phpunit.xml            # PHPUnit config
+│   └── start.php              # Entry point
 ├── apps/
-│   ├── flutter/               # Flutter client (PC-first web layout)
+│   ├── flutter/               # Flutter client (iOS / Android / Web / macOS / Windows / Linux)
+│   │   ├── lib/               # Dart source
+│   │   ├── ios/               # iOS project
+│   │   ├── android/           # Android project
+│   │   ├── macos/             # macOS project
+│   │   ├── windows/           # Windows project
+│   │   ├── linux/             # Linux project
+│   │   ├── web/               # Web project
+│   │   └── test/              # Flutter tests
 │   └── harmonyos/             # HarmonyOS client skeleton
 ├── docker/                    # Dockerfile / docker-compose / nginx / supervisor
-├── docs/                      # Database DDL / design docs / implementation plans
+├── docs/                      # Documentation
+│   ├── diagrams/              # SVG architecture diagrams
+│   ├── superpowers/           # Design specs & implementation plans
+│   │   ├── specs/             # System design specification
+│   │   └── plans/             # Phased implementation plans
+│   ├── *.md                   # Core documentation
+│   ├── *.sql                  # Database DDL
+│   └── *.sh                   # Test scripts
+├── .github/workflows/         # CI/CD pipeline (GitHub Actions)
 └── README*.md                 # Project documentation
 ```
 
@@ -206,61 +231,61 @@ php start.php stop              # Stop
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Health check |
-| POST | `/api/v1/auth/register` | Register (body AES-256-GCM encrypted) |
-| POST | `/api/v1/auth/login` | Login (body AES-256-GCM encrypted) |
-| POST | `/api/v1/auth/refresh` | Refresh token (body AES-256-GCM encrypted) |
-| POST | `/api/v1/captcha/create` | Generate click CAPTCHA (required before login/register) |
-| GET | `/api/v1/products` | Product listing (filterable by category/region/keyword) |
-| GET | `/api/v1/products/{id}` | Product detail (id is a hashid string) |
-| GET | `/api/v1/regions` | Available regions |
-| GET | `/api/v1/domain/check/{domain}/{tld}` | Domain availability check |
-| GET | `/api/v1/domain/tlds` | Available TLDs |
-| POST | `/api/v1/payments/webhook/stripe` | Stripe webhook (signature verified, no encryption) |
+| POST | `/api/auth/register` | Register (body AES-256-GCM encrypted) |
+| POST | `/api/auth/login` | Login (body AES-256-GCM encrypted) |
+| POST | `/api/auth/refresh` | Refresh token (body AES-256-GCM encrypted) |
+| POST | `/api/captcha/create` | Generate click CAPTCHA (required before login/register) |
+| GET | `/api/products` | Product listing (filterable by category/region/keyword) |
+| GET | `/api/products/{id}` | Product detail (id is a hashid string) |
+| GET | `/api/regions` | Available regions |
+| GET | `/api/domain/check/{domain}/{tld}` | Domain availability check |
+| GET | `/api/domain/tlds` | Available TLDs |
+| POST | `/api/payments/webhook/stripe` | Stripe webhook (signature verified, no encryption) |
 
 ### Authenticated Endpoints (Bearer Token)
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/v1/user/profile` | Get profile |
-| PUT | `/api/v1/user/profile` | Update profile |
-| POST | `/api/v1/user/kyc` | Submit KYC |
-| GET | `/api/v1/user/balance` | Account balance |
-| GET/POST | `/api/v1/cart` | Shopping cart |
-| POST/GET | `/api/v1/orders` | Orders |
-| GET | `/api/v1/orders/{id}/payment-methods` | Available payment methods |
-| POST | `/api/v1/orders/{id}/pay` | Initiate payment |
-| GET/POST | `/api/v1/resources` | My resources |
-| GET | `/api/v1/resources/{id}/status` | Resource status |
-| GET | `/api/v1/resources/{id}/console` | VNC console URL |
-| GET/POST | `/api/v1/tickets` | Support tickets |
-| POST | `/api/v1/tickets/{id}/reply` | Reply to ticket |
-| GET/POST | `/api/v1/dns/{domain}` | DNS management |
-| POST | `/api/v1/supplier/apply` | Apply as supplier |
-| GET | `/api/v1/supplier/settlements` | Settlement history |
-| POST | `/api/v1/supplier/withdraw` | Request withdrawal |
+| GET | `/api/user/profile` | Get profile |
+| PUT | `/api/user/profile` | Update profile |
+| POST | `/api/user/kyc` | Submit KYC |
+| GET | `/api/user/balance` | Account balance |
+| GET/POST | `/api/cart` | Shopping cart |
+| POST/GET | `/api/orders` | Orders |
+| GET | `/api/orders/{id}/payment-methods` | Available payment methods |
+| POST | `/api/orders/{id}/pay` | Initiate payment |
+| GET/POST | `/api/resources` | My resources |
+| GET | `/api/resources/{id}/status` | Resource status |
+| GET | `/api/resources/{id}/console` | VNC console URL |
+| GET/POST | `/api/tickets` | Support tickets |
+| POST | `/api/tickets/{id}/reply` | Reply to ticket |
+| GET/POST | `/api/dns/{domain}` | DNS management |
+| POST | `/api/supplier/apply` | Apply as supplier |
+| GET | `/api/supplier/settlements` | Settlement history |
+| POST | `/api/supplier/withdraw` | Request withdrawal |
 
-> **Note:** Authenticated and admin endpoints are processed by `EncryptionMiddleware`. Clients set `X-Encrypted: 1` header and wrap body as `{"payload": "<base64(AES-256-GCM)>"}`. Responses are likewise encrypted and wrapped in a `payload` field. Integer IDs in API responses are automatically converted to 12-character Hashid strings; Hashid strings in requests are decoded back to integer IDs by `HashidRequestMiddleware`.
+> **Note:** All API requests must include the `X-Api-Version: v1` header (defaults to `v1` if omitted, validated by `VersionMiddleware`). Authenticated and admin endpoints are processed by `EncryptionMiddleware`. Clients set `X-Encrypted: 1` header and wrap body as `{"payload": "<base64(AES-256-GCM)>"}`. Responses are likewise encrypted and wrapped in a `payload` field. Integer IDs in API responses are automatically converted to 12-character Hashid strings; Hashid strings in requests are decoded back to integer IDs by `HashidRequestMiddleware`.
 
 ### Admin Endpoints
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/admin/api/v1/dashboard` | Operations dashboard |
-| GET/PUT | `/admin/api/v1/users` | User management |
-| GET/POST | `/admin/api/v1/kyc` | KYC review |
-| GET/POST/PUT/DELETE | `/admin/api/v1/products` | Product management |
-| POST | `/admin/api/v1/products/{productId}/skus` | Create SKU |
-| POST | `/admin/api/v1/skus/{skuId}/region-price` | Set regional price |
-| GET/POST | `/admin/api/v1/orders` | Order management (incl. refunds) |
-| GET | `/admin/api/v1/orders/export` | Export orders (.xlsx) |
-| GET | `/admin/api/v1/users/export` | Export users (.xlsx) |
-| GET | `/admin/api/v1/suppliers/export` | Export suppliers (.xlsx) |
-| GET/PUT | `/admin/api/v1/payments/*` | Channels / transactions / reconciliation |
-| GET/POST | `/admin/api/v1/provisioning/*` | Provisioning tasks / host management |
-| GET/POST | `/admin/api/v1/suppliers/*` | Supplier approval / settlement / withdrawal |
-| GET/POST | `/admin/api/v1/tickets` | Ticket assignment / closure |
-| GET | `/admin/api/v1/reports/*` | Revenue / regional / supplier reports |
-| GET | `/admin/api/v1/monitor/*` | Monitoring dashboard / resource metrics |
-| GET | `/admin/api/v1/audit-logs` | Audit logs |
-| PUT | `/admin/api/v1/system/config` | System config update |
+| GET | `/admin/api/dashboard` | Operations dashboard |
+| GET/PUT | `/admin/api/users` | User management |
+| GET/POST | `/admin/api/kyc` | KYC review |
+| GET/POST/PUT/DELETE | `/admin/api/products` | Product management |
+| POST | `/admin/api/products/{productId}/skus` | Create SKU |
+| POST | `/admin/api/skus/{skuId}/region-price` | Set regional price |
+| GET/POST | `/admin/api/orders` | Order management (incl. refunds) |
+| GET | `/admin/api/orders/export` | Export orders (.xlsx) |
+| GET | `/admin/api/users/export` | Export users (.xlsx) |
+| GET | `/admin/api/suppliers/export` | Export suppliers (.xlsx) |
+| GET/PUT | `/admin/api/payments/*` | Channels / transactions / reconciliation |
+| GET/POST | `/admin/api/provisioning/*` | Provisioning tasks / host management |
+| GET/POST | `/admin/api/suppliers/*` | Supplier approval / settlement / withdrawal |
+| GET/POST | `/admin/api/tickets` | Ticket assignment / closure |
+| GET | `/admin/api/reports/*` | Revenue / regional / supplier reports |
+| GET | `/admin/api/monitor/*` | Monitoring dashboard / resource metrics |
+| GET | `/admin/api/audit-logs` | Audit logs |
+| PUT | `/admin/api/system/config` | System config update |
 
 ## Admin Panel Architecture
 
@@ -355,7 +380,7 @@ ProviderInterface
 
 ### 5. Security Architecture
 
-Global middleware pipeline: `CORS → WAF → Locale → HashidRequest → [Route: Encryption → Captcha → Auth → Confirmation]`
+Global middleware pipeline: `CORS → WAF → Locale → HashidRequest → Version → [Route: Encryption → Captcha → Auth → Confirmation]`
 
 ![Security Middleware Pipeline](docs/diagrams/security-middleware-en.svg)
 
@@ -363,6 +388,7 @@ Global middleware pipeline: `CORS → WAF → Locale → HashidRequest → [Rout
 - **WAF** — Blocks SQL injection / XSS / path traversal attacks
 - **Locale** — Parses Accept-Language, sets locale
 - **HashidRequest** — Auto-decodes hashid strings in requests to real integer IDs
+- **Version** — Validates `X-Api-Version` header, defaults to `v1` if missing, returns `400` for unsupported versions
 - **Encryption** — AES-256-GCM transport encryption (auth + admin routes), prevents MITM eavesdropping and tampering
 - **Captcha** — Click CAPTCHA verified before login/register (GD rendering + Redis storage, one-time keys, 300s TTL, 3 attempts)
 - **Auth** — JWT HS256, Access Token 15 min, Refresh Token 30 days, Redis blacklist

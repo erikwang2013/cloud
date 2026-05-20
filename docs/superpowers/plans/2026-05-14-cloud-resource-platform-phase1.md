@@ -651,7 +651,7 @@ class OrderController
         $this->cartService  = new CartService();
     }
 
-    // POST /api/v1/cart — add to cart
+    // POST /api/cart — add to cart
     public function addToCart($request)
     {
         $data = $request->only(['sku_id', 'region_id', 'quantity', 'cycle']);
@@ -659,14 +659,14 @@ class OrderController
         return json(Response::success(null, 'Added to cart'));
     }
 
-    // GET /api/v1/cart — view cart
+    // GET /api/cart — view cart
     public function cart($request)
     {
         $items = $this->cartService->getCart($request->userId);
         return json(Response::success($items));
     }
 
-    // POST /api/v1/orders — create order from cart
+    // POST /api/orders — create order from cart
     public function store($request)
     {
         $cartIds  = $request->input('cart_ids', []);
@@ -680,7 +680,7 @@ class OrderController
         }
     }
 
-    // GET /api/v1/user/orders — my orders
+    // GET /api/user/orders — my orders
     public function myOrders($request)
     {
         $page     = (int)$request->input('page', 1);
@@ -699,7 +699,7 @@ class OrderController
         ));
     }
 
-    // GET /api/v1/orders/{id} — order detail
+    // GET /api/orders/{id} — order detail
     public function show($request, int $id)
     {
         $order = Order::with(['items', 'timeline'])
@@ -911,7 +911,7 @@ use Common\Helper\Response;
 
 class PaymentController
 {
-    // GET /api/v1/orders/{id}/payment-methods
+    // GET /api/orders/{id}/payment-methods
     public function availableChannels($request, int $orderId)
     {
         $order = Order::where('user_id', $request->userId)->findOrFail($orderId);
@@ -929,7 +929,7 @@ class PaymentController
         return json(Response::success($channels));
     }
 
-    // POST /api/v1/orders/{id}/pay
+    // POST /api/orders/{id}/pay
     public function pay($request, int $orderId)
     {
         $order     = Order::where('user_id', $request->userId)->findOrFail($orderId);
@@ -948,7 +948,7 @@ class PaymentController
         return json(Response::error(422, 'Unsupported payment channel'));
     }
 
-    // POST /api/v1/payments/webhook/stripe
+    // POST /api/payments/webhook/stripe
     public function stripeWebhook($request)
     {
         $payload   = $request->rawBody();
@@ -979,12 +979,12 @@ git commit -m "feat: implement payment system with Stripe integration"
 Add routes:
 ```php
 // Product routes (public)
-Route::get('/api/v1/products', [\App\Product\Controller\ProductController::class, 'index']);
-Route::get('/api/v1/products/{id}', [\App\Product\Controller\ProductController::class, 'show']);
-Route::get('/api/v1/regions', [\App\Product\Controller\ProductController::class, 'regions']);
+Route::get('/api/products', [\App\Product\Controller\ProductController::class, 'index']);
+Route::get('/api/products/{id}', [\App\Product\Controller\ProductController::class, 'show']);
+Route::get('/api/regions', [\App\Product\Controller\ProductController::class, 'regions']);
 
 // Cart routes (auth required)
-Route::group('/api/v1', function () {
+Route::group('/api', function () {
     Route::post('/cart', [\App\Order\Controller\OrderController::class, 'addToCart']);
     Route::get('/cart', [\App\Order\Controller\OrderController::class, 'cart']);
     Route::post('/orders', [\App\Order\Controller\OrderController::class, 'store']);
@@ -995,39 +995,39 @@ Route::group('/api/v1', function () {
 })->middleware([\Common\Auth\Middleware\AuthMiddleware::class]);
 
 // Payment webhook (no auth, signature verification instead)
-Route::post('/api/v1/payments/webhook/stripe', [\App\Payment\Controller\PaymentController::class, 'stripeWebhook']);
+Route::post('/api/payments/webhook/stripe', [\App\Payment\Controller\PaymentController::class, 'stripeWebhook']);
 ```
 
 - [ ] **Step 2: Manual end-to-end test script**
 
 ```bash
 # Register a user
-curl -X POST http://localhost:8787/api/v1/auth/register \
+curl -X POST http://localhost:8787/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"Test1234","country":"US"}'
 
 # Login
-curl -X POST http://localhost:8787/api/v1/auth/login \
+curl -X POST http://localhost:8787/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"login":"test@example.com","password":"Test1234"}'
 
 # Browse products (use token from login)
-curl http://localhost:8787/api/v1/products
+curl http://localhost:8787/api/products
 
 # Add to cart
-curl -X POST http://localhost:8787/api/v1/cart \
+curl -X POST http://localhost:8787/api/cart \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
   -d '{"sku_id":1,"region_id":1,"quantity":1,"cycle":"monthly"}'
 
 # Create order
-curl -X POST http://localhost:8787/api/v1/orders \
+curl -X POST http://localhost:8787/api/orders \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
   -d '{"cart_ids":[1]}'
 
 # Get payment methods
-curl http://localhost:8787/api/v1/orders/1/payment-methods \
+curl http://localhost:8787/api/orders/1/payment-methods \
   -H "Authorization: Bearer <access_token>"
 ```
 

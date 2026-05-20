@@ -127,18 +127,18 @@ API 版本通过 HTTP 请求头 `X-Api-Version` 指定，不在 URL 路径中。
 请求:  GET /api/auth/login
 请求头: X-Api-Version: v1
 
-内部路由 → /api/v1/auth/login → 控制器
+内部路由 → /api/auth/login → 控制器
 响应头: X-Api-Version: v1
 ```
 
 **支持版本**: `v1`（默认，请求头缺失时自动使用）
 
-**向后兼容**: 旧客户端继续使用 `/api/v1/...` 路径也能正常工作，版本已在路径中时不做重写。
+**版本控制机制**: `VersionMiddleware` 对所有 `/api/*` 和 `/admin/api/*` 路径校验 `X-Api-Version` 请求头，缺失默认 `v1`，不支持的版本返回 `400`。URL 路径中不再包含版本号。
 
 **新增版本步骤**:
 1. `VersionMiddleware::SUPPORTED` 数组追加版本号
-2. 创建对应的 `V{n}/` 控制器子目录
-3. 在 `route.php` 注册新版路由
+2. 在 `route.php` 注册新版路由分组
+3. 控制器通过 `$request->properties['api_version']` 获取版本号做差异化处理
 
 ### RESTful 路由
 

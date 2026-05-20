@@ -985,7 +985,7 @@ class ApiClient {
   late final Dio dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
-  static const String baseUrl = 'https://api.example.com/api/v1';
+  static const String baseUrl = 'https://api.example.com/api';
 
   ApiClient() {
     dio = Dio(BaseOptions(
@@ -1169,7 +1169,7 @@ apps/harmonyos/
 import http from '@ohos.net.http';
 import { preferences } from '@kit.ArkData';
 
-const BASE_URL = 'https://api.example.com/api/v1';
+const BASE_URL = 'https://api.example.com/api';
 
 export class ApiClient {
   private static instance: ApiClient;
@@ -1501,26 +1501,26 @@ git commit -m "feat: implement reporting service (revenue, supplier, regional an
 Route::get('/health', [\App\Controller\HealthController::class, 'index']);
 
 // Auth
-Route::post('/api/v1/auth/register', [\App\User\Controller\AuthController::class, 'register'])
+Route::post('/api/auth/register', [\App\User\Controller\AuthController::class, 'register'])
     ->middleware([\Common\Security\RateLimitMiddleware::class . ':register']);
-Route::post('/api/v1/auth/login', [\App\User\Controller\AuthController::class, 'login'])
+Route::post('/api/auth/login', [\App\User\Controller\AuthController::class, 'login'])
     ->middleware([\Common\Security\RateLimitMiddleware::class . ':login']);
-Route::post('/api/v1/auth/refresh', [\App\User\Controller\AuthController::class, 'refresh']);
+Route::post('/api/auth/refresh', [\App\User\Controller\AuthController::class, 'refresh']);
 
 // Products (public read)
-Route::get('/api/v1/products', [\App\Product\Controller\ProductController::class, 'index']);
-Route::get('/api/v1/products/{id}', [\App\Product\Controller\ProductController::class, 'show']);
-Route::get('/api/v1/regions', [\App\Product\Controller\ProductController::class, 'regions']);
+Route::get('/api/products', [\App\Product\Controller\ProductController::class, 'index']);
+Route::get('/api/products/{id}', [\App\Product\Controller\ProductController::class, 'show']);
+Route::get('/api/regions', [\App\Product\Controller\ProductController::class, 'regions']);
 
 // Domains (public)
-Route::get('/api/v1/domain/check/{domain}/{tld}', [\App\Domain\Controller\DomainController::class, 'check']);
-Route::get('/api/v1/domain/tlds', [\App\Domain\Controller\DomainController::class, 'tlds']);
+Route::get('/api/domain/check/{domain}/{tld}', [\App\Domain\Controller\DomainController::class, 'check']);
+Route::get('/api/domain/tlds', [\App\Domain\Controller\DomainController::class, 'tlds']);
 
 // Payment webhooks (no auth, signature verified)
-Route::post('/api/v1/payments/webhook/stripe', [\App\Payment\Controller\PaymentController::class, 'stripeWebhook']);
+Route::post('/api/payments/webhook/stripe', [\App\Payment\Controller\PaymentController::class, 'stripeWebhook']);
 
 // --- User authenticated routes ---
-Route::group('/api/v1', function () {
+Route::group('/api', function () {
     // Profile
     Route::get('/user/profile', [\App\User\Controller\ProfileController::class, 'show']);
     Route::put('/user/profile', [\App\User\Controller\ProfileController::class, 'update']);
@@ -1560,7 +1560,7 @@ Route::group('/api/v1', function () {
 })->middleware([\Common\Auth\Middleware\AuthMiddleware::class]);
 
 // --- Admin routes ---
-Route::group('/admin/api/v1', function () {
+Route::group('/admin/api', function () {
     Route::get('/dashboard', [\App\Admin\Controller\DashboardController::class, 'index']);
 
     // Users

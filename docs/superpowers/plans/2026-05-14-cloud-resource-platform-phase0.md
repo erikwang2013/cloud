@@ -1370,7 +1370,7 @@ use Webman\Route;
 Route::get('/health', [\App\Controller\HealthController::class, 'index']);
 
 // API v1
-Route::group('/api/v1', function () {
+Route::group('/api', function () {
     // Auth routes
     Route::post('/auth/register', [\App\Controller\User\AuthController::class, 'register']);
     Route::post('/auth/login', [\App\Controller\User\AuthController::class, 'login']);
@@ -1379,14 +1379,14 @@ Route::group('/api/v1', function () {
     \Common\Security\RateLimitMiddleware::class . ':register',
 ]);
 
-Route::group('/api/v1/user', function () {
+Route::group('/api/user', function () {
     Route::get('/profile', [\App\Controller\User\ProfileController::class, 'show']);
 })->middleware([
     \Common\Auth\Middleware\AuthMiddleware::class,
 ]);
 
 // Admin API
-Route::group('/admin/api/v1', function () {
+Route::group('/admin/api', function () {
     Route::get('/dashboard', [\App\Controller\Admin\DashboardController::class, 'index']);
 })->middleware([
     \Common\Auth\Middleware\AuthMiddleware::class,
@@ -1422,7 +1422,7 @@ Expected: All return 200 (health doesn't have strict rate limit)
 
 - [ ] **Step 4: Test WAF**
 
-Run: `curl -X POST http://localhost:8787/api/v1/auth/login -d "email=test' OR '1'='1"` 
+Run: `curl -X POST http://localhost:8787/api/auth/login -d "email=test' OR '1'='1"` 
 Expected: `{"code":403,"message":"Request blocked by WAF"}`
 
 - [ ] **Step 5: Verify DB connection**

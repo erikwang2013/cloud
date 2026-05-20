@@ -7,64 +7,65 @@
  */
 
 use Webman\Route;
+use Common\Version\Middleware\VersionMiddleware;
 
-// Health check
+// Health check (no version check)
 Route::get('/health', [App\Controller\HealthController::class, 'index']);
 
-// Auth routes (with encryption + rate limiting + captcha verification on sensitive ops)
-Route::group('/api/v1/auth', function () {
+// Auth routes (with version + encryption + rate limiting + captcha verification on sensitive ops)
+Route::group('/api/auth', function () {
     Route::post('/register', [App\User\Controller\AuthController::class, 'register']);
     Route::post('/login', [App\User\Controller\AuthController::class, 'login']);
     Route::post('/refresh', [App\User\Controller\AuthController::class, 'refresh']);
-})->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class]);
+})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class]);
 
 // Password reset (public)
-Route::post('/api/v1/auth/forgot-password', [App\User\Controller\AuthController::class, 'forgotPassword']);
-Route::post('/api/v1/auth/reset-password', [App\User\Controller\AuthController::class, 'resetPassword']);
+Route::post('/api/auth/forgot-password', [App\User\Controller\AuthController::class, 'forgotPassword']);
+Route::post('/api/auth/reset-password', [App\User\Controller\AuthController::class, 'resetPassword']);
 
 // Email verification (public)
-Route::get('/api/v1/auth/verify-email', [App\User\Controller\AuthController::class, 'verifyEmail']);
+Route::get('/api/auth/verify-email', [App\User\Controller\AuthController::class, 'verifyEmail']);
 
 // Service status (public)
-Route::get('/api/v1/status', [App\Controller\StatusController::class, 'index']);
+Route::get('/api/status', [App\Controller\StatusController::class, 'index']);
 
 // OAuth (public)
-Route::get('/api/v1/auth/google', [App\User\Controller\AuthController::class, 'googleOauthRedirect']);
-Route::get('/api/v1/auth/google/callback', [App\User\Controller\AuthController::class, 'googleOauthCallback']);
-Route::get('/api/v1/auth/apple', [App\User\Controller\AuthController::class, 'appleOauthRedirect']);
-Route::get('/api/v1/auth/apple/callback', [App\User\Controller\AuthController::class, 'appleOauthCallback']);
+Route::get('/api/auth/google', [App\User\Controller\AuthController::class, 'googleOauthRedirect']);
+Route::get('/api/auth/google/callback', [App\User\Controller\AuthController::class, 'googleOauthCallback']);
+Route::get('/api/auth/apple', [App\User\Controller\AuthController::class, 'appleOauthRedirect']);
+Route::get('/api/auth/apple/callback', [App\User\Controller\AuthController::class, 'appleOauthCallback']);
 
 // TOTP recovery login (public)
-Route::post('/api/v1/auth/login/recovery', [App\User\Controller\AuthController::class, 'loginWithRecoveryCode']);
+Route::post('/api/auth/login/recovery', [App\User\Controller\AuthController::class, 'loginWithRecoveryCode']);
 
 // SMS verification (public)
-Route::post('/api/v1/auth/send-sms', [App\User\Controller\AuthController::class, 'sendSmsVerify']);
+Route::post('/api/auth/send-sms', [App\User\Controller\AuthController::class, 'sendSmsVerify']);
 
 // Captcha route (public, generates click captcha for login/register)
-Route::post('/api/v1/captcha/create', [App\Captcha\Controller\CaptchaController::class, 'create'])
+Route::post('/api/captcha/create', [App\Captcha\Controller\CaptchaController::class, 'create'])
     ->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class]);
 
 // Product routes (public)
-Route::get('/api/v1/products', [App\Product\Controller\ProductController::class, 'index']);
-Route::get('/api/v1/products/search', [App\Product\Controller\ProductController::class, 'search']);
-Route::get('/api/v1/products/{id}', [App\Product\Controller\ProductController::class, 'show']);
-Route::get('/api/v1/regions', [App\Product\Controller\ProductController::class, 'regions']);
-Route::get('/api/v1/products/{productId}/reviews', [App\Product\Controller\ReviewController::class, 'index']);
+Route::get('/api/products', [App\Product\Controller\ProductController::class, 'index']);
+Route::get('/api/products/search', [App\Product\Controller\ProductController::class, 'search']);
+Route::get('/api/products/{id}', [App\Product\Controller\ProductController::class, 'show']);
+Route::get('/api/regions', [App\Product\Controller\ProductController::class, 'regions']);
+Route::get('/api/products/{productId}/reviews', [App\Product\Controller\ReviewController::class, 'index']);
 
 // Domain routes (public)
-Route::get('/api/v1/domain/check/{domain}/{tld}', [App\Domain\Controller\DomainController::class, 'check']);
-Route::get('/api/v1/domain/tlds', [App\Domain\Controller\DomainController::class, 'tlds']);
+Route::get('/api/domain/check/{domain}/{tld}', [App\Domain\Controller\DomainController::class, 'check']);
+Route::get('/api/domain/tlds', [App\Domain\Controller\DomainController::class, 'tlds']);
 
 // Help articles (public)
-Route::get('/api/v1/help', [App\Controller\HelpController::class, 'index']);
-Route::get('/api/v1/help/categories', [App\Controller\HelpController::class, 'categories']);
-Route::get('/api/v1/help/{slug}', [App\Controller\HelpController::class, 'show']);
+Route::get('/api/help', [App\Controller\HelpController::class, 'index']);
+Route::get('/api/help/categories', [App\Controller\HelpController::class, 'categories']);
+Route::get('/api/help/{slug}', [App\Controller\HelpController::class, 'show']);
 
 // Payment webhooks (no auth, signature verified)
-Route::post('/api/v1/payments/webhook/stripe', [App\Payment\Controller\PaymentController::class, 'stripeWebhook']);
+Route::post('/api/payments/webhook/stripe', [App\Payment\Controller\PaymentController::class, 'stripeWebhook']);
 
 // === User authenticated routes ===
-Route::group('/api/v1', function () {
+Route::group('/api', function () {
     // Profile
     Route::get('/user/profile', [App\User\Controller\ProfileController::class, 'show']);
     Route::put('/user/profile', [App\User\Controller\ProfileController::class, 'update']);
@@ -150,17 +151,17 @@ Route::group('/api/v1', function () {
     // Supplier
     Route::post('/supplier/apply', [App\Supplier\Controller\SupplierController::class, 'apply']);
     Route::get('/supplier/settlements', [App\Supplier\Controller\SupplierController::class, 'settlements']);
-})->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class]);
+})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class]);
 
 // === User sensitive operations (requires password confirmation) ===
-Route::group('/api/v1', function () {
+Route::group('/api', function () {
     Route::post('/orders/{id}/pay', [App\Payment\Controller\PaymentController::class, 'pay']);
     Route::post('/supplier/withdraw', [App\Supplier\Controller\SupplierController::class, 'withdraw']);
     Route::delete('/dns/{domain}/records/{id}', [App\Domain\Controller\DomainController::class, 'deleteRecord']);
-})->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Confirmation\ConfirmationMiddleware::class]);
+})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Confirmation\ConfirmationMiddleware::class]);
 
 // === Admin routes ===
-Route::group('/admin/api/v1', function () {
+Route::group('/admin/api', function () {
     Route::get('/dashboard', [App\Admin\Controller\DashboardController::class, 'index']);
 
     // Users (read)
@@ -266,10 +267,10 @@ Route::group('/admin/api/v1', function () {
     Route::post('/webhooks', [App\Admin\Controller\WebhookController::class, 'store']);
     Route::delete('/webhooks', [App\Admin\Controller\WebhookController::class, 'destroy']);
     Route::post('/webhooks/test', [App\Admin\Controller\WebhookController::class, 'test']);
-})->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class]);
+})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class]);
 
 // === Admin sensitive operations (requires password confirmation) ===
-Route::group('/admin/api/v1', function () {
+Route::group('/admin/api', function () {
     Route::delete('/products/{id}', [App\Admin\Controller\ProductController::class, 'destroy']);
     Route::post('/orders/{id}/refund', [App\Admin\Controller\OrderController::class, 'refund']);
     Route::post('/provisioning/resources/{id}/destroy', [App\Provisioning\Controller\ResourceController::class, 'destroy']);
@@ -279,4 +280,4 @@ Route::group('/admin/api/v1', function () {
     Route::post('/suppliers/{id}/settle', [App\Admin\Controller\SupplierController::class, 'generateSettlement']);
     Route::post('/suppliers/withdraws/{id}/approve', [App\Admin\Controller\SupplierController::class, 'approveWithdraw']);
     Route::put('/system/config', [App\Admin\Controller\SystemController::class, 'updateConfig']);
-})->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class, Common\Confirmation\ConfirmationMiddleware::class]);
+})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class, Common\Confirmation\ConfirmationMiddleware::class]);
