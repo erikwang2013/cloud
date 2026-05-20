@@ -45,7 +45,7 @@ cloud-php/
 │   │   ├── common/             # Utilities (Auth / Tree / Layui / Util / ExcelExport / Migration)
 │   │   ├── controller/         # 53 controllers (Base / Crud base + per-entity CRUD)
 │   │   ├── exception/          # Exception handling
-│   │   ├── middleware/          # Access control middleware (AccessControl)
+│   │   ├── middleware/          # Access control middleware (WafMiddleware + AccessControl)
 │   │   ├── model/              # 45 Eloquent models (Base with Snowflake PK + Encryptable)
 │   │   ├── view/               # View templates (Layui panel)
 │   │   └── functions.php       # Global helpers (hashids / encrypt / decrypt)
@@ -121,7 +121,7 @@ cloud-php/
 │   ├── database/migrations/    # Database migration files (12 migrations)
 │   ├── i18n/                   # Internationalization resources (en-US / zh-CN)
 │   ├── support/                # Bootstrap (Eloquent / Redis / Event / encryption / snowflake / hashids / scout / MigrationRunner)
-│   ├── tests/                  # Unit tests (PHPUnit 10, 178 tests)
+│   ├── tests/                  # Unit tests (PHPUnit 10, 282 tests)
 │   │   ├── Admin/              # ImportExport
 │   │   ├── Captcha/            # CaptchaService
 │   │   ├── Common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
@@ -417,7 +417,7 @@ Global middleware pipeline: `Version → CORS → ClientPlatform → WAF → Loc
 ![Security Middleware Pipeline](docs/diagrams/security-middleware-en.svg)
 
 - **CORS** — Cross-origin request headers
-- **WAF** — Blocks SQL injection / XSS / path traversal attacks
+- **WAF** — Blocks SQL injection / XSS / command injection / file inclusion / header injection / path traversal (30+ rules)
 - **Locale** — Parses Accept-Language, sets locale
 - **HashidRequest** — Auto-decodes hashid strings in requests to real integer IDs
 - **Version** — Validates `X-Api-Version` header, defaults to `v1` if missing, returns `400` for unsupported versions
@@ -493,7 +493,10 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] FCM push notification production integration (kreait/firebase-php, with invalid token cleanup)
 - [x] Click CAPTCHA (erikwang2013/poster-php, login/register verification)
 - [x] Password confirmation (ConfirmationMiddleware, sensitive ops password re-entry, 5 fails → 15 min lock)
-- [x] Service-layer unit tests (176 tests, 276 assertions)
+- [x] Service-layer unit tests (282 tests, 442 assertions)
+- [x] Client platform identification (ClientPlatformMiddleware, X-Client-Platform header, 8 platforms)
+- [x] WAF security enhancement (30+ rules: SQLi/XSS/command injection/file inclusion/header injection)
+- [x] Admin panel WAF middleware
 - [x] CI/CD pipeline (GitHub Actions, syntax check + dual PHPUnit + Composer validate)
 
 ## 开源不易，欢迎支持

@@ -47,7 +47,7 @@ cloud-php/
 │   │   ├── common/             # 工具类（Auth / Tree / Layui / Util / ExcelExport / Migration）
 │   │   ├── controller/         # 53 个控制器（Base / Crud 基类 + 各业务 CRUD）
 │   │   ├── exception/          # 异常处理
-│   │   ├── middleware/          # 访问控制中间件（AccessControl）
+│   │   ├── middleware/          # 访问控制中间件（WafMiddleware + AccessControl）
 │   │   ├── model/              # 45 个 Eloquent 模型（Base 基类含 Snowflake PK + Encryptable）
 │   │   ├── view/               # 视图模板（Layui 后台面板）
 │   │   └── functions.php       # 全局辅助函数（hashids / encrypt / decrypt）
@@ -123,7 +123,7 @@ cloud-php/
 │   ├── database/migrations/    # 数据库迁移文件（12 个迁移）
 │   ├── i18n/                   # 多语言资源（en-US / zh-CN）
 │   ├── support/                # Bootstrap 引导（Eloquent / Redis / Event / 加密 / 雪花ID / Hashids / Scout / MigrationRunner）
-│   ├── tests/                  # 单元测试（PHPUnit 10, 178 tests）
+│   ├── tests/                  # 单元测试（PHPUnit 10, 282 tests）
 │   │   ├── Admin/              # ImportExport
 │   │   ├── Captcha/            # CaptchaService
 │   │   ├── Common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
@@ -419,7 +419,7 @@ ProviderInterface
 ![安全中间件管道](docs/diagrams/security-middleware-zh.svg)
 
 - **CORS** — 跨域请求头处理
-- **WAF** — 拦截 SQL 注入 / XSS / 路径遍历
+- **WAF** — 拦截 SQL 注入 / XSS / 命令注入 / 文件包含 / HTTP 头注入 / 路径穿越（30+ 条规则）
 - **Locale** — 解析 Accept-Language，设置多语言
 - **HashidRequest** — 自动解码请求中的 hashid 字符串为真实整数 ID
 - **Version** — 校验 `X-Api-Version` 请求头，缺失默认 `v1`，不支持的版本返回 `400`
@@ -495,7 +495,10 @@ ProviderInterface
 - [x] FCM 推送真实集成（kreait/firebase-php，含无效 token 清理）
 - [x] 点击验证码（erikwang2013/poster-php，登录/注册敏感操作验证）
 - [x] 二次确认（ConfirmationMiddleware，敏感操作密码复核，5次失败锁定15分钟）
-- [x] 服务端单元测试（176 tests, 276 assertions）
+- [x] 服务端单元测试（282 tests, 442 assertions）
+- [x] 客户端平台识别（ClientPlatformMiddleware，X-Client-Platform 头支持 8 种平台）
+- [x] WAF 安全增强（30+ 规则，覆盖 SQL注入/XSS/命令注入/文件包含/头注入）
+- [x] Admin 面板 WAF 中间件
 - [x] CI/CD 流水线（GitHub Actions，语法检查 + 双端 PHPUnit + Composer 校验）
 
 ## 开源不易，欢迎支持

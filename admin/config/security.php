@@ -30,10 +30,11 @@ return [
 
         // 命令注入特征检测
         'cmd_injection_patterns' => [
-            '/[;&|`\$\(\)]/',
+            '/\|\s*\b(cat|ls|rm|wget|curl|nc|bash|sh|cmd|powershell|whoami|id)\b/i',
+            '/;\s*\b(cat|ls|rm|wget|curl|nc|bash|sh|cmd|powershell|whoami|id|uname|ifconfig|ipconfig|nslookup|ping)\b/i',
+            '/\$\([^)]+\)/',
+            '/`[^`]+`/',
             '/\b(cat|ls|rm|wget|curl|nc|netcat|bash|sh|zsh|cmd|powershell|whoami|id|uname|ifconfig|ipconfig|nslookup|ping|tracert)\s+/i',
-            '/\||\b2?>&?\d?\b/',
-            '/(\$\(.*\)|`[^`]*`)/',
         ],
 
         // 文件包含 / 路径穿越

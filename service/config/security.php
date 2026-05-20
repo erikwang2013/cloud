@@ -71,14 +71,15 @@ return [
 
         // 命令注入特征检测
         'cmd_injection_patterns' => [
-            // Shell 元字符
-            '/[;&|`\$\(\)]/',
-            // 常见系统命令
-            '/\b(cat|ls|rm|wget|curl|nc|netcat|bash|sh|zsh|cmd|powershell|whoami|id|uname|ifconfig|ipconfig|nslookup|ping|tracert)\s+/i',
-            // 管道与重定向
-            '/\||\b2?>&?\d?\b/',
+            // 管道符后跟命令
+            '/\|\s*\b(cat|ls|rm|wget|curl|nc|bash|sh|cmd|powershell|whoami|id)\b/i',
+            // 分号后跟命令
+            '/;\s*\b(cat|ls|rm|wget|curl|nc|bash|sh|cmd|powershell|whoami|id|uname|ifconfig|ipconfig|nslookup|ping)\b/i',
             // 命令替换：$(cmd), `cmd`
-            '/(\$\(.*\)|`[^`]*`)/',
+            '/\$\([^)]+\)/',
+            '/`[^`]+`/',
+            // 常见系统命令（含参数）
+            '/\b(cat|ls|rm|wget|curl|nc|netcat|bash|sh|zsh|cmd|powershell|whoami|id|uname|ifconfig|ipconfig|nslookup|ping|tracert)\s+/i',
         ],
 
         // 文件包含 / 路径穿越特征检测

@@ -14,9 +14,13 @@ class WafMiddleware implements MiddlewareInterface
 {
     public function process(Request $request, callable $handler): Response
     {
-        $input = json_encode($request->all());
-        $url   = $request->path() . '?' . $request->queryString();
-        $ua    = $request->header('User-Agent', '');
+        $input = json_encode($request->all(), JSON_UNESCAPED_SLASHES);
+        if ($input === false) {
+            $input = serialize($request->all());
+        }
+        $url = mb_substr($request->path() . '?' . $request->queryString(), 0, 2048);
+        $ua  = $request->header('User-Agent', '');
+        $raw = file_get_contents('php://input') ?: '';
 
         $patternGroups = [
             'security.waf.sqli_patterns',
@@ -33,9 +37,17 @@ class WafMiddleware implements MiddlewareInterface
                 $patterns = array_merge($patterns, $groupPatterns);
             }
         }
+        $patterns = array_unique($patterns);
 
         foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $input) || preg_match($pattern, $url) || preg_match($pattern, $ua)) {
+            if ($this->match($pattern, $input) || $this->match($pattern, $url) || $this->match($pattern, $ua) || $this->match($pattern, $raw)) {
+                // Log blocked request to application log (audit DB not available in admin instance)
+                error_log(sprintf(
+                    'WAF blocked [%s] %s from %s',
+                    $request->method(),
+                    $request->path(),
+                    $request->getRealIp()
+                ));
                 if ($request->expectsJson()) {
                     return new Response(403, ['Content-Type' => 'application/json'], json_encode(['code' => 403, 'message' => 'Request blocked by WAF']));
                 }
@@ -44,5 +56,15 @@ class WafMiddleware implements MiddlewareInterface
         }
 
         return $handler($request);
+    }
+
+    private function match(string $pattern, string $subject): bool
+    {
+        $result = @preg_match($pattern, $subject);
+        if ($result === false) {
+            error_log("WAF: invalid regex pattern: $pattern");
+            return false;
+        }
+        return $result === 1;
     }
 }
