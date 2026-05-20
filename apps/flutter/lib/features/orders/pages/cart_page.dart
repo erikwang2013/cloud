@@ -1,21 +1,46 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/responsive.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
-
   @override
   State<CartPage> createState() => _CartPageState();
 }
 
 class _CartPageState extends State<CartPage> {
-  final _quantities = [1, 2, 1];
-  final _items = [
-    ['Cloud VPS Basic', 'US East', 'Monthly', '\$5.00'],
-    ['IPv4 Address', 'Global', 'Monthly', '\$3.00'],
-    ['SSD Block Storage', 'US East', 'Monthly', '\$10.00'],
-  ];
+  final ApiService _api = ApiService();
+  List<dynamic> _items = [];
+  Map<String, dynamic>? _summary;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCart();
+  }
+
+  Future<void> _fetchCart() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final data = await _api.getCart();
+      if (mounted) setState(() {
+        _items = data['items'] as List<dynamic>? ?? [];
+        _summary = data['summary'] as Map<String, dynamic>?;
+        _loading = false;
+      });
+    } on DioException catch (e) {
+      if (mounted) setState(() { _error = e.message; _loading = false; });
+    }
+  }
+
+  Future<void> _removeItem(int id) async {
+    try { await _api.removeFromCart(id); _fetchCart(); }
+    catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +53,13 @@ class _CartPageState extends State<CartPage> {
         children: [
           const Text('Shopping Cart', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
           const SizedBox(height: 20),
+          if (_loading)
+            const Expanded(child: Center(child: CircularProgressIndicator()))
+          else if (_error != null)
+            Expanded(child: Center(child: Text('Error: $_error', style: TextStyle(color: Colors.red.shade400))))
+          else if (_items.isEmpty)
+            const Expanded(child: Center(child: Text('Your cart is empty', style: TextStyle(color: Colors.grey))))
+          else
           Expanded(
             child: isDesktop ? _buildDesktopCart() : _buildMobileCart(),
           ),
@@ -54,23 +86,28 @@ class _CartPageState extends State<CartPage> {
                     DataColumn(label: Text('Price'), numeric: true),
                     DataColumn(label: Text('')),
                   ],
-                  rows: List.generate(_items.length, (i) {
+                  rows: _items.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final item = entry.value as Map<String, dynamic>? ?? {};
+                    final name = (item['product'] is Map ? item['product']['name'] ?? 'Unknown' : 'Unknown').toString();
+                    final region = (item['region'] ?? 'N/A').toString();
+                    final cycle = (item['cycle'] ?? 'monthly').toString();
+                    final qty = int.tryParse((item['quantity'] ?? '1').toString()) ?? 1;
+                    final price = (item['unit_price'] ?? item['price'] ?? '0').toString();
+                    final id = int.tryParse((item['id'] ?? '0').toString()) ?? 0;
                     return DataRow(cells: [
-                      DataCell(Text(_items[i][0], style: const TextStyle(fontWeight: FontWeight.w500))),
-                      DataCell(Text(_items[i][1])),
-                      DataCell(Text(_items[i][2])),
-                      DataCell(_QuantityStepper(
-                        value: _quantities[i],
-                        onChanged: (v) => setState(() => _quantities[i] = v),
-                      )),
-                      DataCell(Text(_items[i][3], style: const TextStyle(fontWeight: FontWeight.w600))),
+                      DataCell(Text(name, style: const TextStyle(fontWeight: FontWeight.w500))),
+                      DataCell(Text(region)),
+                      DataCell(Text(cycle)),
+                      DataCell(_QuantityStepper(value: qty, onChanged: (v) {})),
+                      DataCell(Text('\$$price', style: const TextStyle(fontWeight: FontWeight.w600))),
                       DataCell(IconButton(
                         icon: const Icon(Icons.delete_outline, size: 18),
-                        onPressed: () {},
+                        onPressed: () => _removeItem(id),
                         tooltip: 'Remove',
                       )),
                     ]);
-                  }),
+                  }).toList(),
               ),
             ),
           ),
@@ -86,14 +123,17 @@ class _CartPageState extends State<CartPage> {
                 children: [
                   const Text('Order Summary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 16),
-                  _SummaryRow('Subtotal', '\$18.00'),
-                  _SummaryRow('Tax', '\$1.44'),
+                  _SummaryRow('Subtotal', '\$${_summary?['subtotal'] ?? '0.00'}'),
+                  _SummaryRow('Tax', '\$${_summary?['tax'] ?? '0.00'}'),
                   const Divider(),
-                  _SummaryRow('Total', '\$19.44', bold: true),
+                  _SummaryRow('Total', '\$${_summary?['total'] ?? '0.00'}', bold: true),
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(onPressed: () {}, child: const Text('Checkout')),
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pushNamed(context, '/checkout'),
+                      child: const Text('Checkout'),
+                    ),
                   ),
                 ],
               ),
@@ -107,24 +147,37 @@ class _CartPageState extends State<CartPage> {
   Widget _buildMobileCart() {
     return ListView(
       children: [
-        ...List.generate(_items.length, (i) => Card(
-          child: ListTile(
-            leading: const Icon(Icons.dns_outlined),
-            title: Text(_items[i][0]),
-            subtitle: Text('${_items[i][1]} • ${_items[i][2]} • Qty: ${_quantities[i]}'),
-            trailing: Text(_items[i][3], style: const TextStyle(fontWeight: FontWeight.w600)),
-          ),
-        )),
+        ..._items.asMap().entries.map((entry) {
+          final item = entry.value as Map<String, dynamic>? ?? {};
+          final name = (item['product'] is Map ? item['product']['name'] ?? 'Unknown' : 'Unknown').toString();
+          final region = (item['region'] ?? 'N/A').toString();
+          final cycle = (item['cycle'] ?? 'monthly').toString();
+          final qty = (item['quantity'] ?? 1).toString();
+          final price = (item['unit_price'] ?? item['price'] ?? '0').toString();
+          return Card(
+            child: ListTile(
+              leading: const Icon(Icons.dns_outlined),
+              title: Text(name),
+              subtitle: Text('$region • $cycle • Qty: $qty'),
+              trailing: Text('\$$price', style: const TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          );
+        }).toList(),
         const SizedBox(height: 16),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _SummaryRow('Subtotal', '\$18.00'),
-                _SummaryRow('Total', '\$19.44', bold: true),
+                _SummaryRow('Subtotal', '\$${_summary?['subtotal'] ?? '0.00'}'),
+                _SummaryRow('Total', '\$${_summary?['total'] ?? '0.00'}', bold: true),
                 const SizedBox(height: 12),
-                SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () {}, child: const Text('Checkout'))),
+                SizedBox(width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pushNamed(context, '/checkout'),
+                    child: const Text('Checkout'),
+                  ),
+                ),
               ],
             ),
           ),

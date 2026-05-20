@@ -65,4 +65,42 @@ class SupplierController
         $withdraw->update(['status' => 'completed']);
         return json(Response::success(null, 'Withdrawal approved'));
     }
+
+    public function apiKeys(int $supplierId)
+    {
+        $keys = \Illuminate\Database\Capsule\Manager::table('supplier_api_keys')
+            ->where('supplier_id', $supplierId)
+            ->where('revoked', false)
+            ->get()
+            ->map(fn($k) => ['id' => $k->id, 'name' => $k->name, 'key_prefix' => $k->key_prefix, 'created_at' => $k->created_at, 'last_used_at' => $k->last_used_at]);
+
+        return json(Response::success($keys));
+    }
+
+    public function createApiKey($request, int $supplierId)
+    {
+        $rawKey = 'sk_' . bin2hex(random_bytes(24));
+        $prefix = substr($rawKey, 0, 10);
+
+        \Illuminate\Database\Capsule\Manager::table('supplier_api_keys')->insert([
+            'supplier_id' => $supplierId,
+            'name'        => $request->input('name', 'API Key'),
+            'key_hash'    => hash('sha256', $rawKey),
+            'key_prefix'  => $prefix,
+            'created_at'  => now(),
+            'updated_at'  => now(),
+        ]);
+
+        // Return raw key only once
+        return json(Response::success(['api_key' => $rawKey, 'prefix' => $prefix], 'API key created. Store it securely.'));
+    }
+
+    public function revokeApiKey(int $id)
+    {
+        \Illuminate\Database\Capsule\Manager::table('supplier_api_keys')
+            ->where('id', $id)
+            ->update(['revoked' => true, 'updated_at' => now()]);
+
+        return json(Response::success());
+    }
 }

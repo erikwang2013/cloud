@@ -35,18 +35,27 @@ class AuthService
         }
 
         $user = User::create([
-            'email'         => $data['email'] ?? null,
-            'phone'         => $data['phone'] ?? null,
-            'password_hash' => Hash::make($data['password'], ['cost' => config('auth.password.cost', 12)]),
-            'language'      => $data['language'] ?? config('i18n.default_locale', 'en-US'),
-            'currency'      => $data['currency'] ?? 'USD',
-            'status'        => 'active',
-            'role'          => 'user',
+            'email'              => $data['email'] ?? null,
+            'phone'              => $data['phone'] ?? null,
+            'password_hash'      => Hash::make($data['password'], ['cost' => config('auth.password.cost', 12)]),
+            'language'           => $data['language'] ?? config('i18n.default_locale', 'en-US'),
+            'currency'           => $data['currency'] ?? 'USD',
+            'status'             => 'active',
+            'role'               => 'user',
+            'email_verify_token' => !empty($data['email']) ? bin2hex(random_bytes(32)) : null,
         ]);
 
         UserProfile::create(['user_id' => $user->id, 'country' => $data['country'] ?? null]);
         UserBalance::create(['user_id' => $user->id, 'currency' => 'USD']);
         UserBalance::create(['user_id' => $user->id, 'currency' => 'CNY']);
+
+        // Send verification email if email provided
+        if (!empty($data['email']) && $user->email_verify_token) {
+            $verifyUrl = getenv('APP_URL') . '/api/v1/auth/verify-email?token=' . $user->email_verify_token;
+            \Common\Notification\NotificationDispatcher::send($user, 'email_verify', [
+                'verify_url' => $verifyUrl,
+            ], ['email']);
+        }
 
         return $this->issueTokens($user->id, 'user');
     }
@@ -66,6 +75,22 @@ class AuthService
         if ($this->isLoginLocked($user->id)) {
             throw new \InvalidArgumentException('Account temporarily locked, try again later');
         }
+
+        // New IP alert — notify user if login from unrecognized IP
+        $currentIp = $_SERVER['REMOTE_ADDR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? '0.0.0.0';
+        $lastIp    = $user->last_login_ip;
+        if ($lastIp && $lastIp !== $currentIp && !empty($user->email)) {
+            try {
+                \Common\Notification\NotificationDispatcher::send($user, 'new_ip_login', [
+                    'ip'       => $currentIp,
+                    'time'     => date('Y-m-d H:i:s'),
+                ], ['email']);
+            } catch (\Throwable $e) {
+                // Non-critical, don't block login
+            }
+        }
+
+        $user->update(['last_login_ip' => $currentIp, 'last_login_at' => date('Y-m-d H:i:s')]);
 
         return $this->issueTokens($user->id, $user->role, $deviceFingerprint);
     }

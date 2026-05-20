@@ -5,14 +5,19 @@ class ApiClient {
   late final Dio dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
-  static const String baseUrl = 'https://api.example.com/api/v1';
+  // Version in header, not in URL path
+  static const String baseUrl = 'https://api.example.com/api';
+  static const String apiVersion = 'v1';
 
   ApiClient() {
     dio = Dio(BaseOptions(
       baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Api-Version': apiVersion,
+      },
     ));
 
     dio.interceptors.add(AuthInterceptor(_storage, dio));
@@ -57,9 +62,12 @@ class AuthInterceptor extends Interceptor {
     try {
       final response = await Dio().post('${ApiClient.baseUrl}/auth/refresh', data: {
         'refresh_token': refreshToken,
-      });
-      await _storage.write(key: 'access_token', value: response.data['data']['access_token']);
-      await _storage.write(key: 'refresh_token', value: response.data['data']['refresh_token']);
+      }, options: Options(headers: {'X-Api-Version': ApiClient.apiVersion}));
+      final respData = response.data['data'];
+      if (respData != null) {
+        await _storage.write(key: 'access_token', value: respData['access_token']);
+        await _storage.write(key: 'refresh_token', value: respData['refresh_token']);
+      }
       return true;
     } catch (_) {
       return false;

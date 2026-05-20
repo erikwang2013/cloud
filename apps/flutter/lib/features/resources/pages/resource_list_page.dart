@@ -1,31 +1,39 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/responsive.dart';
 
 class ResourceListPage extends StatefulWidget {
   const ResourceListPage({super.key});
-
   @override
   State<ResourceListPage> createState() => _ResourceListPageState();
 }
 
 class _ResourceListPageState extends State<ResourceListPage> {
+  final ApiService _api = ApiService();
   final _selected = <int>{};
   int? _sortColumn;
   bool _sortAsc = true;
   String _statusFilter = 'all';
+  List<dynamic> _resources = [];
+  bool _loading = true;
+  String? _error;
 
-  static const _data = [
-    ['vm-1001-1', 'Server', 'US East', 'Running', '10.0.0.1', '2026-06-14'],
-    ['vm-1001-2', 'Server', 'Europe', 'Running', '10.0.1.1', '2026-07-01'],
-    ['ip-1002-1', 'IP', 'Global', 'Active', '192.168.0.1', '-'],
-    ['disk-1003-1', 'Disk', 'US East', 'Active', '-', '-'],
-    ['domain-1004-1', 'Domain', 'Global', 'Active', '-', '2027-05-14'],
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchResources();
+  }
 
-  List<List<String>> get _filteredData {
-    if (_statusFilter == 'all') return _data.toList();
-    return _data.where((r) => r[3] == _statusFilter).toList();
+  Future<void> _fetchResources() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final data = await _api.getResources(status: _statusFilter == 'all' ? null : _statusFilter);
+      if (mounted) setState(() { _resources = data; _loading = false; });
+    } on DioException catch (e) {
+      if (mounted) setState(() { _error = e.message; _loading = false; });
+    }
   }
 
   @override
@@ -45,11 +53,11 @@ class _ResourceListPageState extends State<ResourceListPage> {
                 const Text('My Resources', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
                 const SizedBox(width: 24),
                 if (isDesktop) ...[
-                  _StatusChip(label: 'All', value: 'all', current: _statusFilter, onTap: () => setState(() => _statusFilter = 'all')),
+                  _StatusChip(label: 'All', value: 'all', current: _statusFilter, onTap: () => { setState(() => _statusFilter = 'all'), _fetchResources() }),
                   const SizedBox(width: 8),
-                  _StatusChip(label: 'Running', value: 'Running', current: _statusFilter, onTap: () => setState(() => _statusFilter = 'Running')),
+                  _StatusChip(label: 'Active', value: 'active', current: _statusFilter, onTap: () => { setState(() => _statusFilter = 'active'), _fetchResources() }),
                   const SizedBox(width: 8),
-                  _StatusChip(label: 'Active', value: 'Active', current: _statusFilter, onTap: () => setState(() => _statusFilter = 'Active')),
+                  _StatusChip(label: 'Stopped', value: 'stopped', current: _statusFilter, onTap: () => { setState(() => _statusFilter = 'stopped'), _fetchResources() }),
                   const SizedBox(width: 16),
                 ],
                 FilledButton.icon(
@@ -63,9 +71,14 @@ class _ResourceListPageState extends State<ResourceListPage> {
           const SizedBox(height: 20),
 
           // Content
-          Expanded(
-            child: isDesktop ? _buildDesktopTable() : _buildMobileCards(),
-          ),
+          if (_loading)
+            const Expanded(child: Center(child: CircularProgressIndicator()))
+          else if (_error != null)
+            Expanded(child: Center(child: Text('Error: $_error', style: TextStyle(color: Colors.red.shade400))))
+          else
+            Expanded(
+              child: isDesktop ? _buildDesktopTable() : _buildMobileCards(),
+            ),
 
           // Bulk actions
           if (_selected.isNotEmpty) _buildBulkActionBar(),
@@ -91,10 +104,16 @@ class _ResourceListPageState extends State<ResourceListPage> {
           DataColumn(label: const Text('Expires'), numeric: true, onSort: (c, _) => setState(() { _sortColumn = c; _sortAsc = !_sortAsc; })),
           const DataColumn(label: Text('Actions')),
         ],
-        rows: _filteredData.asMap().entries.map((e) {
+        rows: _resources.asMap().entries.map((e) {
           final i = e.key;
-          final row = e.value;
-          final statusColor = _statusColor(row[3]);
+          final r = e.value as Map<String, dynamic>? ?? {};
+          final id = (r['id'] ?? '').toString();
+          final type = (r['type'] ?? 'server').toString();
+          final status = (r['status'] ?? 'unknown').toString();
+          final region = (r['region'] is Map ? r['region']['name'] ?? '' : '').toString();
+          final ip = (r['server'] is Map ? r['server']['ip_address'] ?? '' : (r['ip'] is Map ? r['ip']['ip_address'] ?? '' : '')).toString();
+          final expires = (r['expired_at'] ?? 'N/A').toString();
+          final statusColor = _statusColor(status);
           final selected = _selected.contains(i);
           return DataRow(
             selected: selected,
@@ -102,18 +121,18 @@ class _ResourceListPageState extends State<ResourceListPage> {
               if (v == true) { _selected.add(i); } else { _selected.remove(i); }
             }),
             cells: [
-              DataCell(Text(row[0], style: const TextStyle(fontWeight: FontWeight.w500))),
-              DataCell(Text(row[1])),
-              DataCell(Text(row[2])),
+              DataCell(Text(id, style: const TextStyle(fontWeight: FontWeight.w500))),
+              DataCell(Text(type)),
+              DataCell(Text(region)),
               DataCell(Chip(
-                label: Text(row[3], style: TextStyle(color: statusColor, fontSize: 12)),
+                label: Text(status, style: TextStyle(color: statusColor, fontSize: 12)),
                 backgroundColor: statusColor.withValues(alpha: 0.1),
                 side: BorderSide.none,
                 padding: EdgeInsets.zero,
                 visualDensity: VisualDensity.compact,
               )),
-              DataCell(Text(row[4])),
-              DataCell(Text(row[5])),
+              DataCell(Text(ip)),
+              DataCell(Text(expires)),
               DataCell(Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -150,16 +169,22 @@ class _ResourceListPageState extends State<ResourceListPage> {
 
   Widget _buildMobileCards() {
     return ListView.builder(
-      itemCount: _filteredData.length,
-      itemBuilder: (_, i) => Card(
-        child: ListTile(
-          leading: const Icon(Icons.dns_outlined),
-          title: Text(_filteredData[i][0]),
-          subtitle: Text('${_filteredData[i][2]} • ${_filteredData[i][3]}'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () {},
-        ),
-      ),
+      itemCount: _resources.length,
+      itemBuilder: (_, i) {
+        final r = _resources[i] as Map<String, dynamic>? ?? {};
+        final id = (r['id'] ?? '').toString();
+        final type = (r['type'] ?? '').toString();
+        final status = (r['status'] ?? '').toString();
+        return Card(
+          child: ListTile(
+            leading: const Icon(Icons.dns_outlined),
+            title: Text(id),
+            subtitle: Text('$type • $status'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {},
+          ),
+        );
+      },
     );
   }
 
@@ -211,9 +236,10 @@ class _ResourceListPageState extends State<ResourceListPage> {
   }
 
   Color _statusColor(String status) {
-    switch (status) {
-      case 'Running': return Colors.green;
-      case 'Active': return Colors.blue;
+    switch (status.toLowerCase()) {
+      case 'active': case 'running': return Colors.green;
+      case 'provisioning': case 'pending': return Colors.orange;
+      case 'stopped': case 'destroyed': return Colors.red;
       default: return Colors.grey;
     }
   }

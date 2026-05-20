@@ -186,3 +186,28 @@ if (!function_exists('request_id')) {
         return $id;
     }
 }
+
+// API version helper — returns the current request's API version
+if (!function_exists('api_version')) {
+    function api_version(): string {
+        $request = \Webman\Context::get(\Webman\Http\Request::class);
+        return $request?->properties['api_version'] ?? 'v1';
+    }
+}
+
+// Register provisioning providers — called once at worker start
+if (class_exists(\App\Provisioning\Service\ProviderFactory::class)) {
+    try {
+        \App\Provisioning\Service\ProviderFactory::registerDefaults();
+
+        // DB-backed AWS registrations (if provider_apis table has aws-ec2 entry)
+        $awsConfig = \App\Provisioning\Model\ProviderApi::where('code', 'aws-ec2')->where('status', 'active')->first();
+        if ($awsConfig) {
+            \App\Provisioning\Service\ProviderFactory::register('server', 'aws-ec2', fn() => new \App\Provisioning\Provider\AwsEc2Provider($awsConfig));
+            \App\Provisioning\Service\ProviderFactory::register('disk', 'aws-ec2', fn() => new \App\Provisioning\Provider\AwsEc2Provider($awsConfig));
+            \App\Provisioning\Service\ProviderFactory::register('ip', 'aws-ec2', fn() => new \App\Provisioning\Provider\AwsEc2Provider($awsConfig));
+        }
+    } catch (\Throwable $e) {
+        // DB or provider class not available — skip registration
+    }
+}

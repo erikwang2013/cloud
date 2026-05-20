@@ -189,7 +189,8 @@ Provides click-based CAPTCHA verification for login and registration:
 ```
 Client                         Server
 ──────                         ──────
-POST /api/v1/captcha/create
+POST /api/captcha/create
+  Header: X-Api-Version: v1
   → CaptchaService::create()
     → captcha_create('click')
       → ClickCaptcha::generate()
@@ -197,7 +198,9 @@ POST /api/v1/captcha/create
         → Stores targets + key in Redis/File storage
       ← {key, image (base64), target_count, expires_in}
 
-POST /api/v1/auth/login (with captcha_key + captcha_points)
+POST /api/auth/login
+  Header: X-Api-Version: v1
+  (with captcha_key + captcha_points)
   → AuthController::verifyCaptcha()
     → CaptchaService::verify(key, [[x1,y1], [x2,y2], ...])
       → captcha_verify(key, 'click', points)
@@ -224,7 +227,8 @@ Protects destructive and sensitive operations by requiring the user to re-enter 
 ```
 Client                              Server
 ──────                              ──────
-POST /api/v1/orders/{id}/pay
+POST /api/orders/{id}/pay
+  Header: X-Api-Version: v1
   (with confirm_password field)
     → ConfirmationMiddleware::process()
       → Checks userId present (401 if missing)
@@ -245,22 +249,24 @@ POST /api/v1/orders/{id}/pay
 **Sensitive user endpoints** (Auth + Confirmation):
 | Method | Path | Operation |
 |--------|------|-----------|
-| POST | `/api/v1/orders/{id}/pay` | Initiate payment |
-| POST | `/api/v1/supplier/withdraw` | Request withdrawal |
-| DELETE | `/api/v1/dns/{domain}/records/{id}` | Delete DNS record |
+| POST | `/api/orders/{id}/pay` | Initiate payment |
+| POST | `/api/supplier/withdraw` | Request withdrawal |
+| DELETE | `/api/dns/{domain}/records/{id}` | Delete DNS record |
 
 **Sensitive admin endpoints** (Auth + AdminRole + Confirmation):
 | Method | Path | Operation |
 |--------|------|-----------|
-| DELETE | `/admin/api/v1/products/{id}` | Delete product |
-| POST | `/admin/api/v1/orders/{id}/refund` | Refund order |
-| POST | `/admin/api/v1/provisioning/resources/{id}/destroy` | Destroy resource |
-| POST | `/admin/api/v1/kyc/{id}/approve` | Approve KYC |
-| POST | `/admin/api/v1/kyc/{id}/reject` | Reject KYC |
-| POST | `/admin/api/v1/suppliers/{id}/approve` | Approve supplier |
-| POST | `/admin/api/v1/suppliers/{id}/settle` | Generate settlement |
-| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | Approve withdrawal |
-| PUT | `/admin/api/v1/system/config` | Update system config |
+| DELETE | `/admin/api/products/{id}` | Delete product |
+| POST | `/admin/api/orders/{id}/refund` | Refund order |
+| POST | `/admin/api/provisioning/resources/{id}/destroy` | Destroy resource |
+| POST | `/admin/api/kyc/{id}/approve` | Approve KYC |
+| POST | `/admin/api/kyc/{id}/reject` | Reject KYC |
+| POST | `/admin/api/suppliers/{id}/approve` | Approve supplier |
+| POST | `/admin/api/suppliers/{id}/settle` | Generate settlement |
+| POST | `/admin/api/suppliers/withdraws/{id}/approve` | Approve withdrawal |
+| PUT | `/admin/api/system/config` | Update system config |
+
+API version is carried in the `X-Api-Version` header (default: `v1`), not in the URL path.
 
 **Security features**:
 - bcrypt password verification via `Hash::check()`
@@ -382,44 +388,60 @@ The service backend (`service/`) also has Excel export via its own `Common\Excel
 
 | Endpoint | Controller | Exported Data |
 |----------|-----------|---------------|
-| `GET /admin/api/v1/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
-| `GET /admin/api/v1/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
-| `GET /admin/api/v1/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
+| `GET /admin/api/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
+| `GET /admin/api/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
+| `GET /admin/api/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
+
+All API endpoints require `X-Api-Version` header (default: `v1`).
 
 Export routes are placed BEFORE `/{id}` parameter routes to avoid conflicts.
 
-## Dashboard Visualization
+## Service Admin API — Extended Features
 
-### Architecture
+### Admin API Endpoints (Service Layer)
 
-The admin dashboard (`/app/admin/dashboard`) displays real-time operational metrics with ECharts visualizations. Data is served by `DashboardController::index()` as JSON and rendered client-side.
+All admin REST endpoints are prefixed with `/admin/api` and require `AdminRoleMiddleware`.
 
-### DashboardController (`app/controller/DashboardController.php`)
+| Group | Endpoints | Controller |
+|-------|-----------|------------|
+| Dashboard | `GET /dashboard`, `/kyc`, `POST /kyc/{id}/approve`, `/reject` | `Admin\DashboardController` |
+| Users | `GET /users`, `/users/export`, `/users/{id}`, `PUT /users/{id}/status` | `Admin\UserController` |
+| Products | `POST /products`, `PUT /products/{id}`, `DELETE /products/{id}`, `POST /products/{id}/skus`, `PUT /skus/{id}`, `POST /skus/{id}/region-price` | `Admin\ProductController` |
+| Product Import/Export | `GET /products/export` (CSV), `POST /products/import` (CSV upsert) | `Admin\ImportExportController` |
+| Orders | `GET /orders`, `/orders/export`, `/orders/{id}`, `POST /orders/{id}/refund` | `Admin\OrderController` |
+| Invoices | `GET /invoices`, `POST /invoices/{orderId}/generate` | `Admin\InvoiceController` |
+| Payments | `GET /payments/channels`, `PUT /payments/channels/{id}`, `GET /payments/transactions`, `/reconcile` | `Admin\PaymentController` |
+| Provisioning | `GET /provisioning/tasks`, `POST /tasks/{id}/retry`, `POST /resources/{id}/upgrade`, `/destroy`, `GET /hosts` | `Provisioning\TaskController` |
+| Provider APIs | `GET /providers`, `POST /providers`, `PUT /providers/{id}`, `DELETE /providers/{id}` | `Admin\ProviderApiController` |
+| Suppliers | `GET /suppliers`, `/suppliers/export`, `POST /suppliers/{id}/approve`, `/settle`, `/withdraws/{id}/approve` | `Admin\SupplierController` |
+| Supplier API Keys | `GET /suppliers/{id}/api-keys`, `POST /suppliers/{id}/api-keys`, `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
+| Tickets | `GET /tickets`, `POST /tickets/{id}/assign`, `/close` | `Ticket\TicketController` |
+| Coupons | `GET /coupons`, `POST /coupons`, `DELETE /coupons/{id}` | `Admin\CouponController` |
+| Webhooks | `GET /webhooks`, `POST /webhooks`, `DELETE /webhooks`, `POST /webhooks/test` | `Admin\WebhookController` |
+| Domains | `GET /domains/tlds`, `POST /domains/tlds`, `PUT /domains/tlds/{id}`, `DELETE /domains/tlds/{id}`, `GET /domains/zones`, `/transfers`, `POST /transfers/{id}/approve` | `Admin\DomainController` |
+| Notifications | `GET /notifications/templates`, `PUT /notifications/templates/{id}`, `GET /notifications/log` | `Admin\NotificationController` |
+| Help Articles | `GET /help`, `POST /help`, `PUT /help/{id}`, `DELETE /help/{id}` | `Admin\HelpController` |
+| Reports | `GET /reports/revenue`, `/supplier`, `/region` | `Report\ReportController` |
+| Monitoring | `GET /monitor/dashboard`, `/resources/{id}` | `Monitor\MonitorController` |
+| Audit | `GET /audit-logs` | `Admin\SystemController` |
+| System Config | `PUT /system/config` | `Admin\SystemController` |
 
-Extends `Base`, `$noNeedAuth = ['index']`. Returns JSON with:
+### Dashboard Data (Service Layer)
+
+`Admin\DashboardController::index()` provides real operational metrics:
 
 ```php
 [
-    'stats' => [
-        'today_users'   => ...,  // Users registered today
-        'week_users'    => ...,  // Users registered in last 7 days
-        'month_users'   => ...,  // Users registered in last 30 days
-        'total_users'   => ...,  // Total registered users
-    ],
-    'user_trend_7d'  => [...],   // Daily registration count, last 7 days
-    'user_trend_30d' => [...],   // Daily registration count, last 30 days
-    'system' => [
-        'php_version'       => ...,
-        'workerman_version' => ...,
-        'webman_version'    => ...,
-        'admin_version'     => ...,
-        'mysql_version'     => ...,
-        'os'                => ...,
-    ],
+    'today_stats' => [todayOrders, todayRevenue, newUsers, activeResources],
+    'revenue_trend_30d' => [...],   // Daily revenue for last 30 days
+    'region_distribution' => [...],  // Active resources grouped by region
+    'pending_orders' => ...,         // Orders awaiting payment
+    'pending_kyc' => ...,            // KYC submissions awaiting review
+    'open_tickets' => ...,           // Open or in-progress tickets
 ]
 ```
 
-### Dashboard View (`app/view/index/dashboard.html`)
+### Admin Panel Dashboard View (`app/view/index/dashboard.html`)
 
 - **8 animated stat cards**: today/week/month/total users + today orders + today revenue + pending orders + active resources — each with count-up animation via Layui `count` module
 - **3 ECharts charts**:
@@ -826,3 +848,79 @@ All 4 jobs pass: 243 total tests (67 admin + 176 service), 400 assertions, both 
 3. **Hashids at the Controller boundary**: Encoding/decoding happens at the HTTP boundary (controllers), not at the model or ORM level. This keeps models database-agnostic and makes hashids a pure presentation concern.
 
 4. **Container-based service resolution**: Services (Snowflake, HashidsManager, EncryptionManager) are registered as singletons via Bootstrap classes at worker start. Container resolution via `\support\Container::instance()` uses lazy instantiation — services are only created on first access.
+
+## Extended Features (2026-05-20)
+
+### Service Admin API — New Endpoints
+
+| Group | Endpoints | Controller |
+|-------|-----------|------------|
+| Invoices | `GET /admin/api/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
+| Provider APIs | `GET/POST /admin/api/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
+| Supplier API Keys | `GET/POST /admin/api/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
+| Coupons | `GET/POST /admin/api/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
+| Webhooks | `GET/POST/DELETE /admin/api/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
+| Product Import/Export | `GET /admin/api/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
+| Domain Management | `GET/POST/PUT/DELETE /admin/api/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
+| Notification Templates | `GET /admin/api/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
+| Help Articles | `GET/POST /admin/api/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
+
+### New Middleware
+
+| Middleware | Purpose |
+|------------|---------|
+| `VersionMiddleware` | API版本从X-Api-Version头读取并验证 |
+| `RateLimitMiddleware` | Redis令牌桶限流（默认60req/min，登录5req/min） |
+| `GeoBlockMiddleware` | MaxMind GeoIP2地域封锁 |
+| `MaintenanceMiddleware` | 维护模式（环境变量开关+IP白名单） |
+
+### Scheduled Tasks
+
+| Schedule | Task | Purpose |
+|----------|------|---------|
+| `13 */4 * * *` | ExchangeRateSync | 汇率更新 |
+| `37 2 * * *` | PaymentReconcile | 每日支付对账 |
+| `17 4 * * 1` | SupplierSettlement | 每周供应商结算 |
+| `23 6 * * *` | ExpirationCheck | 资源/域名到期检查+通知 |
+| `43 7 * * *` | SslCertificateCheck | SSL证书到期检查+通知 |
+| `*/5 * * * *` | CollectMetrics | 资源指标采集 |
+| `*/30 * * * *` | CheckExpirations | 资源到期检查 |
+
+### CLI Commands
+
+| Command | Purpose |
+|---------|---------|
+| `php webman migrate` | 运行待执行迁移 |
+| `php webman migrate:rollback` | 回滚上一批次 |
+| `php webman migrate:status` | 查看迁移状态 |
+| `php webman db:backup` | 备份数据库到SQL文件（可选--s3上传） |
+
+### Database Migrations Added (2026-05-20)
+
+| Migration | Tables/Columns |
+|-----------|---------------|
+| 000003 | users + totp_secret, totp_enabled |
+| 000004 | coupons, user_coupons |
+| 000005 | help_articles, supplier_api_keys |
+| 000006 | roles, permissions, role_permission + seed data |
+| 000007 | users + email_verified_at, email_verify_token |
+| 000008 | users + last_login_ip, last_login_at |
+
+## Documentation Index
+
+| Document | Path | Description |
+|----------|------|-------------|
+| System Design Spec | `docs/superpowers/specs/2026-05-14-cloud-resource-platform-design.md` | Full architecture, data model, API design, security |
+| Admin Panel Design | `docs/admin-design.md` | Admin panel architecture, packages, ACL, test suite |
+| Supplier API Docs | `docs/supplier-api.md` | Supplier REST API reference with SDK examples |
+| Deployment Checklist | `docs/deployment.md` | Server setup, env config, migrations, Nginx, HTTPS, cron |
+| API Smoke Test | `docs/api-test.sh` | Automated curl-based API endpoint smoke test |
+
+## Final Test Stats
+
+```
+OK (245 tests, 389 assertions)
+Test files: 20
+```
+- Admin: 67 tests, 124 assertions
+- Service: 178 tests, 265 assertions

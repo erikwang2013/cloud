@@ -31,6 +31,6 @@ return [
     // PHP 错误报告级别，E_ALL & ~E_DEPRECATED 可屏蔽废弃警告
     'error_reporting'   => E_ALL & ~E_DEPRECATED,
 
-    // webman 请求类，不可修改
-    'request_class'     => Webman\Http\Request::class,
+    // 请求类：API 版本从 X-Api-Version 头读取，不在 URL 中
+    'request_class'     => Common\Http\ApiRequest::class,
 ];

@@ -1,40 +1,40 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_service.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/responsive.dart';
 
-
 class ProductListPage extends StatefulWidget {
   const ProductListPage({super.key});
-
   @override
   State<ProductListPage> createState() => _ProductListPageState();
 }
 
 class _ProductListPageState extends State<ProductListPage> {
+  final ApiService _api = ApiService();
   bool _tableView = false;
   final _selected = <int>{};
   String _region = 'all';
   String _typeFilter = 'all';
+  List<dynamic> _products = [];
+  bool _loading = true;
+  String? _error;
 
-  static const _names = [
-    'Cloud VPS Basic', 'Cloud VPS Pro', 'Dedicated Server',
-    'IPv4 Address', 'SSD Block Storage', 'Domain Name',
-    'Load Balancer', 'CDN Accelerator', 'Object Storage',
-    'Kubernetes Cluster', 'Managed Database', 'Firewall',
-  ];
-  static const _regions = ['US East', 'Europe', 'Asia Pacific', 'Global', 'US East', 'Global', 'US East', 'Europe', 'Asia Pacific', 'Global', 'US East', 'Europe'];
-  static const _prices = ['\$5.00', '\$20.00', '\$99.00', '\$3.00', '\$10.00', '\$12.99', '\$25.00', '\$15.00', '\$8.00', '\$120.00', '\$45.00', '\$30.00'];
-  static const _types = ['vps', 'vps', 'server', 'ip', 'disk', 'domain', 'lb', 'cdn', 'storage', 'k8s', 'db', 'fw'];
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
 
-  List<int> get _filteredIndices {
-    final all = List.generate(12, (i) => i);
-    return all.where((i) {
-      if (_typeFilter != 'all' && _types[i] != _typeFilter) return false;
-      if (_region == 'us' && !_regions[i].contains('US')) return false;
-      if (_region == 'eu' && !_regions[i].contains('Europe')) return false;
-      if (_region == 'ap' && !_regions[i].contains('Asia')) return false;
-      return true;
-    }).toList();
+  Future<void> _fetchProducts() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final data = await _api.getProducts();
+      if (mounted) setState(() { _products = data; _loading = false; });
+    } on DioException catch (e) {
+      if (mounted) setState(() { _error = e.message; _loading = false; });
+    }
   }
 
   @override
@@ -51,9 +51,14 @@ class _ProductListPageState extends State<ProductListPage> {
           const SizedBox(height: 20),
 
           // Content
-          Expanded(
-            child: _tableView && isDesktop ? _buildDataTable() : _buildGrid(context, isDesktop),
-          ),
+          if (_loading)
+            const Expanded(child: Center(child: CircularProgressIndicator()))
+          else if (_error != null)
+            Expanded(child: Center(child: Text('Error: $_error', style: TextStyle(color: Colors.red.shade400))))
+          else
+            Expanded(
+              child: _tableView && isDesktop ? _buildDataTable() : _buildGrid(context, isDesktop),
+            ),
 
           // Selection action bar
           if (_selected.isNotEmpty) _buildSelectionBar(),
@@ -118,10 +123,12 @@ class _ProductListPageState extends State<ProductListPage> {
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
-      itemCount: _filteredIndices.length,
+      itemCount: _products.length,
       itemBuilder: (_, idx) {
-        final i = _filteredIndices[idx];
+        final p = _products[idx];
+        final i = idx;
         return _ProductCard(
+          product: p,
           index: i,
           selected: _selected.contains(i),
           compact: !isDesktop,
@@ -147,46 +154,53 @@ class _ProductListPageState extends State<ProductListPage> {
           DataColumn(label: Text('Price'), numeric: true),
           DataColumn(label: Text('')),
         ],
-        rows: _filteredIndices.map((i) => DataRow(
-          key: ValueKey(i),
-          selected: _selected.contains(i),
-          onSelectChanged: (v) => setState(() {
-            if (v == true) { _selected.add(i); } else { _selected.remove(i); }
-          }),
-          cells: [
-            DataCell(Text(_names[i], style: const TextStyle(fontWeight: FontWeight.w500))),
-            DataCell(Chip(
-              label: Text(_types[i].toUpperCase(), style: const TextStyle(fontSize: 11)),
-              backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.08),
-              side: BorderSide.none,
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-            )),
-            DataCell(Text(_regions[i])),
-            DataCell(Text(_prices[i], style: const TextStyle(fontWeight: FontWeight.w600))),
-            DataCell(Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.shopping_cart_outlined, size: 18),
-                  onPressed: () {},
-                  tooltip: 'Add to cart',
-                  visualDensity: VisualDensity.compact,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.more_horiz, size: 18),
-                  onPressed: () {
-                    final renderBox = context.findRenderObject() as RenderBox;
-                    final pos = renderBox.localToGlobal(Offset.zero);
-                    _showContextMenu(context, pos, i);
-                  },
-                  tooltip: 'More actions',
-                  visualDensity: VisualDensity.compact,
-                ),
-              ],
-            )),
-          ],
-        )).toList(),
+        rows: _products.asMap().entries.map((entry) {
+          final i = entry.key;
+          final p = entry.value as Map<String, dynamic>? ?? {};
+          final name = (p['name'] ?? p['name_localized'] ?? '').toString();
+          final category = (p['category'] is Map ? p['category']['name'] ?? 'vps' : 'vps').toString();
+          final price = _lowestPrice(p);
+          return DataRow(
+            key: ValueKey(i),
+            selected: _selected.contains(i),
+            onSelectChanged: (v) => setState(() {
+              if (v == true) { _selected.add(i); } else { _selected.remove(i); }
+            }),
+            cells: [
+              DataCell(Text(name, style: const TextStyle(fontWeight: FontWeight.w500))),
+              DataCell(Chip(
+                label: Text(category.toUpperCase(), style: const TextStyle(fontSize: 11)),
+                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.08),
+                side: BorderSide.none,
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              )),
+              DataCell(Text(category)),
+              DataCell(Text(price, style: const TextStyle(fontWeight: FontWeight.w600))),
+              DataCell(Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.shopping_cart_outlined, size: 18),
+                    onPressed: () {},
+                    tooltip: 'Add to cart',
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.more_horiz, size: 18),
+                    onPressed: () {
+                      final renderBox = context.findRenderObject() as RenderBox;
+                      final pos = renderBox.localToGlobal(Offset.zero);
+                      _showContextMenu(context, pos, i);
+                    },
+                    tooltip: 'More actions',
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              )),
+            ],
+          );
+        }).toList(),
       ),
     );
   }
@@ -226,6 +240,20 @@ class _ProductListPageState extends State<ProductListPage> {
     );
   }
 
+  /// Find the lowest price across all SKUs and regions.
+  String _lowestPrice(dynamic product) {
+    double? lowest;
+    final skus = product['skus'] as List<dynamic>? ?? [];
+    for (final sku in skus) {
+      final prices = sku['region_prices'] as List<dynamic>? ?? [];
+      for (final rp in prices) {
+        final p = double.tryParse((rp['price'] ?? '').toString());
+        if (p != null && (lowest == null || p < lowest)) lowest = p;
+      }
+    }
+    return lowest != null ? '\$${lowest.toStringAsFixed(2)}' : '\$--';
+  }
+
   void _showContextMenu(BuildContext context, Offset position, int index) {
     showMenu<String>(
       context: context,
@@ -259,6 +287,7 @@ class _MenuRow extends StatelessWidget {
 }
 
 class _ProductCard extends StatefulWidget {
+  final dynamic product;
   final int index;
   final bool selected;
   final bool compact;
@@ -266,6 +295,7 @@ class _ProductCard extends StatefulWidget {
   final void Function(TapDownDetails) onSecondaryTapDown;
 
   const _ProductCard({
+    required this.product,
     required this.index,
     required this.selected,
     required this.compact,
@@ -282,10 +312,10 @@ class _ProductCardState extends State<_ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    final i = widget.index % _ProductListPageState._names.length;
-    final name = _ProductListPageState._names[i];
-    final region = _ProductListPageState._regions[i];
-    final price = _ProductListPageState._prices[i];
+    final p = widget.product as Map<String, dynamic>? ?? {};
+    final name = (p['name'] ?? p['name_localized'] ?? 'Unknown').toString();
+    final price = _lowestPrice(p);
+    final category = p['category'] is Map ? (p['category']['name'] ?? '') : '';
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -335,7 +365,7 @@ class _ProductCardState extends State<_ProductCard> {
                         children: [
                           Icon(Icons.location_on_outlined, size: 13, color: Colors.grey[500]),
                           const SizedBox(width: 4),
-                          Text(region, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                          Text(category, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
                         ],
                       ),
                       const SizedBox(height: 10),

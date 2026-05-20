@@ -3,40 +3,70 @@ namespace App\Provisioning\Service;
 
 use App\Provisioning\Model\ProvisionTask;
 use App\Provisioning\Model\Resource;
+use App\Provisioning\Model\ProviderApi;
 
 class ProviderFactory
 {
-    private array $providers = [];
+    private static array $providers = [];
 
-    public function register(string $productType, string $provider, callable $factory): void
+    /**
+     * Register default providers. Called once from bootstrap.
+     */
+    public static function registerDefaults(): void
     {
-        $this->providers["{$productType}:{$provider}"] = $factory;
+        self::register('server', 'proxmox', fn() => new \App\Provisioning\Provider\ProxmoxProvider());
+        self::register('disk', 'proxmox', fn() => new \App\Provisioning\Provider\ProxmoxProvider());
+        self::register('ip', 'proxmox', fn() => new \App\Provisioning\Provider\ProxmoxProvider());
+
+        if (getenv('AWS_ACCESS_KEY_ID')) {
+            $cfg = new ProviderApi([
+                'name' => 'AWS EC2 (env)', 'code' => 'aws-ec2',
+                'api_key_encrypted' => getenv('AWS_ACCESS_KEY_ID'),
+                'api_secret_encrypted' => getenv('AWS_SECRET_ACCESS_KEY'),
+            ]);
+            $ec2 = fn() => new \App\Provisioning\Provider\AwsEc2Provider($cfg);
+            self::register('server', 'aws-ec2', $ec2);
+            self::register('disk', 'aws-ec2', $ec2);
+            self::register('ip', 'aws-ec2', $ec2);
+        }
+    }
+
+    /**
+     * Clear all registered providers. Used in tests.
+     */
+    public static function clear(): void
+    {
+        self::$providers = [];
+    }
+
+    public static function register(string $productType, string $provider, callable $factory): void
+    {
+        self::$providers["{$productType}:{$provider}"] = $factory;
     }
 
     public function create(ProvisionTask $task): ProviderInterface
     {
         $key = "{$task->product_type}:{$task->provider}";
 
-        if (!isset($this->providers[$key])) {
+        if (!isset(self::$providers[$key])) {
             throw new \RuntimeException("No provider registered for: {$key}");
         }
 
-        return call_user_func($this->providers[$key], $task);
+        return call_user_func(self::$providers[$key], $task);
     }
 
     public function createFromResource(Resource $resource): ProviderInterface
     {
         $key = "{$resource->type}:{$resource->provider}";
 
-        if (!isset($this->providers[$key])) {
+        if (!isset(self::$providers[$key])) {
             throw new \RuntimeException("No provider registered for: {$key}");
         }
 
-        // Create a synthetic task for provider factories that expect ProvisionTask
         $task = new ProvisionTask([
             'product_type' => $resource->type,
             'provider'     => $resource->provider,
         ]);
-        return call_user_func($this->providers[$key], $task);
+        return call_user_func(self::$providers[$key], $task);
     }
 }

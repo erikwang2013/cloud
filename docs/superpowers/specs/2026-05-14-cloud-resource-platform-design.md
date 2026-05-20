@@ -119,11 +119,32 @@
 
 ## 三、API 设计规范
 
+### 版本管理
+
+API 版本通过 HTTP 请求头 `X-Api-Version` 指定，不在 URL 路径中。服务端通过中间件将版本头注入内部路由。
+
+```
+请求:  GET /api/auth/login
+请求头: X-Api-Version: v1
+
+内部路由 → /api/v1/auth/login → 控制器
+响应头: X-Api-Version: v1
+```
+
+**支持版本**: `v1`（默认，请求头缺失时自动使用）
+
+**向后兼容**: 旧客户端继续使用 `/api/v1/...` 路径也能正常工作，版本已在路径中时不做重写。
+
+**新增版本步骤**:
+1. `VersionMiddleware::SUPPORTED` 数组追加版本号
+2. 创建对应的 `V{n}/` 控制器子目录
+3. 在 `route.php` 注册新版路由
+
 ### RESTful 路由
 
 ```
-统一前缀: /api/v1
-管理后台: /admin/api/v1
+统一前缀: /api
+管理后台: /admin/api
 ```
 
 ### 统一响应格式
@@ -146,10 +167,21 @@
 
 | 端 | 方式 |
 |----|------|
-| 用户端 | JWT (access_token 2h + refresh_token 30d) |
+| 用户端 | JWT (access_token 2h + refresh_token 30d) + TOTP 两步验证 + 恢复码 |
 | 管理端 | JWT (access_token 2h + refresh_token 7d) |
-| 供应商 API | API Key + IP 白名单 |
+| 供应商 API | API Key (sk_ 前缀，SHA256 哈希存储，仅创建时显示一次) |
 | 云厂商回调 | 签名验证 (HMAC-SHA256) |
+
+**已实现的认证功能**:
+- 邮箱注册 + 邮箱验证链接
+- 手机号注册 + Twilio 短信验证码（60s 冷却 + IP 限流 5次/小时）
+- Google OAuth 登录 / Apple Sign In
+- 忘记密码（邮箱验证码 + Redis 10min TTL）
+- TOTP 两步验证（QR 码扫码设置、恢复码兜底）
+- 活跃会话管理（查看/撤销登录设备）
+- 账号注销 GDPR（密码确认 + 软删除 + token 全部撤销）
+- 登录异常告警（新 IP 登录邮件通知）
+- 登录锁定（5 次失败锁定 15 分钟）
 
 ### 多语言方案
 
@@ -1116,3 +1148,70 @@ cloud-php/
 ### 关键 Composer 依赖
 
 workerman/webman-framework、webman/admin、webman/redis-queue、illuminate/database、firebase/php-jwt、stripe/stripe-php、phpseclib/phpseclib、monolog/monolog
+
+---
+
+## 十二、实现状态总表
+
+### 核心模块
+
+| 模块 | 状态 | 说明 |
+|------|------|------|
+| **User** | ✅ 完成 | 注册/登录/邮箱验证/OAuth/TOTP/会话管理/GDPR注销/地址CRUD |
+| **Product** | ✅ 完成 | SKU×区域定价、分类、搜索(ES)、评价、属性、批量导入导出 |
+| **Order** | ✅ 完成 | 购物车、下单、生命周期、退款、发票(PDF)、优惠券 |
+| **Payment** | ✅ 完成 | Stripe通道、多通道路由、webhook验签、对账 |
+| **Provisioning** | ✅ 完成 | Proxmox + AWS EC2 + ProviderFactory可扩展架构 |
+| **Domain** | ✅ 完成 | TLD定价、DNS记录、域名转移审批 |
+| **Supplier** | ✅ 完成 | 入驻审批、商品上架、结算、提现、API Key管理 |
+| **Monitor** | ✅ 完成 | 资源探活、告警引擎、SSL证书监控 |
+| **Ticket** | ✅ 完成 | 创建/回复/分配/关闭/SLA追踪 |
+| **Notification** | ✅ 完成 | 邮件/SMS/Push/站内信四通道 + 用户偏好管理 |
+| **Report** | ✅ 完成 | 营收/供应商/区域报表 |
+| **I18n** | ✅ 完成 | 多语言、多币种、多时区 |
+
+### 安全体系
+
+| 功能 | 状态 |
+|------|------|
+| WAF (SQL注入/XSS/路径遍历检测) | ✅ |
+| CORS 中间件 | ✅ |
+| API 限流 (Redis令牌桶) | ✅ |
+| Geo-Blocking (MaxMind GeoIP2) | ✅ |
+| 维护模式 (环境变量开关 + IP白名单) | ✅ |
+| 请求/响应加密 (AES-256-GCM) | ✅ |
+| 审计日志 (独立库) | ✅ |
+| 数据脱敏 (日志/响应自动处理) | ✅ |
+| JWT 设备指纹绑定 + token 轮换 | ✅ |
+| bcrypt 密码 (cost=12) + Encryptable 二次加密 | ✅ |
+
+### 后端统计
+
+| 指标 | 数量 |
+|------|------|
+| API 端点 | 80+ |
+| 数据模型 | 50+ |
+| 数据库表 | 50+ |
+| 中间件 | 9 个 |
+| 定时任务 | 7 个 |
+| 迁移文件 | 19 个 |
+| 测试 | 245 tests / 389 assertions |
+| 测试文件 | 20 个 |
+
+### 文档
+
+| 文档 | 路径 |
+|------|------|
+| 系统设计规范 | `docs/superpowers/specs/2026-05-14-cloud-resource-platform-design.md` |
+| 管理后台设计 | `docs/admin-design.md` |
+| 供应商 API 文档 | `docs/supplier-api.md` |
+| 部署清单 | `docs/deployment.md` |
+| API 冒烟测试脚本 | `docs/api-test.sh` |
+
+### 前端状态
+
+| 端 | 状态 | 说明 |
+|----|------|------|
+| Flutter | 🟡 进行中 | ApiClient 已接入 header 版本号 + ApiService 统一数据层；登录/商品列表/购物车/资源列表已对接 API；订单历史/通知中心需编译环境验证 |
+| HarmonyOS | 🔴 初期 | 仅登录页和 ApiClient |
+| Admin Panel | ✅ 完成 | 仪表盘/用户/商品/订单/支付/资源/供应商/工单/域名/通知/系统/报表/Webhook/导入导出 全功能 |

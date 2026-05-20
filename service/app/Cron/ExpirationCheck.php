@@ -1,0 +1,53 @@
+<?php
+namespace App\Cron;
+
+class ExpirationCheck
+{
+    public function run(): void
+    {
+        echo date('Y-m-d H:i:s') . " ExpirationCheck: Scanning expiring resources and domains...\n";
+
+        $now = date('Y-m-d H:i:s');
+        $warnDays = [30, 14, 7, 3, 1];
+
+        // Check resources expiring soon
+        foreach ($warnDays as $days) {
+            $targetDate = date('Y-m-d', strtotime("+{$days} days"));
+
+            $resources = \App\Provisioning\Model\Resource::where('status', 'active')
+                ->whereDate('expired_at', $targetDate)
+                ->with('user')
+                ->get();
+
+            foreach ($resources as $resource) {
+                if ($resource->user) {
+                    \Common\Notification\NotificationDispatcher::send($resource->user, 'resource_expiring', [
+                        'resource_id'   => $resource->id,
+                        'resource_type' => $resource->type,
+                        'expired_at'    => $resource->expired_at,
+                        'days_left'     => $days,
+                    ], ['email', 'in_app']);
+                }
+            }
+        }
+
+        // Check domain renewals
+        $domains = \App\Domain\Model\DnsZone::whereNotNull('expires_at')
+            ->whereDate('expires_at', '<=', date('Y-m-d', strtotime('+30 days')))
+            ->with('user')
+            ->get();
+
+        foreach ($domains as $domain) {
+            $daysLeft = (int) ceil((strtotime($domain->expires_at) - time()) / 86400);
+            if ($daysLeft > 0 && in_array($daysLeft, $warnDays) && $domain->user) {
+                \Common\Notification\NotificationDispatcher::send($domain->user, 'domain_expiring', [
+                    'domain'    => $domain->domain_name,
+                    'expires_at'=> $domain->expires_at,
+                    'days_left' => $daysLeft,
+                ], ['email', 'in_app']);
+            }
+        }
+
+        echo date('Y-m-d H:i:s') . " ExpirationCheck: Done.\n";
+    }
+}

@@ -34,4 +34,25 @@ class ProductController
         $regions = $this->service->getRegions();
         return json(Response::success($regions));
     }
+
+    public function search($request)
+    {
+        $keyword = $request->input('q', '');
+        $page    = (int) $request->input('page', 1);
+        $perPage = min((int) $request->input('page_size', 20), 50);
+
+        if (empty(trim($keyword))) {
+            return json(Response::error(422, 'Search query required'));
+        }
+
+        $results = \App\Product\Model\Product::search($keyword)
+            ->paginate($perPage, 'page', $page);
+
+        return json(Response::paginated(
+            $results->items(),
+            $results->total(),
+            $page,
+            $perPage
+        ));
+    }
 }

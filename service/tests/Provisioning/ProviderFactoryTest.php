@@ -15,13 +15,19 @@ final class ProviderFactoryTest extends TestCase
 
     protected function setUp(): void
     {
+        ProviderFactory::clear();
         $this->factory = new ProviderFactory();
+    }
+
+    protected function tearDown(): void
+    {
+        ProviderFactory::clear();
     }
 
     public function testRegisterAndCreateProvider(): void
     {
         $calledWith = null;
-        $this->factory->register('server', 'proxmox', function (ProvisionTask $task) use (&$calledWith) {
+        ProviderFactory::register('server', 'proxmox', function (ProvisionTask $task) use (&$calledWith) {
             $calledWith = $task;
             return new FakeProvider();
         });
@@ -35,8 +41,8 @@ final class ProviderFactoryTest extends TestCase
 
     public function testCreateProviderWithCorrectKey(): void
     {
-        $this->factory->register('server', 'proxmox', fn() => new FakeProvider());
-        $this->factory->register('disk', 'proxmox', fn() => new FakeProvider());
+        ProviderFactory::register('server', 'proxmox', fn() => new FakeProvider());
+        ProviderFactory::register('disk', 'proxmox', fn() => new FakeProvider());
 
         $serverTask = new ProvisionTask(['product_type' => 'server', 'provider' => 'proxmox']);
         $diskTask = new ProvisionTask(['product_type' => 'disk', 'provider' => 'proxmox']);
@@ -56,7 +62,7 @@ final class ProviderFactoryTest extends TestCase
 
     public function testCreateThrowsForUnregisteredProductType(): void
     {
-        $this->factory->register('server', 'proxmox', fn() => new FakeProvider());
+        ProviderFactory::register('server', 'proxmox', fn() => new FakeProvider());
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('No provider registered for: disk:proxmox');
@@ -67,7 +73,7 @@ final class ProviderFactoryTest extends TestCase
 
     public function testCreateFromResource(): void
     {
-        $this->factory->register('server', 'proxmox', fn($task) => new FakeProvider());
+        ProviderFactory::register('server', 'proxmox', fn($task) => new FakeProvider());
 
         $resource = new Resource(['type' => 'server', 'provider' => 'proxmox']);
         $provider = $this->factory->createFromResource($resource);
@@ -89,11 +95,11 @@ final class ProviderFactoryTest extends TestCase
         $proxmoxCalled = false;
         $aliyunCalled = false;
 
-        $this->factory->register('server', 'proxmox', function () use (&$proxmoxCalled) {
+        ProviderFactory::register('server', 'proxmox', function () use (&$proxmoxCalled) {
             $proxmoxCalled = true;
             return new FakeProvider();
         });
-        $this->factory->register('server', 'aliyun', function () use (&$aliyunCalled) {
+        ProviderFactory::register('server', 'aliyun', function () use (&$aliyunCalled) {
             $aliyunCalled = true;
             return new FakeProvider();
         });
@@ -108,8 +114,8 @@ final class ProviderFactoryTest extends TestCase
 
     public function testRegisterOverwritesExistingProvider(): void
     {
-        $this->factory->register('server', 'proxmox', fn() => new FakeProvider());
-        $this->factory->register('server', 'proxmox', fn() => new FakeProvider('v2'));
+        ProviderFactory::register('server', 'proxmox', fn() => new FakeProvider());
+        ProviderFactory::register('server', 'proxmox', fn() => new FakeProvider('v2'));
 
         $task = new ProvisionTask(['product_type' => 'server', 'provider' => 'proxmox']);
         $provider = $this->factory->create($task);
@@ -120,7 +126,7 @@ final class ProviderFactoryTest extends TestCase
     #[DataProvider('providerKeyProvider')]
     public function testFactoryKeysCombineTypeAndProvider(string $type, string $provider, string $expectedKey): void
     {
-        $this->factory->register($type, $provider, fn() => new FakeProvider());
+        ProviderFactory::register($type, $provider, fn() => new FakeProvider());
 
         $task = new ProvisionTask(['product_type' => $type, 'provider' => $provider]);
         $result = $this->factory->create($task);
