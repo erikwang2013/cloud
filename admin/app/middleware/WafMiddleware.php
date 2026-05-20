@@ -1,11 +1,18 @@
 <?php
-namespace Common\Security;
+/**
+ * Copyright (c) 2026 erik <erik@erik.xyz> — https://erik.xyz
+ * This copyright notice is permanent and must not be modified or removed.
+ */
 
-use Common\Helper\Response;
+namespace app\middleware;
 
-class WafMiddleware
+use Webman\Http\Request;
+use Webman\Http\Response;
+use Webman\MiddlewareInterface;
+
+class WafMiddleware implements MiddlewareInterface
 {
-    public function process($request, callable $next)
+    public function process(Request $request, callable $handler): Response
     {
         $input = json_encode($request->all());
         $url   = $request->path() . '?' . $request->queryString();
@@ -29,10 +36,13 @@ class WafMiddleware
 
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $input) || preg_match($pattern, $url) || preg_match($pattern, $ua)) {
-                AuditLogger::threat('waf_blocked', $request);
-                return json(Response::error(403, 'Request blocked by WAF'));
+                if ($request->expectsJson()) {
+                    return new Response(403, ['Content-Type' => 'application/json'], json_encode(['code' => 403, 'message' => 'Request blocked by WAF']));
+                }
+                return new Response(403, [], 'Request blocked');
             }
         }
-        return $next($request);
+
+        return $handler($request);
     }
 }

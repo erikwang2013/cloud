@@ -873,6 +873,7 @@ All 4 jobs pass: 243 total tests (67 admin + 176 service), 400 assertions, both 
 | `RateLimitMiddleware` | Redis令牌桶限流（默认60req/min，登录5req/min） |
 | `GeoBlockMiddleware` | MaxMind GeoIP2地域封锁 |
 | `MaintenanceMiddleware` | 维护模式（环境变量开关+IP白名单） |
+| `ClientPlatformMiddleware` | 客户端平台识别（X-Client-Platform头），支持8种平台 |
 
 ### Scheduled Tasks
 

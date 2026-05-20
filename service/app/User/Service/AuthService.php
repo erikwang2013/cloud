@@ -18,7 +18,7 @@ class AuthService
         $this->jwt = new JwtAuth();
     }
 
-    public function register(array $data): array
+    public function register(array $data, string $clientPlatform = ''): array
     {
         $minLength = config('auth.password.min_length', 8);
 
@@ -57,10 +57,10 @@ class AuthService
             ], ['email']);
         }
 
-        return $this->issueTokens($user->id, 'user');
+        return $this->issueTokens($user->id, 'user', '', $clientPlatform);
     }
 
-    public function login(string $login, string $password, string $deviceFingerprint): array
+    public function login(string $login, string $password, string $deviceFingerprint, string $clientPlatform = ''): array
     {
         $user = User::where('email', $login)->orWhere('phone', $login)->first();
 
@@ -92,10 +92,10 @@ class AuthService
 
         $user->update(['last_login_ip' => $currentIp, 'last_login_at' => date('Y-m-d H:i:s')]);
 
-        return $this->issueTokens($user->id, $user->role, $deviceFingerprint);
+        return $this->issueTokens($user->id, $user->role, $deviceFingerprint, $clientPlatform);
     }
 
-    public function refreshToken(string $refreshToken, string $deviceFingerprint): array
+    public function refreshToken(string $refreshToken, string $deviceFingerprint, string $clientPlatform = ''): array
     {
         try {
             $payload = $this->jwt->verify($refreshToken);
@@ -123,10 +123,10 @@ class AuthService
         $stored->update(['revoked' => true]);
 
         $user = User::findOrFail($payload['sub']);
-        return $this->issueTokens($user->id, $user->role, $deviceFingerprint);
+        return $this->issueTokens($user->id, $user->role, $deviceFingerprint, $clientPlatform);
     }
 
-    private function issueTokens(int $userId, string $role, string $deviceFingerprint = ''): array
+    public function issueTokens(int $userId, string $role, string $deviceFingerprint = '', string $clientPlatform = ''): array
     {
         $accessToken  = $this->jwt->issueAccessToken($userId, $role);
         $refreshToken = $this->jwt->issueRefreshToken($userId);
@@ -135,6 +135,7 @@ class AuthService
             'user_id'            => $userId,
             'token_hash'         => hash('sha256', $refreshToken),
             'device_fingerprint' => $deviceFingerprint,
+            'client_platform'    => $clientPlatform,
             'expires_at'         => date('Y-m-d H:i:s', time() + config('plugin.erikwang2013.jwt.jwt.refresh_expire', 2592000)),
         ]);
 

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api_client.dart';
+import 'client_platform.dart';
 
 /// Shared API data service used by all feature pages.
 class ApiService {
@@ -14,6 +15,7 @@ class ApiService {
           headers: {
             'Content-Type': 'application/json',
             'X-Api-Version': ApiClient.apiVersion,
+            'X-Client-Platform': getClientPlatform(),
           },
         )) {
     _dio.interceptors.add(_AuthInterceptor(_storage));

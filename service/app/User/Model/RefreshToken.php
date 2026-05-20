@@ -10,7 +10,7 @@ class RefreshToken extends Model
     use HasSnowflakeId;
     protected $table = 'refresh_tokens';
     protected $fillable = [
-        'user_id', 'token_hash', 'device_fingerprint', 'expires_at', 'revoked',
+        'user_id', 'token_hash', 'device_fingerprint', 'client_platform', 'expires_at', 'revoked',
     ];
 
     protected $casts = [

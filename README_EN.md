@@ -112,6 +112,7 @@ cloud-php/
 │   │   ├── Security/           # CORS / WAF / rate limiting / geo-blocking / maintenance / audit logging
 │   │   ├── Snowflake/          # Snowflake ID service / Eloquent HasSnowflakeId trait
 │   │   ├── Version/Middleware/  # API version middleware (X-Api-Version header validation)
+│   │   ├── ClientPlatform/Middleware/  # Client platform middleware (X-Client-Platform header identification)
 │   │   └── Webhook/            # Webhook event dispatcher
 │   ├── config/                 # 17 config files (route / middleware / database / redis / cron / auth / security / i18n / ...)
 │   │   └── plugin/             # Plugin configs
@@ -411,7 +412,7 @@ ProviderInterface
 
 ### 5. Security Architecture
 
-Global middleware pipeline: `CORS → WAF → Locale → HashidRequest → Version → [Route: Encryption → Captcha → Auth → Confirmation]`
+Global middleware pipeline: `Version → CORS → ClientPlatform → WAF → Locale → HashidRequest → Maintenance → [Route: Encryption → Captcha → Auth → Confirmation]`
 
 ![Security Middleware Pipeline](docs/diagrams/security-middleware-en.svg)
 
@@ -420,6 +421,7 @@ Global middleware pipeline: `CORS → WAF → Locale → HashidRequest → Versi
 - **Locale** — Parses Accept-Language, sets locale
 - **HashidRequest** — Auto-decodes hashid strings in requests to real integer IDs
 - **Version** — Validates `X-Api-Version` header, defaults to `v1` if missing, returns `400` for unsupported versions
+- **ClientPlatform** — Validates `X-Client-Platform` header, identifies client OS platform (iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web)
 - **Encryption** — AES-256-GCM transport encryption (auth + admin routes), prevents MITM eavesdropping and tampering
 - **Captcha** — Click CAPTCHA verified before login/register (GD rendering + Redis storage, one-time keys, 300s TTL, 3 attempts)
 - **Auth** — JWT HS256, Access Token 15 min, Refresh Token 30 days, Redis blacklist

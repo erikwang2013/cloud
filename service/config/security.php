@@ -25,18 +25,80 @@ return [
         'upload'   => ['rate' => 10,  'burst' => 2,  'per' => 60],
     ],
 
-    // WAF 规则：简单正则匹配，拦截常见攻击模式
+    // WAF 规则：正则匹配，拦截常见 Web/API 攻击模式
     'waf' => [
         // SQL 注入特征检测
         'sqli_patterns' => [
-            '/(\%27)|(\')|(\-\-)|(\%23)|(#)/i',                                        // 单引号、注释符
-            '/\b(union|select|insert|update|delete|drop|alter|create|truncate)\b/i',   // SQL 关键字
+            // 特殊字符与注释符
+            '/(\%27)|(\')|(\-\-)|(\%23)|(#)/i',
+            // SQL 关键字（增删改查、DDL、权限）
+            '/\b(union|select|insert|update|delete|drop|alter|create|truncate|exec|execute|grant|revoke)\b/i',
+            // 十六进制编码注入：0xDEADBEEF
+            '/\b0x[0-9a-fA-F]{4,}\b/',
+            // 联合查询变形：UNION ALL SELECT, UNION/**/SELECT
+            '/(\%55\%4e\%49\%4f\%4e|union).*(select)/si',
+            // 永真条件注入：' OR '1'='1, OR 1=1, %27+OR+1%3D1
+            '/([\'\"\%])\s*or\s*[\'\"\%]?\s*[0-9a-z]+\s*[\'\"\%]?\s*=\s*[\'\"\%]?\s*[0-9a-z]+/i',
+            // 时间盲注：sleep(, benchmark(, WAITFOR DELAY
+            '/\b(sleep|benchmark|pg_sleep)\s*\(/i',
+            '/\bWAITFOR\s+DELAY\b/i',
+            // 堆叠查询
+            '/;\s*\b(drop|insert|update|delete|select|exec)\b/i',
+            // 多行注释绕过
+            '/\/\*!|\*\/|\/\*\*\/|\bSELECT\b.*\/\*\*\//i',
         ],
 
         // XSS 跨站脚本特征检测
         'xss_patterns' => [
-            '/((\%3C)|<)((\%2F)|\/)*[a-z0-9\%]+((\%3E)|>)/i',                          // HTML 标签
-            '/\b(onload|onerror|onclick|document\.|window\.|alert|eval)\b/i',           // JS 事件/函数
+            // HTML 标签（含编码变形）
+            '/((\%3C)|<)((\%2F)|\/)*[a-z0-9\%]+((\%3E)|>)/i',
+            // Script 标签及变体（大小写、空格、编码）
+            '/<\s*s\s*c\s*r\s*i\s*p\s*t[\s>\/]/i',
+            '/<script[\s>\/]/i',
+            // JS 事件处理器
+            '/\b(onload|onerror|onclick|onmouseover|onmouseout|onfocus|onblur|onkeypress|onkeydown|onkeyup|onsubmit|onchange|oninput|ondblclick|oncontextmenu|onanimationend)\b/i',
+            // JS 全局对象与危险函数
+            '/\b(document\.|window\.|alert|eval|setTimeout|setInterval|Function\(|constructor)\b/i',
+            // JavaScript 伪协议
+            '/javascript\s*:/i',
+            // HTML 实体编码绕过：&#x3C;, &#60;
+            '/&#x?[0-9a-fA-F]+/i',
+            // Data URI 在属性中
+            '/data\s*:\s*text\/html/i',
+            // 内联事件属性
+            '/\bon[a-z]+\s*=\s*[\"\'][^\"\']*\([^\"\']*\)/i',
+        ],
+
+        // 命令注入特征检测
+        'cmd_injection_patterns' => [
+            // Shell 元字符
+            '/[;&|`\$\(\)]/',
+            // 常见系统命令
+            '/\b(cat|ls|rm|wget|curl|nc|netcat|bash|sh|zsh|cmd|powershell|whoami|id|uname|ifconfig|ipconfig|nslookup|ping|tracert)\s+/i',
+            // 管道与重定向
+            '/\||\b2?>&?\d?\b/',
+            // 命令替换：$(cmd), `cmd`
+            '/(\$\(.*\)|`[^`]*`)/',
+        ],
+
+        // 文件包含 / 路径穿越特征检测
+        'file_inclusion_patterns' => [
+            // 路径穿越（多种编码）
+            '/\.\.\/|\.\.\%2f|\.\.\\\\|\.\.\%5c|\.\.\/\.\.\//i',
+            // PHP 伪协议
+            '/\b(php|file|glob|data|expect|phar|zip|ogg):\/\//i',
+            // 绝对路径探测
+            '/(\/etc\/|\/proc\/|\/var\/|\/tmp\/|C:\\\\|%SYSTEMROOT%)/i',
+            // Null byte 注入
+            '/\%00|\\x00/',
+        ],
+
+        // HTTP 头注入 / CRLF 攻击
+        'header_injection_patterns' => [
+            // CRLF 换行注入
+            '/\%0[ad]|\\r\\n|\\r|\\n/i',
+            // Host 头攻击
+            '/\n\s*(Host|Cookie|Set-Cookie|Location|Content-Type):/i',
         ],
     ],
 

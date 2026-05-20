@@ -114,6 +114,7 @@ cloud-php/
 │   │   ├── Security/           # CORS / WAF / 频率限制 / 地域封锁 / 维护模式 / 审计日志
 │   │   ├── Snowflake/          # 雪花 ID 生成服务 / Eloquent HasSnowflakeId Trait
 │   │   ├── Version/Middleware/  # API 版本中间件（X-Api-Version 头校验）
+│   │   ├── ClientPlatform/Middleware/  # 客户端平台中间件（X-Client-Platform 头识别）
 │   │   └── Webhook/            # Webhook 事件分发器
 │   ├── config/                 # 17 个配置文件（route / middleware / database / redis / cron / auth / security / i18n / ...）
 │   │   └── plugin/             # 插件配置
@@ -413,7 +414,7 @@ ProviderInterface
 
 ### 5. 安全架构
 
-全局中间件链：`CORS → WAF → Locale → HashidRequest → Version → [路由: Encryption → Captcha → Auth → Confirmation]`
+全局中间件链：`Version → CORS → ClientPlatform → WAF → Locale → HashidRequest → Maintenance → [路由: Encryption → Captcha → Auth → Confirmation]`
 
 ![安全中间件管道](docs/diagrams/security-middleware-zh.svg)
 
@@ -422,6 +423,7 @@ ProviderInterface
 - **Locale** — 解析 Accept-Language，设置多语言
 - **HashidRequest** — 自动解码请求中的 hashid 字符串为真实整数 ID
 - **Version** — 校验 `X-Api-Version` 请求头，缺失默认 `v1`，不支持的版本返回 `400`
+- **ClientPlatform** — 校验 `X-Client-Platform` 请求头，识别客户端操作系统平台（iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web）
 - **Encryption** — AES-256-GCM 传输加密（认证接口和管理后台），防中间人窃听和篡改
 - **Captcha** — 点击验证码，登录/注册前验证（GD 绘图 + Redis 存储，一次性密钥，300s 有效期，3 次尝试限制）
 - **Auth** — JWT HS256 认证，Access Token 15 分钟，Refresh Token 30 天，Redis 黑名单

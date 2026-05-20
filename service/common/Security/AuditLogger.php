@@ -17,8 +17,9 @@ class AuditLogger
                 'input'      => isset($context['input']) ? json_encode(LogSanitizer::sanitize((array)$context['input'])) : '{}',
                 'status'     => $context['status'] ?? 'success',
                 'request_id' => request_id(),
-                'user_agent' => $request ? $request->header('User-Agent', '') : '',
-                'created_at' => date('Y-m-d H:i:s'),
+                'user_agent'      => $request ? $request->header('User-Agent', '') : '',
+                'client_platform' => $request ? ($request->properties['client_platform'] ?? 'unknown') : '',
+                'created_at'      => date('Y-m-d H:i:s'),
             ]);
         } catch (\Throwable $e) {
             // Don't let audit failure break the request

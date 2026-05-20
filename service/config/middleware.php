@@ -16,6 +16,9 @@ return [
         // CORS 跨域中间件：添加 Access-Control-* 响应头
         Common\Security\CorsMiddleware::class,
 
+        // 客户端平台中间件：从 X-Client-Platform 头识别客户端操作系统平台
+        Common\ClientPlatform\Middleware\ClientPlatformMiddleware::class,
+
         // WAF 安全中间件：检测并拦截 SQL 注入、XSS 攻击
         Common\Security\WafMiddleware::class,
 

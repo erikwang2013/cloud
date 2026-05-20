@@ -38,7 +38,7 @@ class AuthController
         }
 
         try {
-            $tokens = $this->auth->register($data);
+            $tokens = $this->auth->register($data, $this->clientPlatform($request));
             AuditLogger::record('user_registered', ['user_id' => null], $request);
             return json(Response::success($tokens, I18n::trans('auth.register_success')));
         } catch (\InvalidArgumentException $e) {
@@ -61,7 +61,7 @@ class AuthController
         }
 
         try {
-            $tokens = $this->auth->login($login, $password, $deviceFp);
+            $tokens = $this->auth->login($login, $password, $deviceFp, $this->clientPlatform($request));
             $payload = (new \Common\Auth\JwtAuth())->verify($tokens['access_token']);
             AuditLogger::record('user_login', ['user_id' => $payload['sub'] ?? null], $request);
             return json(Response::success($tokens, I18n::trans('auth.login_success')));
@@ -78,7 +78,7 @@ class AuthController
         $deviceFp     = $this->deviceFingerprint($request);
 
         try {
-            $tokens = $this->auth->refreshToken($refreshToken, $deviceFp);
+            $tokens = $this->auth->refreshToken($refreshToken, $deviceFp, $this->clientPlatform($request));
             return json(Response::success($tokens));
         } catch (\InvalidArgumentException $e) {
             return json(Response::error(401, $e->getMessage()));
@@ -278,7 +278,7 @@ class AuthController
                     'password' => bin2hex(random_bytes(16)),
                     'language' => $request->header('Accept-Language', 'en-US'),
                     'currency' => 'USD',
-                ]);
+                ], $this->clientPlatform($request));
                 // Update profile with Google data
                 $user = User::where('email', $googleUser['email'])->first();
                 \App\User\Model\UserProfile::where('user_id', $user->id)->update([
@@ -293,7 +293,7 @@ class AuthController
         }
 
         $deviceFp = $this->deviceFingerprint($request);
-        $tokens = $this->auth->issueTokens($user->id, $user->role, $deviceFp);
+        $tokens = $this->auth->issueTokens($user->id, $user->role, $deviceFp, $this->clientPlatform($request));
         AuditLogger::record('user_oauth_login', ['provider' => 'google', 'user_id' => $user->id], $request);
         return json(Response::success($tokens));
     }
@@ -362,7 +362,7 @@ class AuthController
                     'password' => bin2hex(random_bytes(16)),
                     'language' => $request->header('Accept-Language', 'en-US'),
                     'currency' => 'USD',
-                ]);
+                ], $this->clientPlatform($request));
                 AuditLogger::record('user_oauth_register', ['provider' => 'apple', 'email' => $email], $request);
                 return json(Response::success($tokens));
             } catch (\Exception $e) {
@@ -371,7 +371,7 @@ class AuthController
         }
 
         $deviceFp = $this->deviceFingerprint($request);
-        $tokens   = $this->auth->issueTokens($user->id, $user->role, $deviceFp);
+        $tokens   = $this->auth->issueTokens($user->id, $user->role, $deviceFp, $this->clientPlatform($request));
         AuditLogger::record('user_oauth_login', ['provider' => 'apple', 'user_id' => $user->id], $request);
         return json(Response::success($tokens));
     }
@@ -533,7 +533,7 @@ class AuthController
         \Illuminate\Support\Facades\Redis::setex("totp_recovery:{$user->id}", 86400 * 365, json_encode($codes));
 
         $deviceFp = $this->deviceFingerprint($request);
-        $tokens   = $this->auth->issueTokens($user->id, $user->role, $deviceFp);
+        $tokens   = $this->auth->issueTokens($user->id, $user->role, $deviceFp, $this->clientPlatform($request));
         AuditLogger::record('user_login_recovery_code', ['user_id' => $user->id], $request);
         return json(Response::success($tokens));
     }
@@ -547,10 +547,11 @@ class AuthController
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn($t) => [
-                'id'          => $t->id,
-                'fingerprint' => substr($t->device_fingerprint, 0, 16),
-                'created_at'  => $t->created_at,
-                'expires_at'  => $t->expires_at,
+                'id'              => $t->id,
+                'fingerprint'     => substr($t->device_fingerprint, 0, 16),
+                'client_platform' => $t->client_platform ?? 'unknown',
+                'created_at'      => $t->created_at,
+                'expires_at'      => $t->expires_at,
             ]);
 
         return json(Response::success($sessions));
@@ -593,5 +594,10 @@ class AuthController
         $ip     = $request->getRealIp();
         $ipCidr = substr($ip, 0, (int) strrpos($ip, '.'));
         return hash('sha256', $ua . $ipCidr);
+    }
+
+    private function clientPlatform($request): string
+    {
+        return $request->properties['client_platform'] ?? 'unknown';
     }
 }

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'client_platform.dart';
 
 class ApiClient {
   late final Dio dio;
@@ -17,6 +18,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
         'X-Api-Version': apiVersion,
+        'X-Client-Platform': getClientPlatform(),
       },
     ));
 
@@ -62,7 +64,7 @@ class AuthInterceptor extends Interceptor {
     try {
       final response = await Dio().post('${ApiClient.baseUrl}/auth/refresh', data: {
         'refresh_token': refreshToken,
-      }, options: Options(headers: {'X-Api-Version': ApiClient.apiVersion}));
+      }, options: Options(headers: {'X-Api-Version': ApiClient.apiVersion, 'X-Client-Platform': getClientPlatform()}));
       final respData = response.data['data'];
       if (respData != null) {
         await _storage.write(key: 'access_token', value: respData['access_token']);

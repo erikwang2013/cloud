@@ -20,17 +20,20 @@
  */
 
 use app\middleware\AccessControl;
+use app\middleware\WafMiddleware;
 
 /**
  * Global middleware — executed on every request in the order listed.
  *
  * The empty string key '' means "apply to all routes."
  *
+ * WafMiddleware scans input for SQL injection, XSS, command injection,
+ * file inclusion, and header injection patterns.
  * AccessControl checks session login state and RBAC permissions via plugin\admin\api\Auth.
- * Requests that fail auth get JSON error responses (API) or 401/403 HTML pages (browser).
  */
 return [
     '' => [
+        WafMiddleware::class,
         AccessControl::class,
     ]
 ];
