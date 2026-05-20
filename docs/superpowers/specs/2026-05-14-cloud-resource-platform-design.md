@@ -147,6 +147,17 @@ API 版本通过 HTTP 请求头 `X-Api-Version` 指定，不在 URL 路径中。
 管理后台: /admin/api
 ```
 
+**路由分组与中间件矩阵:**
+
+| 路由组 | 中间件 | 端点示例 |
+|--------|--------|---------|
+| 公开 (无前缀) | 全局中间件链 | `/health`, `/api/products`, `/api/help`, `/api/domain/tlds` |
+| `/api/auth` | 全局 + Encryption | `/api/auth/register`, `/api/auth/login`, `/api/auth/refresh` |
+| `/api` (用户) | 全局 + Encryption + Auth | `/api/user/profile`, `/api/cart`, `/api/orders`, `/api/resources` |
+| `/api` (敏感) | 全局 + Encryption + Auth + Confirmation | `/api/orders/{id}/pay`, `/api/supplier/withdraw`, `/api/dns/{domain}/records/{id}` |
+| `/admin/api` | 全局 + Encryption + Auth + AdminRole | `/admin/api/dashboard`, `/admin/api/users`, `/admin/api/products` |
+| `/admin/api` (敏感) | 全局 + Encryption + Auth + AdminRole + Confirmation | `/admin/api/products/{id}` (delete), `/admin/api/orders/{id}/refund`, `/admin/api/kyc/{id}/approve` |
+
 ### 统一响应格式
 
 ```json
@@ -178,10 +189,62 @@ API 版本通过 HTTP 请求头 `X-Api-Version` 指定，不在 URL 路径中。
 - Google OAuth 登录 / Apple Sign In
 - 忘记密码（邮箱验证码 + Redis 10min TTL）
 - TOTP 两步验证（QR 码扫码设置、恢复码兜底）
-- 活跃会话管理（查看/撤销登录设备）
+- 活跃会话管理（查看/撤销登录设备，含 client_platform 信息）
 - 账号注销 GDPR（密码确认 + 软删除 + token 全部撤销）
 - 登录异常告警（新 IP 登录邮件通知）
 - 登录锁定（5 次失败锁定 15 分钟）
+
+**用户认证流程:**
+
+```
+注册流程                             登录流程
+────────                             ────────
+1. POST /captcha/create              1. POST /captcha/create
+   ← {key, image(点击位置)}              ← {key, image}
+2. POST /auth/register               2. POST /auth/login
+   → {email, password, captcha}         → {login, password, captcha}
+   → [WAF 扫描]                         → [WAF 扫描]
+   → [限流: 3 req/min]                  → [限流: 5 req/min]
+   → [密码 bcrypt(cost=12)]             → [Hash::check()]
+   → [设备指纹: sha256(UA+IP)]           → [设备指纹: sha256(UA+IP)]
+   → [client_platform 记录]              → [client_platform 记录]
+   → User::create()                    → [失败 5 次 → 锁 15min]
+   → RefreshToken::create()            → [新 IP 检测 → 邮件告警]
+     user_id, token_hash,              → RefreshToken::create()
+     device_fingerprint,                   user_id, token_hash,
+     client_platform,                      device_fingerprint,
+     expires_at                            client_platform,
+   → NotificationDispatcher::send()           expires_at
+     (验证邮件)                          → AuditLogger::record('user_login')
+   → AuditLogger::record               ← {access_token, refresh_token}
+     ('user_registered')
+   ← {access_token, refresh_token}    OAuth (Google/Apple):
+                                      ─────────────────────
+                                      1. GET /auth/google
+                                      2. Google 授权 → code
+                                      3. GET /auth/google/callback?code=xxx
+                                      4. 验证 Google token
+                                      5. 新建或查找用户
+                                      6. 签发 token（含 client_platform）
+                                      7. AuditLogger::record('user_oauth_login')
+
+TOTP 两步验证                          会话管理
+────────────────                      ────────
+1. POST /user/totp/setup               GET /user/sessions
+   ← {secret, qr_code_url}                ← [{id, fingerprint, client_platform,
+2. POST /user/totp/verify                      created_at, expires_at}]
+   → {code: 123456}
+   ← {recovery_codes: [...]}          DELETE /user/sessions/{id}
+3. POST /auth/login                      → RefreshToken::update(revoked=true)
+   → {login, password, totp_code}        ← 成功
+   或 → /auth/login/recovery
+   → {login, password, recovery_code}  DELETE /user/account
+                                          → 密码确认 + 软删除 + 全部 token 撤销
+登录锁定机制
+────────────
+Redis: login_failed:{sha1(login)} = count (TTL 900s)
+       count >= 5 → login_lock:{userId} (TTL 900s)
+```
 
 ### 多语言方案
 
@@ -241,39 +304,101 @@ API 版本通过 HTTP 请求头 `X-Api-Version` 指定，不在 URL 路径中。
 
 #### WAF 规则 (webman 中间件)
 
+WAF 中间件通过 5 类正则规则组扫描请求，规则配置在 `config/security.php` 中热更新无需重启。扫描范围覆盖请求体 JSON、URL 路径+查询字符串、User-Agent、原始请求体（防 JSON 编码逃逸）。
+
+**5 类检测规则（30+ 条）：**
+
+| 类别 | 覆盖范围 |
+|------|---------|
+| SQL 注入 | 单引号/注释符、SQL 关键字、十六进制编码、联合查询变形、永真条件(`' OR '1'='1`)、时间盲注(`sleep`/`benchmark`)、堆叠查询、多行注释绕过 |
+| XSS | HTML 标签(含编码变形)、Script 标签及变体、13 种 JS 事件处理器、JS 全局对象/危险函数、`javascript:` 伪协议、HTML 实体编码、Data URI 注入、内联事件属性 |
+| 命令注入 | 管道符后跟命令(`\| cat`)、分号后跟命令(`; whoami`)、`$(cmd)` 和反引号命令替换、独立命令关键字 |
+| 文件包含 | 路径穿越(多编码)、PHP 伪协议(`php://`/`data://`/`phar://`)、绝对路径探测(`/etc/`/`C:\`)、Null byte 注入 |
+| HTTP 头注入 | CRLF 换行注入(`%0d%0a`/`\r\n`)、Host/Cookie/Set-Cookie 头注入 |
+
+**WAF 检测流程:**
+
+```
+请求进入
+  │
+  ▼
+1. 获取待扫描文本
+   ├── json_encode($request->all(), JSON_UNESCAPED_SLASHES)  # 请求体
+   │     └── false → serialize() 回退
+   ├── mb_substr(path + queryString, 0, 2048)                # URL（防 ReDoS 截断）
+   ├── User-Agent 头                                          # UA
+   └── file_get_contents('php://input')                      # 原始体（防 JSON 编码逃逸）
+  │
+  ▼
+2. 加载规则（从 config/security.php）
+   ├── security.waf.sqli_patterns          (9 条)
+   ├── security.waf.xss_patterns           (8 条)
+   ├── security.waf.cmd_injection_patterns (5 条)
+   ├── security.waf.file_inclusion_patterns (4 条)
+   └── security.waf.header_injection_patterns (2 条)
+   → array_merge() + array_unique()
+  │
+  ▼
+3. 逐条匹配
+   foreach patterns as pattern:
+     match($pattern, $input) ───→ 命中 → AuditLogger::threat('waf_blocked')
+     match($pattern, $url)   ───→ 命中 → 返回 403 "Request blocked by WAF"
+     match($pattern, $ua)    ───→ 命中 →
+     match($pattern, $raw)   ───→ 命中 →
+  │
+  ▼
+4. match() 严格检查
+   $result = @preg_match($pattern, $subject)
+   ├── $result === 1    → 命中 ✓
+   ├── $result === 0    → 未命中（安全放行）
+   └── $result === false → 模式错误 → error_log() → 作为未命中处理
+  │
+  ▼
+5. 全部未命中 → $next($request) 放行到下一中间件
+```
+
 ```php
 class WafMiddleware
 {
-    // SQL 注入检测
-    const SQLI_PATTERNS = [
-        '/(\%27)|(\')|(\-\-)|(\%23)|(#)/i',
-        '/((\%3D)|(=))[^\n]*((\%27)|(\')|(\-\-)|(\%3B)|(;))/i',
-        '/\b(union|select|insert|update|delete|drop|alter|create|truncate)\b/i',
-    ];
-
-    // XSS 检测
-    const XSS_PATTERNS = [
-        '/((\%3C)|<)((\%2F)|\/)*[a-z0-9\%]+((\%3E)|>)/i',
-        '/((\%3C)|<)((\%69)|i|(\%49))((\%6D)|m|(\%4D))/i',
-        '/\b(onload|onerror|onclick|onmouseover|document\.|window\.|alert|eval)\b/i',
-    ];
-
-    // 路径遍历检测
-    const PATH_TRAVERSAL = '/\.\.\/|\.\.\%2f|\.\.\\\\/i';
-
-    public function process(Request $request, callable $next): Response
+    public function process($request, callable $next)
     {
-        $input = json_encode($request->all());
+        $input = json_encode($request->all(), JSON_UNESCAPED_SLASHES);
+        if ($input === false) {
+            $input = serialize($request->all());
+        }
+        $url = mb_substr($request->path() . '?' . $request->queryString(), 0, 2048);
+        $ua  = $request->header('User-Agent', '');
+        $raw = file_get_contents('php://input') ?: '';
 
-        foreach (self::SQLI_PATTERNS as $pattern) {
-            if (preg_match($pattern, $input)) {
-                $this->logThreat('sqli', $request);
-                return errorResponse(403, 'Request blocked by WAF');
+        // 从 config/security.php 加载 5 类规则
+        $patterns = array_unique(array_merge(
+            config('security.waf.sqli_patterns'),
+            config('security.waf.xss_patterns'),
+            config('security.waf.cmd_injection_patterns'),
+            config('security.waf.file_inclusion_patterns'),
+            config('security.waf.header_injection_patterns'),
+        ));
+
+        foreach ($patterns as $pattern) {
+            if ($this->match($pattern, $input)
+                || $this->match($pattern, $url)
+                || $this->match($pattern, $ua)
+                || $this->match($pattern, $raw)) {
+                AuditLogger::threat('waf_blocked', $request);
+                return json(Response::error(403, 'Request blocked by WAF'));
             }
         }
-        // XSS、路径遍历同理...
-        
         return $next($request);
+    }
+
+    private function match(string $pattern, string $subject): bool
+    {
+        $result = @preg_match($pattern, $subject);
+        if ($result === false) {
+            error_log("WAF: invalid regex pattern: $pattern");
+            return false;
+        }
+        return $result === 1;
     }
 }
 ```
@@ -309,6 +434,85 @@ if (in_array($country, $blockedCountries)) {
 ---
 
 ### 4.2 传输与应用安全
+
+#### 全局中间件执行链
+
+所有 HTTP 请求按以下顺序经过中间件处理，每个中间件独立可测试：
+
+```
+请求 → VersionMiddleware        # X-Api-Version 校验（缺失默认 v1，无效返回 400）
+     → CorsMiddleware            # CORS 跨域响应头
+     → ClientPlatformMiddleware  # X-Client-Platform 识别（8 种平台），注入 $request->properties
+     → WafMiddleware             # 5 类 30+ 规则安全扫描（SQLi/XSS/命令注入/文件包含/头注入）
+     → LocaleMiddleware          # Accept-Language 解析，设置区域
+     → HashidRequestMiddleware   # 请求参数 hashid → 真实 ID 解码
+     → MaintenanceMiddleware     # 维护模式（IP 白名单放行）
+     ↓
+  [路由中间件—按路由组附加]
+     → EncryptionMiddleware      # AES-256-GCM 请求/响应体加密
+     → Captcha                   # 点击验证码校验（登录/注册前）
+     → AuthMiddleware            # JWT Bearer Token 验证 + 角色注入
+     → AdminRoleMiddleware       # 管理员 RBAC 权限检查
+     → ConfirmationMiddleware    # 敏感操作二次密码确认（5 次失败锁 15min）
+     ↓
+     控制器
+```
+
+#### 各中间件职责
+
+| 中间件 | 注册方式 | 职责 |
+|--------|---------|------|
+| `VersionMiddleware` | 全局 | 校验 `X-Api-Version` 请求头，缺失默认 `v1`，不支持的版本返回 `400` |
+| `CorsMiddleware` | 全局 | 处理 OPTIONS 预检，反射 Origin 到 `Access-Control-Allow-Origin` |
+| `ClientPlatformMiddleware` | 全局 | 校验 `X-Client-Platform` 请求头，识别客户端操作系统平台（iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web），注入 `$request->properties['client_platform']` |
+| `WafMiddleware` | 全局(service) + admin 实例 | 5 类 30+ 规则安全扫描，拦截后记录审计日志 |
+| `LocaleMiddleware` | 全局 | 解析 `Accept-Language` 头，设置多语言区域 |
+| `HashidRequestMiddleware` | 全局 | 自动解码请求中的 hashid 字符串为真实整数 ID |
+| `MaintenanceMiddleware` | 全局 | 检查 `MAINTENANCE_MODE` 环境变量，白名单 IP 放行 |
+| `EncryptionMiddleware` | 路由组 (/api/auth, /api, /admin/api) | AES-256-GCM 请求/响应体加密，`X-Encrypted: 1` 头触发 |
+| `AuthMiddleware` | 路由组 (/api, /admin/api) | JWT HS256 access_token 验证，注入 `$request->userId` 和 `$request->userRole` |
+| `AdminRoleMiddleware` | 路由组 (/admin/api) | 管理员 RBAC 权限检查 |
+| `ConfirmationMiddleware` | 路由组 (敏感操作) | 二次密码确认，Redis 失败计数器，5 次锁定 15 分钟 |
+
+#### ClientPlatform 中间件细节
+
+```php
+class ClientPlatformMiddleware
+{
+    protected const SUPPORTED = [
+        'ipados', 'macos', 'windows', 'linux',
+        'ios', 'android', 'harmonyos', 'web',
+    ];
+
+    public function process($request, callable $next)
+    {
+        // 仅对 API 路由生效
+        $path = $request->path();
+        if (!str_starts_with($path, '/api/') && !str_starts_with($path, '/admin/api/')) {
+            return $next($request);
+        }
+
+        $platform = strtolower(trim($request->header('X-Client-Platform', '')));
+
+        if ($platform === '') {
+            $platform = 'unknown';
+        } elseif (!in_array($platform, static::SUPPORTED, true)) {
+            return response(json_encode(
+                Response::error(400, "Unsupported client platform: {$platform}")
+            ), 400, ['X-Client-Platform' => $platform]);
+        }
+
+        // 注入请求属性供下游使用（审计日志、会话记录）
+        $request->properties['client_platform'] = $platform;
+
+        $response = $next($request);
+        $response->header('X-Client-Platform', $platform);
+        return $response;
+    }
+}
+```
+
+**数据流**: 中间件注入 → `AuditLogger` 自动记录 → `AuthService::issueTokens()` 写入 `refresh_tokens` → `GET /api/user/sessions` 返回平台信息
 
 #### HTTPS 强制
 
@@ -825,6 +1029,43 @@ ProviderFactory 根据 (product_type, provider) 路由到具体实现:
 - 重试策略: 1min → 5min → 15min → 1h → 6h → 24h (最多 6 次)
 - 不可重试失败 → 告警 + 自动生成工单
 
+### 订单到资源开通完整链路
+
+```
+用户下单                               支付                             资源开通
+────────                               ────                             ────────
+1. POST /cart                          5. POST /orders/{id}/pay         9. OrderPaid 事件
+   → addToCart(sku, region, qty)          → 密码二次确认 (Confirmation)      → ProvisioningService
+                                                                             .handleOrderPaid()
+2. POST /orders                           → PaymentRouter::route()
+   → createOrder()                          选择支付通道                   10. 每个 OrderItem:
+   ← {order, order_items}                                                    → ProvisionTask::create()
+                                        6. StripeChannel::                     status=pending
+3. 应用优惠券                               createPaymentIntent()
+   POST /coupons/validate                   → Stripe API                 11. Redis Queue Worker
+   → validate('CODE', order_total)          ← {client_secret}                → ProviderFactory
+   ← {discount, coupon_id}                                                     .create(task)
+                                        7. 前端 confirmCardPayment()
+4. GET /orders/{id}/payment-methods     8. Stripe webhook 回调            12. Provider->create()
+   → 获取可用支付通道                       → 验签 + 幂等检查                   ├→ HostSelector::select()
+   ← [{channel, fee, total}]               → transaction=success              ├→ ProxmoxApi::create()
+                                            → 触发 OrderPaid 事件               │  createVM(CPU,RAM,Disk)
+                                                                              │  allocateIP()
+                                                                              │  startVM()
+                                        重试策略 (失败时)                      ├→ 创建 Resource 记录
+                                        ────────────────                     └→ 更新 host_machine
+                                        1min → 5min → 15min                      已分配资源量
+                                        → 1h → 6h → 24h
+                                        (6 次后标记失败 + 告警)           13. Order::status = completed
+                                                                           → NotificationDispatcher
+                                        退款流程                                ::send('resource_ready')
+                                        ────────
+                                        用户申请 → 客服审核 → admin 确认
+                                        → provider.destroy()
+                                        → payment.refund()
+                                        → 原路退回
+```
+
 ### 自营物理机方案：Proxmox VE (社区版)
 
 自营服务器采用 Proxmox VE (开源免费，AGPL v3)，PHP 通过 HTTP 调用 Proxmox REST API 管理 KVM 虚拟机生命周期和资源分配。
@@ -969,13 +1210,31 @@ PaymentRouter 根据用户币种偏好查询可用通道，计算各通道实付
 
 ### 支付流程 (Stripe)
 
-1. 用户选择 Stripe → 前端收集卡信息
-2. Stripe 返回 PaymentIntent ID
-3. 后端创建 payment_transaction (status=pending)
-4. 前端 confirm Payment
-5. Stripe webhook 回调 → 验签 → 更新 transaction
-6. transaction=success → 触发 OrderPaid 事件
-7. OrderPaid → Provisioning 自动开通
+```
+用户端 (Flutter)               服务端 (webman)                Stripe API
+───────────────               ──────────────                ──────────
+1. 选择 Stripe 支付
+    → POST /orders/{id}/pay ──→ 2. StripeChannel
+    ← client_secret               createPaymentIntent() ──→ 3. paymentIntents.create
+                                                              ← pi_xxx, client_secret
+                               4. 创建 payment_transaction
+                                  (status=pending)
+                                  ← client_secret
+5. confirmCardPayment()
+    → Stripe SDK ──────────────────────────────────────────→ 6. 用户确认支付
+                                                              ← payment_intent.succeeded
+                               7. POST /payments/webhook/stripe ←
+                                  Webhook::constructEvent()
+                                  验签 (stripe-signature)
+                                  幂等检查 (transaction_no)
+                               8. 更新 transaction=success
+                               9. 触发 OrderPaid 事件
+                                  ├→ AuditLogger::record()
+                                  ├→ NotificationDispatcher::send()
+                                  └→ ProvisioningService::handleOrderPaid()
+
+      ← 支付成功页面               ← 返回订单状态
+```
 
 ### 加密货币支付
 
@@ -1081,6 +1340,44 @@ Email (SMTP/SendGrid) / SMS (Twilio/阿里短信) / Push (FCM/HMS) / 站内信
 - 结算公式: 订单商品金额 - 平台抽成 - 通道手续费 = 供应商应收
 - 结算周期: 周结 / 月结
 
+### 供应商完整业务流程
+
+```
+供应商入驻                              管理员审批
+──────────                             ──────────
+POST /supplier/apply                   GET /admin/api/suppliers?status=pending
+  → {company_name, contact_name,         → 审核供应商信息
+     contact_phone, contact_email,       POST /admin/api/suppliers/{id}/approve
+     settlement_method}                    → 确认密码
+  → SupplierService::apply()               → SupplierService::approve()
+  ← {supplier, status:pending}               → User::role = 'supplier'
+                                              ← 成功
+商品上架
+────────
+POST /supplier/products               管理员审核
+  → {product_id, commission_rate}        → 关联供应商商品 + 设置佣金比例
+  ← {supplier_product}                    → 商品状态: published
+
+用户下单 ──→ 支付完成 ──→ 资源开通 ──→ 订单完成
+
+定时结算 (每周一 04:17)                   提现
+───────────────────────                 ──────
+Cron: SupplierSettlement               POST /supplier/withdraw
+  → 统计周期内已完成订单                    → 密码二次确认 (ConfirmationMiddleware)
+  → 计算 total_sales - commission        → SupplierService::requestWithdraw()
+  → = payable                              → 检查可提现余额
+  → 创建 SupplierSettlement                 → 创建 SupplierWithdraw (status:pending)
+  → Webhook: settlement.created          ← 成功
+
+管理员打款                              管理员 API Key 管理
+───────────                             ──────────────────
+POST /admin/api/suppliers/              POST /admin/api/suppliers/{id}/api-keys
+  withdraws/{id}/approve                  → 生成 sk_xxx (SHA256 存储)
+  → 确认密码                               ← {api_key} (仅显示一次)
+  → SupplierWithdraw: status=completed  DELETE /admin/api/suppliers/api-keys/{id}
+  → Webhook: withdrawal.approved           → revoked=true
+```
+
 ---
 
 ## 十、监控与运维
@@ -1174,29 +1471,32 @@ workerman/webman-framework、webman/admin、webman/redis-queue、illuminate/data
 
 | 功能 | 状态 |
 |------|------|
-| WAF (SQL注入/XSS/路径遍历检测) | ✅ |
+| WAF (SQL注入/XSS/命令注入/文件包含/头注入 30+ 规则) | ✅ |
 | CORS 中间件 | ✅ |
+| ClientPlatform 平台识别中间件 (8 种平台) | ✅ |
 | API 限流 (Redis令牌桶) | ✅ |
 | Geo-Blocking (MaxMind GeoIP2) | ✅ |
 | 维护模式 (环境变量开关 + IP白名单) | ✅ |
 | 请求/响应加密 (AES-256-GCM) | ✅ |
-| 审计日志 (独立库) | ✅ |
+| 审计日志 (独立库，含 client_platform 追踪) | ✅ |
 | 数据脱敏 (日志/响应自动处理) | ✅ |
-| JWT 设备指纹绑定 + token 轮换 | ✅ |
+| JWT 设备指纹绑定 + token 轮换 + client_platform 记录 | ✅ |
 | bcrypt 密码 (cost=12) + Encryptable 二次加密 | ✅ |
+| 二次密码确认 (ConfirmationMiddleware，5 次失败锁 15min) | ✅ |
+| Admin 面板 WAF 中间件 | ✅ |
 
 ### 后端统计
 
 | 指标 | 数量 |
 |------|------|
-| API 端点 | 80+ |
+| API 端点 | 127 |
 | 数据模型 | 50+ |
 | 数据库表 | 50+ |
-| 中间件 | 9 个 |
+| 中间件 | 14 个（全局 7 + 路由 5） |
 | 定时任务 | 7 个 |
-| 迁移文件 | 19 个 |
-| 测试 | 245 tests / 389 assertions |
-| 测试文件 | 20 个 |
+| 迁移文件 | 21 个 |
+| 测试 | 349 tests / 566 assertions（Service 282 + Admin 67） |
+| 测试文件 | 22 个 |
 
 ### 文档
 
