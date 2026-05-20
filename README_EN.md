@@ -36,114 +36,145 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 
 ```
 cloud-php/
-├── admin/                     # Admin panel (standalone webman instance)
-│   ├── app/                   # Plugin source (PSR-4: app\)
-│   │   ├── controller/        # Controllers (CRUD / export / table / plugin / install)
-│   │   ├── model/             # Models (admins / roles / rules / users)
-│   │   ├── common/            # Utilities (Auth / Tree / Layui / Util / ExcelExport)
-│   │   ├── middleware/        # Access control middleware
-│   │   ├── bootstrap/         # Process bootstraps (Snowflake / Encryptable / Encryption)
-│   │   ├── exception/        # Exception handling
-│   │   ├── view/              # View templates (Layui panel)
-│   │   └── command/           # Console commands (database migration)
-│   ├── api/                   # Public API (PSR-4: plugin\admin\api)
-│   ├── config/                # Application config (routes / menus / middleware / database)
-│   │   ├── plugin/            # Plugin configs (7 erikwang2013 packages)
-│   │   │   └── erikwang2013/
-│   │   │       ├── snowflake-php/  # Snowflake distributed IDs
-│   │   │       ├── hashids/        # Hashids ID obfuscation
-│   │   │       ├── encryptable/    # Field-level encryption
-│   │   │       ├── encryption/     # Transport encryption (reserved)
-│   │   │       ├── webman-scout/   # Elasticsearch sync
-│   │   │       ├── season/         # Country flags
-│   │   │       └── poster/         # Click CAPTCHA
-│   │   ├── hashids.php        # Hashids connection config
-│   │   ├── encryption.php     # Transport encryption config
-│   │   └── command.php        # Console command registration
-│   ├── database/migrations/   # Database migration files
-│   ├── tests/                 # Unit tests (PHPUnit 11, 67 tests, 124 assertions)
-│   ├── public/                # Document root (static assets)
-│   ├── vendor/                # Composer dependencies
-│   ├── composer.json          # Dependency manifest
-│   ├── phpunit.xml            # PHPUnit config
-│   ├── start.php              # Entry point (php start.php start)
-│   └── install.sql            # Initial SQL (bigint PKs, no auto-increment)
-├── service/                   # Backend service (standalone webman instance)
-│   ├── app/                   # Business modules (PSR-4: App\)
-│   │   ├── Admin/             # Admin API controllers
-│   │   ├── Captcha/           # Click captcha generation
-│   │   ├── Command/           # Console commands (migration / DB backup)
-│   │   ├── Controller/        # Health check / status page / help center / file upload
-│   │   ├── Cron/              # Scheduled tasks (exchange rate / reconciliation / expiration / SSL / settlement)
-│   │   ├── Domain/            # Domain registration / DNS management
-│   │   ├── Model/             # Shared models (HelpArticle / Role / Permission)
-│   │   ├── Monitor/           # Resource monitoring / alert engine
-│   │   ├── Notification/      # Notifications (in-app / email / SMS / push)
-│   │   ├── Order/             # Shopping cart / orders / coupons / invoices
-│   │   ├── Payment/           # Payment routing / Stripe channel / webhooks
-│   │   ├── Product/           # Products / SKUs / regional pricing / reviews
-│   │   ├── Provisioning/      # Resource delivery engine / Proxmox provider / batch ops
-│   │   ├── Report/            # Revenue / supplier / regional reports
-│   │   ├── Supplier/          # Supplier onboarding / settlement / withdrawal
-│   │   ├── Ticket/            # Support tickets / SLA auto-assignment
-│   │   └── User/              # Users / auth / KYC / balances / addresses
-│   ├── common/                # Shared libraries (PSR-4: Common\)
-│   │   ├── Auth/              # JWT authentication / middleware
-│   │   ├── Captcha/           # Click captcha service
-│   │   ├── Confirmation/      # Password confirmation middleware
-│   │   ├── Encryption/        # Transport encryption middleware (AES-256-GCM)
-│   │   ├── Hashid/            # Hashids request middleware / encode-decode service
-│   │   ├── Helper/            # Response formatting (auto hashid encoding)
-│   │   ├── Http/              # HTTP client utility
-│   │   ├── I18n/              # Internationalization
-│   │   ├── Security/          # CORS / WAF / rate limiting / geo-blocking / maintenance / audit logging
-│   │   ├── Snowflake/         # Snowflake ID service / Eloquent model trait
-│   │   ├── Version/           # API version middleware (X-Api-Version header validation)
-│   │   └── Webhook/           # Webhook event dispatcher
-│   ├── config/                # Routes / middleware / logging / DB / queue / crypto / ES / cron configs
-│   ├── database/migrations/   # Database migration files
-│   ├── i18n/                  # Internationalization resources (en-US / zh-CN)
-│   ├── support/               # Bootstrap helpers + MigrationRunner
-│   ├── tests/                 # Unit tests (PHPUnit 10)
-│   │   ├── Admin/             # Import/export tests
-│   │   ├── Captcha/           # Click CAPTCHA create/verify
-│   │   ├── Common/            # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
-│   │   ├── Confirmation/      # Password confirmation middleware (verify/lockout/success)
-│   │   ├── Notification/      # Notification dispatch
-│   │   ├── Order/             # Coupon / Invoice
-│   │   ├── Payment/           # Stripe channel / payment routing
-│   │   ├── Provisioning/      # ProviderFactory / retry logic
-│   │   ├── Security/          # Rate limiting / maintenance / upload security
-│   │   ├── User/              # Address management
-│   │   ├── Version/           # API version middleware
-│   │   └── Webhook/           # Webhook dispatch
-│   ├── runtime/               # Runtime files (logs / cache)
-│   ├── vendor/                # Composer dependencies
-│   ├── composer.json          # Dependency manifest
-│   ├── phpunit.xml            # PHPUnit config
-│   └── start.php              # Entry point
+├── .claude/                    # Claude Code config (settings / skills)
+├── .github/workflows/          # CI/CD pipeline (syntax check + dual PHPUnit)
+├── admin/                      # Admin panel (standalone webman instance)
+│   ├── app/                    # Plugin source (PSR-4: app\)
+│   │   ├── bootstrap/          # Process bootstraps (Snowflake / Encryptable / Encryption)
+│   │   ├── command/            # Console commands (Migrate / Rollback / Status)
+│   │   ├── common/             # Utilities (Auth / Tree / Layui / Util / ExcelExport / Migration)
+│   │   ├── controller/         # 53 controllers (Base / Crud base + per-entity CRUD)
+│   │   ├── exception/          # Exception handling
+│   │   ├── middleware/          # Access control middleware (AccessControl)
+│   │   ├── model/              # 45 Eloquent models (Base with Snowflake PK + Encryptable)
+│   │   ├── view/               # View templates (Layui panel)
+│   │   └── functions.php       # Global helpers (hashids / encrypt / decrypt)
+│   ├── api/                    # Public interfaces (PSR-4: plugin\admin\api)
+│   │   ├── Auth.php            # Auth interface
+│   │   ├── Menu.php            # Menu interface
+│   │   ├── Install.php         # Installation interface
+│   │   └── Middleware.php      # Middleware interface
+│   ├── config/                 # Application config
+│   │   ├── plugin/erikwang2013/ # 6 erikwang2013 package configs
+│   │   │   ├── snowflake-php/  # Snowflake ID generation
+│   │   │   ├── hashids/        # ID obfuscation
+│   │   │   ├── encryptable/    # Field-level encryption
+│   │   │   ├── encryption/     # Transport encryption
+│   │   │   ├── webman-scout/   # Elasticsearch sync
+│   │   │   └── season/         # Country flags
+│   │   ├── route.php           # Route definitions
+│   │   ├── middleware.php       # Middleware config
+│   │   ├── database.php        # Database connections
+│   │   └── ...                 # 18 config files total
+│   ├── database/migrations/    # Database migration files
+│   ├── tests/                  # Unit tests (PHPUnit 11, 67 tests)
+│   │   ├── HashidsTest.php     # hashids encode/decode (21 tests)
+│   │   ├── BaseJsonTest.php    # Base::json() ID encoding (13 tests)
+│   │   ├── CrudHashidsTest.php # Crud input decoding (14 tests)
+│   │   ├── TreeTest.php        # Tree structure (19 tests)
+│   │   └── Support/            # Test helpers
+│   ├── public/                 # Document root (static assets)
+│   ├── vendor/                 # Composer dependencies
+│   ├── .env.example            # Environment template
+│   ├── composer.json           # Dependency manifest
+│   ├── generate.php            # Code generator
+│   ├── phpunit.xml             # PHPUnit config
+│   ├── start.php               # Entry point
+│   └── install.sql             # Initial DDL
+├── service/                    # Backend service (standalone webman instance)
+│   ├── app/                    # Business modules (PSR-4: App\), each with Controller/Model/Service layers
+│   │   ├── Admin/Controller/   # Admin API (15 controllers: Dashboard / User / Product / Order / Payment / Supplier / Coupon / Invoice / Domain / Webhook etc.)
+│   │   ├── Captcha/Controller/ # Click CAPTCHA
+│   │   ├── Command/            # Console commands (Migrate / Rollback / Status / DbBackup)
+│   │   ├── Controller/         # Public controllers (Health / Status / Help / Upload)
+│   │   ├── Cron/               # Scheduled tasks (ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck)
+│   │   ├── Domain/             # Domain registration / DNS (Controller / Model / Service)
+│   │   ├── Model/              # Shared models (HelpArticle / Role / Permission)
+│   │   ├── Monitor/            # Resource monitoring / alerts (Controller / Cron / Model / Service)
+│   │   ├── Notification/       # Notifications (Controller / Model / Queue / Service)
+│   │   ├── Order/              # Cart / orders / coupons / invoices (Controller / Model / Service)
+│   │   ├── Payment/            # Payment routing / Stripe (Controller / Event / Model / Service)
+│   │   ├── Product/            # Products / SKUs / pricing / reviews (Controller / Model / Service)
+│   │   ├── Provisioning/       # Resource delivery engine (Controller / Event / Listener / Model / Provider / Queue / Service)
+│   │   ├── Report/             # Revenue / supplier / regional reports (Controller / Service)
+│   │   ├── Supplier/           # Supplier onboarding / settlement / withdrawal (Controller / Model / Service)
+│   │   ├── Ticket/             # Support tickets (Controller / Event / Listener / Model / Service)
+│   │   └── User/               # Users / auth / KYC / balances / addresses (Controller / Model / Service)
+│   ├── common/                 # Shared libraries (PSR-4: Common\)
+│   │   ├── Auth/Middleware/     # AuthMiddleware / AdminRoleMiddleware / RbacMiddleware / RoleMiddleware
+│   │   ├── Captcha/            # Click CAPTCHA service
+│   │   ├── Confirmation/       # Password confirmation middleware
+│   │   ├── Encryption/Middleware/ # AES-256-GCM transport encryption middleware
+│   │   ├── Hashid/Middleware/   # Hashids request decode middleware + encode-decode service
+│   │   ├── Helper/             # Response formatting (auto hashid encoding)
+│   │   ├── Http/               # HTTP client utility (ApiRequest)
+│   │   ├── I18n/Middleware/     # Locale middleware
+│   │   ├── Security/           # CORS / WAF / rate limiting / geo-blocking / maintenance / audit logging
+│   │   ├── Snowflake/          # Snowflake ID service / Eloquent HasSnowflakeId trait
+│   │   ├── Version/Middleware/  # API version middleware (X-Api-Version header validation)
+│   │   └── Webhook/            # Webhook event dispatcher
+│   ├── config/                 # 17 config files (route / middleware / database / redis / cron / auth / security / i18n / ...)
+│   │   └── plugin/             # Plugin configs
+│   │       ├── erikwang2013/   # encryptable / hashids / jwt / poster / season / webman-scout
+│   │       └── webman/         # event / redis-queue
+│   ├── database/migrations/    # Database migration files (12 migrations)
+│   ├── i18n/                   # Internationalization resources (en-US / zh-CN)
+│   ├── support/                # Bootstrap (Eloquent / Redis / Event / encryption / snowflake / hashids / scout / MigrationRunner)
+│   ├── tests/                  # Unit tests (PHPUnit 10, 178 tests)
+│   │   ├── Admin/              # ImportExport
+│   │   ├── Captcha/            # CaptchaService
+│   │   ├── Common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
+│   │   ├── Confirmation/       # ConfirmationMiddleware
+│   │   ├── Notification/       # NotificationDispatcher
+│   │   ├── Order/              # Coupon / Invoice
+│   │   ├── Payment/            # StripeChannel / PaymentRouter
+│   │   ├── Provisioning/       # ProviderFactory / RetryLogic
+│   │   ├── Security/           # RateLimit / Maintenance / UploadSecurity
+│   │   ├── User/               # AddressController
+│   │   ├── Version/            # VersionMiddleware
+│   │   ├── Webhook/            # WebhookDispatcher
+│   │   ├── Support/            # RequestMock
+│   │   ├── bootstrap.php       # Test bootstrap
+│   │   └── TestCase.php        # Base test case
+│   ├── runtime/                # Runtime files (logs / cache)
+│   ├── vendor/                 # Composer dependencies
+│   ├── .env.example            # Environment template
+│   ├── .env                    # Local environment (gitignored)
+│   ├── composer.json           # Dependency manifest
+│   ├── phpunit.xml             # PHPUnit config
+│   └── start.php               # Entry point
 ├── apps/
-│   ├── flutter/               # Flutter client (iOS / Android / Web / macOS / Windows / Linux)
-│   │   ├── lib/               # Dart source
-│   │   ├── ios/               # iOS project
-│   │   ├── android/           # Android project
-│   │   ├── macos/             # macOS project
-│   │   ├── windows/           # Windows project
-│   │   ├── linux/             # Linux project
-│   │   ├── web/               # Web project
-│   │   └── test/              # Flutter tests
-│   └── harmonyos/             # HarmonyOS client skeleton
-├── docker/                    # Dockerfile / docker-compose / nginx / supervisor
-├── docs/                      # Documentation
-│   ├── diagrams/              # SVG architecture diagrams
-│   ├── superpowers/           # Design specs & implementation plans
-│   │   ├── specs/             # System design specification
-│   │   └── plans/             # Phased implementation plans
-│   ├── *.md                   # Core documentation
-│   ├── *.sql                  # Database DDL
-│   └── *.sh                   # Test scripts
-├── .github/workflows/         # CI/CD pipeline (GitHub Actions)
-└── README*.md                 # Project documentation
+│   ├── flutter/                # Flutter client (iOS / macOS / Windows / Linux / Web)
+│   │   ├── lib/                # Dart source (core / features)
+│   │   ├── ios/                # iOS project
+│   │   ├── macos/              # macOS project
+│   │   ├── windows/            # Windows project
+│   │   ├── linux/              # Linux project
+│   │   ├── web/                # Web project
+│   │   ├── test/               # Flutter tests
+│   │   ├── pubspec.yaml        # Dependency manifest
+│   │   └── analysis_options.yaml # Dart static analysis config
+│   └── harmonyos/              # HarmonyOS client skeleton
+│       └── entry/src/          # ArkTS source
+├── docker/                     # Docker deployment
+│   ├── Dockerfile              # PHP 8.2 image
+│   ├── docker-compose.yml      # Service orchestration
+│   ├── nginx.conf              # Nginx config
+│   └── supervisor.conf         # Supervisor process manager
+├── docs/                       # Documentation
+│   ├── admin-design.md         # Admin panel design doc
+│   ├── supplier-api.md         # Supplier API reference
+│   ├── deployment.md           # Deployment checklist
+│   ├── api-test.sh             # API smoke test script
+│   ├── database.sql            # Database DDL
+│   ├── alipay.png / weixinpay.png  # Sponsor QR codes
+│   ├── diagrams/               # 10 SVG architecture diagrams (system / security / ER / business flows)
+│   └── superpowers/            # Design specs & implementation plans
+│       ├── specs/              # System design specification
+│       └── plans/              # Phase 0~3 implementation plans
+├── .gitignore
+├── README.md                   # Project overview (Chinese)
+└── README_EN.md                # Project overview (English)
 ```
 
 ## Quick Start
