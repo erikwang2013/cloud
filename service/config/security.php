@@ -101,6 +101,52 @@ return [
             // Host 头攻击
             '/\n\s*(Host|Cookie|Set-Cookie|Location|Content-Type):/i',
         ],
+
+        // SSRF 服务端请求伪造检测
+        'ssrf_patterns' => [
+            // 内网 IPv4 地址（127.x, 10.x, 172.16-31.x, 192.168.x）
+            '/\b(127\.\d{1,3}\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/',
+            '/\b172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}\b/',
+            '/\b192\.168\.\d{1,3}\.\d{1,3}\b/',
+            // localhost 别名
+            '/\b(localhost|0\.0\.0\.0|0x7f000001)\b/i',
+            // 云 metadata 端点
+            '/\b169\.254\.169\.254\b/',
+            // file:// 协议
+            '/\bfile:\/\/\/?\b/i',
+        ],
+
+        // NoSQL 注入检测（MongoDB/Redis 操作符）
+        'nosql_injection_patterns' => [
+            // MongoDB 操作符注入（$where, $gt, $regex 等）
+            '/(\$where|\$gt|\$gte|\$lt|\$lte|\$ne|\$nin|\$in|\$regex|\$exists|\$or|\$and|\$nor|\$not|\$eq)\b/i',
+            // MongoDB $where JS 注入
+            '/\$where\s*[=:]\s*[\"\'{]?\s*\$?(function|eval|while|for|require)/i',
+            // Redis 危险命令注入
+            '/\b(FLUSHALL|FLUSHDB|CONFIG\s+SET|CONFIG\s+REWRITE|SHUTDOWN|DEBUG\s+SEGFAULT|SLAVEOF|REPLICAOF)\b/i',
+        ],
+
+        // 开放重定向检测
+        'open_redirect_patterns' => [
+            // 外部 URL 在 redirect/return_to/next 参数中
+            '/(redirect_uri|redirect_url|return_url|return_to|next|callback)["\']?\s*[=:]\s*["\']?\s*https?:\/\/(?![\w\-\.]*example\.com)/i',
+            // // 双重编码的协议前缀
+            '/\%2[fF]{2}\%2[fF]{2}|%25%32%[fF]|\\\\x2[fF]|data\s*:\s*text\/html/i',
+        ],
+    ],
+
+    // 请求限制
+    'request_limits' => [
+        // 请求体最大 10MB
+        'max_body_size' => 10 * 1024 * 1024,
+        // URL 最大 2KB（防 ReDoS + 缓冲区溢出）
+        'max_url_length' => 2048,
+        // 允许的 Content-Type（仅 API 路由校验）
+        'allowed_content_types' => [
+            'application/json',
+            'multipart/form-data',
+            'application/x-www-form-urlencoded',
+        ],
     ],
 
     // 传输加密：API 请求/响应体 AES-256-GCM 加密

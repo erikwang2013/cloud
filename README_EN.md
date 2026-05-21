@@ -121,7 +121,7 @@ cloud-php/
 │   ├── database/migrations/    # Database migration files (12 migrations)
 │   ├── i18n/                   # Internationalization resources (en-US / zh-CN)
 │   ├── support/                # Bootstrap (Eloquent / Redis / Event / encryption / snowflake / hashids / scout / MigrationRunner)
-│   ├── tests/                  # Unit tests (PHPUnit 10, 282 tests)
+│   ├── tests/                  # Unit tests (PHPUnit 10, 295 tests)
 │   │   ├── Admin/              # ImportExport
 │   │   ├── Captcha/            # CaptchaService
 │   │   ├── Common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
@@ -417,7 +417,7 @@ Global middleware pipeline: `Version → CORS → ClientPlatform → WAF → Loc
 ![Security Middleware Pipeline](docs/diagrams/security-middleware-en.svg)
 
 - **CORS** — Cross-origin request headers
-- **WAF** — Blocks SQL injection / XSS / command injection / file inclusion / header injection / path traversal (30+ rules)
+- **WAF** — 8 categories 45+ rules (SQLi/XSS/command injection/file inclusion/header injection/SSRF/NoSQL injection/open redirect) + request size limits + Content-Type validation
 - **Locale** — Parses Accept-Language, sets locale
 - **HashidRequest** — Auto-decodes hashid strings in requests to real integer IDs
 - **Version** — Validates `X-Api-Version` header, defaults to `v1` if missing, returns `400` for unsupported versions
@@ -493,9 +493,9 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] FCM push notification production integration (kreait/firebase-php, with invalid token cleanup)
 - [x] Click CAPTCHA (erikwang2013/poster-php, login/register verification)
 - [x] Password confirmation (ConfirmationMiddleware, sensitive ops password re-entry, 5 fails → 15 min lock)
-- [x] Service-layer unit tests (282 tests, 442 assertions)
+- [x] Service-layer unit tests (295 tests, 455 assertions)
 - [x] Client platform identification (ClientPlatformMiddleware, X-Client-Platform header, 8 platforms)
-- [x] WAF security enhancement (30+ rules: SQLi/XSS/command injection/file inclusion/header injection)
+- [x] WAF security enhancement (8 categories 45+ rules: SQLi/XSS/CMDi/file inclusion/header injection/SSRF/NoSQL injection/open redirect + size limits + Content-Type validation)
 - [x] Admin panel WAF middleware
 - [x] CI/CD pipeline (GitHub Actions, syntax check + dual PHPUnit + Composer validate)
 

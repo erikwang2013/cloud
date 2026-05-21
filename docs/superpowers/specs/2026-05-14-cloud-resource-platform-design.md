@@ -304,9 +304,9 @@ Redis: login_failed:{sha1(login)} = count (TTL 900s)
 
 #### WAF 规则 (webman 中间件)
 
-WAF 中间件通过 5 类正则规则组扫描请求，规则配置在 `config/security.php` 中热更新无需重启。扫描范围覆盖请求体 JSON、URL 路径+查询字符串、User-Agent、原始请求体（防 JSON 编码逃逸）。
+WAF 中间件通过 8 类正则规则组扫描请求，规则配置在 `config/security.php` 中热更新无需重启。扫描范围覆盖请求体 JSON、URL 路径+查询字符串、User-Agent、原始请求体（防 JSON 编码逃逸）。
 
-**5 类检测规则（30+ 条）：**
+**8 类检测规则（45+ 条）：**
 
 | 类别 | 覆盖范围 |
 |------|---------|
@@ -315,6 +315,17 @@ WAF 中间件通过 5 类正则规则组扫描请求，规则配置在 `config/s
 | 命令注入 | 管道符后跟命令(`\| cat`)、分号后跟命令(`; whoami`)、`$(cmd)` 和反引号命令替换、独立命令关键字 |
 | 文件包含 | 路径穿越(多编码)、PHP 伪协议(`php://`/`data://`/`phar://`)、绝对路径探测(`/etc/`/`C:\`)、Null byte 注入 |
 | HTTP 头注入 | CRLF 换行注入(`%0d%0a`/`\r\n`)、Host/Cookie/Set-Cookie 头注入 |
+| **SSRF** | 内网 IPv4 地址(127.x/10.x/172.16-31.x/192.168.x)、localhost 别名、云 metadata 端点(169.254.169.254)、file:// 协议 |
+| **NoSQL 注入** | MongoDB 操作符($where/$gt/$regex/$or 等)、$where JS 注入、Redis 危险命令(FLUSHALL/CONFIG SET/SHUTDOWN) |
+| **开放重定向** | redirect_uri/return_url/next/callback 等参数的外部 URL 检测、双重编码绕过 |
+
+**请求层面防护:**
+
+| 防护项 | 措施 |
+|--------|------|
+| 请求体大小限制 | 最大 10MB（超过返回 413） |
+| URL 长度限制 | 最大 2KB（超过返回 414，防 ReDoS） |
+| Content-Type 白名单 | 仅允许 application/json、multipart/form-data、application/x-www-form-urlencoded |
 
 **WAF 检测流程:**
 
@@ -331,11 +342,14 @@ WAF 中间件通过 5 类正则规则组扫描请求，规则配置在 `config/s
   │
   ▼
 2. 加载规则（从 config/security.php）
-   ├── security.waf.sqli_patterns          (9 条)
-   ├── security.waf.xss_patterns           (8 条)
-   ├── security.waf.cmd_injection_patterns (5 条)
-   ├── security.waf.file_inclusion_patterns (4 条)
-   └── security.waf.header_injection_patterns (2 条)
+   ├── security.waf.sqli_patterns               (9 条)
+   ├── security.waf.xss_patterns                (8 条)
+   ├── security.waf.cmd_injection_patterns      (5 条)
+   ├── security.waf.file_inclusion_patterns     (4 条)
+   ├── security.waf.header_injection_patterns   (2 条)
+   ├── security.waf.ssrf_patterns               (6 条)
+   ├── security.waf.nosql_injection_patterns    (3 条)
+   └── security.waf.open_redirect_patterns      (2 条)
    → array_merge() + array_unique()
   │
   ▼
@@ -370,7 +384,7 @@ class WafMiddleware
         $ua  = $request->header('User-Agent', '');
         $raw = file_get_contents('php://input') ?: '';
 
-        // 从 config/security.php 加载 5 类规则
+        // 从 config/security.php 加载 8 类规则
         $patterns = array_unique(array_merge(
             config('security.waf.sqli_patterns'),
             config('security.waf.xss_patterns'),
@@ -443,7 +457,7 @@ if (in_array($country, $blockedCountries)) {
 请求 → VersionMiddleware        # X-Api-Version 校验（缺失默认 v1，无效返回 400）
      → CorsMiddleware            # CORS 跨域响应头
      → ClientPlatformMiddleware  # X-Client-Platform 识别（8 种平台），注入 $request->properties
-     → WafMiddleware             # 5 类 30+ 规则安全扫描（SQLi/XSS/命令注入/文件包含/头注入）
+     → WafMiddleware             # 8 类 45+ 规则安全扫描（SQLi/XSS/命令注入/文件包含/头注入/SSRF/NoSQL/开放重定向）
      → LocaleMiddleware          # Accept-Language 解析，设置区域
      → HashidRequestMiddleware   # 请求参数 hashid → 真实 ID 解码
      → MaintenanceMiddleware     # 维护模式（IP 白名单放行）
@@ -465,7 +479,7 @@ if (in_array($country, $blockedCountries)) {
 | `VersionMiddleware` | 全局 | 校验 `X-Api-Version` 请求头，缺失默认 `v1`，不支持的版本返回 `400` |
 | `CorsMiddleware` | 全局 | 处理 OPTIONS 预检，反射 Origin 到 `Access-Control-Allow-Origin` |
 | `ClientPlatformMiddleware` | 全局 | 校验 `X-Client-Platform` 请求头，识别客户端操作系统平台（iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web），注入 `$request->properties['client_platform']` |
-| `WafMiddleware` | 全局(service) + admin 实例 | 5 类 30+ 规则安全扫描，拦截后记录审计日志 |
+| `WafMiddleware` | 全局(service) + admin 实例 | 8 类 45+ 规则 + 请求大小限制 + Content-Type 校验，拦截后记录审计日志 |
 | `LocaleMiddleware` | 全局 | 解析 `Accept-Language` 头，设置多语言区域 |
 | `HashidRequestMiddleware` | 全局 | 自动解码请求中的 hashid 字符串为真实整数 ID |
 | `MaintenanceMiddleware` | 全局 | 检查 `MAINTENANCE_MODE` 环境变量，白名单 IP 放行 |
@@ -1471,7 +1485,7 @@ workerman/webman-framework、webman/admin、webman/redis-queue、illuminate/data
 
 | 功能 | 状态 |
 |------|------|
-| WAF (SQL注入/XSS/命令注入/文件包含/头注入 30+ 规则) | ✅ |
+| WAF (8 类 45+ 规则: SQL注入/XSS/命令注入/文件包含/头注入/SSRF/NoSQL注入/开放重定向) | ✅ |
 | CORS 中间件 | ✅ |
 | ClientPlatform 平台识别中间件 (8 种平台) | ✅ |
 | API 限流 (Redis令牌桶) | ✅ |
@@ -1495,7 +1509,7 @@ workerman/webman-framework、webman/admin、webman/redis-queue、illuminate/data
 | 中间件 | 14 个（全局 7 + 路由 5） |
 | 定时任务 | 7 个 |
 | 迁移文件 | 21 个 |
-| 测试 | 349 tests / 566 assertions（Service 282 + Admin 67） |
+| 测试 | 362 tests / 579 assertions（Service 295 + Admin 67） |
 | 测试文件 | 22 个 |
 
 ### 文档

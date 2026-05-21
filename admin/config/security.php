@@ -50,5 +50,39 @@ return [
             '/\%0[ad]|\\r\\n|\\r|\\n/i',
             '/\n\s*(Host|Cookie|Set-Cookie|Location|Content-Type):/i',
         ],
+
+        // SSRF 服务端请求伪造检测
+        'ssrf_patterns' => [
+            '/\b(127\.\d{1,3}\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/',
+            '/\b172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}\b/',
+            '/\b192\.168\.\d{1,3}\.\d{1,3}\b/',
+            '/\b(localhost|0\.0\.0\.0|0x7f000001)\b/i',
+            '/\b169\.254\.169\.254\b/',
+            '/\bfile:\/\/\/?\b/i',
+        ],
+
+        // NoSQL 注入检测
+        'nosql_injection_patterns' => [
+            '/(\$where|\$gt|\$gte|\$lt|\$lte|\$ne|\$nin|\$in|\$regex|\$exists|\$or|\$and|\$nor|\$not|\$eq)\b/i',
+            '/\$where\s*[=:]\s*[\"\'{]?\s*\$?(function|eval|while|for|require)/i',
+            '/\b(FLUSHALL|FLUSHDB|CONFIG\s+SET|CONFIG\s+REWRITE|SHUTDOWN|DEBUG\s+SEGFAULT|SLAVEOF|REPLICAOF)\b/i',
+        ],
+
+        // 开放重定向检测
+        'open_redirect_patterns' => [
+            '/(redirect_uri|redirect_url|return_url|return_to|next|callback)["\']?\s*[=:]\s*["\']?\s*https?:\/\/(?![\w\-\.]*example\.com)/i',
+            '/\%2[fF]{2}\%2[fF]{2}|%25%32%[fF]|\\\\x2[fF]|data\s*:\s*text\/html/i',
+        ],
+    ],
+
+    // 请求限制
+    'request_limits' => [
+        'max_body_size' => 10 * 1024 * 1024,
+        'max_url_length' => 2048,
+        'allowed_content_types' => [
+            'application/json',
+            'multipart/form-data',
+            'application/x-www-form-urlencoded',
+        ],
     ],
 ];

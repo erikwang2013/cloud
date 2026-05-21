@@ -123,7 +123,7 @@ cloud-php/
 │   ├── database/migrations/    # 数据库迁移文件（12 个迁移）
 │   ├── i18n/                   # 多语言资源（en-US / zh-CN）
 │   ├── support/                # Bootstrap 引导（Eloquent / Redis / Event / 加密 / 雪花ID / Hashids / Scout / MigrationRunner）
-│   ├── tests/                  # 单元测试（PHPUnit 10, 282 tests）
+│   ├── tests/                  # 单元测试（PHPUnit 10, 295 tests）
 │   │   ├── Admin/              # ImportExport
 │   │   ├── Captcha/            # CaptchaService
 │   │   ├── Common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
@@ -419,7 +419,7 @@ ProviderInterface
 ![安全中间件管道](docs/diagrams/security-middleware-zh.svg)
 
 - **CORS** — 跨域请求头处理
-- **WAF** — 拦截 SQL 注入 / XSS / 命令注入 / 文件包含 / HTTP 头注入 / 路径穿越（30+ 条规则）
+- **WAF** — 8 类 45+ 规则（SQL注入/XSS/命令注入/文件包含/头注入/SSRF/NoSQL注入/开放重定向）+ 请求大小限制 + Content-Type 校验
 - **Locale** — 解析 Accept-Language，设置多语言
 - **HashidRequest** — 自动解码请求中的 hashid 字符串为真实整数 ID
 - **Version** — 校验 `X-Api-Version` 请求头，缺失默认 `v1`，不支持的版本返回 `400`
@@ -495,9 +495,9 @@ ProviderInterface
 - [x] FCM 推送真实集成（kreait/firebase-php，含无效 token 清理）
 - [x] 点击验证码（erikwang2013/poster-php，登录/注册敏感操作验证）
 - [x] 二次确认（ConfirmationMiddleware，敏感操作密码复核，5次失败锁定15分钟）
-- [x] 服务端单元测试（282 tests, 442 assertions）
+- [x] 服务端单元测试（295 tests, 455 assertions）
 - [x] 客户端平台识别（ClientPlatformMiddleware，X-Client-Platform 头支持 8 种平台）
-- [x] WAF 安全增强（30+ 规则，覆盖 SQL注入/XSS/命令注入/文件包含/头注入）
+- [x] WAF 安全增强（8 类 45+ 规则: SQL注入/XSS/命令注入/文件包含/头注入/SSRF/NoSQL注入/开放重定向 + 请求大小限制 + Content-Type 校验）
 - [x] Admin 面板 WAF 中间件
 - [x] CI/CD 流水线（GitHub Actions，语法检查 + 双端 PHPUnit + Composer 校验）
 

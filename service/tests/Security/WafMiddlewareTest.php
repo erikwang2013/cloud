@@ -256,10 +256,119 @@ final class WafMiddlewareTest extends TestCase
 
     public function testBlocksAttackInUserAgent(): void
     {
-        $req = $this->createRequest('/api/products', [], "' OR '1'='1"); // UA contains SQLi
+        $req = $this->createRequest('/api/products', [], "' OR '1'='1");
         $result = $this->middleware->process($req, fn($r) => response('ok'));
         $body = $this->decodeResponse($result);
         $this->assertSame(403, $body['code'] ?? 200);
+    }
+
+    // ── SSRF Tests ──
+
+    public function testBlocksSsrfLocalhost(): void
+    {
+        $req = $this->createRequest('/api/products', ['webhook_url' => 'http://localhost:8080/admin']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $body = $this->decodeResponse($result);
+        $this->assertSame(403, $body['code'] ?? 200);
+    }
+
+    public function testBlocksSsrf127001(): void
+    {
+        $req = $this->createRequest('/api/products', ['callback' => 'http://127.0.0.1:3000/api']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $body = $this->decodeResponse($result);
+        $this->assertSame(403, $body['code'] ?? 200);
+    }
+
+    public function testBlocksSsrf192168(): void
+    {
+        $req = $this->createRequest('/api/products', ['url' => 'http://192.168.1.1/admin']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $body = $this->decodeResponse($result);
+        $this->assertSame(403, $body['code'] ?? 200);
+    }
+
+    public function testBlocksSsrfCloudMetadata(): void
+    {
+        $req = $this->createRequest('/api/products', ['url' => 'http://169.254.169.254/latest/meta-data/']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $body = $this->decodeResponse($result);
+        $this->assertSame(403, $body['code'] ?? 200);
+    }
+
+    public function testBlocksSsrfFileProtocol(): void
+    {
+        $req = $this->createRequest('/api/products', ['url' => 'file:///etc/passwd']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $body = $this->decodeResponse($result);
+        $this->assertSame(403, $body['code'] ?? 200);
+    }
+
+    // ── NoSQL Injection Tests ──
+
+    public function testBlocksNosqlWhereOperator(): void
+    {
+        $req = $this->createRequest('/api/products', ['query' => '{"$where": "this.role==\'admin\'"}']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $body = $this->decodeResponse($result);
+        $this->assertSame(403, $body['code'] ?? 200);
+    }
+
+    public function testBlocksNosqlGtOperator(): void
+    {
+        $req = $this->createRequest('/api/products', ['filter' => '{"price": {"$gt": 0}}']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $body = $this->decodeResponse($result);
+        $this->assertSame(403, $body['code'] ?? 200);
+    }
+
+    public function testBlocksNosqlRegexOperator(): void
+    {
+        $req = $this->createRequest('/api/products', ['email' => '{"$regex": "^admin"}']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $body = $this->decodeResponse($result);
+        $this->assertSame(403, $body['code'] ?? 200);
+    }
+
+    public function testBlocksRedisFlushall(): void
+    {
+        $req = $this->createRequest('/api/products', ['cmd' => 'FLUSHALL']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $body = $this->decodeResponse($result);
+        $this->assertSame(403, $body['code'] ?? 200);
+    }
+
+    // ── Open Redirect Tests ──
+
+    public function testBlocksOpenRedirect(): void
+    {
+        $req = $this->createRequest('/api/auth/login', ['redirect_uri' => 'https://evil.com/phishing']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $body = $this->decodeResponse($result);
+        $this->assertSame(403, $body['code'] ?? 200);
+    }
+
+    public function testAllowsSameOriginRedirect(): void
+    {
+        $req = $this->createRequest('/api/auth/login', ['redirect_uri' => 'https://example.com/dashboard']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $this->assertSame(200, $result->getStatusCode());
+    }
+
+    // ── Legitimate data with special chars (no false positives) ──
+
+    public function testAllowsPriceWithDollarSign(): void
+    {
+        $req = $this->createRequest('/api/products', ['price' => '$10.00', 'name' => 'Budget VPS']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $this->assertSame(200, $result->getStatusCode());
+    }
+
+    public function testAllowsEmailAddress(): void
+    {
+        $req = $this->createRequest('/api/auth/login', ['email' => 'user@example.com']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $this->assertSame(200, $result->getStatusCode());
     }
 }
 
@@ -306,6 +415,19 @@ class TestableWafMiddleware extends WafMiddleware
             // Header injection
             '/\%0[ad]|\\r\\n|\\r|\\n/i',
             '/\n\s*(Host|Cookie|Set-Cookie|Location|Content-Type):/i',
+            // SSRF
+            '/\b(127\.\d{1,3}\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/',
+            '/\b172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}\b/',
+            '/\b192\.168\.\d{1,3}\.\d{1,3}\b/',
+            '/\b(localhost|0\.0\.0\.0|0x7f000001)\b/i',
+            '/\b169\.254\.169\.254\b/',
+            '/\bfile:\/\/\/?\b/i',
+            // NoSQL injection
+            '/(\$where|\$gt|\$gte|\$lt|\$lte|\$ne|\$nin|\$in|\$regex|\$exists|\$or|\$and|\$nor|\$not|\$eq)\b/i',
+            '/\$where\s*[=:]\s*[\"\'{]?\s*\$?(function|eval|while|for|require)/i',
+            '/\b(FLUSHALL|FLUSHDB|CONFIG\s+SET|CONFIG\s+REWRITE|SHUTDOWN|DEBUG\s+SEGFAULT)\b/i',
+            // Open redirect
+            '/(redirect_uri|redirect_url|return_url|return_to|next|callback)["\']?\s*[=:]\s*["\']?\s*https?:\/\/(?![\w\-\.]*example\.com)/i',
         ];
     }
 

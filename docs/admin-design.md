@@ -772,7 +772,7 @@ Env vars: `FIREBASE_CREDENTIALS_PATH` (service account JSON), `FCM_SERVER_KEY` (
 ### Overview
 
 ```
-PHPUnit 10.5 | 282 tests | 442 assertions
+PHPUnit 10.5 | 295 tests | 455 assertions
 ```
 
 **Directory**: `service/tests/` — 12 test files across 7 modules
@@ -805,7 +805,7 @@ Critical learning: `Webman\Config` cannot be loaded in test context because `loa
 | `Provisioning/ProviderFactoryTest.php` | 12 | register, create, createFromResource, error cases |
 | `Provisioning/RetryLogicTest.php` | 12 | exponential backoff, max retries, status transitions, host selection |
 | `ClientPlatform/ClientPlatformMiddlewareTest.php` | 13 | valid platforms, missing/default header, unsupported platform, case-insensitive, non-API skip, admin routes, downstream access |
-| `Security/WafMiddlewareTest.php` | 24 | SQL injection (4), XSS (6), command injection (4), file inclusion (3), header injection/CRLF (2), safe pass-through (3), URL scanning, User-Agent scanning |
+| `Security/WafMiddlewareTest.php` | 37 | SQLi (4), XSS (6), CMDi (4), file inclusion (3), header injection/CRLF (2), SSRF (5), NoSQL injection (4), open redirect (2), safe pass-through (5), URL scanning, UA scanning |
 | `Version/VersionMiddlewareTest.php` | 6 | valid version, missing version default, unsupported version 400, non-API skip, admin API validation, error response headers |
 
 ### Test Infrastructure
@@ -877,7 +877,7 @@ All 4 jobs pass: 243 total tests (67 admin + 176 service), 400 assertions, both 
 | `GeoBlockMiddleware` | MaxMind GeoIP2地域封锁 |
 | `MaintenanceMiddleware` | 维护模式（环境变量开关+IP白名单） |
 | `ClientPlatformMiddleware` | 客户端平台识别（X-Client-Platform头），支持8种平台 |
-| `WafMiddleware` (admin) | Admin 面板 WAF 中间件，检测 SQL注入/XSS/命令注入/文件包含/头注入 |
+| `WafMiddleware` (admin) | Admin 面板 WAF 中间件，8 类 45+ 规则 + 请求大小限制 + Content-Type 校验 |
 
 ### Scheduled Tasks
 
@@ -941,8 +941,8 @@ All 4 jobs pass: 243 total tests (67 admin + 176 service), 400 assertions, both 
 ## Final Test Stats
 
 ```
-OK (349 tests, 566 assertions)
+OK (362 tests, 579 assertions)
 Test files: 22
 ```
 - Admin: 67 tests, 124 assertions
-- Service: 282 tests, 442 assertions
+- Service: 295 tests, 455 assertions
