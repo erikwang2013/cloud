@@ -11,6 +11,7 @@ class ProductController
     public function store($request)
     {
         $product = Product::create($request->all());
+        \App\Product\Service\ProductService::invalidateCache();
         return json(Response::success($product, 'Product created'));
     }
 
@@ -18,18 +19,23 @@ class ProductController
     {
         $product = Product::findOrFail($id);
         $product->update($request->all());
+        \Common\Helper\CacheService::forget("products:detail:{$id}");
+        \Common\Helper\CacheService::forgetPattern('products:list:*');
         return json(Response::success($product));
     }
 
     public function destroy(int $id)
     {
         Product::findOrFail($id)->delete();
+        \App\Product\Service\ProductService::invalidateCache();
         return json(Response::success(null, 'Product deleted'));
     }
 
     public function storeSku($request, int $productId)
     {
         $sku = ProductSku::create(array_merge($request->all(), ['product_id' => $productId]));
+        \Common\Helper\CacheService::forget("products:detail:{$productId}");
+        \Common\Helper\CacheService::forgetPattern('products:list:*');
         return json(Response::success($sku, 'SKU created'));
     }
 
@@ -37,6 +43,8 @@ class ProductController
     {
         $sku = ProductSku::findOrFail($id);
         $sku->update($request->all());
+        \Common\Helper\CacheService::forget("products:detail:{$sku->product_id}");
+        \Common\Helper\CacheService::forgetPattern('products:list:*');
         return json(Response::success($sku));
     }
 
@@ -51,6 +59,11 @@ class ProductController
                 'discount_percent' => $request->input('discount_percent'),
             ]
         );
+        $sku = ProductSku::find($skuId);
+        if ($sku) {
+            \Common\Helper\CacheService::forget("products:detail:{$sku->product_id}");
+            \Common\Helper\CacheService::forgetPattern('products:list:*');
+        }
         return json(Response::success($regionPrice, 'Region price set'));
     }
 }

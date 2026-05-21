@@ -5,6 +5,7 @@ use App\Domain\Model\DomainTld;
 use App\Domain\Model\DnsZone;
 use App\Domain\Model\DnsRecord;
 use App\Provisioning\Model\ProvisionTask;
+use Common\Helper\CacheService;
 
 class DomainService
 {
@@ -83,6 +84,8 @@ class DomainService
 
     public function getTlds(): array
     {
-        return DomainTld::where('status', 'active')->get()->toArray();
+        return CacheService::remember('tlds:all', CacheService::TTL_TLDS, function () {
+            return DomainTld::where('status', 'active')->get()->toArray();
+        });
     }
 }

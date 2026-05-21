@@ -2,6 +2,7 @@
 namespace App\Admin\Controller;
 
 use App\Model\HelpArticle;
+use Common\Helper\CacheService;
 use Common\Helper\Response;
 
 class HelpController
@@ -17,6 +18,7 @@ class HelpController
         $data = $request->only(['category', 'title', 'slug', 'content', 'locale', 'sort']);
         $data['status'] = $request->input('status', 'published');
         $article = HelpArticle::create($data);
+        CacheService::forgetPattern('help:*');
         return json(Response::success($article));
     }
 
@@ -24,12 +26,14 @@ class HelpController
     {
         $article = HelpArticle::findOrFail($id);
         $article->update($request->only(['category', 'title', 'slug', 'content', 'locale', 'sort', 'status']));
+        CacheService::forgetPattern('help:*');
         return json(Response::success($article));
     }
 
     public function destroy(int $id)
     {
         HelpArticle::findOrFail($id)->update(['status' => 'archived']);
+        CacheService::forgetPattern('help:*');
         return json(Response::success());
     }
 }

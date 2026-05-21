@@ -2,6 +2,7 @@
 namespace App\Controller;
 
 use App\Model\HelpArticle;
+use Common\Helper\CacheService;
 use Common\Helper\Response;
 
 class HelpController
@@ -10,29 +11,46 @@ class HelpController
     {
         $locale   = $request->header('Accept-Language', 'en-US');
         $category = $request->input('category');
-        $query    = HelpArticle::published()->byLocale($locale);
+        $page     = (int)$request->input('page', 1);
+        $cacheKey = 'help:list:' . md5("{$locale}:{$category}:{$page}");
 
-        if ($category) {
-            $query->byCategory($category);
-        }
+        $data = CacheService::remember($cacheKey, CacheService::TTL_HELP_ARTICLES, function () use ($locale, $category, $page) {
+            $query = HelpArticle::published()->byLocale($locale);
+            if ($category) {
+                $query->byCategory($category);
+            }
+            $articles = $query->orderBy('sort')->orderBy('created_at', 'desc')->paginate(20, ['*'], 'page', $page);
+            return [
+                'items' => $articles->items(),
+                'total' => $articles->total(),
+            ];
+        });
 
-        $articles = $query->orderBy('sort')->orderBy('created_at', 'desc')->paginate(20);
-        return json(Response::paginated($articles->items(), $articles->total(), $request->input('page', 1), 20));
+        return json(Response::paginated($data['items'], $data['total'], $page, 20));
     }
 
     public function show($request, string $slug)
     {
-        $locale  = $request->header('Accept-Language', 'en-US');
-        $article = HelpArticle::published()->byLocale($locale)->where('slug', $slug)->firstOrFail();
+        $locale   = $request->header('Accept-Language', 'en-US');
+        $cacheKey = "help:article:{$locale}:{$slug}";
+
+        $article = CacheService::remember($cacheKey, CacheService::TTL_HELP_ARTICLES, function () use ($locale, $slug) {
+            return HelpArticle::published()->byLocale($locale)->where('slug', $slug)->firstOrFail()->toArray();
+        });
+
         return json(Response::success($article));
     }
 
     public function categories()
     {
-        $categories = HelpArticle::published()
-            ->select('category')
-            ->distinct()
-            ->pluck('category');
+        $categories = CacheService::remember('help:categories', CacheService::TTL_HELP_ARTICLES, function () {
+            return HelpArticle::published()
+                ->select('category')
+                ->distinct()
+                ->pluck('category')
+                ->toArray();
+        });
+
         return json(Response::success($categories));
     }
 }

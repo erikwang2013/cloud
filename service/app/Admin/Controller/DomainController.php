@@ -4,6 +4,7 @@ namespace App\Admin\Controller;
 use App\Domain\Model\DomainTld;
 use App\Domain\Model\DnsZone;
 use App\Domain\Model\DomainTransfer;
+use Common\Helper\CacheService;
 use Common\Helper\Response;
 
 class DomainController
@@ -18,6 +19,7 @@ class DomainController
     public function storeTld($request)
     {
         $tld = DomainTld::create($request->only(['tld', 'wholesale_price', 'retail_price', 'registrar', 'promo_price', 'promo_end_at']));
+        CacheService::forget('tlds:all');
         return json(Response::success($tld));
     }
 
@@ -25,6 +27,7 @@ class DomainController
     {
         $tld = DomainTld::findOrFail($id);
         $tld->update($request->only(['wholesale_price', 'retail_price', 'registrar', 'promo_price', 'promo_end_at']));
+        CacheService::forget('tlds:all');
         return json(Response::success($tld));
     }
 

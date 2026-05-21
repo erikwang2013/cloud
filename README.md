@@ -499,6 +499,10 @@ ProviderInterface
 - [x] 客户端平台识别（ClientPlatformMiddleware，X-Client-Platform 头支持 8 种平台）
 - [x] WAF 安全增强（8 类 45+ 规则: SQL注入/XSS/命令注入/文件包含/头注入/SSRF/NoSQL注入/开放重定向 + 请求大小限制 + Content-Type 校验）
 - [x] Admin 面板 WAF 中间件
+- [x] MySQL 读写分离（Eloquent read/write 连接 + sticky）
+- [x] Redis 多级缓存层（CacheService：产品/区域/汇率/TLD/用户，TTL + 主动失效 + 预热）
+- [x] Nginx 响应压缩 + 连接优化（gzip/proxy_buffering/keep-alive/limit_req+limit_conn）
+- [x] 数据库索引建议（13 个推荐复合/覆盖索引）
 - [x] CI/CD 流水线（GitHub Actions，语法检查 + 双端 PHPUnit + Composer 校验）
 
 ## 开源不易，欢迎支持

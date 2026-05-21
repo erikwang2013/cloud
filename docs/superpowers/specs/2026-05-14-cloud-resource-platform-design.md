@@ -1460,6 +1460,124 @@ cloud-php/
 
 workerman/webman-framework、webman/admin、webman/redis-queue、illuminate/database、firebase/php-jwt、stripe/stripe-php、phpseclib/phpseclib、monolog/monolog
 
+### 高并发优化
+
+#### 1. MySQL 读写分离
+
+Eloquent 自动将 SELECT 路由到 read 连接，INSERT/UPDATE/DELETE 路由到 write 连接。
+
+```
+配置 (config/database.php):
+  connections.mysql.write → DB_WRITE_HOST (主库)
+  connections.mysql.read  → DB_READ_HOST  (从库，可配置多个实现负载均衡)
+  sticky = true           → 同一请求周期内写后读走主库（防主从延迟）
+
+环境变量:
+  DB_HOST=10.0.1.1          # 主库（写）
+  DB_READ_HOST=10.0.2.1     # 从库（读），可部署多个
+```
+
+**读写路由规则:**
+
+| 操作类型 | 路由目标 | 示例 |
+|---------|---------|------|
+| SELECT | read 连接 | `Product::where(...)->get()` |
+| INSERT/UPDATE/DELETE | write 连接 | `Order::create(...)` |
+| 事务内所有操作 | write 连接 | `DB::transaction(...)` |
+| 写后读（sticky） | write 连接 | 同一请求周期内 |
+
+#### 2. Redis 多级缓存策略
+
+使用 `CacheService` 对高频读数据做缓存，Redis 不可用时自动降级为直接查询数据库。
+
+```
+缓存分层:
+  L1: Redis (进程间共享，毫秒级)
+  L2: MySQL (持久化，兜底)
+
+缓存策略:
+  产品列表        TTL 5min    按 region_id + category_id + keyword 分键
+  产品详情        TTL 10min   按 product_id 分键，内容变更时主动失效
+  区域列表        TTL 1h      区域数据极少变动
+  汇率            TTL 30min   定时任务刷新 + 主动更新
+  TLD 定价        TTL 1h      TLD 价格变动频率低
+  帮助文章        TTL 10min   发布/修改时主动失效
+  商品分类        TTL 10min   分类树变更时主动失效
+
+缓存预热 (部署后):
+  CacheService::warmUp(['products:all', 'regions', 'tlds', 'exchange_rates'])
+
+主动失效 (数据变更时):
+  ProductController::update() → CacheService::forgetPattern('products:*')
+  Crontab::ExchangeRateSync → CacheService::put('exchange_rates', $rates, TTL)
+```
+
+```php
+// 使用示例
+$products = CacheService::remember(
+    "products:list:{$regionId}:{$categoryId}",
+    CacheService::TTL_PRODUCT_LIST,
+    fn() => Product::where('region_id', $regionId)->where('category_id', $categoryId)->get()
+);
+```
+
+#### 3. Nginx 响应压缩 + 限流
+
+```
+gzip 压缩:
+  gzip on, comp_level=6
+  gzip_types: application/json, text/plain, text/javascript, image/svg+xml
+  效果: JSON 响应压缩率 70-85%，节省带宽
+
+proxy 优化:
+  proxy_buffering on           # 缓冲上游响应，慢客户端不占 worker
+  proxy_http_version 1.1       # HTTP/1.1 长连接复用
+  keep-alive 到上游             # 减少 TCP 握手
+
+限流:
+  limit_req: 10 req/s per IP (burst 20)
+  limit_conn: 20 concurrent per IP
+  /health 端点不限流（关闭 access_log 减 I/O）
+```
+
+#### 4. 数据库索引建议
+
+基于查询模式分析，以下索引在高并发场景下显著减少扫描行数：
+
+| 表 | 建议索引 | 覆盖查询 |
+|----|---------|---------|
+| `orders` | `(user_id, status, created_at)` | 用户订单列表 + 状态筛选 |
+| `orders` | `(order_no)` (唯一) | 订单号精确查询 |
+| `products` | `(status, category_id, sort)` | 前台产品列表 + 分类筛选 + 排序 |
+| `product_skus` | `(product_id, status)` | SKU 列表 + 状态过滤 |
+| `product_regions` | `(sku_id, region_id)` (唯一) | 区域定价查找 |
+| `resources` | `(user_id, status)` | 我的资源列表 |
+| `resources` | `(expired_at, status)` | 到期检查定时任务 |
+| `provision_tasks` | `(status, next_retry_at)` | Worker 轮询待处理任务 |
+| `refresh_tokens` | `(user_id, revoked)` | 会话管理查询 |
+| `payment_transactions` | `(order_id)` | 按订单查交易 |
+| `payment_transactions` | `(transaction_no)` (唯一) | Webhook 幂等检查 |
+| `tickets` | `(user_id, status)` | 用户工单列表 |
+| `notifications` | `(user_id, read_at, created_at)` | 用户通知列表 |
+
+#### 5. 并发连接估算
+
+```
+webman 多进程:
+  CPU 核数 × 进程数 = worker 数
+  例: 4核 × 8 worker = 32 worker 进程
+  
+MySQL 连接数:
+  每个 worker 维持 1 个持久连接
+  32 worker × 2 实例 (service + admin) = 64 连接
+  主库 32 + 从库 32，保守建议 MySQL max_connections ≥ 200
+
+Nginx 连接数:
+  worker_connections 1024 × worker_processes auto
+  峰值并发 ≈ worker_connections × worker_processes / 2
+  4核服务器 ≈ 2048 并发连接
+```
+
 ---
 
 ## 十二、实现状态总表

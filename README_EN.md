@@ -497,6 +497,10 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] Client platform identification (ClientPlatformMiddleware, X-Client-Platform header, 8 platforms)
 - [x] WAF security enhancement (8 categories 45+ rules: SQLi/XSS/CMDi/file inclusion/header injection/SSRF/NoSQL injection/open redirect + size limits + Content-Type validation)
 - [x] Admin panel WAF middleware
+- [x] MySQL read/write splitting (Eloquent read/write connections + sticky)
+- [x] Redis multi-level caching (CacheService: products/regions/exchange rates/TLD/user, TTL + invalidation + warm-up)
+- [x] Nginx response compression + connection optimization (gzip/proxy_buffering/keep-alive/limit_req+limit_conn)
+- [x] Database index recommendations (13 suggested composite/covering indexes)
 - [x] CI/CD pipeline (GitHub Actions, syntax check + dual PHPUnit + Composer validate)
 
 ## 开源不易，欢迎支持

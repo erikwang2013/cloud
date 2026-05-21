@@ -3,47 +3,61 @@ namespace App\Product\Service;
 
 use App\Product\Model\Product;
 use App\Product\Model\Region;
+use Common\Helper\CacheService;
 use Common\Helper\Response;
 
 class ProductService
 {
     public function list(array $filters, int $page = 1, int $pageSize = 20): array
     {
-        $query = Product::published()->with(['category', 'skus.regionPrices']);
+        $cacheKey = 'products:list:' . md5(serialize($filters)) . ":p{$page}";
 
-        if (!empty($filters['category_id'])) {
-            $query->byCategory($filters['category_id']);
-        }
-        if (!empty($filters['region_id'])) {
-            $query->whereHas('skus.regionPrices', function ($q) use ($filters) {
-                $q->where('region_id', $filters['region_id']);
-            });
-        }
-        if (!empty($filters['keyword'])) {
-            $query->where(function ($q) use ($filters) {
-                $q->whereJsonContains('name', $filters['keyword'])
-                  ->orWhere('slug', 'like', "%{$filters['keyword']}%");
-            });
-        }
-        if (!empty($filters['supplier_id'])) {
-            $query->where('supplier_id', $filters['supplier_id']);
-        }
+        return CacheService::remember($cacheKey, CacheService::TTL_PRODUCT_LIST, function () use ($filters, $page, $pageSize) {
+            $query = Product::published()->with(['category', 'skus.regionPrices']);
 
-        $total = $query->count();
-        $items = $query->skip(($page - 1) * $pageSize)->take($pageSize)->get();
+            if (!empty($filters['category_id'])) {
+                $query->byCategory($filters['category_id']);
+            }
+            if (!empty($filters['region_id'])) {
+                $query->whereHas('skus.regionPrices', function ($q) use ($filters) {
+                    $q->where('region_id', $filters['region_id']);
+                });
+            }
+            if (!empty($filters['keyword'])) {
+                $query->where(function ($q) use ($filters) {
+                    $q->whereJsonContains('name', $filters['keyword'])
+                      ->orWhere('slug', 'like', "%{$filters['keyword']}%");
+                });
+            }
+            if (!empty($filters['supplier_id'])) {
+                $query->where('supplier_id', $filters['supplier_id']);
+            }
 
-        return Response::paginated($items, $total, $page, $pageSize);
+            $total = $query->count();
+            $items = $query->skip(($page - 1) * $pageSize)->take($pageSize)->get();
+
+            return Response::paginated($items, $total, $page, $pageSize);
+        });
     }
 
     public function detail(int $id): Product
     {
-        return Product::published()
-            ->with(['category', 'skus.regionPrices', 'images', 'reviews.user.profile'])
-            ->findOrFail($id);
+        return CacheService::remember("products:detail:{$id}", CacheService::TTL_PRODUCT_DETAIL, function () use ($id) {
+            return Product::published()
+                ->with(['category', 'skus.regionPrices', 'images', 'reviews.user.profile'])
+                ->findOrFail($id);
+        });
     }
 
     public function getRegions(): array
     {
-        return Region::where('status', 'active')->get()->groupBy('continent')->toArray();
+        return CacheService::remember('regions:all', CacheService::TTL_REGIONS, function () {
+            return Region::where('status', 'active')->get()->groupBy('continent')->toArray();
+        });
+    }
+
+    public static function invalidateCache(): void
+    {
+        CacheService::forgetPattern('products:*');
     }
 }
