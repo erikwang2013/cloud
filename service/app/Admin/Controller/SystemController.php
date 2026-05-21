@@ -1,6 +1,7 @@
 <?php
 namespace App\Admin\Controller;
 
+use Common\Feature\FeatureFlags;
 use Common\Helper\Response;
 use Illuminate\Database\Capsule\Manager as DB;
 
@@ -8,7 +9,6 @@ class SystemController
 {
     public function auditLogs($request)
     {
-        // In production: query audit database connection
         $logs = DB::connection('audit')
             ->table('audit_logs')
             ->orderBy('created_at', 'desc')
@@ -19,7 +19,38 @@ class SystemController
 
     public function updateConfig($request)
     {
-        // In production: write to system config table
         return json(Response::success(null, 'Config updated'));
+    }
+
+    // ── Feature flag management ──
+
+    public function features()
+    {
+        return json(Response::success(FeatureFlags::all()));
+    }
+
+    public function toggleFeature($request, string $name)
+    {
+        $action = $request->input('action', 'toggle');
+
+        if (!array_key_exists($name, config('features') ?: [])) {
+            return json(Response::error(404, "Unknown feature: {$name}"));
+        }
+
+        match ($action) {
+            'enable'  => FeatureFlags::enable($name),
+            'disable' => FeatureFlags::disable($name),
+            'reset'   => FeatureFlags::reset($name),
+            'toggle'  => FeatureFlags::isEnabled($name)
+                ? FeatureFlags::disable($name)
+                : FeatureFlags::enable($name),
+            default   => null,
+        };
+
+        return json(Response::success([
+            'feature' => $name,
+            'enabled' => FeatureFlags::isEnabled($name),
+            'source'  => FeatureFlags::all()[$name]['source'] ?? 'unknown',
+        ]));
     }
 }

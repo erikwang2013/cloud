@@ -22,7 +22,13 @@ return [
         'pay'      => ['rate' => 10,  'burst' => 3,  'per' => 60],
 
         // 上传接口限制：每 60 秒 10 次
-        'upload'   => ['rate' => 10,  'burst' => 2,  'per' => 60],
+        'upload'         => ['rate' => 10,  'burst' => 2,  'per' => 60],
+
+        // 供应商外部 API：每 60 秒 120 次
+        'supplier_api'    => ['rate' => 120, 'burst' => 20, 'per' => 60],
+
+        // 供应商提现：每 60 秒 10 次
+        'supplier_withdraw' => ['rate' => 10,  'burst' => 3,  'per' => 60],
     ],
 
     // WAF 规则：正则匹配，拦截常见 Web/API 攻击模式

@@ -160,6 +160,18 @@ Route::group('/api', function () {
     Route::delete('/dns/{domain}/records/{id}', [App\Domain\Controller\DomainController::class, 'deleteRecord']);
 })->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Confirmation\ConfirmationMiddleware::class]);
 
+// === Supplier external API (API Key auth) ===
+Route::group('/api', function () {
+    Route::get('/supplier/external/orders', [App\Supplier\Controller\External\OrderController::class, 'index']);
+    Route::get('/supplier/external/orders/{id}', [App\Supplier\Controller\External\OrderController::class, 'show']);
+    Route::get('/supplier/external/resources', [App\Supplier\Controller\External\ResourceController::class, 'index']);
+    Route::get('/supplier/external/resources/{id}/status', [App\Supplier\Controller\External\ResourceController::class, 'status']);
+    Route::get('/supplier/external/settlements', [App\Supplier\Controller\External\SettlementController::class, 'index']);
+    Route::get('/supplier/external/settlements/{id}', [App\Supplier\Controller\External\SettlementController::class, 'show']);
+    Route::post('/supplier/external/withdraw', [App\Supplier\Controller\External\WithdrawController::class, 'store']);
+    Route::get('/supplier/external/withdraws', [App\Supplier\Controller\External\WithdrawController::class, 'index']);
+})->middleware([Common\Version\Middleware\VersionMiddleware::class, Common\Auth\Middleware\SupplierApiKeyMiddleware::class]);
+
 // === Admin routes ===
 Route::group('/admin/api', function () {
     Route::get('/dashboard', [App\Admin\Controller\DashboardController::class, 'index']);
@@ -206,6 +218,10 @@ Route::group('/admin/api', function () {
 
     // System
     Route::get('/audit-logs', [App\Admin\Controller\SystemController::class, 'auditLogs']);
+
+    // Feature flags
+    Route::get('/features', [App\Admin\Controller\SystemController::class, 'features']);
+    Route::put('/features/{name}', [App\Admin\Controller\SystemController::class, 'toggleFeature']);
 
     // Reports
     Route::get('/reports/revenue', [App\Report\Controller\ReportController::class, 'revenue']);

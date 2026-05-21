@@ -877,6 +877,7 @@ All 4 jobs pass: 243 total tests (67 admin + 176 service), 400 assertions, both 
 | `GeoBlockMiddleware` | MaxMind GeoIP2地域封锁 |
 | `MaintenanceMiddleware` | 维护模式（环境变量开关+IP白名单） |
 | `ClientPlatformMiddleware` | 客户端平台识别（X-Client-Platform头），支持8种平台 |
+| `SupplierApiKeyMiddleware` | 供应商外部 API 认证（sk_xxx Key SHA256 验签） |
 | `WafMiddleware` (admin) | Admin 面板 WAF 中间件，8 类 45+ 规则 + 请求大小限制 + Content-Type 校验 |
 
 ### Scheduled Tasks

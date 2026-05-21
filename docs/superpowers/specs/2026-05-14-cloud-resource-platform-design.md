@@ -1616,19 +1616,30 @@ Nginx 连接数:
 | bcrypt 密码 (cost=12) + Encryptable 二次加密 | ✅ |
 | 二次密码确认 (ConfirmationMiddleware，5 次失败锁 15min) | ✅ |
 | Admin 面板 WAF 中间件 | ✅ |
+| Sentry 异常监控（SentryBootstrap + before_send 脱敏） | ✅ |
+| Feature Flags 功能开关（Redis 动态覆盖 + 管理后台 API） | ✅ |
+
+### 新增功能 (2026-05-21)
+
+| 功能 | 状态 |
+|------|------|
+| 供应商外部 API（API Key 认证 + 订单/资源/结算/提现端点） | ✅ |
+| WebSocket 实时推送（Workerman 原生 WebSocket + 事件监听） | ✅ |
+| k6 负载测试脚本（冒烟/产品/并发） | ✅ |
 
 ### 后端统计
 
 | 指标 | 数量 |
 |------|------|
-| API 端点 | 127 |
+| API 端点 | 135 |
 | 数据模型 | 50+ |
 | 数据库表 | 50+ |
-| 中间件 | 14 个（全局 7 + 路由 5） |
+| 中间件 | 15 个（全局 7 + 路由 6 + 外部 API 1 + admin WebSocket） |
 | 定时任务 | 7 个 |
-| 迁移文件 | 21 个 |
+| 迁移文件 | 22 个 |
 | 测试 | 362 tests / 579 assertions（Service 295 + Admin 67） |
 | 测试文件 | 22 个 |
+| k6 负载测试脚本 | 3 个 (smoke / products / concurrent) |
 
 ### 文档
 

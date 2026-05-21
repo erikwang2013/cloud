@@ -7,7 +7,7 @@
 | 类型 | 认证方式 | 前缀 | 状态 |
 |------|---------|------|------|
 | **内部 API** | 用户 Bearer Token | `/api/supplier/` | 可用 |
-| **外部 API** | API Key (`sk_xxx`) | `/api/supplier/` | 设计规格，待实现 |
+| **外部 API** | API Key (`sk_xxx`) | `/api/supplier/external/` | 可用 |
 
 **Base URL**: `https://api.example.com`
 

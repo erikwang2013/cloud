@@ -99,11 +99,12 @@ cloud-php/
 │   │   ├── Product/            # 产品 / SKU / 区域定价 / 评价（Controller / Model / Service）
 │   │   ├── Provisioning/       # 资源交付引擎（Controller / Event / Listener / Model / Provider / Queue / Service）
 │   │   ├── Report/             # 营收 / 供应商 / 区域报表（Controller / Service）
-│   │   ├── Supplier/           # 供应商入驻 / 结算 / 提现（Controller / Model / Service）
+│   │   ├── Supplier/           # 供应商入驻 / 结算 / 提现 + 外部 API（Controller / Model / Service）
 │   │   ├── Ticket/             # 工单系统（Controller / Event / Listener / Model / Service）
-│   │   └── User/               # 用户 / 认证 / KYC / 余额 / 地址（Controller / Model / Service）
+│   │   ├── User/               # 用户 / 认证 / KYC / 余额 / 地址（Controller / Model / Service）
+│   │   └── WebSocket/          # WebSocket 服务器 + 事件监听器
 │   ├── common/                 # 公共库 (PSR-4: Common\)
-│   │   ├── Auth/Middleware/     # AuthMiddleware / AdminRoleMiddleware / RbacMiddleware / RoleMiddleware
+│   │   ├── Auth/Middleware/     # AuthMiddleware / AdminRoleMiddleware / RbacMiddleware / RoleMiddleware / SupplierApiKeyMiddleware
 │   │   ├── Captcha/            # 点击验证码服务
 │   │   ├── Confirmation/       # 二次确认中间件（密码复核）
 │   │   ├── Encryption/Middleware/ # AES-256-GCM 传输加密中间件
@@ -115,6 +116,7 @@ cloud-php/
 │   │   ├── Snowflake/          # 雪花 ID 生成服务 / Eloquent HasSnowflakeId Trait
 │   │   ├── Version/Middleware/  # API 版本中间件（X-Api-Version 头校验）
 │   │   ├── ClientPlatform/Middleware/  # 客户端平台中间件（X-Client-Platform 头识别）
+│   │   ├── Feature/            # Feature Flags 功能开关服务
 │   │   └── Webhook/            # Webhook 事件分发器
 │   ├── config/                 # 17 个配置文件（route / middleware / database / redis / cron / auth / security / i18n / ...）
 │   │   └── plugin/             # 插件配置
@@ -175,6 +177,7 @@ cloud-php/
 │   └── superpowers/            # 设计规格与实施计划
 │       ├── specs/              # 系统设计规格文档
 │       └── plans/              # Phase 0~3 分阶段实施计划
+├── tests/k6/                    # k6 负载测试脚本（冒烟/产品/并发）
 ├── .gitignore
 ├── README.md                   # 项目说明（中文）
 └── README_EN.md                # 项目说明（英文）
@@ -503,6 +506,12 @@ ProviderInterface
 - [x] Redis 多级缓存层（CacheService：产品/区域/汇率/TLD/用户，TTL + 主动失效 + 预热）
 - [x] Nginx 响应压缩 + 连接优化（gzip/proxy_buffering/keep-alive/limit_req+limit_conn）
 - [x] 数据库索引建议（13 个推荐复合/覆盖索引）
+- [x] Sentry 异常监控（SentryBootstrap + before_send 脱敏回调）
+- [x] Feature Flags 功能开关（Redis 动态覆盖 + 管理后台 API）
+- [x] 供应商外部 API（API Key 认证 + 订单/资源/结算/提现端点）
+- [x] WebSocket 实时推送（Workerman 原生 WebSocket + 订单/工单事件监听）
+- [x] k6 负载测试脚本（冒烟/产品/并发压测）
+- [x] CI/CD 流水线（GitHub Actions，语法检查 + 双端 PHPUnit + Composer 校验）
 - [x] CI/CD 流水线（GitHub Actions，语法检查 + 双端 PHPUnit + Composer 校验）
 
 ## 开源不易，欢迎支持

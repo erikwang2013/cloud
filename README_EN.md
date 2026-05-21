@@ -97,11 +97,12 @@ cloud-php/
 │   │   ├── Product/            # Products / SKUs / pricing / reviews (Controller / Model / Service)
 │   │   ├── Provisioning/       # Resource delivery engine (Controller / Event / Listener / Model / Provider / Queue / Service)
 │   │   ├── Report/             # Revenue / supplier / regional reports (Controller / Service)
-│   │   ├── Supplier/           # Supplier onboarding / settlement / withdrawal (Controller / Model / Service)
+│   │   ├── Supplier/           # Supplier onboarding / settlement / withdrawal + external API (Controller / Model / Service)
 │   │   ├── Ticket/             # Support tickets (Controller / Event / Listener / Model / Service)
-│   │   └── User/               # Users / auth / KYC / balances / addresses (Controller / Model / Service)
+│   │   ├── User/               # Users / auth / KYC / balances / addresses (Controller / Model / Service)
+│   │   └── WebSocket/          # WebSocket server + event listeners
 │   ├── common/                 # Shared libraries (PSR-4: Common\)
-│   │   ├── Auth/Middleware/     # AuthMiddleware / AdminRoleMiddleware / RbacMiddleware / RoleMiddleware
+│   │   ├── Auth/Middleware/     # AuthMiddleware / AdminRoleMiddleware / RbacMiddleware / RoleMiddleware / SupplierApiKeyMiddleware
 │   │   ├── Captcha/            # Click CAPTCHA service
 │   │   ├── Confirmation/       # Password confirmation middleware
 │   │   ├── Encryption/Middleware/ # AES-256-GCM transport encryption middleware
@@ -113,6 +114,7 @@ cloud-php/
 │   │   ├── Snowflake/          # Snowflake ID service / Eloquent HasSnowflakeId trait
 │   │   ├── Version/Middleware/  # API version middleware (X-Api-Version header validation)
 │   │   ├── ClientPlatform/Middleware/  # Client platform middleware (X-Client-Platform header identification)
+│   │   ├── Feature/            # Feature Flags service
 │   │   └── Webhook/            # Webhook event dispatcher
 │   ├── config/                 # 17 config files (route / middleware / database / redis / cron / auth / security / i18n / ...)
 │   │   └── plugin/             # Plugin configs
@@ -173,6 +175,7 @@ cloud-php/
 │   └── superpowers/            # Design specs & implementation plans
 │       ├── specs/              # System design specification
 │       └── plans/              # Phase 0~3 implementation plans
+├── tests/k6/                    # k6 load test scripts (smoke / products / concurrent)
 ├── .gitignore
 ├── README.md                   # Project overview (Chinese)
 └── README_EN.md                # Project overview (English)
@@ -501,6 +504,12 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] Redis multi-level caching (CacheService: products/regions/exchange rates/TLD/user, TTL + invalidation + warm-up)
 - [x] Nginx response compression + connection optimization (gzip/proxy_buffering/keep-alive/limit_req+limit_conn)
 - [x] Database index recommendations (13 suggested composite/covering indexes)
+- [x] Sentry error monitoring (SentryBootstrap + before_send sanitization)
+- [x] Feature Flags (Redis dynamic override + admin API)
+- [x] Supplier external API (API Key auth + orders/resources/settlements/withdrawals endpoints)
+- [x] WebSocket real-time push (Workerman native WebSocket + order/ticket event listeners)
+- [x] k6 load test scripts (smoke/products/concurrent)
+- [x] CI/CD pipeline (GitHub Actions, syntax check + dual PHPUnit + Composer validate)
 - [x] CI/CD pipeline (GitHub Actions, syntax check + dual PHPUnit + Composer validate)
 
 ## 开源不易，欢迎支持
