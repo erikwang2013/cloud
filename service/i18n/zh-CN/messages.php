@@ -159,6 +159,9 @@ return [
 
     // ── 系统消息 ──
     'Access denied for your region'                     => '您所在的地区无法访问',
+    'Transfer approved'                                 => '域名转移已批准',
+    'Unknown feature: '                                 => '未知功能：',
+    'Unknown feature: {name}'                           => '未知功能：{name}',
     'error.server_error'                                => '服务器内部错误',
     'order.paid'                                        => '订单支付成功',
     'order.cancelled'                                   => '订单已取消',

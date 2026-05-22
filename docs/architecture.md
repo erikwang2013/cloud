@@ -289,6 +289,32 @@ L3: Nginx 响应压缩（gzip level 6）
     JSON 响应压缩率 70-85%
 ```
 
+### 4.6 国际化（i18n）
+
+```
+Accept-Language: zh-CN,zh;q=0.9
+         │
+         ▼
+  LocaleMiddleware (全局中间件)
+         │  解析主语言 → zh-CN
+         │  I18n::setLocale('zh-CN')
+         │  加载 i18n/zh-CN/messages.php
+         ▼
+  控制器 / Service
+         │
+         ├── I18n::trans('auth.login_success')  →  '登录成功'
+         ├── I18n::translateField($jsonField)   →  按语言取值
+         └── I18n::getLocale()                  →  'zh-CN'
+```
+
+| 能力 | 说明 |
+|------|------|
+| 头解析 | `LocaleMiddleware` 自动解析 `Accept-Language` 头 |
+| 语言回落 | 不支持的语言 → `fallback_locale` |
+| 静态翻译 | 120 词条，覆盖 15 个模块（`i18n/{locale}/messages.php`） |
+| 参数替换 | `I18n::trans('key', ['field' => 'value'])` |
+| JSON 字段 | `translateField()` 处理多语言 JSON 列 |
+
 ---
 
 ## 5. 安全架构

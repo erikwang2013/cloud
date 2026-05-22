@@ -1,7 +1,7 @@
 <?php
 return [
     // ── General ──
-    'ok'                                                => 'OK',
+    'ok'                                                => 'ok',
     'Unauthorized'                                      => 'Unauthorized',
     'Forbidden'                                         => 'Forbidden',
     'Forbidden: admin access required'                  => 'Forbidden: admin access required',
@@ -159,6 +159,9 @@ return [
 
     // ── System ──
     'Access denied for your region'                     => 'Access denied for your region',
+    'Transfer approved'                                 => 'Transfer approved',
+    'Unknown feature: '                                 => 'Unknown feature: ',
+    'Unknown feature: {name}'                           => 'Unknown feature: {name}',
     'error.server_error'                                => 'Internal server error',
     'order.paid'                                        => 'Order paid successfully',
     'order.cancelled'                                   => 'Order cancelled',

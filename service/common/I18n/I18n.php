@@ -8,12 +8,12 @@ class I18n
 
     public static function setLocale(string $locale): void
     {
-        $supported = config('i18n.supported_locales');
+        $supported = config('i18n.supported_locales') ?: ['en-US', 'zh-CN'];
         if (in_array($locale, $supported)) {
             self::$locale = $locale;
         } else {
-            $map = config('i18n.locale_map');
-            self::$locale = $map[$locale] ?? config('i18n.fallback_locale');
+            $map = config('i18n.locale_map') ?: [];
+            self::$locale = $map[$locale] ?? (config('i18n.fallback_locale') ?: 'en-US');
         }
         self::loadMessages();
     }
@@ -44,7 +44,7 @@ class I18n
     {
         if (empty($jsonValue)) return null;
         return $jsonValue[self::$locale]
-            ?? $jsonValue[config('i18n.fallback_locale')]
+            ?? $jsonValue[config('i18n.fallback_locale') ?: 'en-US']
             ?? array_values($jsonValue)[0];
     }
 }

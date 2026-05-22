@@ -17,6 +17,8 @@
 
 **客户端平台:** 所有 API 请求建议携带 `X-Client-Platform` 头，支持 `ios/android/macos/windows/linux/web/harmonyos/ipados`。
 
+**多语言:** 所有 API 请求建议携带 `Accept-Language` 头（`zh-CN` / `en-US`），影响翻译文本和 JSON 多语言字段的返回值。缺失默认 `en-US`。
+
 ---
 
 ## 统一响应格式

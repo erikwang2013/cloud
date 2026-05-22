@@ -26,7 +26,8 @@
         "ext-json": "*",
         "ext-pdo": "*",
         "ext-redis": "*",
-        "erikwang2013/poster-php": "^1.0"
+        "erikwang2013/poster-php": "^1.0",
+        "hg/apidoc": "^5.3"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0",

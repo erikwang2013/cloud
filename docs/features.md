@@ -520,7 +520,30 @@ Cron: CollectMetrics (每 5 分钟)
 
 ---
 
-## 12. Feature Flags 功能开关
+## 12. 国际化（i18n）
+
+### 12.1 请求流
+
+```
+客户端 → Accept-Language: zh-CN
+  → LocaleMiddleware（全局中间件）
+    → I18n::setLocale('zh-CN')
+    → 加载 i18n/zh-CN/messages.php
+```
+
+### 12.2 翻译方式
+
+**静态文本：** `I18n::trans('auth.login_success')` → `登录成功`
+**JSON 字段：** `{"zh-CN":"云服务器","en-US":"Cloud Server"}` + `translateField()`
+**参数替换：** `I18n::trans('validation.required', ['field' => '邮箱'])` → `邮箱 不能为空`
+
+### 12.3 覆盖范围
+
+120 词条，覆盖认证/商品/订单/支付/资源/KYC/工单/通知/供应商/Webhook/系统等全部模块。支持语言回落（不支持的语言 → en-US）。
+
+---
+
+## 13. Feature Flags 功能开关
 
 ```
 config/features.php (默认值)

@@ -20,7 +20,9 @@
         "phpoffice/phpspreadsheet": "^2.0",
         "erikwang2013/poster-php": "^1.0",
         "ext-json": "*",
-        "ext-pdo": "*"
+        "ext-pdo": "*",
+        "hg/apidoc": "^5.3",
+        "erikwang2013/jwt-webman": "^2.0"
     },
     "autoload": {
         "psr-4": {

@@ -41,6 +41,8 @@
 | [架构设计文档](docs/architecture.md) | 系统架构、组件关系、中间件管线、安全分层、数据架构、部署拓扑 |
 | [功能设计文档](docs/features.md) | 12 模块详细功能设计，含流程图、数据模型、交互说明 |
 | [API 接口文档](docs/api-reference.md) | 135+ 端点完整参考，按模块分组，含请求/响应示例、错误码 |
+| [API 在线文档 (service)](http://localhost:8787/apidoc) | hg/apidoc 自动生成，按功能分组，支持在线调试 |
+| [API 在线文档 (admin)](http://localhost:8788/apidoc) | hg/apidoc 自动生成，管理后台接口文档 |
 | [管理后台设计](docs/admin-design.md) | Admin 面板架构、包集成、ACL 权限、测试套件 |
 | [供应商 API 文档](docs/supplier-api.md) | 供应商 API 参考（内部 + 外部），SDK 示例 |
 | [部署清单](docs/deployment.md) | 服务器配置、环境变量、Nginx、HTTPS、定时任务 |
@@ -464,11 +466,21 @@ ProviderInterface
 
 采用 Twitter Snowflake 算法生成 64 位全局唯一 ID：`timestamp(41b) | datacenter(5b) | worker(5b) | sequence(12b)`。所有 38 个 Eloquent 模型在 `creating` 事件中自动生成雪花 ID，无数据库自增依赖，天然支持分库分表。
 
-### 8. 多语言
+### 8. 多语言（i18n）
 
-- 产品名称 / 描述存储为 JSON `{"en": "...", "zh": "..."}`，API 根据 `Accept-Language` 头返回对应语言
+**全局中间件自动解析：**
+- `LocaleMiddleware` 读取 `Accept-Language` 请求头，自动设置当前语言
+- 支持语言回退：不支持的语言 → `fallback_locale` (en-US)
+
+**静态文本翻译：**
+- `I18n::trans('auth.login_success')` → `登录成功` / `Login successful`
+- 翻译文件：`i18n/{locale}/messages.php`，120 词条覆盖全部 15 个模块
+- 支持参数替换：`I18n::trans('validation.required', ['field' => '邮箱'])`
+
+**JSON 多语言字段：**
+- 产品名称 / 描述存储为 `{"zh-CN":"云服务器","en-US":"Cloud Server"}`
+- `I18n::translateField($json)` 自动按当前语言取值
 - 通知模板同样支持多语言，按用户偏好语言推送
-- Flutter 客户端通过 Interceptor 携带语言标识
 
 ### 9. 全文搜索
 

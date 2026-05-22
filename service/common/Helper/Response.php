@@ -2,6 +2,7 @@
 namespace Common\Helper;
 
 use Common\Hashid\HashidService;
+use Common\I18n\I18n;
 
 class Response
 {
@@ -9,7 +10,7 @@ class Response
     {
         $body = [
             'code'    => 0,
-            'message' => $message,
+            'message' => I18n::trans($message),
             'data'    => $data !== null ? HashidService::encodeIds($data) : null,
             'request_id' => request_id(),
         ];
@@ -23,7 +24,7 @@ class Response
     {
         return [
             'code'       => $code,
-            'message'    => $message,
+            'message'    => I18n::trans($message),
             'data'       => $data,
             'request_id' => request_id(),
         ];
