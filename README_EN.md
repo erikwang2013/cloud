@@ -32,6 +32,17 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 
 ![System Architecture](docs/diagrams/system-architecture-en.svg)
 
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Architecture Design](docs/architecture.md) | System architecture, component relationships, middleware pipeline, security layers, data architecture, deployment topology |
+| [Feature Design](docs/features.md) | 12 modules detailed feature design with flow diagrams, data models, interaction descriptions |
+| [API Reference](docs/api-reference.md) | 135+ endpoints complete reference, grouped by module, with request/response examples, error codes |
+| [Admin Panel Design](docs/admin-design.md) | Admin panel architecture, package integration, ACL, test suite |
+| [Supplier API Docs](docs/supplier-api.md) | Supplier API reference (internal + external), SDK examples |
+| [Deployment Checklist](docs/deployment.md) | Server setup, environment config, Nginx, HTTPS, cron jobs |
+
 ## Directory Structure
 
 ```

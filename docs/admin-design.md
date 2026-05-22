@@ -918,9 +918,12 @@ All 4 jobs pass: 243 total tests (67 admin + 176 service), 400 assertions, both 
 
 | Document | Path | Description |
 |----------|------|-------------|
+| 架构设计文档 | `docs/architecture.md` | 系统架构、组件关系、中间件管线、安全分层、数据架构、部署拓扑 |
+| 功能设计文档 | `docs/features.md` | 12 模块详细功能设计，含流程图、数据模型、交互说明 |
+| API 接口文档 | `docs/api-reference.md` | 135+ 端点完整参考，按模块分组，含请求/响应示例、错误码 |
 | 系统设计规格 | `docs/superpowers/specs/2026-05-14-cloud-resource-platform-design.md` | 完整架构、数据模型、API 设计、安全策略 |
 | 管理后台设计 | `docs/admin-design.md` | Admin 面板架构、包集成、ACL 权限、测试套件 |
-| 供应商 API 文档 | `docs/supplier-api.md` | 供应商 API 参考（内部 API + 外部 API 设计规格）、SDK 示例 |
+| 供应商 API 文档 | `docs/supplier-api.md` | 供应商 API 参考（内部 API + 外部 API）、SDK 示例 |
 | 部署清单 | `docs/deployment.md` | 服务器配置、环境变量、数据库迁移、Nginx、HTTPS、定时任务 |
 
 ### 实现计划
