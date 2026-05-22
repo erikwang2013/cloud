@@ -75,6 +75,13 @@ return [
                 ['title'=>'安装向导','path'=>'InstallController'],
                 ['title'=>'开发工具','path'=>'DevController'],
             ]],
+            ['title'=>'其他管理','path'=>'app\controller','key'=>'other','group'=>[
+                ['title'=>'首页','path'=>'IndexController'],
+                ['title'=>'Token管理','path'=>'RefreshTokenController'],
+                ['title'=>'区域管理','path'=>'RegionController'],
+                ['title'=>'用户地址','path'=>'UserAddressController'],
+                ['title'=>'用户余额','path'=>'UserBalanceController'],
+            ]],
         ],
         'auto_url' => [
             'letter_rule' => "lcfirst",
