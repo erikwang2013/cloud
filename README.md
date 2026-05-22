@@ -44,6 +44,7 @@
 | [管理后台设计](docs/admin-design.md) | Admin 面板架构、包集成、ACL 权限、测试套件 |
 | [供应商 API 文档](docs/supplier-api.md) | 供应商 API 参考（内部 + 外部），SDK 示例 |
 | [部署清单](docs/deployment.md) | 服务器配置、环境变量、Nginx、HTTPS、定时任务 |
+| [版本对比](docs/editions.md) | 简化版/标准版/完整版功能、设计、架构对比 |
 
 ## 目录结构
 
@@ -533,6 +534,16 @@ ProviderInterface
 
 ---
 
+## 版本
+
+| 版本 | 授权 | 获取 |
+|------|------|------|
+| **简化版 Lite** | 开源 (MIT) | GitHub |
+| **标准版 Standard** | 商业 | erik@erik.xyz |
+| **完整版 Full** | 商业 | erik@erik.xyz |
+
+详细对比：[docs/editions.md](docs/editions.md)
+
 ## License
 
-Proprietary — All rights reserved.
+简化版 — MIT License | 标准版/完整版 — Proprietary
