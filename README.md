@@ -1,4 +1,4 @@
-# CloudPlatform — 全球云资源交易平台
+# Cloud Platform — 全球云资源交易平台
 
 > [English Documentation](README_EN.md)
 
