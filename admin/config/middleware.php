@@ -34,6 +34,7 @@ use app\middleware\WafMiddleware;
 return [
     '' => [
         WafMiddleware::class,
+        \Erikwang2013\Security\Middleware\Webman\SecurityMiddleware::class,
         AccessControl::class,
     ]
 ];

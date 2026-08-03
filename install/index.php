@@ -87,6 +87,7 @@ if ($isPost && $requestedStep === 2) {
 
             if ($dbCreate) {
                 $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}_audit` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
             }
 
             $pdo->exec("USE `{$dbName}`");
@@ -622,8 +623,8 @@ body { font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-ser
     <h2 style="text-align:center">Installation Complete!</h2>
     <p style="text-align:center;color:var(--muted);margin-bottom:16px">CloudPlatform has been installed successfully.</p>
     <div class="complete-links">
-        <a href="#" class="complete-link"><strong>Service API</strong><span>http://localhost:8787</span></a>
-        <a href="#" class="complete-link"><strong>Admin Panel</strong><span>http://localhost:8787/app/admin</span></a>
+        <div class="complete-link"><strong>Service API</strong><span>http://localhost:8787</span></div>
+        <div class="complete-link"><strong>Admin Panel</strong><span>http://localhost:8788/app/admin</span></div>
     </div>
     <div style="margin-top:24px;padding:16px;background:#f8f9fa;border-radius:var(--radius);font-size:13px">
         <strong>Next Steps:</strong>

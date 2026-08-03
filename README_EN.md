@@ -17,6 +17,7 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 | Full-Text Search | Elasticsearch ([erikwang2013/webman-scout](https://github.com/erikwang2013/webman-scout)) |
 | Country Flags | Unicode Flag Emoji ([erikwang2013/season](https://github.com/erikwang2013/season)) |
 | Click CAPTCHA | ([erikwang2013/poster-php](https://github.com/erikwang2013/poster-php)) |
+| Security Protection | 31 attack detectors ([erikwang2013/security-php](https://github.com/erikwang2013/security-php)) |
 | Spreadsheet Export | PhpSpreadsheet ^2.0 |
 | Payment SDK | Stripe PHP ^15.0 |
 | SMS SDK | Twilio PHP ^8.0 |
@@ -452,6 +453,7 @@ Global middleware pipeline: `Version → CORS → ClientPlatform → WAF → Loc
 
 - **CORS** — Cross-origin request headers
 - **WAF** — 8 categories 45+ rules (SQLi/XSS/command injection/file inclusion/header injection/SSRF/NoSQL injection/open redirect) + request size limits + Content-Type validation
+- **Security Plugin** — 31 attack detectors (XSS/SQLi/CMDi/SSRF/deserialization/JWT attack/host header/request smuggling/GraphQL injection/data leak etc.), IP whitelist + IP blacklist auto-ban
 - **Locale** — Parses Accept-Language, sets locale
 - **HashidRequest** — Auto-decodes hashid strings in requests to real integer IDs
 - **Version** — Validates `X-Api-Version` header, defaults to `v1` if missing, returns `400` for unsupported versions
@@ -530,6 +532,7 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] Service-layer unit tests (295 tests, 455 assertions)
 - [x] Client platform identification (ClientPlatformMiddleware, X-Client-Platform header, 8 platforms)
 - [x] WAF security enhancement (8 categories 45+ rules: SQLi/XSS/CMDi/file inclusion/header injection/SSRF/NoSQL injection/open redirect + size limits + Content-Type validation)
+- [x] Security Plugin (erikwang2013/security-php, 31 attack detectors + IP blacklist auto-ban + log rotation)
 - [x] Admin panel WAF middleware
 - [x] MySQL read/write splitting (Eloquent read/write connections + sticky)
 - [x] Redis multi-level caching (CacheService: products/regions/exchange rates/TLD/user, TTL + invalidation + warm-up)

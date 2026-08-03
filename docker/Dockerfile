@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y \
     libzip-dev zip unzip libpng-dev libjpeg-dev \
     libfreetype6-dev nginx supervisor \
     && docker-php-ext-configure gd \
-    && docker-php-ext-install gd pdo_mysql zip bcmath \
+    && docker-php-ext-install gd pdo_mysql zip bcmath intl xml fileinfo \
     && pecl install redis && docker-php-ext-enable redis
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer

@@ -19,6 +19,7 @@
 | 全文搜索 | Elasticsearch ([erikwang2013/webman-scout](https://github.com/erikwang2013/webman-scout)) |
 | 国家旗帜 | Unicode Flag Emoji ([erikwang2013/season](https://github.com/erikwang2013/season)) |
 | 点击验证码 | Click CAPTCHA ([erikwang2013/poster-php](https://github.com/erikwang2013/poster-php)) |
+| 安全防护 | 31 种攻击检测 ([erikwang2013/security-php](https://github.com/erikwang2013/security-php)) |
 | 表格导出 | PhpSpreadsheet ^2.0 |
 | 支付 SDK | Stripe PHP ^15.0 |
 | 短信 SDK | Twilio PHP ^8.0 |
@@ -455,6 +456,7 @@ ProviderInterface
 
 - **CORS** — 跨域请求头处理
 - **WAF** — 8 类 45+ 规则（SQL注入/XSS/命令注入/文件包含/头注入/SSRF/NoSQL注入/开放重定向）+ 请求大小限制 + Content-Type 校验
+- **Security Plugin** — 31 种攻击检测（XSS/SQL注入/命令注入/SSRF/反序列化/JWT攻击/Host头攻击/请求走私/GraphQL注入/敏感数据泄露等），IP 白名单 + IP 黑名单自动封禁
 - **Locale** — 解析 Accept-Language，设置多语言
 - **HashidRequest** — 自动解码请求中的 hashid 字符串为真实整数 ID
 - **Version** — 校验 `X-Api-Version` 请求头，缺失默认 `v1`，不支持的版本返回 `400`
@@ -543,6 +545,7 @@ ProviderInterface
 - [x] 服务端单元测试（295 tests, 455 assertions）
 - [x] 客户端平台识别（ClientPlatformMiddleware，X-Client-Platform 头支持 8 种平台）
 - [x] WAF 安全增强（8 类 45+ 规则: SQL注入/XSS/命令注入/文件包含/头注入/SSRF/NoSQL注入/开放重定向 + 请求大小限制 + Content-Type 校验）
+- [x] Security Plugin（erikwang2013/security-php，31 种攻击检测 + IP 黑名单自动封禁 + 日志轮转）
 - [x] Admin 面板 WAF 中间件
 - [x] MySQL 读写分离（Eloquent read/write 连接 + sticky）
 - [x] Redis 多级缓存层（CacheService：产品/区域/汇率/TLD/用户，TTL + 主动失效 + 预热）

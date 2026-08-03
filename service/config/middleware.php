@@ -19,8 +19,11 @@ return [
         // 客户端平台中间件：从 X-Client-Platform 头识别客户端操作系统平台
         Common\ClientPlatform\Middleware\ClientPlatformMiddleware::class,
 
-        // WAF 安全中间件：检测并拦截 SQL 注入、XSS 攻击
+        // WAF 安全中间件：检测并拦截 SQL 注入、XSS 攻击（传统，保留兼容）
         Common\Security\WafMiddleware::class,
+
+        // Security Plugin — 31 种攻击检测（XSS/SQL注入/命令注入/SSRF/反序列化等）
+        Erikwang2013\Security\Middleware\Webman\SecurityMiddleware::class,
 
         // 多语言中间件：解析 Accept-Language，设置当前区域
         Common\I18n\Middleware\LocaleMiddleware::class,
