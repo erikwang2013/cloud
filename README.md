@@ -192,6 +192,10 @@ cloud-php/
 │       ├── specs/              # 系统设计规格文档
 │       └── plans/              # Phase 0~3 分阶段实施计划
 ├── tests/k6/                    # k6 负载测试脚本（冒烟/产品/并发）
+├── install.php                 # 一键安装向导入口
+├── install/                    # 安装向导页面
+│   └── index.php               # 向导 Web 应用
+├── install.sql                 # 统一数据库 DDL（46 张表）
 ├── .gitignore
 ├── README.md                   # 项目说明（中文）
 └── README_EN.md                # 项目说明（英文）
@@ -201,11 +205,35 @@ cloud-php/
 
 ### 环境要求
 
-- PHP 8.2+ (ext-json, ext-pdo, ext-redis)
+- PHP 8.2+ (ext-json, ext-pdo, ext-pdo_mysql, ext-redis, ext-openssl)
 - MySQL 8.0
 - Redis 7
 
-### 本地开发
+### 一键安装（推荐）
+
+项目提供了 Web 安装向导，可在浏览器中完成全部配置：
+
+```bash
+# 1. 安装依赖
+cd service && composer install && cd ../admin && composer install && cd ..
+
+# 2. 启动安装向导
+php install.php
+# 打开浏览器访问 http://localhost:8888
+
+# 3. 按向导提示完成：
+#    - 环境检查
+#    - 数据库配置（主机、端口、库名、用户名、密码）
+#    - 后台管理员账号设置（用户名、密码、邮箱）
+#    - 一键执行安装（建表 + 写入配置）
+```
+
+安装完成后，向导会自动：
+- 创建全部 46 张数据库表（wa_* 管理表 + erik_* 业务表）
+- 创建超级管理员角色和账号
+- 生成 `service/.env` 和 `admin/.env` 配置文件（含自动生成的 JWT/加密密钥）
+
+### 手动安装
 
 ```bash
 cd service
@@ -220,18 +248,11 @@ cp .env.example .env
 # ENCRYPTION_KEY 生成：echo -n "$(openssl rand -base64 16)" | base64 -w0
 # JWT_SECRET_KEY 生成：openssl rand -base64 32
 
-# 3. 创建数据库
+# 3. 创建数据库并导入
 mysql -u root -p -e "CREATE DATABASE cloud_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root -p -e "CREATE DATABASE cloud_platform_audit CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p cloud_platform < ../install.sql
 
-# 4. 导入数据库结构
-mysql -u root -p cloud_platform < ../docs/database.sql
-mysql -u root -p cloud_platform_audit < ../docs/database_audit.sql
-
-# 或使用迁移命令（推荐）
-php webman migrate
-
-# 5. 启动服务（开发模式）
+# 4. 启动服务（开发模式）
 php start.php start
 # 访问 http://localhost:8787
 ```
@@ -257,14 +278,11 @@ composer install
 
 # 2. 配置环境变量
 cp .env.example .env
-# 编辑 .env 填写数据库密码、JWT 密钥等
+# 如果使用一键安装向导，此文件已自动生成
 
 # 3. 启动服务（开发模式）
 php start.php start
 # 访问 http://localhost:8787/app/admin
-
-# 可选：运行数据库迁移
-php webman migrate
 ```
 
 ### 守护进程模式
@@ -503,7 +521,7 @@ ProviderInterface
 
 ## 待办事项
 
-- [x] 数据库 DDL（`docs/database.sql`，39 张表，erik_ 前缀，BigInt 非自增主键）
+- [x] 数据库 DDL（`install.sql`，46 张表，wa_* 管理表 + erik_* 业务表，BigInt 非自增主键）
 - [x] 雪花 ID 生成（`erikwang2013/snowflake-php`）
 - [x] JWT 认证（`erikwang2013/jwt-webman`，HS256 + Redis 黑名单）
 - [x] API ID 混淆（`erikwang2013/hashids`，请求自动解码 + 响应自动编码）
@@ -516,7 +534,7 @@ ProviderInterface
 - [x] Excel 导出（PhpSpreadsheet ^2.0，管理后台 Crud/Table + 服务端管理 API）
 - [x] 仪表板可视化（ECharts 图表 + 动画统计卡片 + 系统信息面板）
 - [x] PDF 导出（html2canvas + jsPDF，仪表板截图导出）
-- [x] 数据库迁移脚本（`docs/database.sql` 已生成，`php webman migrate` 命令化）
+- [x] 数据库迁移脚本（`install.sql` 统一 DDL，`php webman migrate` 命令化）
 - [x] Stripe 真实集成（stripe-php SDK，PaymentIntent + Webhook 签名校验）
 - [x] Twilio 短信真实集成（twilio/sdk，含发送失败处理）
 - [x] FCM 推送真实集成（kreait/firebase-php，含无效 token 清理）
@@ -536,7 +554,7 @@ ProviderInterface
 - [x] WebSocket 实时推送（Workerman 原生 WebSocket + 订单/工单事件监听）
 - [x] k6 负载测试脚本（冒烟/产品/并发压测）
 - [x] CI/CD 流水线（GitHub Actions，语法检查 + 双端 PHPUnit + Composer 校验）
-- [x] CI/CD 流水线（GitHub Actions，语法检查 + 双端 PHPUnit + Composer 校验）
+- [x] 一键安装向导（Web UI，环境检查 + 数据库配置 + 管理员创建 + 自动生成 .env）
 
 ## 开源不易，欢迎支持
 

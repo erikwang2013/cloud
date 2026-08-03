@@ -189,6 +189,10 @@ cloud-php/
 │       ├── specs/              # System design specification
 │       └── plans/              # Phase 0~3 implementation plans
 ├── tests/k6/                    # k6 load test scripts (smoke / products / concurrent)
+├── install.php                 # One-click install wizard entry
+├── install/                    # Install wizard pages
+│   └── index.php               # Wizard web application
+├── install.sql                 # Unified database DDL (46 tables)
 ├── .gitignore
 ├── README.md                   # Project overview (Chinese)
 └── README_EN.md                # Project overview (English)
@@ -198,11 +202,35 @@ cloud-php/
 
 ### Prerequisites
 
-- PHP 8.2+ (ext-json, ext-pdo, ext-redis)
+- PHP 8.2+ (ext-json, ext-pdo, ext-pdo_mysql, ext-redis, ext-openssl)
 - MySQL 8.0
 - Redis 7
 
-### Local Development
+### One-Click Install (Recommended)
+
+Use the web-based installation wizard to configure everything in your browser:
+
+```bash
+# 1. Install dependencies
+cd service && composer install && cd ../admin && composer install && cd ..
+
+# 2. Start the installation wizard
+php install.php
+# Open http://localhost:8888 in your browser
+
+# 3. Follow the wizard steps:
+#    - Environment check
+#    - Database configuration (host, port, database name, username, password)
+#    - Admin account setup (username, password, email)
+#    - One-click install (create tables + write config)
+```
+
+The wizard automatically:
+- Creates all 46 database tables (wa_* admin + erik_* business)
+- Creates the super admin role and account
+- Generates `service/.env` and `admin/.env` with auto-generated JWT/encryption keys
+
+### Manual Install
 
 ```bash
 cd service
@@ -217,18 +245,11 @@ cp .env.example .env
 # ENCRYPTION_KEY:       echo -n "$(openssl rand -base64 16)" | base64 -w0
 # JWT_SECRET_KEY:       openssl rand -base64 32
 
-# 3. Create databases
+# 3. Create database and import
 mysql -u root -p -e "CREATE DATABASE cloud_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root -p -e "CREATE DATABASE cloud_platform_audit CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p cloud_platform < ../install.sql
 
-# 4. Import schema
-mysql -u root -p cloud_platform < ../docs/database.sql
-mysql -u root -p cloud_platform_audit < ../docs/database_audit.sql
-
-# Or use migration command (recommended)
-php webman migrate
-
-# 5. Start (dev mode)
+# 4. Start (dev mode)
 php start.php start
 # Visit http://localhost:8787
 ```
@@ -254,14 +275,11 @@ composer install
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env with database password, JWT key, etc.
+# If using the one-click wizard, this file is already generated
 
 # 3. Start (dev mode)
 php start.php start
 # Visit http://localhost:8787/app/admin
-
-# Optional: run database migrations
-php webman migrate
 ```
 
 ### Daemon Mode
@@ -490,7 +508,7 @@ Unicode flag emoji support via `erikwang2013/season`:
 
 ## Roadmap
 
-- [x] Database DDL (`docs/database.sql`, 39 tables, erik_ prefix, BigInt non-auto-increment PKs)
+- [x] Database DDL (`install.sql`, 46 tables, wa_* admin + erik_* business, BigInt non-auto-increment PKs)
 - [x] Snowflake ID generation (`erikwang2013/snowflake-php`)
 - [x] JWT authentication (`erikwang2013/jwt-webman`, HS256 + Redis blacklist)
 - [x] API ID obfuscation (`erikwang2013/hashids`, auto decode requests + auto encode responses)
@@ -503,7 +521,7 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] Excel export (PhpSpreadsheet ^2.0, admin Crud/Table + service admin API)
 - [x] Dashboard visualization (ECharts charts + animated stat cards + system info panel)
 - [x] PDF export (html2canvas + jsPDF, dashboard screenshot export)
-- [x] Database migration scripting (`docs/database.sql` ready, `php webman migrate` command)
+- [x] Database migration scripting (`install.sql` ready, `php webman migrate` command)
 - [x] Stripe production integration (stripe-php SDK, PaymentIntent + webhook signature verification)
 - [x] Twilio SMS production integration (twilio/sdk, with send failure handling)
 - [x] FCM push notification production integration (kreait/firebase-php, with invalid token cleanup)
@@ -523,7 +541,7 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] WebSocket real-time push (Workerman native WebSocket + order/ticket event listeners)
 - [x] k6 load test scripts (smoke/products/concurrent)
 - [x] CI/CD pipeline (GitHub Actions, syntax check + dual PHPUnit + Composer validate)
-- [x] CI/CD pipeline (GitHub Actions, syntax check + dual PHPUnit + Composer validate)
+- [x] One-click install wizard (Web UI, env check + DB config + admin creation + auto .env generation)
 
 ## 开源不易，欢迎支持
 
