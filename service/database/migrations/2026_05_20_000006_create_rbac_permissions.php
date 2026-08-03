@@ -38,7 +38,7 @@ $roles = [
     [5, 'supplier', 'Supplier', 'Own products/orders/settlements'],
 ];
 foreach ($roles as [$id, $name, $display, $desc]) {
-    Capsule::table('roles')->insert(compact('id', 'name', 'display_name' => $display, 'description' => $desc));
+    Capsule::table('roles')->insert(['id' => $id, 'name' => $name, 'display_name' => $display, 'description' => $desc]);
 }
 
 // Seed default permissions

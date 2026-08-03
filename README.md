@@ -96,8 +96,7 @@ cloud-php/
 │   ├── composer.json           # 依赖声明
 │   ├── generate.php            # 代码生成器
 │   ├── phpunit.xml             # PHPUnit 配置
-│   ├── start.php               # 启动入口
-│   └── install.sql             # 初始化 DDL
+│   └── start.php               # 启动入口
 ├── service/                    # 后端服务（独立 webman 实例）
 │   ├── app/                    # 业务模块 (PSR-4: App\)，每个模块含 Controller / Model / Service 等分层
 │   │   ├── Admin/Controller/   # 管理后台 API（15 个控制器：Dashboard / User / Product / Order / Payment / Supplier / Coupon / Invoice / Domain / Webhook 等）
@@ -566,16 +565,6 @@ ProviderInterface
 | ![微信](./docs/weixinpay.png "微信") | ![支付宝](./docs/alipay.png "支付宝") |
 
 ---
-
-## 版本
-
-| 版本 | 授权 | 获取 |
-|------|------|------|
-| **简化版 Lite** | 开源 (MIT) | GitHub |
-| **标准版 Standard** | 商业 | erik@erik.xyz |
-| **完整版 Full** | 商业 | erik@erik.xyz |
-
-详细对比：[docs/editions.md](docs/editions.md)
 
 ## License
 
