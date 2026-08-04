@@ -15,4 +15,6 @@ return [
     'google_oauth'            => (bool)(getenv('FEATURE_GOOGLE_OAUTH') ?: true),
     'apple_oauth'             => (bool)(getenv('FEATURE_APPLE_OAUTH') ?: true),
     'ssl_product'             => (bool)(getenv('FEATURE_SSL_PRODUCT') ?: true),
+    'object_storage_product'  => (bool)(getenv('FEATURE_OBJECT_STORAGE') ?: true),
+    'usage_billing'           => (bool)(getenv('FEATURE_USAGE_BILLING') ?: true),
 ];

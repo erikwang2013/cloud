@@ -167,6 +167,13 @@ Route::group('/api', function () {
     Route::get('/ssl-certs/{id}', [App\Ssl\Controller\SslController::class, 'show']);
     Route::get('/ssl-certs/{id}/download', [App\Ssl\Controller\SslController::class, 'downloadCert']);
     Route::post('/ssl-certs/{id}/auto-renew', [App\Ssl\Controller\SslController::class, 'toggleAutoRenew']);
+
+    // Object storage
+    Route::get('/storage/buckets', [App\Storage\Controller\StorageController::class, 'index']);
+    Route::get('/storage/buckets/{id}', [App\Storage\Controller\StorageController::class, 'show']);
+    Route::post('/storage/buckets/{id}/presign-upload', [App\Storage\Controller\StorageController::class, 'presignUpload']);
+    Route::post('/storage/buckets/{id}/presign-download', [App\Storage\Controller\StorageController::class, 'presignDownload']);
+    Route::get('/storage/buckets/{id}/credentials', [App\Storage\Controller\StorageController::class, 'credentials']);
 })->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class]);
 
 // === User sensitive operations (requires password confirmation) ===
@@ -307,6 +314,13 @@ Route::group('/admin/api', function () {
     Route::delete('/ssl/plans/{id}', [App\Admin\Controller\SslController::class, 'destroyPlan']);
     Route::get('/ssl/certs', [App\Admin\Controller\SslController::class, 'certs']);
     Route::post('/ssl/certs/{id}/revoke', [App\Admin\Controller\SslController::class, 'revokeCert']);
+
+    // Usage billing management
+    Route::get('/billing/rates', [App\Admin\Controller\BillingController::class, 'rates']);
+    Route::post('/billing/rates', [App\Admin\Controller\BillingController::class, 'storeRate']);
+    Route::put('/billing/rates/{id}', [App\Admin\Controller\BillingController::class, 'updateRate']);
+    Route::delete('/billing/rates/{id}', [App\Admin\Controller\BillingController::class, 'destroyRate']);
+    Route::get('/billing/usage', [App\Admin\Controller\BillingController::class, 'usage']);
 })->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class]);
 
 // === Admin sensitive operations (requires password confirmation) ===

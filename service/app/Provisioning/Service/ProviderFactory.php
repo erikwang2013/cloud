@@ -22,6 +22,10 @@ class ProviderFactory
         self::register('ssl', 'letsencrypt', fn() => new \App\Ssl\Service\SslProvider());
         self::register('ssl', 'zerossl', fn() => new \App\Ssl\Service\SslProvider());
 
+        // Object storage providers
+        self::register('storage', 's3', fn() => new \App\Storage\Provider\S3StorageProvider());
+        self::register('storage', 'minio', fn() => new \App\Storage\Provider\MinioProvider());
+
         if (getenv('AWS_ACCESS_KEY_ID')) {
             $cfg = new ProviderApi([
                 'name' => 'AWS EC2 (env)', 'code' => 'aws-ec2',

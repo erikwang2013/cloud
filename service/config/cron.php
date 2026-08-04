@@ -37,4 +37,13 @@ return [
 
     // Resource expiration check — every 30 minutes
     '*/30 * * * *' => [App\Monitor\Cron\CheckExpirations::class, 'run'],
+
+    // Usage aggregation — hourly at :07
+    '7 * * * *'    => [App\Billing\Service\UsageAggregator::class, 'aggregate'],
+
+    // Usage billing — daily at 03:41
+    '41 3 * * *'   => [App\Billing\Service\BillingEngine::class, 'runDaily'],
+
+    // Suspend check — every 30 minutes at :11 and :41
+    '11,41 * * * *' => [App\Billing\Cron\SuspendCheck::class, 'run'],
 ];
