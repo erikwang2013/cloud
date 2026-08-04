@@ -220,6 +220,7 @@ CREATE TABLE IF NOT EXISTS `erik_product_categories` (
     parent_id       BIGINT          DEFAULT NULL,
     name            JSON            NOT NULL,
     slug            VARCHAR(128)    NOT NULL,
+    type            VARCHAR(30)     DEFAULT NULL,
     sort            INT             NOT NULL DEFAULT 0,
     icon            VARCHAR(255)    DEFAULT NULL,
     status          VARCHAR(32)     NOT NULL DEFAULT 'active',
@@ -227,6 +228,7 @@ CREATE TABLE IF NOT EXISTS `erik_product_categories` (
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE INDEX uk_slug (slug),
     INDEX idx_parent_id (parent_id),
+    INDEX idx_type (type),
     INDEX idx_sort (sort)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

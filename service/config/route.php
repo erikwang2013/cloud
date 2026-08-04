@@ -9,8 +9,15 @@
 use Webman\Route;
 use Common\Version\Middleware\VersionMiddleware;
 
-// Health check (no version check)
+// Health check (no version check, public)
 Route::get('/health', [App\Controller\HealthController::class, 'index']);
+
+// Health check (internal monitoring, token-protected)
+Route::group('/health', function () {
+    Route::get('/live', [App\Controller\HealthController::class, 'live']);
+    Route::get('/ready', [App\Controller\HealthController::class, 'ready']);
+    Route::get('/deps', [App\Controller\HealthController::class, 'deps']);
+})->middleware([Common\Security\InternalTokenMiddleware::class]);
 
 // Auth routes (with version + encryption + rate limiting + captcha verification on sensitive ops)
 Route::group('/api/auth', function () {
@@ -60,6 +67,9 @@ Route::get('/api/domain/tlds', [App\Domain\Controller\DomainController::class, '
 Route::get('/api/help', [App\Controller\HelpController::class, 'index']);
 Route::get('/api/help/categories', [App\Controller\HelpController::class, 'categories']);
 Route::get('/api/help/{slug}', [App\Controller\HelpController::class, 'show']);
+
+// SSL plans (public)
+Route::get('/api/ssl/plans', [App\Ssl\Controller\SslController::class, 'plans']);
 
 // Payment webhooks (no auth, signature verified)
 Route::post('/api/payments/webhook/stripe', [App\Payment\Controller\PaymentController::class, 'stripeWebhook']);
@@ -151,6 +161,12 @@ Route::group('/api', function () {
     // Supplier
     Route::post('/supplier/apply', [App\Supplier\Controller\SupplierController::class, 'apply']);
     Route::get('/supplier/settlements', [App\Supplier\Controller\SupplierController::class, 'settlements']);
+
+    // SSL certificates
+    Route::get('/ssl-certs', [App\Ssl\Controller\SslController::class, 'index']);
+    Route::get('/ssl-certs/{id}', [App\Ssl\Controller\SslController::class, 'show']);
+    Route::get('/ssl-certs/{id}/download', [App\Ssl\Controller\SslController::class, 'downloadCert']);
+    Route::post('/ssl-certs/{id}/auto-renew', [App\Ssl\Controller\SslController::class, 'toggleAutoRenew']);
 })->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class]);
 
 // === User sensitive operations (requires password confirmation) ===
@@ -283,6 +299,14 @@ Route::group('/admin/api', function () {
     Route::post('/webhooks', [App\Admin\Controller\WebhookController::class, 'store']);
     Route::delete('/webhooks', [App\Admin\Controller\WebhookController::class, 'destroy']);
     Route::post('/webhooks/test', [App\Admin\Controller\WebhookController::class, 'test']);
+
+    // SSL certificate management
+    Route::get('/ssl/plans', [App\Admin\Controller\SslController::class, 'plans']);
+    Route::post('/ssl/plans', [App\Admin\Controller\SslController::class, 'storePlan']);
+    Route::put('/ssl/plans/{id}', [App\Admin\Controller\SslController::class, 'updatePlan']);
+    Route::delete('/ssl/plans/{id}', [App\Admin\Controller\SslController::class, 'destroyPlan']);
+    Route::get('/ssl/certs', [App\Admin\Controller\SslController::class, 'certs']);
+    Route::post('/ssl/certs/{id}/revoke', [App\Admin\Controller\SslController::class, 'revokeCert']);
 })->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class]);
 
 // === Admin sensitive operations (requires password confirmation) ===

@@ -18,6 +18,10 @@ class ProviderFactory
         self::register('disk', 'proxmox', fn() => new \App\Provisioning\Provider\ProxmoxProvider());
         self::register('ip', 'proxmox', fn() => new \App\Provisioning\Provider\ProxmoxProvider());
 
+        // SSL certificate providers
+        self::register('ssl', 'letsencrypt', fn() => new \App\Ssl\Service\SslProvider());
+        self::register('ssl', 'zerossl', fn() => new \App\Ssl\Service\SslProvider());
+
         if (getenv('AWS_ACCESS_KEY_ID')) {
             $cfg = new ProviderApi([
                 'name' => 'AWS EC2 (env)', 'code' => 'aws-ec2',

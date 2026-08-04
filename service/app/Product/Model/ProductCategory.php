@@ -9,6 +9,7 @@ class ProductCategory extends Model
     use HasSnowflakeId;
     protected $table = 'product_categories';
     protected $casts = ['name' => 'array'];
+    protected $fillable = ['parent_id', 'name', 'slug', 'type', 'sort', 'icon', 'status'];
 
     public function parent()
     {

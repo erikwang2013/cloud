@@ -54,6 +54,11 @@ class ProvisioningService
 
     private function getProductType(OrderItem $item): string
     {
+        $categoryType = $item->sku->product->category->type ?? null;
+        if ($categoryType) {
+            return $categoryType;
+        }
+        // Legacy fallback for categories without type column populated
         $categoryId = $item->sku->product->category_id ?? 0;
         $map = [1 => 'server', 2 => 'ip', 3 => 'disk', 4 => 'domain'];
         return $map[$categoryId] ?? 'server';
