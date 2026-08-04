@@ -29,6 +29,7 @@ return [
     \App\Payment\Event\OrderPaid::class => [
         \App\Provisioning\Listener\OrderPaidListener::class,
         \App\WebSocket\Listener\OrderPaidListener::class,
+        \App\Affiliate\Listener\OrderPaidListener::class,
     ],
     // 工单创建后自动分配 + WebSocket 实时推送
     \App\Ticket\Event\TicketCreated::class => [

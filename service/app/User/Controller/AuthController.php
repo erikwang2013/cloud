@@ -38,6 +38,10 @@ class AuthController
         }
 
         try {
+            $refCode = $request->input('ref');
+            if ($refCode) {
+                $data['affiliate_code'] = $refCode;
+            }
             $tokens = $this->auth->register($data, $this->clientPlatform($request));
             AuditLogger::record('user_registered', ['user_id' => null], $request);
             return json(Response::success($tokens, I18n::trans('auth.register_success')));

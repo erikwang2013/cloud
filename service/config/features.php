@@ -20,4 +20,6 @@ return [
     'prometheus_metrics'      => (bool)(getenv('FEATURE_PROMETHEUS') ?: true),
     'cdn_product'             => (bool)(getenv('FEATURE_CDN_PRODUCT') ?: true),
     'supplier_rating'         => (bool)(getenv('FEATURE_SUPPLIER_RATING') ?: true),
+    'affiliate_program'       => (bool)(getenv('FEATURE_AFFILIATE') ?: true),
+    'graphql_api'             => (bool)(getenv('FEATURE_GRAPHQL') ?: true),
 ];

@@ -42,6 +42,7 @@ class AuthService
             'currency'           => $data['currency'] ?? 'USD',
             'status'             => 'active',
             'role'               => 'user',
+            'affiliate_code'     => $data['affiliate_code'] ?? null,
             'email_verify_token' => !empty($data['email']) ? bin2hex(random_bytes(32)) : null,
         ]);
 

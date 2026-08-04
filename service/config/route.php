@@ -74,6 +74,9 @@ Route::get('/api/ssl/plans', [App\Ssl\Controller\SslController::class, 'plans'])
 // Supplier ratings (public)
 Route::get('/api/suppliers/{supplierId}/ratings', [App\Supplier\Controller\SupplierRatingController::class, 'supplierRatings']);
 
+// GraphQL (public, limited queries)
+Route::post('/graphql', [App\Graphql\GraphqlController::class, 'publicHandle']);
+
 // Payment webhooks (no auth, signature verified)
 Route::post('/api/payments/webhook/stripe', [App\Payment\Controller\PaymentController::class, 'stripeWebhook']);
 
@@ -187,6 +190,15 @@ Route::group('/api', function () {
     // Supplier ratings
     Route::post('/supplier/ratings', [App\Supplier\Controller\SupplierRatingController::class, 'store']);
     Route::get('/supplier/ratings/me', [App\Supplier\Controller\SupplierRatingController::class, 'myRatings']);
+
+    // Affiliate
+    Route::get('/affiliate/summary', [App\Affiliate\Controller\AffiliateController::class, 'summary']);
+    Route::post('/affiliate/links', [App\Affiliate\Controller\AffiliateController::class, 'generateLink']);
+    Route::get('/affiliate/earnings', [App\Affiliate\Controller\AffiliateController::class, 'earnings']);
+    Route::post('/affiliate/payout', [App\Affiliate\Controller\AffiliateController::class, 'requestPayout']);
+
+    // GraphQL (authenticated, full queries)
+    Route::post('/graphql', [App\Graphql\GraphqlController::class, 'handle']);
 })->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class]);
 
 // === User sensitive operations (requires password confirmation) ===
@@ -343,6 +355,14 @@ Route::group('/admin/api', function () {
     Route::get('/suppliers/{id}/ratings', [App\Admin\Controller\RatingController::class, 'supplierRatings']);
     Route::post('/suppliers/ratings/{id}/approve', [App\Admin\Controller\RatingController::class, 'approve']);
     Route::post('/suppliers/ratings/{id}/hide', [App\Admin\Controller\RatingController::class, 'hide']);
+
+    // Affiliate management
+    Route::get('/affiliate/plans', [App\Admin\Controller\AffiliateController::class, 'plans']);
+    Route::post('/affiliate/plans', [App\Admin\Controller\AffiliateController::class, 'storePlan']);
+    Route::get('/affiliate/earnings', [App\Admin\Controller\AffiliateController::class, 'earnings']);
+    Route::post('/affiliate/earnings/{id}/approve', [App\Admin\Controller\AffiliateController::class, 'approveEarning']);
+    Route::get('/affiliate/payouts', [App\Admin\Controller\AffiliateController::class, 'payouts']);
+    Route::post('/affiliate/payouts/{id}/approve', [App\Admin\Controller\AffiliateController::class, 'approvePayout']);
 })->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class]);
 
 // === Admin sensitive operations (requires password confirmation) ===
