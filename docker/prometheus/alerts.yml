@@ -1,0 +1,27 @@
+groups:
+  - name: cloud-platform
+    interval: 30s
+    rules:
+      - alert: HighQueueDepth
+        expr: http_requests_total{status="503"} > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Queue depth exceeds threshold"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP 5xx error rate"
+
+      - alert: SlowResponses
+        expr: http_request_duration_ms{quantile="0.95"} > 2000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 response time above 2000ms"

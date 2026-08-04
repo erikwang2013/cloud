@@ -1,0 +1,43 @@
+{
+  "dashboard": {
+    "title": "Cloud Platform Overview",
+    "panels": [
+      {
+        "id": 1,
+        "title": "HTTP Request Rate",
+        "type": "graph",
+        "targets": [
+          {"expr": "rate(http_requests_total[1m])", "legendFormat": "{{method}} {{route}}"}
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Response Time (P95)",
+        "type": "graph",
+        "targets": [
+          {"expr": "http_request_duration_ms{quantile=\"0.95\"}", "legendFormat": "{{route}}"}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Error Rate (5xx)",
+        "type": "stat",
+        "targets": [
+          {"expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m]))"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Request Volume by Status",
+        "type": "piechart",
+        "targets": [
+          {"expr": "sum(http_requests_total) by (status)", "legendFormat": "{{status}}"}
+        ]
+      }
+    ],
+    "refresh": "10s",
+    "time": {"from": "now-1h", "to": "now"},
+    "uid": "cloud-platform-overview",
+    "version": 1
+  }
+}

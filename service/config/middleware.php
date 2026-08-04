@@ -34,6 +34,9 @@ return [
         // 多语言中间件：解析 Accept-Language，设置当前区域
         Common\I18n\Middleware\LocaleMiddleware::class,
 
+        // Prometheus metrics:记录 HTTP 请求计数和延迟
+        Common\Metrics\MetricsMiddleware::class,
+
         // Hashid 请求中间件：将请求参数中的 hashid 字符串解码为真实 ID
         Common\Hashid\Middleware\HashidRequestMiddleware::class,
 

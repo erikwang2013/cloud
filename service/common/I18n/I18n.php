@@ -32,11 +32,31 @@ class I18n
         return $message;
     }
 
+    public static function transExists(string $key): bool
+    {
+        return array_key_exists($key, self::$messages);
+    }
+
+    public static function getKeys(): array
+    {
+        return array_keys(self::$messages);
+    }
+
     private static function loadMessages(): void
     {
-        $path = base_path() . "/i18n/" . self::$locale . "/messages.php";
-        if (file_exists($path)) {
-            self::$messages = require $path;
+        self::$messages = [];
+        $dir = base_path() . '/i18n/' . self::$locale;
+
+        if (!is_dir($dir)) return;
+
+        $files = glob($dir . '/*.php');
+        sort($files);
+
+        foreach ($files as $file) {
+            $loaded = require $file;
+            if (is_array($loaded)) {
+                self::$messages = array_merge(self::$messages, $loaded);
+            }
         }
     }
 

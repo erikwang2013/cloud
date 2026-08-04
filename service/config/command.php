@@ -5,4 +5,5 @@ return [
     \App\Command\MigrateRollbackCommand::class,
     \App\Command\MigrateStatusCommand::class,
     \App\Command\DbBackupCommand::class,
+    \App\Command\I18nSyncCommand::class,
 ];
