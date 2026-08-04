@@ -71,6 +71,9 @@ Route::get('/api/help/{slug}', [App\Controller\HelpController::class, 'show']);
 // SSL plans (public)
 Route::get('/api/ssl/plans', [App\Ssl\Controller\SslController::class, 'plans']);
 
+// Supplier ratings (public)
+Route::get('/api/suppliers/{supplierId}/ratings', [App\Supplier\Controller\SupplierRatingController::class, 'supplierRatings']);
+
 // Payment webhooks (no auth, signature verified)
 Route::post('/api/payments/webhook/stripe', [App\Payment\Controller\PaymentController::class, 'stripeWebhook']);
 
@@ -174,6 +177,16 @@ Route::group('/api', function () {
     Route::post('/storage/buckets/{id}/presign-upload', [App\Storage\Controller\StorageController::class, 'presignUpload']);
     Route::post('/storage/buckets/{id}/presign-download', [App\Storage\Controller\StorageController::class, 'presignDownload']);
     Route::get('/storage/buckets/{id}/credentials', [App\Storage\Controller\StorageController::class, 'credentials']);
+
+    // CDN
+    Route::get('/cdn/domains', [App\Cdn\Controller\CdnController::class, 'index']);
+    Route::get('/cdn/domains/{id}', [App\Cdn\Controller\CdnController::class, 'show']);
+    Route::post('/cdn/domains/{id}/purge', [App\Cdn\Controller\CdnController::class, 'purgeCache']);
+    Route::get('/cdn/domains/{id}/stats', [App\Cdn\Controller\CdnController::class, 'stats']);
+
+    // Supplier ratings
+    Route::post('/supplier/ratings', [App\Supplier\Controller\SupplierRatingController::class, 'store']);
+    Route::get('/supplier/ratings/me', [App\Supplier\Controller\SupplierRatingController::class, 'myRatings']);
 })->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class]);
 
 // === User sensitive operations (requires password confirmation) ===
@@ -321,6 +334,15 @@ Route::group('/admin/api', function () {
     Route::put('/billing/rates/{id}', [App\Admin\Controller\BillingController::class, 'updateRate']);
     Route::delete('/billing/rates/{id}', [App\Admin\Controller\BillingController::class, 'destroyRate']);
     Route::get('/billing/usage', [App\Admin\Controller\BillingController::class, 'usage']);
+
+    // CDN management
+    Route::get('/cdn/domains', [App\Admin\Controller\CdnController::class, 'index']);
+    Route::put('/cdn/domains/{id}', [App\Admin\Controller\CdnController::class, 'updatePlan']);
+
+    // Supplier rating moderation
+    Route::get('/suppliers/{id}/ratings', [App\Admin\Controller\RatingController::class, 'supplierRatings']);
+    Route::post('/suppliers/ratings/{id}/approve', [App\Admin\Controller\RatingController::class, 'approve']);
+    Route::post('/suppliers/ratings/{id}/hide', [App\Admin\Controller\RatingController::class, 'hide']);
 })->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class]);
 
 // === Admin sensitive operations (requires password confirmation) ===

@@ -18,4 +18,6 @@ return [
     'object_storage_product'  => (bool)(getenv('FEATURE_OBJECT_STORAGE') ?: true),
     'usage_billing'           => (bool)(getenv('FEATURE_USAGE_BILLING') ?: true),
     'prometheus_metrics'      => (bool)(getenv('FEATURE_PROMETHEUS') ?: true),
+    'cdn_product'             => (bool)(getenv('FEATURE_CDN_PRODUCT') ?: true),
+    'supplier_rating'         => (bool)(getenv('FEATURE_SUPPLIER_RATING') ?: true),
 ];

@@ -26,6 +26,9 @@ class ProviderFactory
         self::register('storage', 's3', fn() => new \App\Storage\Provider\S3StorageProvider());
         self::register('storage', 'minio', fn() => new \App\Storage\Provider\MinioProvider());
 
+        // CDN providers
+        self::register('cdn', 'cloudflare', fn() => new \App\Cdn\Provider\CdnProvider());
+
         if (getenv('AWS_ACCESS_KEY_ID')) {
             $cfg = new ProviderApi([
                 'name' => 'AWS EC2 (env)', 'code' => 'aws-ec2',
