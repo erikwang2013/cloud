@@ -177,7 +177,7 @@
 <title>es</title>
 <path fill="#cfd8dc" stroke="black" d="M994.5,-62C994.5,-64.21 973.21,-66 947,-66 920.79,-66 899.5,-64.21 899.5,-62 899.5,-62 899.5,-26 899.5,-26 899.5,-23.79 920.79,-22 947,-22 973.21,-22 994.5,-23.79 994.5,-26 994.5,-26 994.5,-62 994.5,-62"/>
 <path fill="none" stroke="black" d="M994.5,-62C994.5,-59.79 973.21,-58 947,-58 920.79,-58 899.5,-59.79 899.5,-62"/>
-<text text-anchor="middle" x="947" y="-47.2" font-family="sans-serif" font-size="11.00">Elasticsearch 8.x</text>
+<text text-anchor="middle" x="947" y="-47.2" font-family="sans-serif" font-size="11.00">ES / Prometheus 8.x</text>
 <text text-anchor="middle" x="947" y="-35.2" font-family="sans-serif" font-size="11.00">全文搜索</text>
 </g>
 <!-- api&#45;&gt;es -->
@@ -191,7 +191,7 @@
 <title>proxmox</title>
 <path fill="#cfd8dc" stroke="black" d="M746.5,-62C746.5,-64.21 730.14,-66 710,-66 689.86,-66 673.5,-64.21 673.5,-62 673.5,-62 673.5,-26 673.5,-26 673.5,-23.79 689.86,-22 710,-22 730.14,-22 746.5,-23.79 746.5,-26 746.5,-26 746.5,-62 746.5,-62"/>
 <path fill="none" stroke="black" d="M746.5,-62C746.5,-59.79 730.14,-58 710,-58 689.86,-58 673.5,-59.79 673.5,-62"/>
-<text text-anchor="middle" x="710" y="-47.2" font-family="sans-serif" font-size="11.00">Proxmox VE</text>
+<text text-anchor="middle" x="710" y="-47.2" font-family="sans-serif" font-size="11.00">Proxmox VE / AWS EC2 / S3 / Cloudflare</text>
 <text text-anchor="middle" x="710" y="-35.2" font-family="sans-serif" font-size="11.00">虚拟化交付</text>
 </g>
 <!-- api&#45;&gt;proxmox -->

@@ -560,3 +560,68 @@ Redis feature:{name} (TTL 1h, 通过管理 API 动态调整)
   supplier_external_api, websocket_push, maintenance_redirect,
   totp_two_factor, google_oauth, apple_oauth
 ```
+
+## 13. SSL 证书
+
+SSL 证书产品支持 DV/OV/EV 三种类型，通过 ACME 协议（Let's Encrypt）或外部 CA API（ZeroSSL/GoGetSSL）自动签发和续期。
+
+**关键流程：**
+
+    用户选购 SSL 套餐 → 下单支付 → ProvisionTask 创建
+      → SslProvider::create() → CertificateAuthority::issue()
+      → ACME HTTP-01/DNS-01 验证 → 证书签发
+      → 每天检查 expires_at → 到期前 14 天自动续期
+      → 到期 → status=expired → 通知用户
+
+**数据模型：** `ssl_plans`（套餐）、`resource_ssl_certs`（证书实例）
+
+## 14. 对象存储（S3）
+
+兼容 S3 API 的对象存储，支持 AWS S3 及 MinIO 自建存储。用户通过预签名 URL 上传/下载文件。
+
+**数据模型：** `resource_storage_buckets`
+
+## 15. CDN 加速
+
+CDN 产品支持 Cloudflare 集成，可将服务器或存储桶作为源站接入 CDN，支持缓存清除。
+
+**接口：** ProviderInterface + CachePurgeInterface（可选能力接口）
+
+**数据模型：** `resource_cdn`
+
+## 16. 按量计费
+
+资源使用量采集 → 聚合 → 计费 → 扣款的完整管线：
+
+    ResourceMonitor 每 5 分钟采集指标 → resource_metrics
+      → UsageAggregator 每小时聚合 → usage_events
+      → BillingEngine 每日扣减余额 → 余额不足 → 挂起资源
+      → SuspendCheck 每 30 分钟检查 → 余额恢复 → 解挂
+
+**数据模型：** `resource_metrics`、`usage_events`、`usage_rates`、`usage_invoice_items`
+
+## 17. 供应商评分
+
+已购用户可对供应商进行四维度评分（质量/支持/交付速度/性价比），每订单一次。管理端可审核（approve/hide）。
+
+**数据模型：** `supplier_ratings`、`suppliers.rating_avg/rating_count`
+
+## 18. 推荐分销
+
+用户生成推荐链接（?ref=CODE），新用户注册时绑定 affiliate_code，订单支付后自动归因佣金。
+
+**事件驱动：** OrderPaid → Affiliate OrderPaidListener → attributeOrder()
+
+**数据模型：** `affiliate_plans`、`affiliate_links`、`affiliate_earnings`、`affiliate_payouts`
+
+## 19. GraphQL API
+
+提供 POST /graphql（公开查询）和 POST /api/graphql（认证查询）两个端点。基于 webonyx/graphql-php，查询深度限制 5 层，复杂度限制 100。
+
+**敏感操作保持 REST-only：** 支付、提现、退款、KYC 审核。
+
+## 20. 可观测性
+
+Prometheus 指标端点独立进程 127.0.0.1:9100，不受 WAF/限流影响。MetricsMiddleware 记录 HTTP 请求计数和延迟。Docker Compose 预置 Prometheus + Grafana + 告警规则 + 仪表盘。
+
+**健康检查：** /health（公开）、/health/live、/health/ready（5 项依赖检查）、/health/deps（延迟详情）

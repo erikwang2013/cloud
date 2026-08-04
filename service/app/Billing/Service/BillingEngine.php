@@ -71,7 +71,7 @@ class BillingEngine
                     $resource->update(['status' => 'suspended']);
                     $user = $resource->user;
                     if ($user) {
-                        \App\Notification\Service\NotificationDispatcher::send(
+                        (new \App\Notification\Service\NotificationDispatcher())->dispatch(
                             $user, 'resource_suspended',
                             ['resource_id' => $resource->id, 'reason' => 'Insufficient balance for usage billing'],
                             ['email', 'in_app']

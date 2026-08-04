@@ -4,6 +4,7 @@ namespace App\Cron;
 use App\Ssl\Model\SslCertificate;
 use App\Provisioning\Model\ProvisionTask;
 use App\User\Model\User;
+use App\Notification\Service\NotificationDispatcher;
 
 class SslCertificateCheck
 {
@@ -19,6 +20,8 @@ class SslCertificateCheck
 
     private function checkManagedCerts(): void
     {
+        $notifier = new NotificationDispatcher();
+
         $expiringCerts = SslCertificate::where('status', 'issued')
             ->whereNotNull('expires_at')
             ->where('expires_at', '<=', date('Y-m-d H:i:s', strtotime('+30 days')))
@@ -60,7 +63,7 @@ class SslCertificateCheck
             if (in_array($daysLeft, [30, 14, 7, 1])) {
                 $user = User::find($resource->user_id ?? 0);
                 if ($user) {
-                    \App\Notification\Service\NotificationDispatcher::send($user, 'ssl_expiring', [
+                    $notifier->dispatch($user->id, 'ssl_expiring', [
                         'domain'    => $cert->domain_name,
                         'days_left' => $daysLeft,
                         'auto_renew' => $cert->auto_renew,
@@ -72,6 +75,7 @@ class SslCertificateCheck
 
     private function checkExternalDomains(): void
     {
+        $notifier = new NotificationDispatcher();
         $domains = \App\Domain\Model\DnsZone::whereNotNull('domain_name')->get();
         $warnDays = [30, 14, 7, 1];
 
@@ -96,7 +100,7 @@ class SslCertificateCheck
                     echo "  [EXTERNAL] {$domain->domain_name}: {$daysLeft} days until expiry\n";
                     $user = User::find($domain->user_id);
                     if ($user) {
-                        \App\Notification\Service\NotificationDispatcher::send($user, 'ssl_expiring', [
+                        $notifier->dispatch($user->id, 'ssl_expiring', [
                             'domain'    => $domain->domain_name,
                             'days_left' => $daysLeft,
                         ], ['email', 'in_app']);

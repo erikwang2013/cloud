@@ -2,7 +2,7 @@
 
 > [English Documentation](README_EN.md)
 
-面向全球用户的云资源交易平台，支持服务器（VM）、IP 地址、云磁盘、域名等产品的在线购买与自动交付。自营物理机通过 Proxmox VE 虚拟化交付，同时支持第三方供应商入驻售卖。
+面向全球用户的云资源交易平台，支持服务器（VM）、IP 地址、云磁盘、域名、SSL 证书、对象存储（S3）、CDN 加速等产品的在线购买与自动交付。自营物理机通过 Proxmox VE 虚拟化交付，同时支持第三方供应商入驻售卖。提供按量计费、推荐分销、GraphQL API 及 Prometheus/Grafana 可观测性。提供按量计费、推荐分销、GraphQL API 及 Prometheus/Grafana 可观测性。
 
 ## 技术栈
 
@@ -28,7 +28,11 @@
 | 数据库 | MySQL 8.0（主库 + 审计库双连接） |
 | 搜索引擎 | Elasticsearch 8.x |
 | 虚拟化 | Proxmox VE REST API |
-| 客户端 | Flutter (iOS / Android / Web PC) + HarmonyOS ArkTS |
+| 客户端 | Flutter (iOS/Android/Web/Linux/macOS/Windows) + HarmonyOS ArkTS |
+| GraphQL | webonyx/graphql-php ^15.0 |
+| 对象存储 | AWS S3 SDK PHP ^3.300 |
+| 可观测性 | Prometheus + Grafana（预置仪表盘） |
+| 多语言 | i18n 7 语言（中/英/日/韩/德/法/西） |
 | 部署 | Docker Compose 一键启动 |
 
 ## 系统架构
@@ -43,7 +47,7 @@
 
 ## 功能模块总览
 
-系统按四层架构组织：客户端层（6 平台接入）、API 网关层（8 项中间件）、业务服务层（15 大功能模块）、基础设施层（6 个核心组件）。
+系统按四层架构组织：客户端层（6 平台接入）、API 网关层（14 项中间件）、业务服务层（20+ 功能模块）、基础设施层（8 个核心组件）。
 
 ![功能模块总览](docs/diagrams/module-overview-zh.svg)
 

@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 850" font-family="'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 930" font-family="'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif">
   <defs>
     <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1e40af"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient>
     <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/></filter>
     <marker id="arrD" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/></marker>
   </defs>
 
-  <rect width="1100" height="850" fill="#f8fafc" rx="12"/>
+  <rect width="1100" height="930" fill="#f8fafc" rx="12"/>
   <rect x="0" y="0" width="1100" height="50" fill="url(#hdr)" rx="12"/>
   <rect x="0" y="12" width="1100" height="38" fill="url(#hdr)"/>
   <text x="550" y="34" text-anchor="middle" fill="#fff" font-size="18" font-weight="bold">Cloud Platform — 功能模块架构图</text>
@@ -70,8 +70,8 @@
 
   <!-- Layer 3: Service Modules -->
   <g filter="url(#sh)">
-    <rect x="30" y="312" width="1040" height="380" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-    <text x="50" y="336" fill="#1e40af" font-size="13" font-weight="bold">业务服务层 — 15 大功能模块</text>
+    <rect x="30" y="312" width="1040" height="458" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+    <text x="50" y="336" fill="#1e40af" font-size="13" font-weight="bold">业务服务层 — 20+ 功能模块</text>
 
     <rect x="50" y="350" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
     <text x="140" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">User 用户</text>
@@ -123,67 +123,118 @@
     <text x="942" y="480" text-anchor="middle" fill="#3b82f6" font-size="10">资源指标·告警</text>
     <text x="942" y="496" text-anchor="middle" fill="#3b82f6" font-size="10">定时采集</text>
 
-    <rect x="50" y="526" width="180" height="72" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
-    <text x="140" y="550" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Admin 后台</text>
-    <text x="140" y="568" text-anchor="middle" fill="#b45309" font-size="10">Dashboard·CRUD</text>
-    <text x="140" y="584" text-anchor="middle" fill="#b45309" font-size="10">53控制器·ACL</text>
+    <!-- New modules row -->
 
-    <rect x="248" y="526" width="180" height="72" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
-    <text x="338" y="550" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Report 报表</text>
-    <text x="338" y="568" text-anchor="middle" fill="#b45309" font-size="10">营收·区域·供应商</text>
-    <text x="338" y="584" text-anchor="middle" fill="#b45309" font-size="10">Excel导出</text>
+    <rect x="50" y="526" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="140" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">SSL 证书</text>
+    <text x="140" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">DV/OV/EV·ACME</text>
+    <text x="140" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">自动签发·续期</text>
 
-    <rect x="446" y="526" width="180" height="72" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
-    <text x="536" y="550" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">WebSocket</text>
-    <text x="536" y="568" text-anchor="middle" fill="#b45309" font-size="10">实时推送·双向通信</text>
-    <text x="536" y="584" text-anchor="middle" fill="#b45309" font-size="10">订单/工单事件</text>
+    <rect x="248" y="526" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="338" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Storage 存储</text>
+    <text x="338" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">S3兼容·MinIO</text>
+    <text x="338" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">预签名·配额</text>
 
-    <rect x="644" y="526" width="180" height="72" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
-    <text x="734" y="550" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Captcha 验证码</text>
-    <text x="734" y="568" text-anchor="middle" fill="#b45309" font-size="10">点击验证·300s</text>
-    <text x="734" y="584" text-anchor="middle" fill="#b45309" font-size="10">GD绘图·Redis</text>
+    <rect x="446" y="526" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="536" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">CDN 加速</text>
+    <text x="536" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">Cloudflare</text>
+    <text x="536" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">缓存清除·统计</text>
 
-    <rect x="842" y="526" width="200" height="72" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
-    <text x="942" y="550" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Cron 定时任务</text>
-    <text x="942" y="568" text-anchor="middle" fill="#b45309" font-size="10">汇率·对账·结算</text>
-    <text x="942" y="584" text-anchor="middle" fill="#b45309" font-size="10">到期检测·SSL检查</text>
+    <rect x="644" y="526" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="734" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Billing 计费</text>
+    <text x="734" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">按量采集·聚合</text>
+    <text x="734" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">余额扣款·挂起</text>
 
-    <rect x="50" y="612" width="370" height="62" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
-    <text x="235" y="636" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">Common 公共库</text>
-    <text x="235" y="656" text-anchor="middle" fill="#4f46e5" font-size="10">Auth·Hashid·Snowflake·I18n·Encryption·Security·Version·ClientPlatform·Feature·Webhook·Confirmation·Helper</text>
+    <rect x="842" y="526" width="200" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="942" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Affiliate 分销</text>
+    <text x="942" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">推荐链接·归因</text>
+    <text x="942" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">佣金·提现</text>
+    <rect x="50" y="604" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="140" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">SSL 证书</text>
+    <text x="140" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">DV/OV/EV·ACME</text>
+    <text x="140" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">自动签发·续期</text>
 
-    <rect x="440" y="612" width="265" height="62" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
-    <text x="572" y="636" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">erikwang2013 生态包</text>
-    <text x="572" y="656" text-anchor="middle" fill="#4f46e5" font-size="10">snowflake-php·hashids·jwt-webman·encryption·encryptable·webman-scout·season·poster-php·security-php</text>
+    <rect x="248" y="604" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="338" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Storage 存储</text>
+    <text x="338" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">S3兼容·MinIO</text>
+    <text x="338" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">预签名·配额</text>
 
-    <rect x="725" y="612" width="317" height="62" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
-    <text x="883" y="636" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">外部服务 SDK</text>
-    <text x="883" y="656" text-anchor="middle" fill="#4f46e5" font-size="10">Stripe PHP·Twilio·Firebase·PhpSpreadsheet·GeoIP2·Sentry</text>
+    <rect x="446" y="604" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="536" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">CDN 加速</text>
+    <text x="536" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">Cloudflare</text>
+    <text x="536" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">缓存清除</text>
+
+    <rect x="644" y="604" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="734" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Billing 计费</text>
+    <text x="734" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">按量采集·聚合</text>
+    <text x="734" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">余额扣款·挂起</text>
+
+    <rect x="842" y="604" width="200" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="942" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Affiliate 分销</text>
+    <text x="942" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">推荐链接·归因</text>
+    <text x="942" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">佣金·提现</text>
+
+    <rect x="50" y="600" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="140" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Admin 后台</text>
+    <text x="140" y="646" text-anchor="middle" fill="#b45309" font-size="10">Dashboard·CRUD</text>
+    <text x="140" y="662" text-anchor="middle" fill="#b45309" font-size="10">53控制器·ACL</text>
+
+    <rect x="248" y="600" width="180" height="62" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
+    <text x="338" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Report 报表</text>
+    <text x="338" y="646" text-anchor="middle" fill="#b45309" font-size="10">营收·区域·供应商</text>
+    <text x="338" y="662" text-anchor="middle" fill="#b45309" font-size="10">Excel导出</text>
+
+    <rect x="446" y="600" width="180" height="62" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
+    <text x="536" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">WebSocket</text>
+    <text x="536" y="646" text-anchor="middle" fill="#b45309" font-size="10">实时推送·双向通信</text>
+    <text x="536" y="662" text-anchor="middle" fill="#b45309" font-size="10">订单/工单事件</text>
+
+    <rect x="644" y="600" width="180" height="62" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
+    <text x="734" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Captcha 验证码</text>
+    <text x="734" y="646" text-anchor="middle" fill="#b45309" font-size="10">点击验证·300s</text>
+    <text x="734" y="662" text-anchor="middle" fill="#b45309" font-size="10">GD绘图·Redis</text>
+
+    <rect x="842" y="604" width="200" height="72" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
+    <text x="942" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Cron 定时任务</text>
+    <text x="942" y="646" text-anchor="middle" fill="#b45309" font-size="10">汇率·对账·结算</text>
+    <text x="942" y="662" text-anchor="middle" fill="#b45309" font-size="10">到期检测·SSL检查</text>
+
+    <rect x="50" y="690" width="370" height="62" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
+    <text x="235" y="714" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">Common 公共库</text>
+    <text x="235" y="734" text-anchor="middle" fill="#4f46e5" font-size="10">Auth·Hashid·Snowflake·I18n·Encryption·Security·Version·ClientPlatform·Feature·Webhook·Confirmation·Helper</text>
+
+    <rect x="440" y="690" width="265" height="62" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
+    <text x="572" y="714" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">erikwang2013 生态包</text>
+    <text x="572" y="734" text-anchor="middle" fill="#4f46e5" font-size="10">snowflake-php·hashids·jwt-webman·encryption·encryptable·webman-scout·season·poster-php·security-php</text>
+
+    <rect x="725" y="690" width="317" height="62" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
+    <text x="883" y="714" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">外部服务 SDK</text>
+    <text x="883" y="734" text-anchor="middle" fill="#4f46e5" font-size="10">Stripe PHP·Twilio·Firebase·PhpSpreadsheet·GeoIP2·Sentry</text>
   </g>
 
   <path d="M550,692 L550,709" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrD)"/>
 
   <!-- Layer 4: Infrastructure -->
   <g filter="url(#sh)">
-    <rect x="30" y="714" width="1040" height="115" rx="8" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.5"/>
-    <text x="50" y="736" fill="#047857" font-size="13" font-weight="bold">基础设施层 — 数据 &amp; 部署</text>
-    <rect x="50" y="748" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
-    <text x="125" y="774" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">MySQL 8.0</text>
-    <text x="125" y="794" text-anchor="middle" fill="#059669" font-size="10">主库+审计库</text>
-    <rect x="218" y="748" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
-    <text x="293" y="774" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Redis 7</text>
-    <text x="293" y="794" text-anchor="middle" fill="#059669" font-size="10">缓存·队列·会话</text>
-    <rect x="386" y="748" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
-    <text x="461" y="774" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Elasticsearch 8</text>
-    <text x="461" y="794" text-anchor="middle" fill="#059669" font-size="10">IK分词·全文搜索</text>
-    <rect x="554" y="748" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
-    <text x="629" y="774" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Proxmox VE</text>
-    <text x="629" y="794" text-anchor="middle" fill="#059669" font-size="10">虚拟化·资源交付</text>
-    <rect x="722" y="748" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
-    <text x="797" y="774" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Docker Compose</text>
-    <text x="797" y="794" text-anchor="middle" fill="#059669" font-size="10">Nginx·Supervisor</text>
-    <rect x="890" y="748" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
-    <text x="965" y="774" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">GitHub Actions</text>
-    <text x="965" y="794" text-anchor="middle" fill="#059669" font-size="10">CI/CD流水线</text>
+    <rect x="30" y="792" width="1040" height="115" rx="8" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.5"/>
+    <text x="50" y="814" fill="#047857" font-size="13" font-weight="bold">基础设施层 — 数据 &amp; 部署</text>
+    <rect x="50" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
+    <text x="125" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">MySQL 8.0</text>
+    <text x="125" y="872" text-anchor="middle" fill="#059669" font-size="10">主库+审计库</text>
+    <rect x="218" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
+    <text x="293" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Redis 7</text>
+    <text x="293" y="872" text-anchor="middle" fill="#059669" font-size="10">缓存·队列·会话</text>
+    <rect x="386" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
+    <text x="461" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Elasticsearch 8</text>
+    <text x="461" y="872" text-anchor="middle" fill="#059669" font-size="10">IK分词·全文搜索</text>
+    <rect x="554" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
+    <text x="629" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Proxmox VE</text>
+    <text x="629" y="872" text-anchor="middle" fill="#059669" font-size="10">虚拟化·资源交付</text>
+    <rect x="722" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
+    <text x="797" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Docker Compose</text>
+    <text x="797" y="872" text-anchor="middle" fill="#059669" font-size="10">Nginx·Supervisor</text>
+    <rect x="890" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
+    <text x="965" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">GitHub Actions</text>
+    <text x="965" y="872" text-anchor="middle" fill="#059669" font-size="10">CI/CD流水线</text>
   </g>
 </svg>

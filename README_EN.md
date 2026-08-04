@@ -26,7 +26,7 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 | Database | MySQL 8.0 (main + audit dual connection) |
 | Search Engine | Elasticsearch 8.x |
 | Virtualization | Proxmox VE REST API |
-| Clients | Flutter (iOS / Android / Web PC) + HarmonyOS ArkTS |
+| Clients | Flutter (iOS/Android/Web/Linux/macOS/Windows) + HarmonyOS ArkTS |
 | Deployment | Docker Compose |
 
 ## System Architecture
@@ -41,7 +41,7 @@ Complete end-to-end business flow from user registration through resource delive
 
 ## Module Overview
 
-The system is organized into four layers: Client Layer (6 platform access points), API Gateway Layer (8 middleware components), Business Service Layer (15 core modules), and Infrastructure Layer (6 core components).
+The system is organized into four layers: Client Layer (6 platform access points), API Gateway Layer (8 middleware components), Business Service Layer (15 core modules), and Infrastructure Layer (8 core components).
 
 ![Module Overview](docs/diagrams/module-overview-en.svg)
 

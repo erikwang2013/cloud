@@ -45,7 +45,7 @@
   <rect x="720" y="475" width="340" height="50" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/><text x="740" y="496" fill="#991b1b" font-size="11" font-weight="bold">Retry Strategy</text><text x="740" y="514" fill="#b91c1c" font-size="11">1min → 5min → 15min → 1h → 6h → 24h (max 6 retries)</text>
 
   <g font-size="10" fill="#64748b">
-    <text x="45" y="495" font-weight="bold" fill="#334155">States:</text><text x="130" y="495">6 states + 8 lifecycle events</text>
+    <text x="45" y="495" font-weight="bold" fill="#334155">States:</text><text x="130" y="495">7 states + 10 lifecycle events</text>
     <text x="45" y="512" font-weight="bold" fill="#334155">Delivery:</text><text x="130" y="512">Event-driven · Async Queue · Exponential Backoff · Failure Alert</text>
     <text x="45" y="529" font-weight="bold" fill="#334155">Providers:</text><text x="130" y="529">Proxmox (Self-op) · Aliyun (Planned) · AWS (Planned)</text>
   </g>

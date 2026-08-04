@@ -128,6 +128,7 @@ common/
 ├── I18n/Middleware/     # 多语言 LocaleMiddleware
 ├── Security/            # CORS / WAF / RateLimit / GeoBlock / Maintenance / AuditLogger / LogSanitizer
 ├── Snowflake/           # 雪花 ID 服务 + Eloquent Trait
+├── Metrics/             # Prometheus 指标采集器 + 渲染器 + HTTP 请求计数中间件
 ├── Version/             # VersionMiddleware（X-Api-Version 头）
 └── Webhook/             # Webhook 事件分发器
 ```
