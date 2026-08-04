@@ -23,6 +23,7 @@ skills-lock.json
 .php-cs-fixer.cache
 *.backup
 *.bak
+.claude1
 
 
 apps/flutter/# Miscellaneous
