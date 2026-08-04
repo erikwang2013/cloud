@@ -76,6 +76,15 @@ return [
     ],
 
     // 请求限制
+
+    // 速率限制：防止暴力破解、刷接口、DoS 攻击
+    'rate_limits' => [
+        // 默认限制：每 60 秒允许 60 次
+        'default'  => ['rate' => 60,  'burst' => 10, 'per' => 60],
+
+        // 登录接口限制：每 60 秒仅 5 次（防撞库）
+        'login'    => ['rate' => 5,   'burst' => 2,  'per' => 60],
+    ],
     'request_limits' => [
         'max_body_size' => 10 * 1024 * 1024,
         'max_url_length' => 2048,

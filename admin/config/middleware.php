@@ -20,6 +20,8 @@
  */
 
 use app\middleware\AccessControl;
+use app\middleware\RateLimitMiddleware;
+use app\middleware\SecurityHeadersMiddleware;
 use app\middleware\WafMiddleware;
 
 /**
@@ -33,6 +35,8 @@ use app\middleware\WafMiddleware;
  */
 return [
     '' => [
+        SecurityHeadersMiddleware::class,
+        RateLimitMiddleware::class,
         WafMiddleware::class,
         \Erikwang2013\Security\Middleware\Webman\SecurityMiddleware::class,
         AccessControl::class,

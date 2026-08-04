@@ -447,11 +447,13 @@ ProviderInterface
 
 ### 5. Security Architecture
 
-Global middleware pipeline: `Version → CORS → ClientPlatform → WAF → Locale → HashidRequest → Maintenance → [Route: Encryption → Captcha → Auth → Confirmation]`
+Global middleware pipeline: `Version → CORS → SecurityHeaders → ClientPlatform → GeoBlock → WAF → SecurityPlugin → Locale → HashidRequest → Maintenance → [Route: Encryption → Captcha → Auth → Confirmation]`
 
 ![Security Middleware Pipeline](docs/diagrams/security-middleware-en.svg)
 
-- **CORS** — Cross-origin request headers
+- **CORS** — Cross-origin request headers (whitelist mode, supports *.example.com wildcard)
+- **SecurityHeaders** — Security response headers (HSTS / X-Frame-Options / X-Content-Type-Options / Referrer-Policy / Permissions-Policy)
+- **GeoBlock** — Geographic blocking (blocks access from GEO_BLOCKED_COUNTRIES, GeoIP2-based)
 - **WAF** — 8 categories 45+ rules (SQLi/XSS/command injection/file inclusion/header injection/SSRF/NoSQL injection/open redirect) + request size limits + Content-Type validation
 - **Security Plugin** — 31 attack detectors (XSS/SQLi/CMDi/SSRF/deserialization/JWT attack/host header/request smuggling/GraphQL injection/data leak etc.), IP whitelist + IP blacklist auto-ban
 - **Locale** — Parses Accept-Language, sets locale

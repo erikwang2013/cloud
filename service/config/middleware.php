@@ -16,8 +16,14 @@ return [
         // CORS 跨域中间件：添加 Access-Control-* 响应头
         Common\Security\CorsMiddleware::class,
 
+        // 安全响应头中间件：HSTS / X-Frame-Options / CSP / Referrer-Policy 等
+        Common\Security\SecurityHeadersMiddleware::class,
+
         // 客户端平台中间件：从 X-Client-Platform 头识别客户端操作系统平台
         Common\ClientPlatform\Middleware\ClientPlatformMiddleware::class,
+
+        // 地理封禁中间件：根据 GEO_BLOCKED_COUNTRIES 阻止指定国家的访问
+        Common\Security\GeoBlockMiddleware::class,
 
         // WAF 安全中间件：检测并拦截 SQL 注入、XSS 攻击（传统，保留兼容）
         Common\Security\WafMiddleware::class,
