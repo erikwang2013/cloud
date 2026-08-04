@@ -29,6 +29,12 @@ return [
 
         // 供应商提现：每 60 秒 10 次
         'supplier_withdraw' => ['rate' => 10,  'burst' => 3,  'per' => 60],
+
+        // GraphQL API：每 60 秒 30 次（查询复杂度限制 100）
+        'graphql'          => ['rate' => 30,  'burst' => 5,  'per' => 60],
+
+        // 内部健康检查端点（高频率，token/loopback 保护）
+        'health'           => ['rate' => 120, 'burst' => 20, 'per' => 60],
     ],
 
     // WAF 规则：正则匹配，拦截常见 Web/API 攻击模式
