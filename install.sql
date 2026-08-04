@@ -1,4 +1,9 @@
 -- ============================================================
+--
+-- 新增表请通过迁移系统创建: cd service && php webman migrate
+-- 本文件仅包含初始安装所需的核心表结构
+--
+
 -- CloudPlatform — Unified Database DDL
 -- Tables: wa_* (admin panel) + erik_* (business)
 -- Primary Key: BIGINT (non auto-increment, application-generated)

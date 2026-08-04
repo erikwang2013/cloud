@@ -149,7 +149,8 @@
 <title>mysqlaudit</title>
 <path fill="#cfd8dc" stroke="black" d="M644,-62C644,-64.21 618,-66 586,-66 554,-66 528,-64.21 528,-62 528,-62 528,-26 528,-26 528,-23.79 554,-22 586,-22 618,-22 644,-23.79 644,-26 644,-26 644,-62 644,-62"/>
 <path fill="none" stroke="black" d="M644,-62C644,-59.79 618,-58 586,-58 554,-58 528,-59.79 528,-62"/>
-<text text-anchor="middle" x="586" y="-47.2" font-family="sans-serif" font-size="11.00">MySQL 8.0 审计库</text>
+<text text-anchor="middle" x="586" y="-47.2" font-family="sans-serif" font-size="11.00">MySQL 8.0 审计库
+Prometheus · Grafana 可观测</text>
 <text text-anchor="middle" x="586" y="-35.2" font-family="sans-serif" font-size="11.00">cloud_platform_audit</text>
 </g>
 <!-- api&#45;&gt;mysqlaudit -->
@@ -177,7 +178,7 @@
 <title>es</title>
 <path fill="#cfd8dc" stroke="black" d="M994.5,-62C994.5,-64.21 973.21,-66 947,-66 920.79,-66 899.5,-64.21 899.5,-62 899.5,-62 899.5,-26 899.5,-26 899.5,-23.79 920.79,-22 947,-22 973.21,-22 994.5,-23.79 994.5,-26 994.5,-26 994.5,-62 994.5,-62"/>
 <path fill="none" stroke="black" d="M994.5,-62C994.5,-59.79 973.21,-58 947,-58 920.79,-58 899.5,-59.79 899.5,-62"/>
-<text text-anchor="middle" x="947" y="-47.2" font-family="sans-serif" font-size="11.00">ES / Prometheus 8.x</text>
+<text text-anchor="middle" x="947" y="-47.2" font-family="sans-serif" font-size="11.00">Elasticsearch 8.x</text>
 <text text-anchor="middle" x="947" y="-35.2" font-family="sans-serif" font-size="11.00">全文搜索</text>
 </g>
 <!-- api&#45;&gt;es -->

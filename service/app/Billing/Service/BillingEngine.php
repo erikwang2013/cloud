@@ -5,7 +5,6 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use App\User\Model\UserBalance;
 use App\User\Model\UserBalanceLog;
 use App\Provisioning\Model\Resource;
-use App\Provisioning\Model\ResourceServer;
 
 class BillingEngine
 {

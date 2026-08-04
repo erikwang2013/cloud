@@ -228,13 +228,13 @@
     <text x="461" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Elasticsearch 8</text>
     <text x="461" y="872" text-anchor="middle" fill="#059669" font-size="10">IK分词·全文搜索</text>
     <rect x="554" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
-    <text x="629" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Proxmox VE</text>
-    <text x="629" y="872" text-anchor="middle" fill="#059669" font-size="10">虚拟化·资源交付</text>
+    <text x="629" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Prometheus</text>
+    <text x="629" y="872" text-anchor="middle" fill="#059669" font-size="10">指标采集·告警</text>
     <rect x="722" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
     <text x="797" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Docker Compose</text>
     <text x="797" y="872" text-anchor="middle" fill="#059669" font-size="10">Nginx·Supervisor</text>
     <rect x="890" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
-    <text x="965" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">GitHub Actions</text>
-    <text x="965" y="872" text-anchor="middle" fill="#059669" font-size="10">CI/CD流水线</text>
+    <text x="965" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Grafana</text>
+    <text x="965" y="872" text-anchor="middle" fill="#059669" font-size="10">可视化仪表盘</text>
   </g>
 </svg>

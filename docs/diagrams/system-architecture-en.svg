@@ -149,7 +149,8 @@
 <title>mysqlaudit</title>
 <path fill="#cfd8dc" stroke="black" d="M644,-62C644,-64.21 618,-66 586,-66 554,-66 528,-64.21 528,-62 528,-62 528,-26 528,-26 528,-23.79 554,-22 586,-22 618,-22 644,-23.79 644,-26 644,-26 644,-62 644,-62"/>
 <path fill="none" stroke="black" d="M644,-62C644,-59.79 618,-58 586,-58 554,-58 528,-59.79 528,-62"/>
-<text text-anchor="middle" x="586" y="-47.2" font-family="sans-serif" font-size="11.00">MySQL 8.0 Audit DB</text>
+<text text-anchor="middle" x="586" y="-47.2" font-family="sans-serif" font-size="11.00">MySQL 8.0 Audit
+Prometheus · Grafana Obs. DB</text>
 <text text-anchor="middle" x="586" y="-35.2" font-family="sans-serif" font-size="11.00">cloud_platform_audit</text>
 </g>
 <!-- api&#45;&gt;mysqlaudit -->
@@ -177,7 +178,7 @@
 <title>es</title>
 <path fill="#cfd8dc" stroke="black" d="M1018.5,-62C1018.5,-64.21 997.21,-66 971,-66 944.79,-66 923.5,-64.21 923.5,-62 923.5,-62 923.5,-26 923.5,-26 923.5,-23.79 944.79,-22 971,-22 997.21,-22 1018.5,-23.79 1018.5,-26 1018.5,-26 1018.5,-62 1018.5,-62"/>
 <path fill="none" stroke="black" d="M1018.5,-62C1018.5,-59.79 997.21,-58 971,-58 944.79,-58 923.5,-59.79 923.5,-62"/>
-<text text-anchor="middle" x="971" y="-47.2" font-family="sans-serif" font-size="11.00">ES / Prometheus 8.x</text>
+<text text-anchor="middle" x="971" y="-47.2" font-family="sans-serif" font-size="11.00">Elasticsearch 8.x</text>
 <text text-anchor="middle" x="971" y="-35.2" font-family="sans-serif" font-size="11.00">Full&#45;Text Search</text>
 </g>
 <!-- api&#45;&gt;es -->

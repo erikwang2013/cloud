@@ -121,7 +121,7 @@ class S3StorageProvider implements ProviderInterface
         return ProvisionResult::success([]);
     }
 
-    protected function getClient(array $config): \Aws\S3\S3Client
+    public function getClient(array $config): \Aws\S3\S3Client
     {
         $args = [
             'version'     => 'latest',
