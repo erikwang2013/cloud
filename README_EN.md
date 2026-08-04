@@ -33,6 +33,24 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 
 ![System Architecture](docs/diagrams/system-architecture-en.svg)
 
+## Core Business Flow
+
+Complete end-to-end business flow from user registration through resource delivery, covering product selection, ordering, payment, auto-provisioning, after-sales management, and renewal cycles.
+
+![Core Business Flow](docs/diagrams/business-flowchart-en.svg)
+
+## Module Overview
+
+The system is organized into four layers: Client Layer (6 platform access points), API Gateway Layer (8 middleware components), Business Service Layer (15 core modules), and Infrastructure Layer (6 core components).
+
+![Module Overview](docs/diagrams/module-overview-en.svg)
+
+## Resource Lifecycle
+
+Resources progress through 6 states driven by 8 lifecycle events, supporting automatic delivery, suspension/recovery, expiry reminders, and resource cleanup.
+
+![Resource Lifecycle](docs/diagrams/resource-lifecycle-en.svg)
+
 ## Documentation
 
 | Document | Description |

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 850" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif">
+  <defs>
+    <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1e40af"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/></filter>
+    <marker id="arrD" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/></marker>
+  </defs>
+  <rect width="1100" height="850" fill="#f8fafc" rx="12"/>
+  <rect x="0" y="0" width="1100" height="50" fill="url(#hdr)" rx="12"/>
+  <rect x="0" y="12" width="1100" height="38" fill="url(#hdr)"/>
+  <text x="550" y="34" text-anchor="middle" fill="#fff" font-size="18" font-weight="bold">Cloud Platform — Module Architecture Overview</text>
+
+  <g filter="url(#sh)">
+    <rect x="30" y="68" width="1040" height="100" rx="8" fill="#faf5ff" stroke="#c4b5fd" stroke-width="1.5"/>
+    <text x="50" y="90" fill="#6b21a8" font-size="13" font-weight="bold">Client Layer — Multi-Platform Access</text>
+    <rect x="50" y="100" width="150" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="125" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">Flutter iOS</text><text x="125" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">iPhone / iPad</text>
+    <rect x="215" y="100" width="150" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="290" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">Flutter Android</text><text x="290" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">Phone / Tablet</text>
+    <rect x="380" y="100" width="150" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="455" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">Flutter Web</text><text x="455" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">PWA / Browser</text>
+    <rect x="545" y="100" width="150" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="620" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">Flutter Desktop</text><text x="620" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">Win / Mac / Linux</text>
+    <rect x="710" y="100" width="150" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="785" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">HarmonyOS</text><text x="785" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">ArkTS Native</text>
+    <rect x="875" y="100" width="170" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="960" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">Admin Panel</text><text x="960" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">Layui · webman-admin</text>
+  </g>
+
+  <path d="M550,168 L550,185" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrD)"/>
+
+  <g filter="url(#sh)">
+    <rect x="30" y="190" width="1040" height="100" rx="8" fill="#ecfeff" stroke="#67e8f9" stroke-width="1.5"/>
+    <text x="50" y="212" fill="#0e7490" font-size="13" font-weight="bold">API Gateway Layer — Global Middleware Pipeline</text>
+    <rect x="50" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/><text x="107" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">Version</text><text x="107" y="260" text-anchor="middle" fill="#64748b" font-size="9">Validation</text>
+    <rect x="175" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/><text x="232" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">CORS</text><text x="232" y="260" text-anchor="middle" fill="#64748b" font-size="9">Cross-Origin</text>
+    <rect x="300" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/><text x="357" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">WAF</text><text x="357" y="260" text-anchor="middle" fill="#64748b" font-size="9">45+ Rules</text>
+    <rect x="425" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/><text x="482" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">SecurityPlugin</text><text x="482" y="260" text-anchor="middle" fill="#64748b" font-size="9">31 Detectors</text>
+    <rect x="550" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/><text x="607" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">GeoBlock</text><text x="607" y="260" text-anchor="middle" fill="#64748b" font-size="9">GeoIP2</text>
+    <rect x="675" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/><text x="732" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">Encryption</text><text x="732" y="260" text-anchor="middle" fill="#64748b" font-size="9">AES-256-GCM</text>
+    <rect x="800" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/><text x="857" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">Auth</text><text x="857" y="260" text-anchor="middle" fill="#64748b" font-size="9">JWT · RBAC</text>
+    <rect x="925" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/><text x="982" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">RateLimit</text><text x="982" y="260" text-anchor="middle" fill="#64748b" font-size="9">Throttle</text>
+  </g>
+
+  <path d="M550,290 L550,307" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrD)"/>
+
+  <g filter="url(#sh)">
+    <rect x="30" y="312" width="1040" height="380" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+    <text x="50" y="336" fill="#1e40af" font-size="13" font-weight="bold">Business Service Layer — 15 Core Modules</text>
+    <rect x="50" y="350" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/><text x="140" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">User</text><text x="140" y="392" text-anchor="middle" fill="#3b82f6" font-size="10">Register·Login·JWT·KYC</text><text x="140" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">Balance·Address·Verify</text>
+    <rect x="248" y="350" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/><text x="338" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Product</text><text x="338" y="392" text-anchor="middle" fill="#3b82f6" font-size="10">Product·SKU·Category</text><text x="338" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">Regional Price·ES Search</text>
+    <rect x="446" y="350" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/><text x="536" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Order</text><text x="536" y="392" text-anchor="middle" fill="#3b82f6" font-size="10">Cart·Order·Coupon</text><text x="536" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">Invoice·Refund</text>
+    <rect x="644" y="350" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/><text x="734" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Payment</text><text x="734" y="392" text-anchor="middle" fill="#3b82f6" font-size="10">Stripe·Router</text><text x="734" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">Webhook·Reconcile</text>
+    <rect x="842" y="350" width="200" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/><text x="942" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Provisioning</text><text x="942" y="392" text-anchor="middle" fill="#3b82f6" font-size="10">Provider Plugin·Queue</text><text x="942" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">Proxmox·Host Select</text>
+    <rect x="50" y="438" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/><text x="140" y="462" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Supplier</text><text x="140" y="480" text-anchor="middle" fill="#3b82f6" font-size="10">Onboard·Settle·Payout</text><text x="140" y="496" text-anchor="middle" fill="#3b82f6" font-size="10">External API</text>
+    <rect x="248" y="438" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/><text x="338" y="462" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Ticket</text><text x="338" y="480" text-anchor="middle" fill="#3b82f6" font-size="10">Submit·Reply·Close</text><text x="338" y="496" text-anchor="middle" fill="#3b82f6" font-size="10">Event Assignment</text>
+    <rect x="446" y="438" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/><text x="536" y="462" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Domain</text><text x="536" y="480" text-anchor="middle" fill="#3b82f6" font-size="10">Register·Renew·DNS</text><text x="536" y="496" text-anchor="middle" fill="#3b82f6" font-size="10">Availability Check</text>
+    <rect x="644" y="438" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/><text x="734" y="462" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Notification</text><text x="734" y="480" text-anchor="middle" fill="#3b82f6" font-size="10">Email·SMS·Push</text><text x="734" y="496" text-anchor="middle" fill="#3b82f6" font-size="10">I18n Templates</text>
+    <rect x="842" y="438" width="200" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/><text x="942" y="462" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Monitor</text><text x="942" y="480" text-anchor="middle" fill="#3b82f6" font-size="10">Resource Metrics·Alert</text><text x="942" y="496" text-anchor="middle" fill="#3b82f6" font-size="10">Scheduled Collect</text>
+    <rect x="50" y="526" width="180" height="72" rx="6" fill="#fef3c7" stroke="#f59e0b"/><text x="140" y="550" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Admin Panel</text><text x="140" y="568" text-anchor="middle" fill="#b45309" font-size="10">Dashboard·CRUD</text><text x="140" y="584" text-anchor="middle" fill="#b45309" font-size="10">53 Controllers·ACL</text>
+    <rect x="248" y="526" width="180" height="72" rx="6" fill="#fef3c7" stroke="#f59e0b"/><text x="338" y="550" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Report</text><text x="338" y="568" text-anchor="middle" fill="#b45309" font-size="10">Revenue·Region·Supplier</text><text x="338" y="584" text-anchor="middle" fill="#b45309" font-size="10">Excel Export</text>
+    <rect x="446" y="526" width="180" height="72" rx="6" fill="#fef3c7" stroke="#f59e0b"/><text x="536" y="550" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">WebSocket</text><text x="536" y="568" text-anchor="middle" fill="#b45309" font-size="10">Real-time·Bidirectional</text><text x="536" y="584" text-anchor="middle" fill="#b45309" font-size="10">Order/Ticket Events</text>
+    <rect x="644" y="526" width="180" height="72" rx="6" fill="#fef3c7" stroke="#f59e0b"/><text x="734" y="550" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">CAPTCHA</text><text x="734" y="568" text-anchor="middle" fill="#b45309" font-size="10">Click Verify·300s</text><text x="734" y="584" text-anchor="middle" fill="#b45309" font-size="10">GD Render·Redis</text>
+    <rect x="842" y="526" width="200" height="72" rx="6" fill="#fef3c7" stroke="#f59e0b"/><text x="942" y="550" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Cron Jobs</text><text x="942" y="568" text-anchor="middle" fill="#b45309" font-size="10">FX Rate·Reconcile·Settle</text><text x="942" y="584" text-anchor="middle" fill="#b45309" font-size="10">Expiry·SSL Check</text>
+    <rect x="50" y="612" width="370" height="62" rx="6" fill="#e0e7ff" stroke="#818cf8"/><text x="235" y="636" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">Common Libraries</text><text x="235" y="656" text-anchor="middle" fill="#4f46e5" font-size="10">Auth·Hashid·Snowflake·I18n·Encryption·Security·Version·ClientPlatform·Feature·Webhook·Confirmation·Helper</text>
+    <rect x="440" y="612" width="265" height="62" rx="6" fill="#e0e7ff" stroke="#818cf8"/><text x="572" y="636" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">erikwang2013 Packages</text><text x="572" y="656" text-anchor="middle" fill="#4f46e5" font-size="10">snowflake-php·hashids·jwt-webman·encryption·encryptable·webman-scout·season·poster-php·security-php</text>
+    <rect x="725" y="612" width="317" height="62" rx="6" fill="#e0e7ff" stroke="#818cf8"/><text x="883" y="636" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">External SDKs</text><text x="883" y="656" text-anchor="middle" fill="#4f46e5" font-size="10">Stripe PHP·Twilio·Firebase·PhpSpreadsheet·GeoIP2·Sentry</text>
+  </g>
+
+  <path d="M550,692 L550,709" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrD)"/>
+
+  <g filter="url(#sh)">
+    <rect x="30" y="714" width="1040" height="115" rx="8" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.5"/>
+    <text x="50" y="736" fill="#047857" font-size="13" font-weight="bold">Infrastructure Layer — Data &amp; Deployment</text>
+    <rect x="50" y="748" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/><text x="125" y="774" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">MySQL 8.0</text><text x="125" y="794" text-anchor="middle" fill="#059669" font-size="10">Main+Audit DB</text>
+    <rect x="218" y="748" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/><text x="293" y="774" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Redis 7</text><text x="293" y="794" text-anchor="middle" fill="#059669" font-size="10">Cache·Queue·Session</text>
+    <rect x="386" y="748" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/><text x="461" y="774" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Elasticsearch 8</text><text x="461" y="794" text-anchor="middle" fill="#059669" font-size="10">IK Analyzer·Search</text>
+    <rect x="554" y="748" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/><text x="629" y="774" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Proxmox VE</text><text x="629" y="794" text-anchor="middle" fill="#059669" font-size="10">Virtualization</text>
+    <rect x="722" y="748" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/><text x="797" y="774" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Docker Compose</text><text x="797" y="794" text-anchor="middle" fill="#059669" font-size="10">Nginx·Supervisor</text>
+    <rect x="890" y="748" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/><text x="965" y="774" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">GitHub Actions</text><text x="965" y="794" text-anchor="middle" fill="#059669" font-size="10">CI/CD Pipeline</text>
+  </g>
+</svg>

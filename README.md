@@ -35,6 +35,24 @@
 
 ![系统架构](docs/diagrams/system-architecture-zh.svg)
 
+## 核心业务流程
+
+从用户注册到资源交付的完整端到端业务流程，包括选购、下单、支付、自动交付、售后管理和续费循环。
+
+![核心业务流程](docs/diagrams/business-flowchart-zh.svg)
+
+## 功能模块总览
+
+系统按四层架构组织：客户端层（6 平台接入）、API 网关层（8 项中间件）、业务服务层（15 大功能模块）、基础设施层（6 个核心组件）。
+
+![功能模块总览](docs/diagrams/module-overview-zh.svg)
+
+## 资源生命周期
+
+资源从创建到终止共经历 6 个状态，由 8 个生命周期事件驱动，支持自动交付、挂起恢复、到期提醒和销毁清理。
+
+![资源生命周期](docs/diagrams/resource-lifecycle-zh.svg)
+
 ## 文档导航
 
 | 文档 | 说明 |
