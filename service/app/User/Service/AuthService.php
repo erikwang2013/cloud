@@ -50,6 +50,8 @@ class AuthService
         UserBalance::create(['user_id' => $user->id, 'currency' => 'USD']);
         UserBalance::create(['user_id' => $user->id, 'currency' => 'CNY']);
 
+        \Common\Security\AuditLogger::record('user_registered', ['user_id' => $user->id]);
+
         // Send verification email if email provided
         if (!empty($data['email']) && $user->email_verify_token) {
             $verifyUrl = getenv('APP_URL') . '/api/auth/verify-email?token=' . $user->email_verify_token;
@@ -61,7 +63,7 @@ class AuthService
         return $this->issueTokens($user->id, 'user', '', $clientPlatform);
     }
 
-    public function login(string $login, string $password, string $deviceFingerprint, string $clientPlatform = ''): array
+    public function login(string $login, string $password, string $deviceFingerprint, string $clientPlatform = '', string $totpCode = ''): array
     {
         $user = User::where('email', $login)->orWhere('phone', $login)->first();
 
@@ -75,6 +77,16 @@ class AuthService
 
         if ($this->isLoginLocked($user->id)) {
             throw new \InvalidArgumentException('Account temporarily locked, try again later');
+        }
+
+        if (!empty($user->totp_enabled) && !empty($user->totp_secret)) {
+            if (empty($totpCode)) {
+                throw new \InvalidArgumentException('TOTP code required');
+            }
+            if (!\Common\Auth\TotpService::verify($user->totp_secret, $totpCode)) {
+                $this->recordTotpFailure($user->id);
+                throw new \InvalidArgumentException('Invalid TOTP code');
+            }
         }
 
         // New IP alert — notify user if login from unrecognized IP
@@ -154,6 +166,21 @@ class AuthService
             return Redis::exists("login_lock:{$userId}");
         } catch (\Exception $e) {
             return false;
+        }
+    }
+
+    private function recordTotpFailure(int $userId): void
+    {
+        try {
+            $key = "totp_fail:{$userId}";
+            $count = Redis::incr($key);
+            Redis::expire($key, 900);
+
+            if ($count >= 5) {
+                Redis::setex("login_lock:{$userId}", 900, '1');
+            }
+        } catch (\Exception $e) {
+            // Redis unavailable — skip rate limiting
         }
     }
 

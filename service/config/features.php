@@ -14,6 +14,11 @@ return [
     'totp_two_factor'         => (bool)(getenv('FEATURE_TOTP') ?: true),  // enabled by default
     'google_oauth'            => (bool)(getenv('FEATURE_GOOGLE_OAUTH') ?: true),
     'apple_oauth'             => (bool)(getenv('FEATURE_APPLE_OAUTH') ?: true),
+    'facebook_oauth'          => (bool)(getenv('FEATURE_FACEBOOK_OAUTH') ?: true),
+    'x_oauth'                 => (bool)(getenv('FEATURE_X_OAUTH') ?: true),
+    'microsoft_oauth'         => (bool)(getenv('FEATURE_MICROSOFT_OAUTH') ?: true),
+    'linkedin_oauth'          => (bool)(getenv('FEATURE_LINKEDIN_OAUTH') ?: true),
+    'github_oauth'            => (bool)(getenv('FEATURE_GITHUB_OAUTH') ?: true),
     'ssl_product'             => (bool)(getenv('FEATURE_SSL_PRODUCT') ?: true),
     'object_storage_product'  => (bool)(getenv('FEATURE_OBJECT_STORAGE') ?: true),
     'usage_billing'           => (bool)(getenv('FEATURE_USAGE_BILLING') ?: true),

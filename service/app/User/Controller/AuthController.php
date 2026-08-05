@@ -2,6 +2,7 @@
 namespace App\User\Controller;
 
 use App\User\Service\AuthService;
+use App\User\Service\OAuthService;
 use Common\Auth\TotpService;
 use Common\Captcha\CaptchaService;
 use Common\Helper\Response;
@@ -13,10 +14,12 @@ use App\User\Model\User;
 class AuthController
 {
     private AuthService $auth;
+    private OAuthService $oauth;
 
     public function __construct()
     {
-        $this->auth = new AuthService();
+        $this->auth  = new AuthService();
+        $this->oauth = new OAuthService();
     }
 
     public function register($request)
@@ -43,7 +46,6 @@ class AuthController
                 $data['affiliate_code'] = $refCode;
             }
             $tokens = $this->auth->register($data, $this->clientPlatform($request));
-            AuditLogger::record('user_registered', ['user_id' => null], $request);
             return json(Response::success($tokens, I18n::trans('auth.register_success')));
         } catch (\InvalidArgumentException $e) {
             return json(Response::error(422, $e->getMessage()));
@@ -65,7 +67,7 @@ class AuthController
         }
 
         try {
-            $tokens = $this->auth->login($login, $password, $deviceFp, $this->clientPlatform($request));
+            $tokens = $this->auth->login($login, $password, $deviceFp, $this->clientPlatform($request), (string) $request->input('totp_code', ''));
             $payload = (new \Common\Auth\JwtAuth())->verify($tokens['access_token']);
             AuditLogger::record('user_login', ['user_id' => $payload['sub'] ?? null], $request);
             return json(Response::success($tokens, I18n::trans('auth.login_success')));
@@ -138,11 +140,20 @@ class AuthController
             return json(Response::error(422, 'Password must be at least 8 characters'));
         }
 
+        $attemptKey = "password_reset_attempts:{$email}";
+        $attempts = (int) \Illuminate\Support\Facades\Redis::get($attemptKey);
+        if ($attempts >= 5) {
+            return json(Response::error(429, 'Too many reset attempts, try again later'));
+        }
+
         $stored = \Illuminate\Support\Facades\Redis::get("password_reset:{$email}");
         if (!$stored || $stored !== $code) {
+            \Illuminate\Support\Facades\Redis::incr($attemptKey);
+            \Illuminate\Support\Facades\Redis::expire($attemptKey, 600);
             return json(Response::error(422, 'Invalid or expired reset code'));
         }
 
+        \Illuminate\Support\Facades\Redis::del($attemptKey);
         $user = \App\User\Model\User::where('email', $email)->firstOrFail();
         $user->update(['password_hash' => \Illuminate\Support\Facades\Hash::make($password, ['cost' => 12])]);
         \Illuminate\Support\Facades\Redis::del("password_reset:{$email}");
@@ -212,195 +223,33 @@ class AuthController
         return json(Response::success(null, 'Two-factor authentication has been disabled'));
     }
 
-    public function googleOauthRedirect($request)
+    public function oauthRedirect($request, string $provider)
     {
-        $clientId     = getenv('GOOGLE_OAUTH_CLIENT_ID');
-        $redirectUri  = getenv('GOOGLE_OAUTH_REDIRECT_URI') ?: url('/api/auth/google/callback');
-        $state        = bin2hex(random_bytes(16));
-
-        \Illuminate\Support\Facades\Redis::setex("oauth_state:{$state}", 300, $request->input('redirect', '/'));
-
-        $url = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query([
-            'client_id'     => $clientId,
-            'redirect_uri'  => $redirectUri,
-            'response_type' => 'code',
-            'scope'         => 'openid email profile',
-            'state'         => $state,
-            'access_type'   => 'online',
-        ]);
-
-        return json(Response::success(['url' => $url]));
+        try {
+            $url = $this->oauth->authorizeUrl($provider);
+            return json(Response::success(['url' => $url]));
+        } catch (\InvalidArgumentException $e) {
+            return json(Response::error(422, $e->getMessage()));
+        }
     }
 
-    public function googleOauthCallback($request)
+    public function oauthCallback($request, string $provider)
     {
-        $code  = $request->input('code');
-        $state = $request->input('state');
-        $clientId     = getenv('GOOGLE_OAUTH_CLIENT_ID');
-        $clientSecret = getenv('GOOGLE_OAUTH_CLIENT_SECRET');
-        $redirectUri  = getenv('GOOGLE_OAUTH_REDIRECT_URI') ?: url('/api/auth/google/callback');
-
-        if (empty($code)) {
-            return json(Response::error(422, 'Authorization code required'));
+        try {
+            $tokens = $this->oauth->completeLogin(
+                $provider,
+                (string) $request->input('code'),
+                (string) $request->input('state'),
+                $this->deviceFingerprint($request),
+                $this->clientPlatform($request),
+                $request->header('Accept-Language', 'en-US')
+            );
+            return json(Response::success($tokens));
+        } catch (\InvalidArgumentException $e) {
+            return json(Response::error(422, $e->getMessage()));
+        } catch (\RuntimeException $e) {
+            return json(Response::error(401, $e->getMessage()));
         }
-
-        $storedRedirect = \Illuminate\Support\Facades\Redis::get("oauth_state:{$state}");
-        if (!$storedRedirect) {
-            return json(Response::error(422, 'Invalid state'));
-        }
-        \Illuminate\Support\Facades\Redis::del("oauth_state:{$state}");
-
-        // Exchange code for token
-        $http = new \GuzzleHttp\Client();
-        $tokenResponse = $http->post('https://oauth2.googleapis.com/token', [
-            'form_params' => [
-                'code'          => $code,
-                'client_id'     => $clientId,
-                'client_secret' => $clientSecret,
-                'redirect_uri'  => $redirectUri,
-                'grant_type'    => 'authorization_code',
-            ],
-        ]);
-        $tokenData = json_decode((string) $tokenResponse->getBody(), true);
-
-        if (empty($tokenData['access_token'])) {
-            return json(Response::error(401, 'Failed to obtain access token'));
-        }
-
-        // Get user info
-        $userResponse = $http->get('https://openidconnect.googleapis.com/v1/userinfo', [
-            'headers' => ['Authorization' => 'Bearer ' . $tokenData['access_token']],
-        ]);
-        $googleUser = json_decode((string) $userResponse->getBody(), true);
-
-        // Find or create user
-        $user = User::where('email', $googleUser['email'])->first();
-        if (!$user) {
-            try {
-                $tokens = $this->auth->register([
-                    'email'    => $googleUser['email'],
-                    'password' => bin2hex(random_bytes(16)),
-                    'language' => $request->header('Accept-Language', 'en-US'),
-                    'currency' => 'USD',
-                ], $this->clientPlatform($request));
-                // Update profile with Google data
-                $user = User::where('email', $googleUser['email'])->first();
-                \App\User\Model\UserProfile::where('user_id', $user->id)->update([
-                    'avatar'   => $googleUser['picture'] ?? null,
-                    'nickname' => $googleUser['name'] ?? null,
-                ]);
-                AuditLogger::record('user_oauth_register', ['provider' => 'google', 'email' => $googleUser['email']], $request);
-                return json(Response::success($tokens));
-            } catch (\Exception $e) {
-                return json(Response::error(500, 'Registration failed'));
-            }
-        }
-
-        $deviceFp = $this->deviceFingerprint($request);
-        $tokens = $this->auth->issueTokens($user->id, $user->role, $deviceFp, $this->clientPlatform($request));
-        AuditLogger::record('user_oauth_login', ['provider' => 'google', 'user_id' => $user->id], $request);
-        return json(Response::success($tokens));
-    }
-
-    public function appleOauthRedirect($request)
-    {
-        $clientId    = getenv('APPLE_OAUTH_CLIENT_ID');
-        $redirectUri = getenv('APPLE_OAUTH_REDIRECT_URI') ?: url('/api/auth/apple/callback');
-        $state       = bin2hex(random_bytes(16));
-
-        \Illuminate\Support\Facades\Redis::setex("oauth_state:{$state}", 300, $request->input('redirect', '/'));
-
-        $url = 'https://appleid.apple.com/auth/authorize?' . http_build_query([
-            'client_id'     => $clientId,
-            'redirect_uri'  => $redirectUri,
-            'response_type' => 'code',
-            'scope'         => 'name email',
-            'state'         => $state,
-            'response_mode' => 'form_post',
-        ]);
-
-        return json(Response::success(['url' => $url]));
-    }
-
-    public function appleOauthCallback($request)
-    {
-        $code  = $request->input('code');
-        $state = $request->input('state');
-
-        if (empty($code)) return json(Response::error(422, 'Authorization code required'));
-
-        $stored = \Illuminate\Support\Facades\Redis::get("oauth_state:{$state}");
-        if (!$stored) return json(Response::error(422, 'Invalid state'));
-        \Illuminate\Support\Facades\Redis::del("oauth_state:{$state}");
-
-        // Exchange code for tokens via Apple's token endpoint
-        $clientSecret = $this->generateAppleClientSecret();
-        $http   = new \GuzzleHttp\Client();
-        $resp   = $http->post('https://appleid.apple.com/auth/token', [
-            'form_params' => [
-                'client_id'     => getenv('APPLE_OAUTH_CLIENT_ID'),
-                'client_secret' => $clientSecret,
-                'code'          => $code,
-                'grant_type'    => 'authorization_code',
-                'redirect_uri'  => getenv('APPLE_OAUTH_REDIRECT_URI') ?: url('/api/auth/apple/callback'),
-            ],
-        ]);
-        $tokenData = json_decode((string) $resp->getBody(), true);
-
-        if (empty($tokenData['id_token'])) return json(Response::error(401, 'Failed to obtain ID token'));
-
-        // Decode the id_token (JWT) to get user info
-        $jwtParts = explode('.', $tokenData['id_token']);
-        $claims   = json_decode(base64_decode($jwtParts[1]), true);
-
-        $email = $claims['email'] ?? null;
-        if (!$email) {
-            return json(Response::error(400, 'Email not provided by Apple. User may need to re-authorize.'));
-        }
-
-        $user = User::where('email', $email)->first();
-        if (!$user) {
-            try {
-                $tokens = $this->auth->register([
-                    'email'    => $email,
-                    'password' => bin2hex(random_bytes(16)),
-                    'language' => $request->header('Accept-Language', 'en-US'),
-                    'currency' => 'USD',
-                ], $this->clientPlatform($request));
-                AuditLogger::record('user_oauth_register', ['provider' => 'apple', 'email' => $email], $request);
-                return json(Response::success($tokens));
-            } catch (\Exception $e) {
-                return json(Response::error(500, 'Registration failed'));
-            }
-        }
-
-        $deviceFp = $this->deviceFingerprint($request);
-        $tokens   = $this->auth->issueTokens($user->id, $user->role, $deviceFp, $this->clientPlatform($request));
-        AuditLogger::record('user_oauth_login', ['provider' => 'apple', 'user_id' => $user->id], $request);
-        return json(Response::success($tokens));
-    }
-
-    private function generateAppleClientSecret(): string
-    {
-        $teamId   = getenv('APPLE_TEAM_ID');
-        $clientId = getenv('APPLE_OAUTH_CLIENT_ID');
-        $keyId    = getenv('APPLE_KEY_ID');
-        $keyPath  = getenv('APPLE_PRIVATE_KEY_PATH');
-
-        if (!$keyPath || !file_exists($keyPath)) {
-            throw new \RuntimeException('Apple private key not found');
-        }
-
-        $privateKey = file_get_contents($keyPath);
-        $payload = [
-            'iss' => $teamId,
-            'iat' => time(),
-            'exp' => time() + 86400 * 180,
-            'aud' => 'https://appleid.apple.com',
-            'sub' => $clientId,
-        ];
-
-        return \Firebase\JWT\JWT::encode($payload, $privateKey, 'ES256', $keyId);
     }
 
     public function sendSmsVerify($request)
@@ -494,6 +343,11 @@ class AuthController
         $user = User::findOrFail($request->userId);
         if (!$user->totp_enabled) {
             return json(Response::error(400, 'TOTP is not enabled'));
+        }
+
+        $password = $request->input('password');
+        if (empty($password) || !\Illuminate\Support\Facades\Hash::check($password, $user->password_hash)) {
+            return json(Response::error(403, 'Password verification required'));
         }
 
         // Generate 8 single-use recovery codes
@@ -594,9 +448,11 @@ class AuthController
 
     private function deviceFingerprint($request): string
     {
-        $ua     = $request->header('User-Agent', '');
-        $ip     = $request->getRealIp();
-        $ipCidr = substr($ip, 0, (int) strrpos($ip, '.'));
+        $ua = $request->header('User-Agent', '');
+        $ip = $request->getRealIp();
+        $ipCidr = str_contains($ip, ':')
+            ? substr($ip, 0, strpos($ip, ':')) . ':'
+            : substr($ip, 0, (int) strrpos($ip, '.'));
         return hash('sha256', $ua . $ipCidr);
     }
 

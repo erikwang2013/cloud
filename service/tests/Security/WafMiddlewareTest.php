@@ -370,6 +370,24 @@ final class WafMiddlewareTest extends TestCase
         $result = $this->middleware->process($req, fn($r) => response('ok'));
         $this->assertSame(200, $result->getStatusCode());
     }
+
+    // ── SQL-like words in plain text (no false positives) ──
+
+    public function testAllowsSqlishWordsInPlainText(): void
+    {
+        $req = $this->createRequest('/api/tickets', [
+            'message' => 'Please update your server settings, create a new order, and select the correct region. Exec finished.',
+        ]);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $this->assertSame(200, $result->getStatusCode());
+    }
+
+    public function testAllowsCreateAndDeleteInTicket(): void
+    {
+        $req = $this->createRequest('/api/tickets', ['message' => 'How do I create a ticket to delete my account?']);
+        $result = $this->middleware->process($req, fn($r) => response('ok'));
+        $this->assertSame(200, $result->getStatusCode());
+    }
 }
 
 /**
@@ -385,7 +403,9 @@ class TestableWafMiddleware extends WafMiddleware
         $this->testPatterns = [
             // SQL injection
             '/(\%27)|(\')|(\-\-)|(\%23)|(#)/i',
-            '/\b(union|select|insert|update|delete|drop|alter|create|truncate|exec|execute|grant|revoke)\b/i',
+            '/\b(union)\s+(all\s+)?select\b/i',
+            '/\bselect\b.{0,60}\bfrom\b/i',
+            '/\b(insert\s+into|delete\s+from|drop\s+table|truncate\s+table|update\s+\w+\s+set)\b/i',
             '/\b0x[0-9a-fA-F]{4,}\b/',
             '/(\%55\%4e\%49\%4f\%4e|union).*(select)/si',
             '/([\'\"\%])\s*or\s*[\'\"\%]?\s*[0-9a-z]+\s*[\'\"\%]?\s*=\s*[\'\"\%]?\s*[0-9a-z]+/i',

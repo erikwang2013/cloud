@@ -189,12 +189,18 @@ POST /api/auth/refresh
 
 ### OAuth
 
+支持提供商：google, apple, facebook, x, microsoft, linkedin, github
+（由 .env 中 `{PROVIDER}_OAUTH_CLIENT_ID` 等配置决定是否启用）
+
 ```
-GET /api/auth/google            → { url }
-GET /api/auth/google/callback?code=xxx
-GET /api/auth/apple             → { url }
-GET /api/auth/apple/callback?code=xxx
+GET /api/auth/{provider}            → { url }        # 跳转授权页（PKCE/nonce 防重放）
+GET /api/auth/{provider}/callback?code=xxx
+POST /api/auth/{provider}/callback  体: { code }
 ```
+
+- Apple/Microsoft 返回 id_token，服务端经 JWKS 校验签名、iss/aud/exp/nonce
+- 所有提供商要求 `email_verified=true` 才允许登录，否则 403
+- OAuth 流程限流：每 60 秒 10 次（redirect + callback）
 
 ### 密码重置
 
@@ -206,6 +212,7 @@ POST /api/auth/forgot-password
 POST /api/auth/reset-password
   体: { email, code, password }
   → 重置成功
+  → 错误累计 5 次 → 429 限流 10 分钟
 ```
 
 ### 邮箱验证
@@ -228,10 +235,13 @@ POST /api/auth/send-sms
 ```
 POST /api/user/totp/setup        → { secret, qr_code_url }
 POST /api/user/totp/verify       体: { code } → { recovery_codes }
-POST /api/user/totp/disable      体: { code }
-GET /api/user/totp/recovery-codes → { codes }
+POST /api/user/totp/disable      体: { code, password }      # 需密码确认，否则 403
+GET /api/user/totp/recovery-codes → { codes }                # 需密码确认，否则 403
 POST /api/auth/login/recovery    体: { login, recovery_code }
 ```
+
+- 用户启用 TOTP 后登录必须携带 `totp_code`，否则 400
+- TOTP 连续错误 5 次 → 该用户锁定 15 分钟（login_lock）
 
 ---
 
@@ -316,6 +326,7 @@ POST /api/upload
   体: multipart/form-data { file, type: avatar/kyc/attach }
   限制: avatar 2MB, kyc 5MB, attach 10MB
   允许: jpg, jpeg, png, gif, pdf
+  说明: 类型白名单校验 + finfo 内容嗅探（扩展名与 MIME 不符 → 422）
 ```
 
 ---

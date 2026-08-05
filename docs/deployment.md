@@ -194,6 +194,14 @@ TWILIO_ACCOUNT_SID=ACxxx
 TWILIO_AUTH_TOKEN=xxx
 TWILIO_PHONE_NUMBER=+1234567890
 
+# SMTP 邮件（symfony/mailer；未配置 SMTP_HOST 时发送记录为 dev-stub 状态）
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USERNAME=apikey
+SMTP_PASSWORD=xxx
+SMTP_ENCRYPTION=tls            # tls(STARTTLS) / ssl(隐式TLS) / 空
+MAIL_FROM_ADDRESS=noreply@yourdomain.com
+
 # Google OAuth
 GOOGLE_OAUTH_CLIENT_ID=xxx.apps.googleusercontent.com
 GOOGLE_OAUTH_CLIENT_SECRET=GOCSPX-xxx
@@ -204,6 +212,31 @@ APPLE_OAUTH_CLIENT_ID=com.yourdomain.service
 APPLE_TEAM_ID=xxx
 APPLE_KEY_ID=xxx
 APPLE_PRIVATE_KEY_PATH=/home/wwwroot/cloud-php/service/storage/apple/AuthKey_xxx.p8
+
+# Facebook OAuth
+FACEBOOK_OAUTH_CLIENT_ID=xxx
+FACEBOOK_OAUTH_CLIENT_SECRET=xxx
+FACEBOOK_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/facebook/callback
+
+# X (Twitter) OAuth
+X_OAUTH_CLIENT_ID=xxx
+X_OAUTH_CLIENT_SECRET=xxx
+X_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/x/callback
+
+# Microsoft OAuth
+MICROSOFT_OAUTH_CLIENT_ID=xxx
+MICROSOFT_OAUTH_CLIENT_SECRET=xxx
+MICROSOFT_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/microsoft/callback
+
+# LinkedIn OAuth
+LINKEDIN_OAUTH_CLIENT_ID=xxx
+LINKEDIN_OAUTH_CLIENT_SECRET=xxx
+LINKEDIN_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/linkedin/callback
+
+# GitHub OAuth
+GITHUB_OAUTH_CLIENT_ID=xxx
+GITHUB_OAUTH_CLIENT_SECRET=xxx
+GITHUB_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/github/callback
 
 # AWS (可选 — 云厂商对接)
 AWS_ACCESS_KEY_ID=AKIAxxx

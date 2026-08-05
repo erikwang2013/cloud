@@ -18,6 +18,18 @@ return [
         // 注册接口限制：每 60 秒仅 3 次（防批量注册）
         'register' => ['rate' => 3,   'burst' => 0,  'per' => 60],
 
+        // 忘记/重置密码：每 5 分钟 3 次（防验证码爆破与邮件轰炸）
+        'password_reset' => ['rate' => 3,   'burst' => 0,  'per' => 300],
+
+        // OAuth 流程（redirect + callback）：每 60 秒 10 次
+        'oauth'    => ['rate' => 10,  'burst' => 2,  'per' => 60],
+
+        // 验证码生成：每 60 秒 30 次
+        'captcha'  => ['rate' => 30,  'burst' => 5,  'per' => 60],
+
+        // 短信验证码：每小时 5 次（与控制器内 per-IP 限制一致）
+        'sms'      => ['rate' => 5,   'burst' => 0,  'per' => 3600],
+
         // 支付接口限制：每 60 秒 10 次
         'pay'      => ['rate' => 10,  'burst' => 3,  'per' => 60],
 
@@ -43,8 +55,10 @@ return [
         'sqli_patterns' => [
             // 特殊字符与注释符
             '/(\%27)|(\')|(\-\-)|(\%23)|(#)/i',
-            // SQL 关键字（增删改查、DDL、权限）
-            '/\b(union|select|insert|update|delete|drop|alter|create|truncate|exec|execute|grant|revoke)\b/i',
+            // SQL 关键字（需配合 SQL 结构出现，避免普通文本误伤：create/select/update 等单词在日常工单/评价中常见）
+            '/\b(union)\s+(all\s+)?select\b/i',
+            '/\bselect\b.{0,60}\bfrom\b/i',
+            '/\b(insert\s+into|delete\s+from|drop\s+table|truncate\s+table|update\s+\w+\s+set)\b/i',
             // 十六进制编码注入：0xDEADBEEF
             '/\b0x[0-9a-fA-F]{4,}\b/',
             // 联合查询变形：UNION ALL SELECT, UNION/**/SELECT

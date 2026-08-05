@@ -24,7 +24,7 @@ Route::group('/api/auth', function () {
     Route::post('/register', [App\User\Controller\AuthController::class, 'register']);
     Route::post('/login', [App\User\Controller\AuthController::class, 'login']);
     Route::post('/refresh', [App\User\Controller\AuthController::class, 'refresh']);
-})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class]);
+})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Security\RateLimitMiddleware::class]);
 
 // Password reset (public)
 Route::post('/api/auth/forgot-password', [App\User\Controller\AuthController::class, 'forgotPassword']);
@@ -36,21 +36,26 @@ Route::get('/api/auth/verify-email', [App\User\Controller\AuthController::class,
 // Service status (public)
 Route::get('/api/status', [App\Controller\StatusController::class, 'index']);
 
-// OAuth (public)
-Route::get('/api/auth/google', [App\User\Controller\AuthController::class, 'googleOauthRedirect']);
-Route::get('/api/auth/google/callback', [App\User\Controller\AuthController::class, 'googleOauthCallback']);
-Route::get('/api/auth/apple', [App\User\Controller\AuthController::class, 'appleOauthRedirect']);
-Route::get('/api/auth/apple/callback', [App\User\Controller\AuthController::class, 'appleOauthCallback']);
+// OAuth (public) — generic provider routes: google, apple, facebook, x, microsoft, linkedin, github
+// POST callback is required by Apple (response_mode=form_post)
+Route::get('/api/auth/{provider}', [App\User\Controller\AuthController::class, 'oauthRedirect'])
+    ->middleware([Common\Security\RateLimitMiddleware::class]);
+Route::get('/api/auth/{provider}/callback', [App\User\Controller\AuthController::class, 'oauthCallback'])
+    ->middleware([Common\Security\RateLimitMiddleware::class]);
+Route::post('/api/auth/{provider}/callback', [App\User\Controller\AuthController::class, 'oauthCallback'])
+    ->middleware([Common\Security\RateLimitMiddleware::class]);
 
 // TOTP recovery login (public)
-Route::post('/api/auth/login/recovery', [App\User\Controller\AuthController::class, 'loginWithRecoveryCode']);
+Route::post('/api/auth/login/recovery', [App\User\Controller\AuthController::class, 'loginWithRecoveryCode'])
+    ->middleware([Common\Security\RateLimitMiddleware::class]);
 
 // SMS verification (public)
-Route::post('/api/auth/send-sms', [App\User\Controller\AuthController::class, 'sendSmsVerify']);
+Route::post('/api/auth/send-sms', [App\User\Controller\AuthController::class, 'sendSmsVerify'])
+    ->middleware([Common\Security\RateLimitMiddleware::class]);
 
 // Captcha route (public, generates click captcha for login/register)
 Route::post('/api/captcha/create', [App\Captcha\Controller\CaptchaController::class, 'create'])
-    ->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class]);
+    ->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Security\RateLimitMiddleware::class]);
 
 // Product routes (public)
 Route::get('/api/products', [App\Product\Controller\ProductController::class, 'index']);

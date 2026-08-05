@@ -46,8 +46,10 @@ POST /api/auth/login
   → Captcha 验证（点击验证码，3 次尝试限制）
   → Hash::check(password, user->password_hash)
   → 失败 5 次 → login_lock:{userId} Redis TTL 900s
+  → TOTP 验证（用户已启用时强制，totp_code 必填；
+      错误累计 5 次 → totp_fail:{userId} → login_lock TTL 900s）
   → 新 IP 检测 → 邮件告警
-  → deviceFingerprint = sha256(UA + IP段)
+  → deviceFingerprint = sha256(UA + IP段，IPv6 取前缀)
   → clientPlatform = X-Client-Platform 头
   → issueTokens(): Access(15min) + Refresh(30d)
   → AuditLogger::record('user_login')
@@ -558,7 +560,8 @@ Redis feature:{name} (TTL 1h, 通过管理 API 动态调整)
 
 当前 Flags:
   supplier_external_api, websocket_push, maintenance_redirect,
-  totp_two_factor, google_oauth, apple_oauth
+  totp_two_factor, google_oauth, apple_oauth, facebook_oauth,
+  x_oauth, microsoft_oauth, linkedin_oauth, github_oauth
 ```
 
 ## 13. SSL 证书

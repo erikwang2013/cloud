@@ -5,6 +5,7 @@ class I18n
 {
     private static string $locale = 'en-US';
     private static array $messages = [];
+    private static array $fallback = [];
 
     public static function setLocale(string $locale): void
     {
@@ -25,7 +26,7 @@ class I18n
 
     public static function trans(string $key, array $replace = []): string
     {
-        $message = self::$messages[$key] ?? $key;
+        $message = self::$messages[$key] ?? self::$fallback[$key] ?? $key;
         foreach ($replace as $k => $v) {
             $message = str_replace(":{$k}", $v, $message);
         }
@@ -45,17 +46,28 @@ class I18n
     private static function loadMessages(): void
     {
         self::$messages = [];
+        self::$fallback = [];
         $dir = base_path() . '/i18n/' . self::$locale;
 
+        if (is_dir($dir)) {
+            foreach (glob($dir . '/*.php') as $file) {
+                $loaded = require $file;
+                if (is_array($loaded)) {
+                    self::$messages = array_merge(self::$messages, $loaded);
+                }
+            }
+        }
+
+        $fallbackLocale = config('i18n.fallback_locale') ?: 'en-US';
+        if ($fallbackLocale === self::$locale) return;
+
+        $dir = base_path() . '/i18n/' . $fallbackLocale;
         if (!is_dir($dir)) return;
 
-        $files = glob($dir . '/*.php');
-        sort($files);
-
-        foreach ($files as $file) {
+        foreach (glob($dir . '/*.php') as $file) {
             $loaded = require $file;
             if (is_array($loaded)) {
-                self::$messages = array_merge(self::$messages, $loaded);
+                self::$fallback = array_merge(self::$fallback, $loaded);
             }
         }
     }

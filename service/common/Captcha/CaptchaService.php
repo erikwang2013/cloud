@@ -28,7 +28,7 @@ class CaptchaService
         return [
             'key'          => $result['key'],
             'image'        => $result['image'],
-            'target_count' => count($result['extra']['targets'] ?? []),
+            'target_count' => count($result['extra']['texts'] ?? []),
             'expires_in'   => PosterConfig::get('captcha.ttl', 300),
         ];
     }

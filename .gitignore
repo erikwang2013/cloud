@@ -9,8 +9,8 @@
 /.cursor
 /service/vendor
 /admin/vendor
-/service/composer.lock
-/admin/composer.lock
+/service/.phpunit.cache/
+/admin/.phpunit.cache/
 /.github.phpunit.cache/
 .claude
 .claude-flow
