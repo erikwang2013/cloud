@@ -81,7 +81,10 @@ class AuthController
     public function refresh($request)
     {
         $refreshToken = $request->input('refresh_token');
-        $deviceFp     = $this->deviceFingerprint($request);
+        if (!is_string($refreshToken) || $refreshToken === '') {
+            return json(Response::error(422, 'Refresh token required'));
+        }
+        $deviceFp = $this->deviceFingerprint($request);
 
         try {
             $tokens = $this->auth->refreshToken($refreshToken, $deviceFp, $this->clientPlatform($request));

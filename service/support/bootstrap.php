@@ -4,6 +4,7 @@
 
 use Dotenv\Dotenv;
 use Illuminate\Database\Capsule\Manager as Capsule;
+use Illuminate\Events\Dispatcher;
 use support\Log;
 use Webman\Bootstrap;
 use Webman\Config;
@@ -136,24 +137,32 @@ $auditConfig = config('database.connections.audit');
 $capsule = new Capsule;
 $capsule->addConnection($dbConfig, 'default');
 $capsule->addConnection($auditConfig, 'audit');
+
+// 为 Eloquent 装配事件分发器（含模型事件），并让 Illuminate Facade 拿到容器，
+// 否则 Event Facade 抛 "A facade root has not been set" / "Target class [events] does not exist"
+$dispatcher = new Dispatcher($capsule->getContainer());
+$capsule->setEventDispatcher($dispatcher);
 $capsule->setAsGlobal();
 $capsule->bootEloquent();
+Illuminate\Support\Facades\Facade::setFacadeApplication($capsule->getContainer());
 
-// Event listeners
-if (class_exists(Illuminate\Support\Facades\Event::class)) {
-    Illuminate\Support\Facades\Event::listen(
-        App\Payment\Event\OrderPaid::class,
-        [App\Provisioning\Listener\OrderPaidListener::class, 'handle']
-    );
-    Illuminate\Support\Facades\Event::listen(
-        App\Ticket\Event\TicketCreated::class,
-        [App\Ticket\Listener\AutoAssignListener::class, 'handle']
-    );
-    Illuminate\Support\Facades\Event::listen(
-        App\Provisioning\Event\ProvisionFailed::class,
-        [App\Monitor\Service\AlertEngine::class, 'onProvisionFailed']
-    );
-}
+// Redis 容器绑定：illuminate/redis 由 config/redis.php 驱动。
+// 缺失绑定时容器自动装配出裸 phpredis 实例（未连接），Redis::get() 抛 "server went away"。
+$capsule->getContainer()->singleton('redis', fn() => support\Redis::manager());
+
+// Event listeners — 直接使用 dispatcher 实例（不依赖容器中的 events 服务）
+$dispatcher->listen(
+    App\Payment\Event\OrderPaid::class,
+    [App\Provisioning\Listener\OrderPaidListener::class, 'handle']
+);
+$dispatcher->listen(
+    App\Ticket\Event\TicketCreated::class,
+    [App\Ticket\Listener\AutoAssignListener::class, 'handle']
+);
+$dispatcher->listen(
+    App\Provisioning\Event\ProvisionFailed::class,
+    [App\Monitor\Service\AlertEngine::class, 'onProvisionFailed']
+);
 
 // Snowflake ID generator
 Common\Snowflake\SnowflakeService::init();
@@ -173,6 +182,13 @@ if (!function_exists('hashid_encode')) {
 if (!function_exists('hashid_decode')) {
     function hashid_decode(string $hash): ?int {
         return Common\Hashid\HashidService::decode($hash);
+    }
+}
+
+// storage_path helper — 属于 webman 骨架层（webman/webman），本项目只装 framework 故缺失
+if (!function_exists('storage_path')) {
+    function storage_path(string $path = ''): string {
+        return base_path() . '/storage' . ($path ? '/' . ltrim($path, '/') : '');
     }
 }
 

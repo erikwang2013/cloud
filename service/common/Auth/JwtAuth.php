@@ -1,8 +1,8 @@
 <?php
 namespace Common\Auth;
 
-use ErikJwt\JWTFactory;
-use ErikJwt\JWT;
+use Erikwang2013\Jwt\JWTFactory;
+use Erikwang2013\Jwt\JWT;
 use App\User\Model\RefreshToken;
 
 class JwtAuth

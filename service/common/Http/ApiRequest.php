@@ -13,28 +13,14 @@ use Webman\Http\Request;
 class ApiRequest extends Request
 {
     /**
-     * Get path with API version prefix rewritten from X-Api-Version header.
+     * 请求路径保持原样（如 /api/auth/login）。
      *
-     * External URLs omit the version segment (e.g. /api/auth/login).
-     * The version is carried in the X-Api-Version header (default: v1).
-     * This method rewrites the path internally so versioned routes still match.
+     * 注意：此前的版本重写逻辑会把 /api/xxx 改写为 /api/v1/xxx，
+     * 但 config/route.php 注册的路由全部不带版本前缀，导致所有 API 端点 404。
+     * API 版本校验由 Common\Version\Middleware\VersionMiddleware 基于 X-Api-Version 头完成。
      */
     public function path(): string
     {
-        $path = parent::path();
-
-        // /api/xxx -> /api/{version}/xxx
-        if (str_starts_with($path, '/api/') && !preg_match('#^/api/v\d+/#', $path)) {
-            $version = $this->header('X-Api-Version', 'v1');
-            return preg_replace('#^(/api)/#', '$1/' . $version . '/', $path);
-        }
-
-        // /admin/api/xxx -> /admin/api/{version}/xxx
-        if (str_starts_with($path, '/admin/api/') && !preg_match('#^/admin/api/v\d+/#', $path)) {
-            $version = $this->header('X-Api-Version', 'v1');
-            return preg_replace('#^(/admin/api)/#', '$1/' . $version . '/', $path);
-        }
-
-        return $path;
+        return parent::path();
     }
 }
