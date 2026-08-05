@@ -27,8 +27,10 @@ Route::group('/api/auth', function () {
 })->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Security\RateLimitMiddleware::class]);
 
 // Password reset (public)
-Route::post('/api/auth/forgot-password', [App\User\Controller\AuthController::class, 'forgotPassword']);
-Route::post('/api/auth/reset-password', [App\User\Controller\AuthController::class, 'resetPassword']);
+Route::post('/api/auth/forgot-password', [App\User\Controller\AuthController::class, 'forgotPassword'])
+    ->middleware([Common\Security\RateLimitMiddleware::class]);
+Route::post('/api/auth/reset-password', [App\User\Controller\AuthController::class, 'resetPassword'])
+    ->middleware([Common\Security\RateLimitMiddleware::class]);
 
 // Email verification (public)
 Route::get('/api/auth/verify-email', [App\User\Controller\AuthController::class, 'verifyEmail']);

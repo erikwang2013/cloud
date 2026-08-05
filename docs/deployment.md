@@ -360,9 +360,9 @@ server {
         proxy_read_timeout 60s;
     }
 
-    # 静态文件直读
-    location /storage/ {
-        alias /home/wwwroot/cloud-php/service/storage/;
+    # 静态文件直读 — 仅暴露 uploads 子目录（backups/apple/firebase 等含敏感数据，禁止公开）
+    location ^~ /storage/uploads/ {
+        alias /home/wwwroot/cloud-php/service/storage/uploads/;
         expires 30d;
         add_header Cache-Control "public, immutable";
     }
