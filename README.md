@@ -45,6 +45,32 @@
 
 ![核心业务流程](docs/diagrams/business-flowchart-zh.svg)
 
+## 多币种结算
+
+系统原生支持多币种定价、支付与结算，覆盖从用户币种设置、区域定价、汇率快照到支付收款、余额入账与供应商结算的完整链路。
+
+![多币种结算流程图](docs/diagrams/currency-settlement-zh.svg)
+
+**1. 多币种余额账户**
+
+`erik_user_balances` 按 `(user_id, currency)` 分币种记账（唯一索引 `uk_user_currency`）。注册时默认创建 USD + CNY 两个币种账户，余额与冻结余额按币种独立管理，可扩展任意 Stripe 支持的币种。
+
+**2. 多币种区域定价**
+
+`erik_product_regions` 支持同一 SKU 在同一区域按多个币种定价（唯一索引 `uk_sku_region_currency`）。前端按用户首选币种展示价格，下单时 `OrderService` 按 `(sku_id, region_id, currency)` 精确取价。
+
+**3. 汇率体系**
+
+`ExchangeRateSync` 定时任务从 exchangerate-api 同步汇率并写入 Redis（30 分钟 TTL 缓存）。每笔订单记录下单时的 `exchange_rate` 汇率快照，保证后续结算可追溯。
+
+**4. 多币种支付**
+
+`erik_payment_channels.currency_support` 声明各支付通道支持的币种白名单，`PaymentRouter` 按 币种 / 金额区间 / 可见区域 动态过滤可用通道。Stripe PaymentIntent 直接以订单币种收款，内置 16 种零小数币种（JPY / KRW / VND 等）的小数位处理，Webhook 回调校验金额与币种一致性。
+
+**5. 结算与报表**
+
+支付交易（`erik_payment_transactions`）、供应商结算（`erik_supplier_settlements`）、营收报表均保留币种与汇率字段，按币种统计汇总。
+
 ## 功能模块总览
 
 系统按四层架构组织：客户端层（6 平台接入）、API 网关层（14 项中间件）、业务服务层（20+ 功能模块）、基础设施层（8 个核心组件）。
@@ -210,7 +236,7 @@ cloud-php/
 │   ├── api-test.sh             # API 冒烟测试脚本
 │   ├── database.sql            # 数据库 DDL
 │   ├── alipay.png / weixinpay.png  # 打赏二维码
-│   ├── diagrams/               # 10 个 SVG 架构图（系统架构 / 安全管道 / ER 图 / 业务流程等）
+│   ├── diagrams/               # 18 个 SVG 架构图（系统架构 / 安全管道 / ER 图 / 业务流程 / 多币种结算等）
 │   └── superpowers/            # 设计规格与实施计划
 │       ├── specs/              # 系统设计规格文档
 │       └── plans/              # Phase 0~3 分阶段实施计划

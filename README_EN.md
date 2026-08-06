@@ -39,6 +39,32 @@ Complete end-to-end business flow from user registration through resource delive
 
 ![Core Business Flow](docs/diagrams/business-flowchart-en.svg)
 
+## Multi-Currency Settlement
+
+The platform natively supports multi-currency pricing, payment, and settlement — covering the full chain from user currency preference, regional pricing, exchange-rate snapshots to payment collection, balance crediting, and supplier settlement.
+
+![Multi-Currency Settlement Flow](docs/diagrams/currency-settlement-zh.svg)
+
+**1. Multi-Currency Balance Accounts**
+
+`erik_user_balances` keeps per-currency ledgers keyed by `(user_id, currency)` (unique index `uk_user_currency`). Registration creates USD + CNY balance accounts by default; balance and frozen balance are managed independently per currency, extensible to any Stripe-supported currency.
+
+**2. Multi-Currency Regional Pricing**
+
+`erik_product_regions` supports multiple currency prices for the same SKU in the same region (unique index `uk_sku_region_currency`). Prices are displayed in the user's preferred currency, and `OrderService` resolves the exact price by `(sku_id, region_id, currency)` at checkout.
+
+**3. Exchange Rate System**
+
+The `ExchangeRateSync` cron job pulls rates from exchangerate-api into Redis (30-minute TTL cache). Every order records an `exchange_rate` snapshot at creation time, keeping settlement auditable.
+
+**4. Multi-Currency Payment**
+
+`erik_payment_channels.currency_support` declares the supported-currency whitelist per channel; `PaymentRouter` filters available channels dynamically by currency / amount range / visible regions. Stripe PaymentIntents charge in the order currency directly, with built-in handling for 16 zero-decimal currencies (JPY / KRW / VND, etc.). Webhook callbacks verify amount and currency consistency.
+
+**5. Settlement & Reporting**
+
+Payment transactions (`erik_payment_transactions`), supplier settlements (`erik_supplier_settlements`), and revenue reports all retain currency and exchange-rate fields and aggregate per currency.
+
 ## Module Overview
 
 The system is organized into four layers: Client Layer (6 platform access points), API Gateway Layer (8 middleware components), Business Service Layer (15 core modules), and Infrastructure Layer (8 core components).
