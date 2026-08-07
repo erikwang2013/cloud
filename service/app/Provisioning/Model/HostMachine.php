@@ -4,7 +4,7 @@ namespace App\Provisioning\Model;
 use Illuminate\Database\Eloquent\Model;
 use Common\Snowflake\HasSnowflakeId;
 use App\Product\Model\Region;
-use Maize\Encryptable\Encryptable;
+use Erikwang2013\Encryptable\Encryptable;
 
 class HostMachine extends Model
 {

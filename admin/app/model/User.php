@@ -8,7 +8,7 @@
 namespace app\model;
 
 use Erikwang2013\WebmanScout\Searchable;
-use Maize\Encryptable\Encryptable;
+use Erikwang2013\Encryptable\Encryptable;
 
 /**
  * @property integer $id 主键(主键)

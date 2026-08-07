@@ -3,7 +3,6 @@ namespace App\Controller;
 
 use Common\Helper\Response;
 use Illuminate\Database\Capsule\Manager as Capsule;
-use Redis;
 
 class HealthController
 {
@@ -12,7 +11,7 @@ class HealthController
         return json(Response::success([
             'status'    => 'healthy',
             'timestamp' => date('c'),
-            'version'   => getenv('APP_VERSION') ?: trim(shell_exec('git rev-parse --short HEAD 2>/dev/null') ?: 'dev'),
+            'version'   => $this->getVersion(),
         ]));
     }
 
@@ -51,7 +50,7 @@ class HealthController
             'status'    => $healthy ? 'ok' : 'degraded',
             'timestamp' => date('c'),
             'checks'    => $checks,
-            'version'   => getenv('APP_VERSION') ?: trim(shell_exec('git rev-parse --short HEAD 2>/dev/null') ?: 'dev'),
+            'version'   => $this->getVersion(),
             'uptime'    => $this->getUptime(),
         ];
 
@@ -59,8 +58,7 @@ class HealthController
             $redis->setex($cacheKey, $ttl, json_encode($result));
         }
 
-        http_response_code($statusCode);
-        return json($result);
+        return json($result)->withStatus($statusCode);
     }
 
     public function deps()
@@ -78,7 +76,7 @@ class HealthController
             'database'      => $this->depStatus('MySQL', $this->checkDatabase()),
             'redis'         => $this->depStatus('Redis', $this->checkRedis($redis)),
             'elasticsearch' => $this->depStatus('Elasticsearch', $this->checkElasticsearch()),
-            'version'       => getenv('APP_VERSION') ?: trim(shell_exec('git rev-parse --short HEAD 2>/dev/null') ?: 'dev'),
+            'version'       => $this->getVersion(),
             'uptime'        => $this->getUptime(),
             'timestamp'     => date('c'),
         ];
@@ -102,7 +100,7 @@ class HealthController
         }
     }
 
-    private function checkRedis(?Redis $redis): array
+    private function checkRedis($redis): array
     {
         if (!$redis) {
             return ['healthy' => false, 'error' => 'Redis not configured'];
@@ -153,7 +151,7 @@ class HealthController
         ];
     }
 
-    private function checkQueueDepth(?Redis $redis): array
+    private function checkQueueDepth($redis): array
     {
         if (!$redis) {
             return ['healthy' => true, 'note' => 'not configured'];
@@ -188,16 +186,22 @@ class HealthController
         return $startedAt;
     }
 
-    private function getRedis(): ?Redis
+    private function getVersion(): string
+    {
+        static $version;
+        if ($version === null) {
+            $version = getenv('APP_VERSION');
+            if (!$version) {
+                $version = trim(shell_exec('git rev-parse --short HEAD 2>/dev/null') ?: '') ?: 'dev';
+            }
+        }
+        return $version;
+    }
+
+    private function getRedis()
     {
         try {
-            $redis = new Redis();
-            $redis->connect(
-                getenv('REDIS_HOST') ?: '127.0.0.1',
-                (int)(getenv('REDIS_PORT') ?: 6379),
-                2
-            );
-            return $redis;
+            return \support\Redis::connection();
         } catch (\Throwable) {
             return null;
         }

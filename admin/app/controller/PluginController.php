@@ -86,7 +86,10 @@ class PluginController extends Base
         $name = $request->post('name');
         $version = $request->post('version');
         $installed_version = $this->getPluginVersion($name);
-        if (!$name || !$version) {
+        if (!$name || !preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
+            return $this->json(1, '参数错误');
+        }
+        if (!$version) {
             return $this->json(1, '缺少参数');
         }
 

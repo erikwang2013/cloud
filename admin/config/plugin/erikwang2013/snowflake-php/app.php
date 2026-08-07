@@ -53,7 +53,7 @@ return [
      * SequentialSequenceResolver: 0,1,2... per millisecond (predictable).
      * RandomSequenceResolver: random start per millisecond (unpredictable).
      */
-    'sequence_resolver' => \Snowflake\Resolvers\SequentialSequenceResolver::class,
+    'sequence_resolver' => \Erikwang2013\Snowflake\Resolvers\SequentialSequenceResolver::class,
 
     /**
      * Clock drift tolerance in milliseconds.

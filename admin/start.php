@@ -6,6 +6,6 @@
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-define('BASE_PATH', __DIR__);
+// BASE_PATH 由 webman-framework 的 support/helpers.php 自动探测定义
 
 support\App::run();

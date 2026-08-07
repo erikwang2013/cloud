@@ -199,17 +199,20 @@
     <text x="942" y="646" text-anchor="middle" fill="#b45309" font-size="10">FX·Reconcile·Pay</text>
     <text x="942" y="662" text-anchor="middle" fill="#b45309" font-size="10">Expiry·SSL Check</text>
 
-    <rect x="50" y="690" width="370" height="62" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
-    <text x="235" y="714" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">Common Library</text>
-    <text x="235" y="734" text-anchor="middle" fill="#4f46e5" font-size="10">Auth·Hashid·Snowflake·I18n·Encryption·Security·Version·ClientPlatform·Feature·Webhook·Confirmation·Helper</text>
+    <rect x="50" y="690" width="350" height="76" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
+    <text x="225" y="714" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">Common Library</text>
+    <text x="225" y="733" text-anchor="middle" fill="#4f46e5" font-size="9.5">Auth·Hashid·Snowflake·I18n·Encryption·Security·Version</text>
+    <text x="225" y="749" text-anchor="middle" fill="#4f46e5" font-size="9.5">ClientPlatform·Feature·Webhook·Confirmation·Helper</text>
 
-    <rect x="440" y="690" width="265" height="62" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
-    <text x="572" y="714" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">erikwang2013 Ecosystem</text>
-    <text x="572" y="734" text-anchor="middle" fill="#4f46e5" font-size="10">snowflake-php·hashids·jwt-webman·encryption·encryptable·webman-scout·season·poster-php·security-php</text>
+    <rect x="420" y="690" width="300" height="76" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
+    <text x="570" y="714" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">erikwang2013 Ecosystem</text>
+    <text x="570" y="733" text-anchor="middle" fill="#4f46e5" font-size="9.5">snowflake-php·hashids·jwt-webman·encryption·encryptable</text>
+    <text x="570" y="749" text-anchor="middle" fill="#4f46e5" font-size="9.5">webman-scout·season·poster-php·security-php</text>
 
-    <rect x="725" y="690" width="317" height="62" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
-    <text x="883" y="714" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">External Service SDKs</text>
-    <text x="883" y="734" text-anchor="middle" fill="#4f46e5" font-size="10">Stripe PHP·Twilio·Firebase·PhpSpreadsheet·GeoIP2·Sentry</text>
+    <rect x="740" y="690" width="302" height="76" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
+    <text x="891" y="714" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">External Service SDKs</text>
+    <text x="891" y="733" text-anchor="middle" fill="#4f46e5" font-size="9.5">Stripe PHP·Twilio·Firebase·PhpSpreadsheet</text>
+    <text x="891" y="749" text-anchor="middle" fill="#4f46e5" font-size="9.5">GeoIP2·Sentry</text>
   </g>
 
   <path d="M550,692 L550,709" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrD)"/>

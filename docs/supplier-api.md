@@ -536,8 +536,12 @@ X-Webhook-Event: order.paid
 |------|------|
 | 内部 API | 60 req/min 每用户（默认） |
 | 内部 API 登录 | 5 req/min |
-| 外部 API | 120 req/min 每 API Key（设计值） |
-| 外部 API 提现 | 10 req/min（设计值） |
+| 外部 API | 120 req/min 每 API Key（`supplier_api` 规则，经 `RateLimitMiddleware` 生效） |
+| 外部 API 提现 | 10 req/min（建议值，可调 `config/security.php`） |
+
+> 外部 API 限流规则定义在 `config/security.php` 的 `rate_limits.supplier_api`，
+> 由 `RateLimitMiddleware` 对 `/api/supplier/external/*` 路径统一执行（原子 INCR 计数，
+> Redis 不可用时放行）。
 
 限流头:
 

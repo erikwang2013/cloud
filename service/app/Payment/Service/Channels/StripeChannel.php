@@ -7,6 +7,7 @@ use App\Payment\Model\PaymentTransaction;
 use App\Order\Model\Order;
 use App\Order\Model\OrderTimeline;
 use App\Payment\Event\OrderPaid;
+use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Support\Facades\Event;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
@@ -133,24 +134,33 @@ class StripeChannel
 
     private function confirmPayment(string $transactionNo, int $orderId): void
     {
-        $txn = PaymentTransaction::where('transaction_no', $transactionNo)
-            ->where('order_id', $orderId)
-            ->where('status', 'pending')
-            ->firstOrFail();
+        $order = null;
+        Capsule::transaction(function () use ($transactionNo, $orderId, &$order) {
+            // 原子抢占：Stripe 重试并发投递时仅一个请求能 pending->success
+            $affected = Capsule::table('payment_transactions')
+                ->where('transaction_no', $transactionNo)
+                ->where('order_id', $orderId)
+                ->where('status', 'pending')
+                ->update(['status' => 'success', 'callback_at' => now()]);
 
-        $txn->update(['status' => 'success', 'callback_at' => now()]);
+            if ($affected === 0) {
+                return;
+            }
 
-        $order = Order::findOrFail($orderId);
-        $order->update(['status' => 'paid', 'paid_at' => now()]);
+            $order = Order::where('id', $orderId)->lockForUpdate()->firstOrFail();
+            if ($order->status !== 'paid') {
+                $order->update(['status' => 'paid', 'paid_at' => now()]);
 
-        OrderTimeline::create([
-            'order_id' => $orderId,
-            'status' => 'paid',
-            'operator' => 'payment',
-            'remark' => 'Payment confirmed via Stripe',
-        ]);
+                OrderTimeline::create([
+                    'order_id' => $orderId,
+                    'status' => 'paid',
+                    'operator' => 'payment',
+                    'remark' => 'Payment confirmed via Stripe',
+                ]);
+            }
+        });
 
-        if (class_exists(Event::class)) {
+        if ($order && class_exists(Event::class)) {
             Event::dispatch(new OrderPaid($order));
         }
     }

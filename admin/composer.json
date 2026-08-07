@@ -23,7 +23,8 @@
         "ext-pdo": "*",
         "hg/apidoc": "^5.3",
         "erikwang2013/jwt-webman": "^2.0",
-        "erikwang2013/security-php": "^1.1"
+        "erikwang2013/security-php": "^1.1",
+        "monolog/monolog": "^3.0"
     },
     "autoload": {
         "psr-4": {
@@ -31,9 +32,7 @@
             "plugin\\admin\\": "./"
         },
         "files": [
-            "app/functions.php",
-            "vendor/erikwang2013/season/src/helpers.php",
-            "vendor/erikwang2013/webman-scout/helpers.php"
+            "app/functions.php"
         ]
     },
     "autoload-dev": {

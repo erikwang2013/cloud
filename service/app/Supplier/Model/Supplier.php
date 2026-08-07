@@ -4,7 +4,7 @@ namespace App\Supplier\Model;
 use Illuminate\Database\Eloquent\Model;
 use Common\Snowflake\HasSnowflakeId;
 use App\User\Model\User;
-use Maize\Encryptable\Encryptable;
+use Erikwang2013\Encryptable\Encryptable;
 
 class Supplier extends Model
 {

@@ -74,7 +74,15 @@ class CacheService
     public static function forgetPattern(string $pattern): void
     {
         try {
-            $keys = Redis::keys(self::PREFIX . $pattern);
+            // SCAN 游标迭代，避免 KEYS 全键空间阻塞
+            $keys = [];
+            $cursor = null;
+            do {
+                $batch = Redis::scan($cursor, self::PREFIX . $pattern);
+                if (is_array($batch)) {
+                    $keys = array_merge($keys, $batch);
+                }
+            } while ($cursor > 0);
             if (!empty($keys)) {
                 Redis::del($keys);
             }

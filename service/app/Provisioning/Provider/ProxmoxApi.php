@@ -14,8 +14,9 @@ class ProxmoxApi
     {
         $this->baseUrl = "https://{$host->ip_address}:8006/api2/json";
         $this->token   = $host->api_token_encrypted;
+        // 生产环境建议设置 PROXMOX_SSL_VERIFY=1 并配置合法 CA（IP 直连需证书含 IP SAN）
         $this->http    = new Client([
-            'verify'  => false,
+            'verify'  => getenv('PROXMOX_SSL_VERIFY') === '1',
             'timeout' => 30,
         ]);
     }

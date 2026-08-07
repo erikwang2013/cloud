@@ -5,9 +5,20 @@ use App\Product\Model\Product;
 use App\Product\Model\ProductSku;
 use App\Product\Model\ProductRegion;
 use Common\Helper\Response;
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 class ImportExportController
 {
+    // 防 CSV 公式注入：以 = + - @ 开头的单元格加单引号前缀
+    private static function csvSafe(mixed $value): string
+    {
+        $value = (string) $value;
+        if ($value !== '' && str_contains('=+-@', $value[0])) {
+            return "'" . $value;
+        }
+        return $value;
+    }
+
     public function exportProducts()
     {
         $products = Product::with(['category', 'skus.regionPrices', 'images'])->get();
@@ -17,9 +28,9 @@ class ImportExportController
             foreach ($p->skus as $sku) {
                 foreach ($sku->regionPrices as $rp) {
                     $rows[] = [
-                        $p->id, $p->name, $p->category->name ?? '',
-                        $sku->id, json_encode($sku->specs), $sku->cycle,
-                        $rp->region_id, $rp->price, $rp->original_price, $rp->stock,
+                        self::csvSafe($p->id), self::csvSafe($p->name), self::csvSafe($p->category->name ?? ''),
+                        self::csvSafe($sku->id), self::csvSafe(json_encode($sku->specs)), self::csvSafe($sku->cycle),
+                        self::csvSafe($rp->region_id), self::csvSafe($rp->price), self::csvSafe($rp->original_price), self::csvSafe($rp->stock),
                     ];
                 }
             }
@@ -48,42 +59,45 @@ class ImportExportController
         $imported = 0;
         $errors   = [];
 
-        while ($row = fgetcsv($csv)) {
-            try {
-                $data = array_combine($header, array_slice(array_pad($row, count($header), ''), 0, count($header)));
-                $productId = (int) $data['ProductID'];
-                $skuId     = (int) $data['SkuID'];
+        // 单个事务批量导入：大幅减少行级提交开销，失败行仍按行跳过并记录
+        Capsule::transaction(function () use ($csv, $header, &$imported, &$errors) {
+            while ($row = fgetcsv($csv)) {
+                try {
+                    $data = array_combine($header, array_slice(array_pad($row, count($header), ''), 0, count($header)));
+                    $productId = (int) $data['ProductID'];
+                    $skuId     = (int) $data['SkuID'];
 
-                // Upsert product
-                $product = $productId ? Product::find($productId) : null;
-                if (!$product) {
-                    $product = Product::create(['name' => $data['Name'], 'status' => 'published']);
+                    // Upsert product
+                    $product = $productId ? Product::find($productId) : null;
+                    if (!$product) {
+                        $product = Product::create(['name' => $data['Name'], 'status' => 'published']);
+                    }
+
+                    // Upsert SKU
+                    $sku = $skuId ? ProductSku::find($skuId) : null;
+                    $specs = json_decode($data['Specs'] ?? '{}', true) ?: [];
+                    if ($sku) {
+                        $sku->update(['specs' => $specs, 'cycle' => $data['Cycle'] ?? 'monthly']);
+                    } else {
+                        $sku = ProductSku::create([
+                            'product_id' => $product->id,
+                            'specs'      => $specs,
+                            'cycle'      => $data['Cycle'] ?? 'monthly',
+                        ]);
+                    }
+
+                    // Upsert region price
+                    ProductRegion::updateOrCreate(
+                        ['sku_id' => $sku->id, 'region_id' => (int) ($data['RegionID'] ?? 0)],
+                        ['price' => (float) ($data['Price'] ?? 0), 'original_price' => (float) ($data['OriginalPrice'] ?? 0), 'stock' => (int) ($data['Stock'] ?? 0)]
+                    );
+
+                    $imported++;
+                } catch (\Throwable $e) {
+                    $errors[] = "Row {$imported}: " . $e->getMessage();
                 }
-
-                // Upsert SKU
-                $sku = $skuId ? ProductSku::find($skuId) : null;
-                $specs = json_decode($data['Specs'] ?? '{}', true) ?: [];
-                if ($sku) {
-                    $sku->update(['specs' => $specs, 'cycle' => $data['Cycle'] ?? 'monthly']);
-                } else {
-                    $sku = ProductSku::create([
-                        'product_id' => $product->id,
-                        'specs'      => $specs,
-                        'cycle'      => $data['Cycle'] ?? 'monthly',
-                    ]);
-                }
-
-                // Upsert region price
-                ProductRegion::updateOrCreate(
-                    ['sku_id' => $sku->id, 'region_id' => (int) ($data['RegionID'] ?? 0)],
-                    ['price' => (float) ($data['Price'] ?? 0), 'original_price' => (float) ($data['OriginalPrice'] ?? 0), 'stock' => (int) ($data['Stock'] ?? 0)]
-                );
-
-                $imported++;
-            } catch (\Throwable $e) {
-                $errors[] = "Row {$imported}: " . $e->getMessage();
             }
-        }
+        });
         fclose($csv);
 
         return json(Response::success(compact('imported', 'errors')));

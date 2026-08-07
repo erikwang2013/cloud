@@ -1,8 +1,7 @@
 <?php
 require_once __DIR__ . '/vendor/autoload.php';
 
-// Define BASE_PATH constant used by webman
-define('BASE_PATH', __DIR__);
+// BASE_PATH 由 webman-framework 的 support/helpers.php 自动探测定义
 
 // Run webman
 support\App::run();

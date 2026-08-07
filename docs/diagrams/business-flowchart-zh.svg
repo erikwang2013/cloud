@@ -115,9 +115,8 @@
 
   <!-- Security bar -->
   <g>
-    <rect x="0" y="674" width="1200" height="46" fill="url(#secBar)"/>
-    <text x="600" y="703" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">
-      全局安全防护：CORS · WAF (45+规则) · SecurityPlugin (31种攻击检测) · GeoBlock · AES-256-GCM · 频率限制 · 审计日志 · 二次确认
-    </text>
+    <rect x="0" y="660" width="1200" height="60" fill="url(#secBar)"/>
+    <text x="600" y="686" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">全局安全防护：CORS · WAF (45+规则) · SecurityPlugin · GeoBlock</text>
+    <text x="600" y="704" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">(31种攻击检测) · AES-256-GCM · 频率限制 · 审计日志 · 二次确认</text>
   </g>
 </svg>

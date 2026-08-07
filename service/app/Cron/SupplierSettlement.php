@@ -22,6 +22,13 @@ class SupplierSettlement
 
                 if ($orders->isEmpty()) continue;
 
+                // 幂等：同一供应商同一结算周期已存在则跳过，避免 cron 重复执行产生重复结算单
+                $exists = \App\Supplier\Model\SupplierSettlement::where('supplier_id', $supplier->id)
+                    ->where('period_start', $weekStart)
+                    ->where('period_end', $weekEnd)
+                    ->exists();
+                if ($exists) continue;
+
                 $totalSales = $orders->sum('total');
                 $commission = $totalSales * ((float) ($supplier->commission_rate ?? 10) / 100);
                 $payable    = $totalSales - $commission;

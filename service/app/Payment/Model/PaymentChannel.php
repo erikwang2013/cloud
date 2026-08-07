@@ -3,7 +3,7 @@ namespace App\Payment\Model;
 
 use Illuminate\Database\Eloquent\Model;
 use Common\Snowflake\HasSnowflakeId;
-use Maize\Encryptable\Encryptable;
+use Erikwang2013\Encryptable\Encryptable;
 
 class PaymentChannel extends Model
 {

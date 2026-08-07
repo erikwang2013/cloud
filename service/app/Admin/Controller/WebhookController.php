@@ -31,7 +31,14 @@ class WebhookController
     public function test($request)
     {
         $url = $request->input('url');
-        WebhookDispatcher::dispatch('test.ping', ['message' => 'Webhook test from CloudPlatform']);
+        if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return json(Response::error(422, 'Valid URL required'));
+        }
+        try {
+            WebhookDispatcher::dispatchTo($url, 'test.ping', ['message' => 'Webhook test from CloudPlatform']);
+        } catch (\InvalidArgumentException $e) {
+            return json(Response::error(422, $e->getMessage()));
+        }
         return json(Response::success(null, 'Test webhook sent'));
     }
 }

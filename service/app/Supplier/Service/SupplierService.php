@@ -40,6 +40,15 @@ class SupplierService
 
     public function generateSettlement(int $supplierId, string $periodStart, string $periodEnd): SupplierSettlement
     {
+        // 幂等：同一周期已存在结算单则直接返回，避免重复生成
+        $existing = SupplierSettlement::where('supplier_id', $supplierId)
+            ->where('period_start', $periodStart)
+            ->where('period_end', $periodEnd)
+            ->first();
+        if ($existing) {
+            return $existing;
+        }
+
         $items = OrderItem::whereHas('order', function ($q) use ($periodStart, $periodEnd) {
                 $q->where('status', 'completed')
                   ->whereBetween('paid_at', [$periodStart, $periodEnd]);

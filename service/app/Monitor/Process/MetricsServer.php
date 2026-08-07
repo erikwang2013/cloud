@@ -11,19 +11,25 @@ class MetricsServer
 {
     public function onWorkerStart(Worker $worker): void
     {
-        echo "Metrics server started on http://0.0.0.0:9100\n";
+        echo "Metrics server started on {$worker->getSocketName()}\n";
 
         try {
             $redis = new Redis();
             $redis->connect(
                 getenv('REDIS_HOST') ?: '127.0.0.1',
-                (int)(getenv('REDIS_PORT') ?: 6379)
+                (int)(getenv('REDIS_PORT') ?: 6379),
+                2
             );
+            if ($password = getenv('REDIS_PASSWORD')) {
+                $redis->auth($password);
+            }
             Collector::setRedis($redis);
-        } catch (\Throwable) {}
+        } catch (\Throwable $e) {
+            echo "Metrics Redis connection failed: {$e->getMessage()}\n";
+        }
     }
 
-    public function onMessage(TcpConnection $connection, string $data): void
+    public function onMessage(TcpConnection $connection, $data): void
     {
         $response = Render::text();
         $headers = "HTTP/1.1 200 OK\r\n"

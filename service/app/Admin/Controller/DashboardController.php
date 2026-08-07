@@ -19,12 +19,16 @@ class DashboardController
         $newUsers     = User::whereDate('created_at', $today)->count();
         $activeResources = Resource::where('status', 'active')->count();
 
+        $trend = Order::selectRaw('DATE(paid_at) as day, SUM(total) as total')
+            ->where('status', '!=', 'refunded')
+            ->where('paid_at', '>=', date('Y-m-d', strtotime('-29 days')) . ' 00:00:00')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+
         $thirtyDays = [];
         for ($i = 29; $i >= 0; $i--) {
             $date = date('Y-m-d', strtotime("-{$i} days"));
-            $thirtyDays[$date] = Order::whereDate('paid_at', $date)
-                ->where('status', '!=', 'refunded')
-                ->sum('total');
+            $thirtyDays[$date] = $trend[$date] ?? '0';
         }
 
         $regionDistribution = Resource::where('status', 'active')

@@ -6,6 +6,8 @@ class I18n
     private static string $locale = 'en-US';
     private static array $messages = [];
     private static array $fallback = [];
+    // 按 locale 缓存已加载的语言包，避免每个请求重复 glob/require/merge
+    private static array $loaded = [];
 
     public static function setLocale(string $locale): void
     {
@@ -45,6 +47,12 @@ class I18n
 
     private static function loadMessages(): void
     {
+        if (isset(self::$loaded[self::$locale])) {
+            self::$messages = self::$loaded[self::$locale]['messages'];
+            self::$fallback = self::$loaded[self::$locale]['fallback'];
+            return;
+        }
+
         self::$messages = [];
         self::$fallback = [];
         $dir = base_path() . '/i18n/' . self::$locale;
@@ -70,6 +78,8 @@ class I18n
                 self::$fallback = array_merge(self::$fallback, $loaded);
             }
         }
+
+        self::$loaded[self::$locale] = ['messages' => self::$messages, 'fallback' => self::$fallback];
     }
 
     public static function translateField(?array $jsonValue): ?string

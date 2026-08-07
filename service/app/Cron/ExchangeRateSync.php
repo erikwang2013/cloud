@@ -7,7 +7,8 @@ class ExchangeRateSync
     {
         $apiUrl = getenv('EXCHANGE_RATE_API_URL') ?: 'https://api.exchangerate-api.com/v4/latest/USD';
         try {
-            $response = file_get_contents($apiUrl);
+            $ctx = stream_context_create(['http' => ['timeout' => 10, 'ignore_errors' => true]]);
+            $response = file_get_contents($apiUrl, false, $ctx);
             $data = json_decode($response, true);
             if (!empty($data['rates'])) {
                 \Illuminate\Support\Facades\Redis::set('exchange_rates', json_encode($data['rates']));

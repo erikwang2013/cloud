@@ -25,11 +25,12 @@ class DbBackupCommand extends Command
         if (!is_dir($backupDir)) mkdir($backupDir, 0755, true);
 
         $filename = $backupDir . '/backup_' . date('Ymd_His') . '.sql';
+        // 密码经 MYSQL_PWD 传入而非 -p 参数，避免出现在进程 cmdline（ps 可读）
         $command  = sprintf(
-            'mysqldump -h%s -u%s -p%s %s > %s 2>&1',
+            'MYSQL_PWD=%s mysqldump -h%s -u%s %s > %s 2>&1',
+            escapeshellarg($dbConfig['password']),
             escapeshellarg($dbConfig['host']),
             escapeshellarg($dbConfig['username']),
-            escapeshellarg($dbConfig['password']),
             escapeshellarg($dbConfig['database']),
             escapeshellarg($filename)
         );

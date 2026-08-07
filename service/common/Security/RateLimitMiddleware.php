@@ -26,18 +26,17 @@ class RateLimitMiddleware
         $key = "ratelimit:" . $request->getRealIp() . ":{$route}";
 
         try {
-            $current = \support\Redis::get($key) ?: 0;
+            // 原子计数：INCR 后判断，避免 GET+SET 竞态绕过限流
+            $current = \support\Redis::incr($key);
 
-            if ($current >= $limit['rate']) {
+            if ($current == 1) {
+                \support\Redis::expire($key, $limit['per']);
+            }
+
+            if ($current > $limit['rate']) {
                 return json(Response::error(429, 'Too Many Requests', [
                     'retry_after' => $limit['per'],
                 ]));
-            }
-
-            if ($current == 0) {
-                \support\Redis::setex($key, $limit['per'], 1);
-            } else {
-                \support\Redis::incr($key);
             }
         } catch (\Exception $e) {
             // Redis unavailable — allow request through
@@ -54,6 +53,10 @@ class RateLimitMiddleware
         // OAuth：/api/auth/{provider} 与 /api/auth/{provider}/callback
         if (preg_match('#^/api/auth/[a-z]+(/callback)?$#', $path)) {
             return 'oauth';
+        }
+        // 供应商外部 API（API Key 认证）：走 supplier_api 规则
+        if (str_starts_with($path, '/api/supplier/external/')) {
+            return 'supplier_api';
         }
         return 'default';
     }

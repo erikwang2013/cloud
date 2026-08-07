@@ -4,7 +4,7 @@ namespace App\User\Model;
 use Illuminate\Database\Eloquent\Model;
 use Common\Snowflake\HasSnowflakeId;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Maize\Encryptable\Encryptable;
+use Erikwang2013\Encryptable\Encryptable;
 use Erikwang2013\WebmanScout\Searchable;
 
 class User extends Model

@@ -43,25 +43,28 @@ class WafMiddleware
         $ua  = $request->header('User-Agent', '');
         $raw = file_get_contents('php://input') ?: '';
 
-        $patternGroups = [
-            'security.waf.sqli_patterns',
-            'security.waf.xss_patterns',
-            'security.waf.cmd_injection_patterns',
-            'security.waf.file_inclusion_patterns',
-            'security.waf.header_injection_patterns',
-            'security.waf.ssrf_patterns',
-            'security.waf.nosql_injection_patterns',
-            'security.waf.open_redirect_patterns',
-        ];
+        static $patterns = null;
+        if ($patterns === null) {
+            $patternGroups = [
+                'security.waf.sqli_patterns',
+                'security.waf.xss_patterns',
+                'security.waf.cmd_injection_patterns',
+                'security.waf.file_inclusion_patterns',
+                'security.waf.header_injection_patterns',
+                'security.waf.ssrf_patterns',
+                'security.waf.nosql_injection_patterns',
+                'security.waf.open_redirect_patterns',
+            ];
 
-        $patterns = [];
-        foreach ($patternGroups as $group) {
-            $groupPatterns = config($group);
-            if (is_array($groupPatterns)) {
-                $patterns = array_merge($patterns, $groupPatterns);
+            $patterns = [];
+            foreach ($patternGroups as $group) {
+                $groupPatterns = config($group);
+                if (is_array($groupPatterns)) {
+                    $patterns = array_merge($patterns, $groupPatterns);
+                }
             }
+            $patterns = array_unique($patterns);
         }
-        $patterns = array_unique($patterns);
 
         foreach ($patterns as $pattern) {
             if ($this->match($pattern, $input) || $this->match($pattern, $url) || $this->match($pattern, $ua) || $this->match($pattern, $raw)) {

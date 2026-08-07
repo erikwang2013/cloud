@@ -27,7 +27,8 @@ class InternalTokenMiddleware implements MiddlewareInterface
 
     private function isLoopback(Request $request): bool
     {
-        $ip = $request->getRealIp();
+        // 使用真实 socket 连接 IP，不信任任何可伪造的 X-Forwarded-For 等头
+        $ip = $request->getRemoteIp();
         return in_array($ip, ['127.0.0.1', '::1', 'localhost'], true);
     }
 }

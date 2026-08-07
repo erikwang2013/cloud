@@ -174,9 +174,8 @@ REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
 REDIS_PASSWORD=
 
-# JWT 密钥 (生成: php -r "echo bin2hex(random_bytes(32));")
-JWT_ACCESS_SECRET=<64位十六进制随机字符串>
-JWT_REFRESH_SECRET=<64位十六进制随机字符串>
+# JWT 密钥 (生成: openssl rand -base64 32；未设置时服务拒绝启动)
+JWT_SECRET_KEY=<base64 随机字符串>
 
 # 加密主密钥 (生成: php -r "echo bin2hex(random_bytes(32));")
 ENCRYPTION_MASTER_KEY=<64位十六进制随机字符串>
@@ -268,8 +267,7 @@ BACKUP_S3_REGION=us-east-1
 
 ```bash
 # 生成所有需要的随机密钥
-echo "JWT Access Secret: $(php -r 'echo bin2hex(random_bytes(32));')"
-echo "JWT Refresh Secret: $(php -r 'echo bin2hex(random_bytes(32));')"
+echo "JWT Secret Key: $(openssl rand -base64 32)"
 echo "Encryption Master Key: $(php -r 'echo bin2hex(random_bytes(32));')"
 echo "Webhook Secret: $(php -r 'echo bin2hex(random_bytes(16));')"
 ```

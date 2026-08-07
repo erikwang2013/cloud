@@ -52,24 +52,36 @@ class AffiliateService
 
     public function requestPayout(int $userId): AffiliatePayout
     {
-        $totalEarned = AffiliateEarning::where('affiliate_id', $userId)
-            ->where('status', 'approved')
-            ->sum('amount');
+        return Capsule::transaction(function () use ($userId) {
+            // 行锁串行化同一用户的并发提现请求，避免重复创建 pending 提现
+            User::where('id', $userId)->lockForUpdate()->first();
 
-        $totalPaid = AffiliatePayout::where('affiliate_id', $userId)
-            ->where('status', 'paid')
-            ->sum('amount');
+            $existing = AffiliatePayout::where('affiliate_id', $userId)
+                ->where('status', 'pending')
+                ->first();
+            if ($existing) {
+                return $existing;
+            }
 
-        $available = bcsub((string) $totalEarned, (string) $totalPaid, 4);
-        if (bccomp($available, '50', 4) < 0) {
-            throw new \RuntimeException('Minimum payout is 50.00 USD');
-        }
+            $totalEarned = AffiliateEarning::where('affiliate_id', $userId)
+                ->where('status', 'approved')
+                ->sum('amount');
 
-        return AffiliatePayout::create([
-            'affiliate_id' => $userId,
-            'amount'       => $available,
-            'status'       => 'pending',
-        ]);
+            $totalPaid = AffiliatePayout::where('affiliate_id', $userId)
+                ->where('status', 'paid')
+                ->sum('amount');
+
+            $available = bcsub((string) $totalEarned, (string) $totalPaid, 4);
+            if (bccomp($available, '50', 4) < 0) {
+                throw new \RuntimeException('Minimum payout is 50.00 USD');
+            }
+
+            return AffiliatePayout::create([
+                'affiliate_id' => $userId,
+                'amount'       => $available,
+                'status'       => 'pending',
+            ]);
+        });
     }
 
     public function approvePayout(int $payoutId): void

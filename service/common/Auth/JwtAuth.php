@@ -14,6 +14,10 @@ class JwtAuth
     public function __construct()
     {
         $cfg = config('plugin.erikwang2013.jwt.jwt');
+        // fail-fast：密钥缺失时直接拒绝启动，避免退化为空密钥 HS256（可伪造 token）
+        if (empty($cfg['secret_key'])) {
+            throw new \RuntimeException('JWT_SECRET_KEY is not configured');
+        }
         $this->accessTtl  = (int)($cfg['default_expire'] ?? 900);
         $this->refreshTtl = (int)($cfg['refresh_expire'] ?? 2592000);
 

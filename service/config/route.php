@@ -198,6 +198,9 @@ Route::group('/api', function () {
     Route::post('/supplier/ratings', [App\Supplier\Controller\SupplierRatingController::class, 'store']);
     Route::get('/supplier/ratings/me', [App\Supplier\Controller\SupplierRatingController::class, 'myRatings']);
 
+    // Logout (revokes current access token via blacklist)
+    Route::post('/auth/logout', [App\User\Controller\AuthController::class, 'logout']);
+
     // Affiliate
     Route::get('/affiliate/summary', [App\Affiliate\Controller\AffiliateController::class, 'summary']);
     Route::post('/affiliate/links', [App\Affiliate\Controller\AffiliateController::class, 'generateLink']);
@@ -225,7 +228,7 @@ Route::group('/api', function () {
     Route::get('/supplier/external/settlements/{id}', [App\Supplier\Controller\External\SettlementController::class, 'show']);
     Route::post('/supplier/external/withdraw', [App\Supplier\Controller\External\WithdrawController::class, 'store']);
     Route::get('/supplier/external/withdraws', [App\Supplier\Controller\External\WithdrawController::class, 'index']);
-})->middleware([Common\Version\Middleware\VersionMiddleware::class, Common\Auth\Middleware\SupplierApiKeyMiddleware::class]);
+})->middleware([Common\Version\Middleware\VersionMiddleware::class, Common\Auth\Middleware\SupplierApiKeyMiddleware::class, Common\Security\RateLimitMiddleware::class]);
 
 // === Admin routes ===
 Route::group('/admin/api', function () {

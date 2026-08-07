@@ -70,7 +70,7 @@ class MeterCollector
 
     private function collectDiskMetrics(Resource $resource): array
     {
-        $disk = ResourceDisk::where('resource_id', $resource->first())->first();
+        $disk = ResourceDisk::where('resource_id', $resource->id)->first();
         if (!$disk) return [];
         return ['disk_usage_gb' => $disk->size_gb ?? 0, 'disk_io_read' => 0, 'disk_io_write' => 0];
     }

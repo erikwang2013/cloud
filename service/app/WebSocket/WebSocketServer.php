@@ -25,7 +25,6 @@ class WebSocketServer
     {
         // Parse JWT token from query string
         $query = [];
-        parse_str($connection->worker->getConnections() ? '' : '', $query);
         parse_str($connection->queryString() ?? '', $query);
 
         $token  = $query['token'] ?? '';

@@ -80,7 +80,7 @@ Redis 路径（验证码、限流、JWT 黑名单存储）全部实测可用。
 | 缺 CSP 头 | 全站未配置 Content-Security-Policy；API JSON 场景风险低，建议在 SecurityHeadersMiddleware 补 `default-src 'none'` 级别策略 |
 | WAF 性能 | WafMiddleware 每请求 `file_get_contents('php://input')` 读全量 body 扫描（31 种模式），高流量下有内存/CPU 开销，建议仅对 POST/PUT 且 Content-Type 匹配时读 body |
 | HealthController `shell_exec('git rev-parse')` | 每个 health 请求起子进程；生产建议只用 `APP_VERSION` env，shell 仅本地开发 fallback |
-| RateLimit TOCTOU | check-then-set 非原子（竞态下可超发）；可换 `SET NX EX` 或 Lua 脚本 |
+| ~~RateLimit TOCTOU~~ | ~~check-then-set 非原子~~ **已修复（2026-08-07）：** 改为原子 `INCR` + 首次 `EXPIRE`，见 §七-6 |
 | X-XSS-Protection | 已弃用头，保留无害；CSP 到位后可移除 |
 
 ---
@@ -88,7 +88,7 @@ Redis 路径（验证码、限流、JWT 黑名单存储）全部实测可用。
 ## 四、环境缺口（非代码问题，需运维补）
 
 1. **`.env` 缺 `DB_PASSWORD`**（唯一阻塞项）：docker-compose 以 `${DB_PASSWORD}` 创建 app_user，本地 .env 该键缺失 → 所有 DB 端点 500。`DB_PASSWORD` 已在 `.env.example` 定义，属部署凭据，需用户补入 `.env`。
-2. **9100 被本机 dart 进程占用**：metrics 进程默认端口绑定失败会**阻止整组启动**（webman 启动前全端口预检）。绕行：`METRICS_PORT=9199 WS_PORT=8299 php start.php start -d`（进程级 env，不改文件）。dart 释放 9100 后即可用默认配置。
+2. **9100 被本机 dart 进程占用**：metrics 进程默认端口绑定失败会**阻止整组启动**（webman 启动前全端口预检）。已持久化绕行：`.env` 写入 `METRICS_PORT=9199`（2026-08-07）。dart 释放 9100 后可改回默认。
 3. **composer validate fatal**（第三方）：`erikwang2013/security-php` 的 composer 插件与 composer 自身 eval 冲突（`isLaravel()` 重复声明），与本项目代码无关；CI 中 `composer validate --strict` 步骤可能因此失败，建议 CI 该步骤加 continue-on-error 或跳过 service 包。
 4. 上轮记录的 8787 被 erp-php 占用已解除（本轮实测可绑定）。
 
@@ -119,6 +119,17 @@ Redis 路径（验证码、限流、JWT 黑名单存储）全部实测可用。
 
 ---
 
+## 七、第四轮补充修复（2026-08-07）
+
+1. **计费原子性（P0 财务）**：`BillingEngine::runDaily()` 按资源包裹事务，扣款/挂起/事件标记同事务提交；`StripeChannel::confirmPayment()` 用 `UPDATE ... WHERE status='pending'` 原子抢占 + 订单行锁，防 webhook 重复入账。
+2. **并发幂等（P0/P1）**：`AffiliateService::requestPayout()` 行锁 + 已存在 pending 提现直接返回；`SupplierSettlement`（cron 与 `generateSettlement`）按供应商+周期判重。
+3. **数据正确性（P1）**：`MeterCollector` 修复 `$resource->first()` 意外全表查询；`ExchangeRateSync` 加 10s 超时。
+4. **性能（P2）**：Dashboard 30 次 SUM 查询合并为单条 GROUP BY；`CacheService::forgetPattern()` KEYS→SCAN 游标；`I18n` 语言包按 locale 进程内缓存；`ImportExport` 导入整轮事务；`BillingEngine` 预取费率映射消除 N+1。
+5. **安全（P1）**：`InternalTokenMiddleware` 用 `getRemoteIp()` 防 XFF 伪造；Webhook 注册拒绝私网地址（SSRF）；`JwtAuth` 空密钥 fail-fast；`DbBackupCommand` 密码改 `MYSQL_PWD` 防 `ps` 泄漏；CSV/Excel 导出防公式注入；供应商外部 API 挂上 `supplier_api` 限流。
+6. **基础设施（P2）**：`RateLimitMiddleware` 原子 INCR（消除 TOCTOU）；`MetricsServer` 修 `onMessage` 类型崩溃循环；`HealthController` Redis 连接池化；补装 `symfony/mailer ^6.4`（EmailSender 原为隐雷）；admin 侧 `EncryptableBootstrap` 命名空间修正。
+
+---
+
 ## 结论
 
-本轮从"代码可读"推进到"**可启动、可运行**"：8 处 P0 级故障全部修复并实测，316 个测试全绿，完整中间件链冒烟通过。剩余阻塞仅一项环境缺口（DB_PASSWORD），补入后即可全链路验证。
+本轮从"代码可读"推进到"**可启动、可运行**"：8 处 P0 级故障全部修复并实测，316 个测试全绿，完整中间件链冒烟通过。剩余阻塞仅一项环境缺口（DB_PASSWORD），补入后即可全链路验证。第四轮（2026-08-07）进一步完成计费原子性、并发幂等、限流/注入防护等 20+ 项加固。

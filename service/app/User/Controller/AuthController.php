@@ -3,6 +3,7 @@ namespace App\User\Controller;
 
 use App\User\Service\AuthService;
 use App\User\Service\OAuthService;
+use Common\Auth\JwtAuth;
 use Common\Auth\TotpService;
 use Common\Captcha\CaptchaService;
 use Common\Helper\Response;
@@ -425,6 +426,22 @@ class AuthController
             ->update(['revoked' => true]);
 
         return json(Response::success(null, 'Session revoked'));
+    }
+
+    public function logout($request)
+    {
+        $header = $request->header('Authorization');
+        if (!$header || !str_starts_with($header, 'Bearer ')) {
+            return json(Response::error(401, 'Unauthorized'));
+        }
+
+        try {
+            (new JwtAuth())->blacklist(substr($header, 7));
+        } catch (\Throwable $e) {
+            return json(Response::error(500, 'Logout failed'));
+        }
+
+        return json(Response::success(null, 'Logged out'));
     }
 
     // --- Account deletion ---

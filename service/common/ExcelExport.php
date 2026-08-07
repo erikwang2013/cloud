@@ -1,6 +1,8 @@
 <?php
 namespace Common;
 
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -50,7 +52,13 @@ class ExcelExport
             if (is_array($value)) {
                 $value = json_encode($value, JSON_UNESCAPED_UNICODE);
             }
-            $this->sheet->setCellValue($colIndex . $this->rowIndex, (string) $value);
+            $value = (string) $value;
+            // 防公式注入：以 = + - @ 开头的值强制存为文本，避免被 Excel 当作公式执行
+            if ($value !== '' && str_contains('=+-@', $value[0])) {
+                $this->sheet->setCellValueExplicit($colIndex . $this->rowIndex, $value, DataType::TYPE_STRING);
+            } else {
+                $this->sheet->setCellValue($colIndex . $this->rowIndex, $value);
+            }
             $colIndex++;
         }
         $this->rowIndex++;
@@ -72,10 +80,11 @@ class ExcelExport
             mkdir($dir, 0755, true);
         }
 
-        $path = $dir . '/' . $filename;
+        // basename 防止调用方传入带路径分隔符的文件名造成目录穿越
+        $path = $dir . '/' . basename($filename);
         $writer = new Xlsx($this->spreadsheet);
 
-        foreach (range('A', chr(64 + count($this->columns))) as $col) {
+        foreach (range('A', Coordinate::stringFromColumnIndex(count($this->columns))) as $col) {
             $this->sheet->getColumnDimension($col)->setAutoSize(true);
         }
 

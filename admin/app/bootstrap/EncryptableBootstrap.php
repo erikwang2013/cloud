@@ -7,11 +7,11 @@
 
 namespace app\bootstrap;
 
-use Maize\Encryptable\Bridge\Laravel\IlluminateDbDriverDetector;
-use Maize\Encryptable\Bridge\Webman\WebmanPluginEncryptableConfig;
-use Maize\Encryptable\Encryption;
-use Maize\Encryptable\DBEncrypter;
-use Maize\Encryptable\PHPEncrypter;
+use Erikwang2013\Encryptable\Bridge\Laravel\IlluminateDbDriverDetector;
+use Erikwang2013\Encryptable\Bridge\Webman\WebmanPluginEncryptableConfig;
+use Erikwang2013\Encryptable\Encryption;
+use Erikwang2013\Encryptable\DBEncrypter;
+use Erikwang2013\Encryptable\PHPEncrypter;
 use Webman\Bootstrap;
 use Workerman\Worker;
 
