@@ -11,6 +11,11 @@ class ExchangeRateSync
             $response = file_get_contents($apiUrl, false, $ctx);
             $data = json_decode($response, true);
             if (!empty($data['rates'])) {
+                // 逐币种写入，供 OrderService::getExchangeRate 按 "exchange_rate:{currency}" 读取
+                foreach ($data['rates'] as $currency => $rate) {
+                    \Illuminate\Support\Facades\Redis::set("exchange_rate:{$currency}", (string) $rate);
+                }
+                // 保留全量键供其他用途
                 \Illuminate\Support\Facades\Redis::set('exchange_rates', json_encode($data['rates']));
                 echo date('Y-m-d H:i:s') . " Exchange rates updated. Currencies: " . count($data['rates']) . "\n";
             }

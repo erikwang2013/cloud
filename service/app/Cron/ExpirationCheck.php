@@ -20,8 +20,8 @@ class ExpirationCheck
                 ->get();
 
             foreach ($resources as $resource) {
-                if ($resource->user) {
-                    \Common\Notification\NotificationDispatcher::send($resource->user, 'resource_expiring', [
+                if ($resource->user_id) {
+                    (new \App\Notification\Service\NotificationDispatcher())->dispatch($resource->user_id, 'resource_expiring', [
                         'resource_id'   => $resource->id,
                         'resource_type' => $resource->type,
                         'expired_at'    => $resource->expired_at,
@@ -40,7 +40,7 @@ class ExpirationCheck
         foreach ($domains as $domain) {
             $daysLeft = (int) ceil((strtotime($domain->expires_at) - time()) / 86400);
             if ($daysLeft > 0 && in_array($daysLeft, $warnDays) && $domain->user) {
-                \Common\Notification\NotificationDispatcher::send($domain->user, 'domain_expiring', [
+                (new \App\Notification\Service\NotificationDispatcher())->dispatch($domain->user_id, 'domain_expiring', [
                     'domain'    => $domain->domain_name,
                     'expires_at'=> $domain->expires_at,
                     'days_left' => $daysLeft,

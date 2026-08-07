@@ -17,6 +17,7 @@ services:
       - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
       - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
       - ENCRYPTION_MASTER_KEY=${ENCRYPTION_MASTER_KEY}
+      - ES_HOST=${ES_HOST:-elasticsearch}
     depends_on:
       - mysql
       - redis

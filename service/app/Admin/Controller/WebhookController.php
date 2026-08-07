@@ -2,6 +2,7 @@
 namespace App\Admin\Controller;
 
 use Common\Helper\Response;
+use Common\Security\AuditLogger;
 use Common\Webhook\WebhookDispatcher;
 
 class WebhookController
@@ -18,6 +19,12 @@ class WebhookController
             return json(Response::error(422, 'Valid URL required'));
         }
         WebhookDispatcher::register($url);
+
+        AuditLogger::record('admin_webhook_store', [
+            'user_id' => $request->userId,
+            'input'   => ['url' => $url],
+        ], $request);
+
         return json(Response::success(null, 'Webhook registered'));
     }
 
@@ -25,6 +32,12 @@ class WebhookController
     {
         $url = $request->input('url');
         WebhookDispatcher::unregister($url);
+
+        AuditLogger::record('admin_webhook_destroy', [
+            'user_id' => $request->userId,
+            'input'   => ['url' => $url],
+        ], $request);
+
         return json(Response::success(null, 'Webhook removed'));
     }
 

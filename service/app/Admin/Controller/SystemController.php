@@ -3,6 +3,7 @@ namespace App\Admin\Controller;
 
 use Common\Feature\FeatureFlags;
 use Common\Helper\Response;
+use Common\Security\AuditLogger;
 use Illuminate\Database\Capsule\Manager as DB;
 
 class SystemController
@@ -19,6 +20,11 @@ class SystemController
 
     public function updateConfig($request)
     {
+        AuditLogger::record('admin_config_update', [
+            'user_id' => $request->userId,
+            'input'   => $request->all(),
+        ], $request);
+
         return json(Response::success(null, 'Config updated'));
     }
 
@@ -46,6 +52,11 @@ class SystemController
                 : FeatureFlags::enable($name),
             default   => null,
         };
+
+        AuditLogger::record('admin_feature_toggle', [
+            'user_id' => $request->userId,
+            'input'   => ['feature' => $name, 'action' => $action],
+        ], $request);
 
         return json(Response::success([
             'feature' => $name,

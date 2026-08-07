@@ -15,7 +15,7 @@ use Workerman\Worker;
 
 class DashboardController extends Base
 {
-    protected $noNeedAuth = ['index'];
+    protected $noNeedAuth = [];
 
     /**
      * Dashboard data API — returns JSON for ECharts and stat cards.

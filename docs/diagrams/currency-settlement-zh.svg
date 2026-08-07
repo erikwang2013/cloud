@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" font-family="'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" font-family="'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif">
   <defs>
     <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1e40af"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient>
     <linearGradient id="userGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#eff6ff"/><stop offset="100%" stop-color="#dbeafe"/></linearGradient>
@@ -11,7 +11,7 @@
     <marker id="arr" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/></marker>
   </defs>
 
-  <rect width="1200" height="720" fill="#f8fafc" rx="12"/>
+  <rect width="1200" height="760" fill="#f8fafc" rx="12"/>
   <rect x="0" y="0" width="1200" height="56" fill="url(#hdr)" rx="12"/>
   <rect x="0" y="12" width="1200" height="44" fill="url(#hdr)"/>
   <text x="600" y="37" text-anchor="middle" fill="#fff" font-size="20" font-weight="bold">Cloud Platform — 多币种结算流程图</text>
@@ -87,13 +87,15 @@
 
   <!-- Key mechanisms -->
   <g font-size="11" fill="#64748b">
-    <rect x="30" y="460" width="1140" height="180" rx="10" fill="#ffffff" stroke="#e2e8f0"/>
+    <rect x="30" y="460" width="1140" height="196" rx="10" fill="#ffffff" stroke="#e2e8f0"/>
     <text x="50" y="488" font-weight="bold" fill="#475569" font-size="12">关键机制：</text>
     <text x="50" y="512">· 汇率同步：ExchangeRateSync 定时任务拉取汇率 → Redis 缓存（30 分钟 TTL）</text>
-    <text x="50" y="536">· 分币种隔离：uk_user_currency (user_id, currency) / uk_sku_region_currency (sku_id, region_id, currency) 唯一约束</text>
-    <text x="50" y="560">· 汇率快照：订单与支付交易均记录下单时 exchange_rate，保证结算可追溯</text>
-    <text x="50" y="584">· 币种范围：任意 Stripe 支持的币种（USD / CNY / JPY / KRW / VND 等），内置 16 种零小数币种处理</text>
-    <text x="50" y="608">· 支付通道：erik_payment_channels.currency_support 声明币种白名单，PaymentRouter 动态过滤，无需改代码上下线</text>
+    <text x="50" y="536">· 分币种隔离：uk_user_currency (user_id, currency)</text>
+    <text x="50" y="554">uk_sku_region_currency (sku_id, region_id, currency) 唯一约束</text>
+    <text x="50" y="578">· 汇率快照：订单与支付交易均记录下单时 exchange_rate，保证结算可追溯</text>
+    <text x="50" y="602">· 币种范围：任意 Stripe 支持的币种（USD / CNY / JPY / KRW / VND 等），内置 16 种零小数币种处理</text>
+    <text x="50" y="626">· 支付通道：erik_payment_channels.currency_support 声明币种白名单，</text>
+    <text x="50" y="644">PaymentRouter 动态过滤，无需改代码上下线</text>
   </g>
 
   <!-- Security bar -->
@@ -101,5 +103,8 @@
     <rect x="0" y="660" width="1200" height="60" fill="url(#secBar)"/>
     <text x="600" y="686" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">全局安全防护：CORS · WAF (45+规则) · SecurityPlugin · GeoBlock</text>
     <text x="600" y="704" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">(31种攻击检测) · AES-256-GCM · 频率限制 · 审计日志 · 二次确认</text>
+  </g>
+<g opacity="0.5">
+    <text x="1184" y="750" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="rgba(0,0,0,0.18)">https://erik.xyz</text>
   </g>
 </svg>

@@ -5,7 +5,7 @@
 --
 
 -- CloudPlatform — Unified Database DDL
--- Tables: wa_* (admin panel) + erik_* (business)
+-- Tables: wa_* (admin panel) + business tables (no prefix)
 -- Primary Key: BIGINT (non auto-increment, application-generated)
 -- ============================================================
 
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS `wa_users` (
 
 -- ======================== User ========================
 
-CREATE TABLE IF NOT EXISTS `erik_users` (
+CREATE TABLE IF NOT EXISTS `users` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     email           VARCHAR(255)    DEFAULT NULL,
     phone           VARCHAR(32)     DEFAULT NULL,
@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS `erik_users` (
     INDEX idx_fcm_token (fcm_token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_user_profiles` (
+CREATE TABLE IF NOT EXISTS `user_profiles` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     avatar          VARCHAR(512)    DEFAULT NULL,
@@ -157,7 +157,7 @@ CREATE TABLE IF NOT EXISTS `erik_user_profiles` (
     INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_user_kyc` (
+CREATE TABLE IF NOT EXISTS `user_kyc` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     user_id             BIGINT          NOT NULL,
     id_type             VARCHAR(32)     NOT NULL,
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS `erik_user_kyc` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_user_balances` (
+CREATE TABLE IF NOT EXISTS `user_balances` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     currency        VARCHAR(3)      NOT NULL DEFAULT 'USD',
@@ -187,7 +187,7 @@ CREATE TABLE IF NOT EXISTS `erik_user_balances` (
     INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_user_addresses` (
+CREATE TABLE IF NOT EXISTS `user_addresses` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     type            VARCHAR(32)     NOT NULL DEFAULT 'billing',
@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS `erik_user_addresses` (
     INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_refresh_tokens` (
+CREATE TABLE IF NOT EXISTS `refresh_tokens` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     user_id             BIGINT          NOT NULL,
     token_hash          VARCHAR(128)    NOT NULL,
@@ -220,7 +220,7 @@ CREATE TABLE IF NOT EXISTS `erik_refresh_tokens` (
 
 -- ======================== Product ========================
 
-CREATE TABLE IF NOT EXISTS `erik_product_categories` (
+CREATE TABLE IF NOT EXISTS `product_categories` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     parent_id       BIGINT          DEFAULT NULL,
     name            JSON            NOT NULL,
@@ -237,7 +237,7 @@ CREATE TABLE IF NOT EXISTS `erik_product_categories` (
     INDEX idx_sort (sort)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_products` (
+CREATE TABLE IF NOT EXISTS `products` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     category_id     BIGINT          NOT NULL,
     supplier_id     BIGINT          DEFAULT NULL,
@@ -253,7 +253,7 @@ CREATE TABLE IF NOT EXISTS `erik_products` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_product_skus` (
+CREATE TABLE IF NOT EXISTS `product_skus` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     product_id      BIGINT          NOT NULL,
     sku_code        VARCHAR(128)    NOT NULL,
@@ -266,7 +266,7 @@ CREATE TABLE IF NOT EXISTS `erik_product_skus` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_product_regions` (
+CREATE TABLE IF NOT EXISTS `product_regions` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     sku_id          BIGINT          NOT NULL,
     region_id       BIGINT          NOT NULL,
@@ -280,7 +280,7 @@ CREATE TABLE IF NOT EXISTS `erik_product_regions` (
     INDEX idx_region (region_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_product_images` (
+CREATE TABLE IF NOT EXISTS `product_images` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     product_id      BIGINT          NOT NULL,
     url             VARCHAR(512)    NOT NULL,
@@ -290,7 +290,7 @@ CREATE TABLE IF NOT EXISTS `erik_product_images` (
     INDEX idx_product (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_product_reviews` (
+CREATE TABLE IF NOT EXISTS `product_reviews` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     product_id      BIGINT          NOT NULL,
@@ -305,7 +305,7 @@ CREATE TABLE IF NOT EXISTS `erik_product_reviews` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_regions` (
+CREATE TABLE IF NOT EXISTS `regions` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     name            VARCHAR(128)    NOT NULL,
     continent       VARCHAR(32)     NOT NULL,
@@ -319,7 +319,7 @@ CREATE TABLE IF NOT EXISTS `erik_regions` (
 
 -- ======================== Order ========================
 
-CREATE TABLE IF NOT EXISTS `erik_carts` (
+CREATE TABLE IF NOT EXISTS `carts` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     sku_id          BIGINT          NOT NULL,
@@ -331,7 +331,7 @@ CREATE TABLE IF NOT EXISTS `erik_carts` (
     INDEX idx_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_orders` (
+CREATE TABLE IF NOT EXISTS `orders` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_no        VARCHAR(32)     NOT NULL,
     user_id         BIGINT          NOT NULL,
@@ -352,7 +352,7 @@ CREATE TABLE IF NOT EXISTS `erik_orders` (
     INDEX idx_paid_at (paid_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_order_items` (
+CREATE TABLE IF NOT EXISTS `order_items` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     order_id            BIGINT          NOT NULL,
     sku_id              BIGINT          NOT NULL,
@@ -371,7 +371,7 @@ CREATE TABLE IF NOT EXISTS `erik_order_items` (
     INDEX idx_product (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_order_timeline` (
+CREATE TABLE IF NOT EXISTS `order_timeline` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_id        BIGINT          NOT NULL,
     status          VARCHAR(32)     NOT NULL,
@@ -382,7 +382,7 @@ CREATE TABLE IF NOT EXISTS `erik_order_timeline` (
     INDEX idx_order (order_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_refunds` (
+CREATE TABLE IF NOT EXISTS `refunds` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_id        BIGINT          NOT NULL,
     user_id         BIGINT          NOT NULL,
@@ -398,7 +398,7 @@ CREATE TABLE IF NOT EXISTS `erik_refunds` (
 
 -- ======================== Payment ========================
 
-CREATE TABLE IF NOT EXISTS `erik_payment_channels` (
+CREATE TABLE IF NOT EXISTS `payment_channels` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     name                VARCHAR(128)    NOT NULL,
     code                VARCHAR(64)     NOT NULL,
@@ -417,7 +417,7 @@ CREATE TABLE IF NOT EXISTS `erik_payment_channels` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_payment_transactions` (
+CREATE TABLE IF NOT EXISTS `payment_transactions` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_id        BIGINT          NOT NULL,
     user_id         BIGINT          NOT NULL,
@@ -440,7 +440,7 @@ CREATE TABLE IF NOT EXISTS `erik_payment_transactions` (
 
 -- ======================== Domain ========================
 
-CREATE TABLE IF NOT EXISTS `erik_domain_tlds` (
+CREATE TABLE IF NOT EXISTS `domain_tlds` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     tld             VARCHAR(32)     NOT NULL,
     registrar       VARCHAR(128)    NOT NULL,
@@ -452,7 +452,7 @@ CREATE TABLE IF NOT EXISTS `erik_domain_tlds` (
     UNIQUE INDEX uk_tld (tld)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_dns_zones` (
+CREATE TABLE IF NOT EXISTS `dns_zones` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     domain_name     VARCHAR(255)    NOT NULL,
@@ -462,7 +462,7 @@ CREATE TABLE IF NOT EXISTS `erik_dns_zones` (
     INDEX idx_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_dns_records` (
+CREATE TABLE IF NOT EXISTS `dns_records` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     zone_id         BIGINT          NOT NULL,
     type            VARCHAR(16)     NOT NULL,
@@ -478,7 +478,7 @@ CREATE TABLE IF NOT EXISTS `erik_dns_records` (
 
 -- ======================== Provisioning ========================
 
-CREATE TABLE IF NOT EXISTS `erik_host_machines` (
+CREATE TABLE IF NOT EXISTS `host_machines` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     region_id           BIGINT          NOT NULL,
     name                VARCHAR(255)    NOT NULL,
@@ -494,7 +494,7 @@ CREATE TABLE IF NOT EXISTS `erik_host_machines` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_ip_pools` (
+CREATE TABLE IF NOT EXISTS `ip_pools` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     host_machine_id BIGINT          NOT NULL,
     ip_start        VARCHAR(64)     NOT NULL,
@@ -507,7 +507,7 @@ CREATE TABLE IF NOT EXISTS `erik_ip_pools` (
     INDEX idx_host (host_machine_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_ip_allocations` (
+CREATE TABLE IF NOT EXISTS `ip_allocations` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     ip_pool_id      BIGINT          NOT NULL,
     resource_id     BIGINT          NOT NULL,
@@ -522,7 +522,7 @@ CREATE TABLE IF NOT EXISTS `erik_ip_allocations` (
     INDEX idx_resource (resource_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_provision_tasks` (
+CREATE TABLE IF NOT EXISTS `provision_tasks` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_id        BIGINT          NOT NULL,
     order_item_id   BIGINT          NOT NULL,
@@ -544,7 +544,7 @@ CREATE TABLE IF NOT EXISTS `erik_provision_tasks` (
     INDEX idx_status_next (status, next_retry_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_resources` (
+CREATE TABLE IF NOT EXISTS `resources` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_item_id   BIGINT          NOT NULL,
     user_id         BIGINT          NOT NULL,
@@ -565,7 +565,7 @@ CREATE TABLE IF NOT EXISTS `erik_resources` (
     INDEX idx_expired (expired_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_disks` (
+CREATE TABLE IF NOT EXISTS `disks` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     resource_id     BIGINT          NOT NULL,
     host_machine_id BIGINT          NOT NULL,
@@ -581,7 +581,7 @@ CREATE TABLE IF NOT EXISTS `erik_disks` (
     INDEX idx_host (host_machine_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_disk_resizes` (
+CREATE TABLE IF NOT EXISTS `disk_resizes` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     disk_id         BIGINT          NOT NULL,
     old_size_gb     INT             NOT NULL,
@@ -595,7 +595,7 @@ CREATE TABLE IF NOT EXISTS `erik_disk_resizes` (
 
 -- ======================== Ticket ========================
 
-CREATE TABLE IF NOT EXISTS `erik_tickets` (
+CREATE TABLE IF NOT EXISTS `tickets` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     ticket_no       VARCHAR(32)     NOT NULL,
     user_id         BIGINT          NOT NULL,
@@ -618,7 +618,7 @@ CREATE TABLE IF NOT EXISTS `erik_tickets` (
     INDEX idx_category (category)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_ticket_messages` (
+CREATE TABLE IF NOT EXISTS `ticket_messages` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     ticket_id       BIGINT          NOT NULL,
     sender_id       BIGINT          NOT NULL,
@@ -632,7 +632,7 @@ CREATE TABLE IF NOT EXISTS `erik_ticket_messages` (
 
 -- ======================== Supplier ========================
 
-CREATE TABLE IF NOT EXISTS `erik_suppliers` (
+CREATE TABLE IF NOT EXISTS `suppliers` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     user_id             BIGINT          NOT NULL,
     company_name        VARCHAR(255)    NOT NULL,
@@ -649,7 +649,7 @@ CREATE TABLE IF NOT EXISTS `erik_suppliers` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_supplier_settlements` (
+CREATE TABLE IF NOT EXISTS `supplier_settlements` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     supplier_id     BIGINT          NOT NULL,
     period_start    DATE            NOT NULL,
@@ -665,7 +665,7 @@ CREATE TABLE IF NOT EXISTS `erik_supplier_settlements` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_supplier_withdraws` (
+CREATE TABLE IF NOT EXISTS `supplier_withdraws` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     supplier_id     BIGINT          NOT NULL,
     amount          DECIMAL(16,4)   NOT NULL,
@@ -680,7 +680,7 @@ CREATE TABLE IF NOT EXISTS `erik_supplier_withdraws` (
 
 -- ======================== Notification ========================
 
-CREATE TABLE IF NOT EXISTS `erik_notifications` (
+CREATE TABLE IF NOT EXISTS `notifications` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     channel         VARCHAR(32)     NOT NULL DEFAULT 'in_app',
@@ -693,7 +693,7 @@ CREATE TABLE IF NOT EXISTS `erik_notifications` (
     INDEX idx_status (send_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `erik_notification_templates` (
+CREATE TABLE IF NOT EXISTS `notification_templates` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     code            VARCHAR(128)    NOT NULL,
     name            VARCHAR(255)    NOT NULL,
@@ -707,7 +707,7 @@ CREATE TABLE IF NOT EXISTS `erik_notification_templates` (
 
 -- ======================== Monitor ========================
 
-CREATE TABLE IF NOT EXISTS `erik_alerts` (
+CREATE TABLE IF NOT EXISTS `alerts` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     rule_code       VARCHAR(128)    NOT NULL,
     severity        VARCHAR(32)     NOT NULL DEFAULT 'warning',
@@ -726,7 +726,7 @@ CREATE TABLE IF NOT EXISTS `erik_alerts` (
 
 -- ======================== Audit ========================
 
-CREATE TABLE IF NOT EXISTS `erik_audit_logs` (
+CREATE TABLE IF NOT EXISTS `audit_logs` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          DEFAULT NULL,
     action          VARCHAR(128)    NOT NULL,

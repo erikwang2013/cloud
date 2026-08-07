@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 930" font-family="'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 970" font-family="'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif">
   <defs>
     <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1e40af"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient>
     <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/></filter>
     <marker id="arrD" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/></marker>
   </defs>
 
-  <rect width="1100" height="930" fill="#f8fafc" rx="12"/>
+  <rect width="1100" height="970" fill="#f8fafc" rx="12"/>
   <rect x="0" y="0" width="1100" height="50" fill="url(#hdr)" rx="12"/>
   <rect x="0" y="12" width="1100" height="38" fill="url(#hdr)"/>
   <text x="550" y="34" text-anchor="middle" fill="#fff" font-size="18" font-weight="bold">Cloud Platform — 功能模块架构图</text>
@@ -239,5 +239,8 @@
     <rect x="890" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
     <text x="965" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Grafana</text>
     <text x="965" y="872" text-anchor="middle" fill="#059669" font-size="10">可视化仪表盘</text>
+  </g>
+<g opacity="0.5">
+    <text x="1084" y="958" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="rgba(0,0,0,0.18)">https://erik.xyz</text>
   </g>
 </svg>

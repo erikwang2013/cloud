@@ -124,7 +124,7 @@ class AuthController
         \Illuminate\Support\Facades\Redis::setex("password_reset:{$email}", 600, $code);
 
         // Dispatch email asynchronously via NotificationDispatcher
-        \Common\Notification\NotificationDispatcher::send($user, 'password_reset', [
+        (new \App\Notification\Service\NotificationDispatcher())->dispatch($user->id, 'password_reset', [
             'code' => $code,
         ], ['email']);
 
@@ -333,7 +333,7 @@ class AuthController
 
         $user->update(['email_verify_token' => bin2hex(random_bytes(32))]);
         $verifyUrl = getenv('APP_URL') . '/api/auth/verify-email?token=' . $user->email_verify_token;
-        \Common\Notification\NotificationDispatcher::send($user, 'email_verify', [
+        (new \App\Notification\Service\NotificationDispatcher())->dispatch($user->id, 'email_verify', [
             'verify_url' => $verifyUrl,
         ], ['email']);
 

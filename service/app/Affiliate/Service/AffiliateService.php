@@ -89,6 +89,12 @@ class AffiliateService
         $payout = AffiliatePayout::findOrFail($payoutId);
 
         Capsule::transaction(function () use ($payout) {
+            // 行锁 + 状态守卫：仅允许 pending 状态的提现审批，防止重复审批双重入账
+            $locked = AffiliatePayout::where('id', $payout->id)->lockForUpdate()->first();
+            if (!$locked || $locked->status !== 'pending') {
+                throw new \RuntimeException("Payout #{$payoutId} is not pending, cannot approve");
+            }
+
             $payout->update(['status' => 'approved', 'paid_at' => date('Y-m-d H:i:s')]);
 
             $balance = UserBalance::firstOrCreate(

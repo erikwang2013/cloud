@@ -50,6 +50,9 @@ class ProvisioningService
                 'next_retry_at' => date('Y-m-d H:i:s'),
             ]);
         }
+
+        // Enqueue provisioning job so the queue consumer picks up the pending tasks
+        \Webman\RedisQueue\Client::send('provisioning', ['order_id' => $order->id]);
     }
 
     private function getProductType(OrderItem $item): string

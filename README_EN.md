@@ -47,11 +47,11 @@ The platform natively supports multi-currency pricing, payment, and settlement �
 
 **1. Multi-Currency Balance Accounts**
 
-`erik_user_balances` keeps per-currency ledgers keyed by `(user_id, currency)` (unique index `uk_user_currency`). Registration creates USD + CNY balance accounts by default; balance and frozen balance are managed independently per currency, extensible to any Stripe-supported currency.
+`user_balances` keeps per-currency ledgers keyed by `(user_id, currency)` (unique index `uk_user_currency`). Registration creates USD + CNY balance accounts by default; balance and frozen balance are managed independently per currency, extensible to any Stripe-supported currency.
 
 **2. Multi-Currency Regional Pricing**
 
-`erik_product_regions` supports multiple currency prices for the same SKU in the same region (unique index `uk_sku_region_currency`). Prices are displayed in the user's preferred currency, and `OrderService` resolves the exact price by `(sku_id, region_id, currency)` at checkout.
+`product_regions` supports multiple currency prices for the same SKU in the same region (unique index `uk_sku_region_currency`). Prices are displayed in the user's preferred currency, and `OrderService` resolves the exact price by `(sku_id, region_id, currency)` at checkout.
 
 **3. Exchange Rate System**
 
@@ -59,11 +59,11 @@ The `ExchangeRateSync` cron job pulls rates from exchangerate-api into Redis (30
 
 **4. Multi-Currency Payment**
 
-`erik_payment_channels.currency_support` declares the supported-currency whitelist per channel; `PaymentRouter` filters available channels dynamically by currency / amount range / visible regions. Stripe PaymentIntents charge in the order currency directly, with built-in handling for 16 zero-decimal currencies (JPY / KRW / VND, etc.). Webhook callbacks verify amount and currency consistency.
+`payment_channels.currency_support` declares the supported-currency whitelist per channel; `PaymentRouter` filters available channels dynamically by currency / amount range / visible regions. Stripe PaymentIntents charge in the order currency directly, with built-in handling for 16 zero-decimal currencies (JPY / KRW / VND, etc.). Webhook callbacks verify amount and currency consistency.
 
 **5. Settlement & Reporting**
 
-Payment transactions (`erik_payment_transactions`), supplier settlements (`erik_supplier_settlements`), and revenue reports all retain currency and exchange-rate fields and aggregate per currency.
+Payment transactions (`payment_transactions`), supplier settlements (`supplier_settlements`), and revenue reports all retain currency and exchange-rate fields and aggregate per currency.
 
 ## Module Overview
 
@@ -145,7 +145,7 @@ cloud-php/
 │   │   ├── Captcha/Controller/ # Click CAPTCHA
 │   │   ├── Command/            # Console commands (Migrate / Rollback / Status / DbBackup)
 │   │   ├── Controller/         # Public controllers (Health / Status / Help / Upload)
-│   │   ├── Cron/               # Scheduled tasks (ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck)
+│   │   ├── Cron/               # Scheduled tasks (CronRunner scheduler + ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck)
 │   │   ├── Domain/             # Domain registration / DNS (Controller / Model / Service)
 │   │   ├── Model/              # Shared models (HelpArticle / Role / Permission)
 │   │   ├── Monitor/            # Resource monitoring / alerts (Controller / Cron / Model / Service)
@@ -178,10 +178,10 @@ cloud-php/
 │   │   └── plugin/             # Plugin configs
 │   │       ├── erikwang2013/   # encryptable / hashids / jwt / poster / season / webman-scout
 │   │       └── webman/         # event / redis-queue
-│   ├── database/migrations/    # Database migration files (12 migrations)
+│   ├── database/migrations/    # Database migration files (30 migrations)
 │   ├── i18n/                   # Internationalization resources (en-US / zh-CN)
 │   ├── support/                # Bootstrap (Eloquent / Redis / Event / encryption / snowflake / hashids / scout / MigrationRunner)
-│   ├── tests/                  # Unit tests (PHPUnit 10, 295 tests)
+│   ├── tests/                  # Unit tests (PHPUnit 10, 316 tests)
 │   │   ├── Admin/              # ImportExport
 │   │   ├── Captcha/            # CaptchaService
 │   │   ├── Common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
@@ -271,7 +271,7 @@ php install.php
 ```
 
 The wizard automatically:
-- Creates all 46 database tables (wa_* admin + erik_* business)
+- Creates all 46 database tables (wa_* admin + unprefixed business)
 - Creates the super admin role and account
 - Generates `service/.env` and `admin/.env` with auto-generated JWT/encryption keys
 
@@ -556,7 +556,7 @@ Unicode flag emoji support via `erikwang2013/season`:
 
 ## Roadmap
 
-- [x] Database DDL (`install.sql`, 46 tables, wa_* admin + erik_* business, BigInt non-auto-increment PKs)
+- [x] Database DDL (`install.sql`, 46 tables, wa_* admin + unprefixed business, BigInt non-auto-increment PKs)
 - [x] Snowflake ID generation (`erikwang2013/snowflake-php`)
 - [x] JWT authentication (`erikwang2013/jwt-webman`, HS256 + Redis blacklist)
 - [x] API ID obfuscation (`erikwang2013/hashids`, auto decode requests + auto encode responses)
@@ -575,7 +575,7 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] FCM push notification production integration (kreait/firebase-php, with invalid token cleanup)
 - [x] Click CAPTCHA (erikwang2013/poster-php, login/register verification)
 - [x] Password confirmation (ConfirmationMiddleware, sensitive ops password re-entry, 5 fails → 15 min lock)
-- [x] Service-layer unit tests (295 tests, 455 assertions)
+- [x] Service-layer unit tests (316 tests, 502 assertions)
 - [x] Client platform identification (ClientPlatformMiddleware, X-Client-Platform header, 8 platforms)
 - [x] WAF security enhancement (8 categories 45+ rules: SQLi/XSS/CMDi/file inclusion/header injection/SSRF/NoSQL injection/open redirect + size limits + Content-Type validation)
 - [x] Security Plugin (erikwang2013/security-php, 31 attack detectors + IP blacklist auto-ban + log rotation)

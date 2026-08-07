@@ -53,7 +53,7 @@ class AffiliateController
             $payout = $service->requestPayout($userId);
             return json(Response::success($payout, 'Payout requested'));
         } catch (\RuntimeException $e) {
-            return json(Response::error($e->getMessage()));
+            return json(Response::error(400, $e->getMessage()));
         }
     }
 }

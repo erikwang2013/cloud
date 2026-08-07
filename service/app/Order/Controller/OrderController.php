@@ -32,11 +32,12 @@ class OrderController
 
     public function store($request)
     {
-        $cartIds  = $request->input('cart_ids', []);
-        $currency = $request->input('currency', 'USD');
+        $cartIds    = $request->input('cart_ids', []);
+        $currency   = $request->input('currency', 'USD');
+        $couponCode = $request->input('coupon_code');
 
         try {
-            $order = $this->orderService->createFromCart($request->userId, $cartIds, $currency);
+            $order = $this->orderService->createFromCart($request->userId, $cartIds, $currency, $couponCode);
             return json(Response::success($order, 'Order created'));
         } catch (\InvalidArgumentException $e) {
             return json(Response::error(422, $e->getMessage()));

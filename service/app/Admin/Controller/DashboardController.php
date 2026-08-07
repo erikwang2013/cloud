@@ -7,6 +7,7 @@ use App\User\Model\UserKyc;
 use App\Provisioning\Model\Resource;
 use App\Ticket\Model\Ticket;
 use Common\Helper\Response;
+use Common\Security\AuditLogger;
 
 class DashboardController
 {
@@ -63,6 +64,12 @@ class DashboardController
             'verified_by' => $request->userId,
             'verified_at' => date('Y-m-d H:i:s'),
         ]);
+
+        AuditLogger::record('admin_kyc_approve', [
+            'user_id' => $request->userId,
+            'input'   => ['kyc_id' => $id, 'user_id' => $kyc->user_id],
+        ], $request);
+
         return json(Response::success(null, 'KYC approved'));
     }
 
@@ -74,6 +81,12 @@ class DashboardController
             'verified_by'   => $request->userId,
             'reject_reason' => $request->input('reason'),
         ]);
+
+        AuditLogger::record('admin_kyc_reject', [
+            'user_id' => $request->userId,
+            'input'   => ['kyc_id' => $id, 'user_id' => $kyc->user_id],
+        ], $request);
+
         return json(Response::success(null, 'KYC rejected'));
     }
 }

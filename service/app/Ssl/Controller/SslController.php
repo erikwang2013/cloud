@@ -38,7 +38,7 @@ class SslController
         })->findOrFail($id);
 
         if (!$cert->cert_pem) {
-            return json(Response::error('Certificate not yet issued'));
+            return json(Response::error(400, 'Certificate not yet issued'));
         }
 
         return json(Response::success([
@@ -57,7 +57,7 @@ class SslController
         })->findOrFail($id);
 
         if (!$cert->private_key_encrypted) {
-            return json(Response::error('Private key not available'));
+            return json(Response::error(400, 'Private key not available'));
         }
 
         return json(Response::success([

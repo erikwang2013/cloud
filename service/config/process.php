@@ -19,4 +19,21 @@ return [
         'count'       => 1,
         'constructor' => [],
     ],
+
+    // Redis queue consumer — scans app/ for Webman\RedisQueue\Consumer implementations
+    // (provisioning, notification_email/sms/push, etc.)
+    'queue_consumer' => [
+        'handler'     => Webman\RedisQueue\Process\Consumer::class,
+        'count'       => 2,
+        'constructor' => [
+            'consumer_dir' => app_path(),
+        ],
+    ],
+
+    // Cron scheduler — evaluates config/cron.php 5-field expressions every minute
+    'cron' => [
+        'handler'     => App\Cron\CronRunner::class,
+        'count'       => 1,
+        'constructor' => [],
+    ],
 ];

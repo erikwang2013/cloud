@@ -11,7 +11,12 @@ class CertificateAuthority
     public function __construct(string $provider = 'letsencrypt', ?string $apiKey = null, ?string $apiSecret = null, bool $staging = false)
     {
         $this->provider  = $provider;
-        $this->apiKey    = $apiKey;
+        // 未显式传入 API key 时，按提供商从环境变量读取默认值
+        $this->apiKey    = $apiKey ?? match ($provider) {
+            'zerossl'  => getenv('SSL_ZEROSSL_API_KEY') ?: null,
+            'gogetssl' => getenv('SSL_GOGETSSL_API_KEY') ?: null,
+            default    => null,
+        };
         $this->apiSecret = $apiSecret;
         $this->staging   = $staging;
     }
@@ -68,6 +73,13 @@ class CertificateAuthority
 
     private function issueViaApi(string $domain, string $certType, bool $wildcard, string $validationMethod, string $endpoint): array
     {
+        if (empty($this->apiKey)) {
+            $envName = $this->provider === 'zerossl' ? 'SSL_ZEROSSL_API_KEY' : 'SSL_GOGETSSL_API_KEY';
+            throw new \RuntimeException(
+                "CA provider '{$this->provider}' not configured: missing {$envName}"
+            );
+        }
+
         $key = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
         openssl_pkey_export($key, $privateKey);
 

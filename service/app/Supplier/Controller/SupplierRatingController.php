@@ -13,7 +13,7 @@ class SupplierRatingController
         $orderId    = $request->input('order_id');
 
         if (!$supplierId || !$orderId) {
-            return json(Response::error('supplier_id and order_id are required'));
+            return json(Response::error(400, 'supplier_id and order_id are required'));
         }
 
         try {
@@ -21,7 +21,7 @@ class SupplierRatingController
             $rating  = $service->rate($userId, (int) $supplierId, (int) $orderId, $request->all());
             return json(Response::success($rating, 'Rating submitted'));
         } catch (\RuntimeException $e) {
-            return json(Response::error($e->getMessage()));
+            return json(Response::error(400, $e->getMessage()));
         }
     }
 

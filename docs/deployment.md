@@ -527,31 +527,30 @@ sudo systemctl status cloud-platform cloud-platform-admin
 
 ## 十、定时任务
 
+系统内置 cron 调度进程（`config/process.php` 注册 `App\Cron\CronRunner`），每分钟评估
+`service/config/cron.php` 中的 5 字段 cron 表达式并执行对应任务，随服务启动自动运行，
+**无需外部 crontab**。另设 `queue_consumer` 进程消费 provisioning / notification_* 等
+Redis 队列消息。
+
 ```bash
-# 编辑 crontab
-sudo crontab -e -u www-data
+# 查看进程状态（http / websocket / metrics / queue_consumer / cron）
+php start.php status
 ```
 
-```cron
-# CloudPlatform 定时任务
-# 汇率同步 — 每4小时
-13 */4 * * * /usr/bin/php /home/wwwroot/cloud-php/service/app/Cron/ExchangeRateSync.php >> /home/wwwroot/cloud-php/service/runtime/logs/cron.log 2>&1
+任务清单（`service/config/cron.php`）：
 
-# 支付对账 — 每天凌晨2:37
-37 2 * * * /usr/bin/php /home/wwwroot/cloud-php/service/app/Cron/PaymentReconcile.php >> /home/wwwroot/cloud-php/service/runtime/logs/cron.log 2>&1
-
-# 供应商结算 — 每周一凌晨4:17
-17 4 * * 1 /usr/bin/php /home/wwwroot/cloud-php/service/app/Cron/SupplierSettlement.php >> /home/wwwroot/cloud-php/service/runtime/logs/cron.log 2>&1
-
-# 到期检查 — 每天早上6:23
-23 6 * * * /usr/bin/php /home/wwwroot/cloud-php/service/app/Cron/ExpirationCheck.php >> /home/wwwroot/cloud-php/service/runtime/logs/cron.log 2>&1
-
-# SSL证书检查 — 每天早上7:43
-43 7 * * * /usr/bin/php /home/wwwroot/cloud-php/service/app/Cron/SslCertificateCheck.php >> /home/wwwroot/cloud-php/service/runtime/logs/cron.log 2>&1
-
-# 数据库备份 — 每天凌晨3:00
-0 3 * * * /usr/bin/php /home/wwwroot/cloud-php/service/webman db:backup >> /home/wwwroot/cloud-php/service/runtime/logs/backup.log 2>&1
-```
+| cron 表达式 | 任务 |
+|-------------|------|
+| `13 */4 * * *` | ExchangeRateSync — 汇率同步 |
+| `37 2 * * *` | PaymentReconcile — 支付对账 |
+| `17 4 * * 1` | SupplierSettlement — 供应商结算 |
+| `23 6 * * *` | ExpirationCheck — 资源/域名到期检查 |
+| `43 7,19 * * *` | SslCertificateCheck — SSL 证书检查（数据库） |
+| `*/5 * * * *` | ResourceMonitor::collectAllMetrics — 资源指标采集 |
+| `*/30 * * * *` | ResourceMonitor::checkSslCertificates — 在线证书探测 |
+| `7 * * * *` | UsageAggregator::aggregate — 用量聚合 |
+| `41 3 * * *` | BillingEngine::runDaily — 每日计费 |
+| `11,41 * * * *` | SuspendCheck — 欠费挂起检查 |
 
 ---
 

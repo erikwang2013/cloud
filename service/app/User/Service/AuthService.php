@@ -55,7 +55,7 @@ class AuthService
         // Send verification email if email provided
         if (!empty($data['email']) && $user->email_verify_token) {
             $verifyUrl = getenv('APP_URL') . '/api/auth/verify-email?token=' . $user->email_verify_token;
-            \Common\Notification\NotificationDispatcher::send($user, 'email_verify', [
+            (new \App\Notification\Service\NotificationDispatcher())->dispatch($user->id, 'email_verify', [
                 'verify_url' => $verifyUrl,
             ], ['email']);
         }
@@ -94,9 +94,9 @@ class AuthService
         $lastIp    = $user->last_login_ip;
         if ($lastIp && $lastIp !== $currentIp && !empty($user->email)) {
             try {
-                \Common\Notification\NotificationDispatcher::send($user, 'new_ip_login', [
-                    'ip'       => $currentIp,
-                    'time'     => date('Y-m-d H:i:s'),
+                (new \App\Notification\Service\NotificationDispatcher())->dispatch($user->id, 'new_ip_login', [
+                    'ip'   => $currentIp,
+                    'time' => date('Y-m-d H:i:s'),
                 ], ['email']);
             } catch (\Throwable $e) {
                 // Non-critical, don't block login

@@ -43,7 +43,13 @@ class StorageController
         $expires     = min((int) $request->input('expires', 3600), 86400);
 
         if (!$key) {
-            return json(Response::error('key is required'));
+            return json(Response::error(400, 'key is required'));
+        }
+
+        // 强制前缀 user_{userId}/，防止用户上传覆盖他人 key（拼接而非拒绝）
+        $prefix = "user_{$userId}/";
+        if (!str_starts_with($key, $prefix)) {
+            $key = $prefix . ltrim($key, '/');
         }
 
         $service = new PresignedUrlService();
@@ -63,7 +69,7 @@ class StorageController
         $expires = min((int) $request->input('expires', 3600), 86400);
 
         if (!$key) {
-            return json(Response::error('key is required'));
+            return json(Response::error(400, 'key is required'));
         }
 
         $service = new PresignedUrlService();
@@ -79,12 +85,11 @@ class StorageController
             $q->where('user_id', $userId);
         })->findOrFail($id);
 
+        // 仅返回非敏感信息，凭据密文不外泄
         return json(Response::success([
-            'bucket_name'   => $bucket->bucket_name,
-            'endpoint'       => $bucket->endpoint,
-            'region'         => $bucket->region,
-            'access_key'     => $bucket->access_key_encrypted,
-            'secret_key'     => $bucket->secret_key_encrypted,
+            'bucket_name' => $bucket->bucket_name,
+            'endpoint'    => $bucket->endpoint,
+            'region'      => $bucket->region,
         ]));
     }
 }

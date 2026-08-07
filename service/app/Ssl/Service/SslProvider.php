@@ -15,7 +15,9 @@ class SslProvider implements ProviderInterface
     private function getCa(SslCertificate $cert): CertificateAuthority
     {
         if ($this->ca) return $this->ca;
-        $plan = \App\Ssl\Model\SslPlan::find($cert->cert_type) ?? new \App\Ssl\Model\SslPlan();
+        // cert_type 是 ssl_plans 的业务列，不是主键，按列查询
+        $plan = \App\Ssl\Model\SslPlan::where('cert_type', $cert->cert_type)->first()
+            ?? new \App\Ssl\Model\SslPlan();
         $this->ca = new CertificateAuthority(
             $cert->cert_type === 'DV' ? 'letsencrypt' : ($plan->ca_provider ?? 'letsencrypt'),
             null, null,

@@ -6,6 +6,7 @@ use App\Affiliate\Model\AffiliatePayout;
 use App\Affiliate\Service\AffiliateService;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Common\Helper\Response;
+use Common\Security\AuditLogger;
 
 class AffiliateController
 {
@@ -35,9 +36,21 @@ class AffiliateController
         return json(Response::success($earnings));
     }
 
-    public function approveEarning(int $id)
+    public function approveEarning($request, int $id)
     {
-        AffiliateEarning::where('id', $id)->update(['status' => 'approved']);
+        // 状态机守卫：仅 pending 可批准，避免重复审批
+        $earning = AffiliateEarning::where('id', $id)->where('status', 'pending')->first();
+        if (!$earning) {
+            return json(Response::error(422, 'Earning is not pending or not found'));
+        }
+
+        $earning->update(['status' => 'approved']);
+
+        AuditLogger::record('admin_affiliate_earning_approve', [
+            'user_id' => $request->userId,
+            'input'   => ['earning_id' => $id],
+        ], $request);
+
         return json(Response::success(null, 'Earning approved'));
     }
 
@@ -47,10 +60,20 @@ class AffiliateController
         return json(Response::success($payouts));
     }
 
-    public function approvePayout(int $id)
+    public function approvePayout($request, int $id)
     {
         $service = new AffiliateService();
-        $service->approvePayout($id);
+        try {
+            $service->approvePayout($id);
+        } catch (\RuntimeException $e) {
+            return json(Response::error(400, $e->getMessage()));
+        }
+
+        AuditLogger::record('admin_affiliate_payout_approve', [
+            'user_id' => $request->userId,
+            'input'   => ['payout_id' => $id],
+        ], $request);
+
         return json(Response::success(null, 'Payout approved'));
     }
 }

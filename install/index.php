@@ -178,16 +178,30 @@ if ($isPost && $requestedStep === 4) {
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ]);
 
-            // Import SQL
+            // Generate shared keys once (encryption + hashids salt)
+            [$jwtKey, $masterKey, $fieldKey] = generateKeys();
+            $hashidsSalt = bin2hex(random_bytes(16));
+
+            // Write .env files with shared keys (migrations read DB credentials from them)
+            $serviceResult = file_put_contents(ROOT_DIR . '/service/.env', generateServiceEnv($db, $jwtKey, $masterKey, $fieldKey, $hashidsSalt));
+            $adminResult = file_put_contents(ROOT_DIR . '/admin/.env', generateAdminEnv($db, $masterKey, $fieldKey, $hashidsSalt));
+
+            if ($serviceResult === false) {
+                throw new RuntimeException('Failed to write service/.env. Check directory permissions: ' . ROOT_DIR . '/service');
+            }
+            if ($adminResult === false) {
+                throw new RuntimeException('Failed to write admin/.env. Check directory permissions: ' . ROOT_DIR . '/admin');
+            }
+
+            // Run service migrations to create tables not covered by install.sql
+            runServiceMigrations();
+
+            // Import SQL (CREATE TABLE IF NOT EXISTS — skips tables already created by migrations)
             $sqlFile = ROOT_DIR . '/install.sql';
             if (!file_exists($sqlFile)) {
                 throw new RuntimeException("install.sql not found at: {$sqlFile}");
             }
             $sql = file_get_contents($sqlFile);
-
-            // Generate shared keys once (encryption + hashids salt)
-            [$jwtKey, $masterKey, $fieldKey] = generateKeys();
-            $hashidsSalt = bin2hex(random_bytes(16));
 
             $pdo->beginTransaction();
             try {
@@ -223,17 +237,6 @@ if ($isPost && $requestedStep === 4) {
                 throw $e;
             }
 
-            // Write .env files with shared keys
-            $serviceResult = file_put_contents(ROOT_DIR . '/service/.env', generateServiceEnv($db, $jwtKey, $masterKey, $fieldKey, $hashidsSalt));
-            $adminResult = file_put_contents(ROOT_DIR . '/admin/.env', generateAdminEnv($db, $masterKey, $fieldKey, $hashidsSalt));
-
-            if ($serviceResult === false) {
-                throw new RuntimeException('Failed to write service/.env. Check directory permissions: ' . ROOT_DIR . '/service');
-            }
-            if ($adminResult === false) {
-                throw new RuntimeException('Failed to write admin/.env. Check directory permissions: ' . ROOT_DIR . '/admin');
-            }
-
             $success = 'Installation complete!';
             session_destroy();
         } catch (Exception $e) {
@@ -263,6 +266,55 @@ function snowflakeId(): int
         $lastTimestamp = $timestamp;
     }
     return ($timestamp << 22) | (0 << 17) | (0 << 12) | $sequence;
+}
+
+/**
+ * Run service database migrations in a child PHP process (independent of the
+ * installer's own PDO transaction). install.sql only covers the legacy 39
+ * business tables; migrations create the rest.
+ */
+function runServiceMigrations(): void
+{
+    $serviceRoot = ROOT_DIR . '/service';
+    $autoload    = var_export($serviceRoot . '/vendor/autoload.php', true);
+    $migrations  = var_export($serviceRoot . '/database/migrations', true);
+
+    $code = strtr(
+        <<<'PHP'
+require __AUTOLOAD__;
+use Dotenv\Dotenv;
+use Illuminate\Database\Capsule\Manager as Capsule;
+use Webman\Config;
+if (class_exists(Dotenv::class)) {
+    if (method_exists(Dotenv::class, 'createUnsafeMutable')) {
+        Dotenv::createUnsafeMutable(__SERVICE_ROOT__)->load();
+    } else {
+        Dotenv::createMutable(__SERVICE_ROOT__)->load();
+    }
+}
+Config::clear();
+support\App::loadAllConfig(['route']);
+$capsule = new Capsule;
+$capsule->addConnection(config('database.connections.mysql'), 'default');
+$capsule->setAsGlobal();
+$capsule->bootEloquent();
+$runner = new \support\MigrationRunner(__MIGRATIONS__);
+$ran = $runner->migrate();
+echo 'migrated:' . count($ran) . PHP_EOL;
+PHP,
+        [
+            '__AUTOLOAD__'     => $autoload,
+            '__SERVICE_ROOT__' => var_export($serviceRoot, true),
+            '__MIGRATIONS__'   => $migrations,
+        ]
+    );
+
+    $cmd = 'php -d display_errors=1 ' . escapeshellarg('-r') . ' ' . escapeshellarg($code);
+    $output = [];
+    exec($cmd . ' 2>&1', $output, $exitCode);
+    if ($exitCode !== 0) {
+        throw new RuntimeException('Service migrations failed: ' . implode("\n", $output));
+    }
 }
 
 function generateKeys(): array

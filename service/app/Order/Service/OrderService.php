@@ -18,6 +18,11 @@ class OrderService
 
     public function addToCart(int $userId, array $data): void
     {
+        $quantity = (int) ($data['quantity'] ?? 1);
+        if ($quantity < 1 || $quantity > 999) {
+            throw new \InvalidArgumentException('quantity must be an integer between 1 and 999');
+        }
+
         Cart::updateOrCreate(
             [
                 'user_id'   => $userId,
@@ -25,13 +30,13 @@ class OrderService
                 'region_id' => $data['region_id'],
             ],
             [
-                'quantity' => $data['quantity'] ?? 1,
+                'quantity' => $quantity,
                 'cycle'    => $data['cycle'] ?? 'monthly',
             ]
         );
     }
 
-    public function createFromCart(int $userId, array $cartIds, string $currency = 'USD'): Order
+    public function createFromCart(int $userId, array $cartIds, string $currency = 'USD', ?string $couponCode = null): Order
     {
         $carts = Cart::whereIn('id', $cartIds)
             ->where('user_id', $userId)
@@ -47,6 +52,10 @@ class OrderService
             $items = [];
 
             foreach ($carts as $cart) {
+                if ((int) $cart->quantity < 1 || (int) $cart->quantity > 999) {
+                    throw new \InvalidArgumentException("Invalid quantity for SKU {$cart->sku_id}");
+                }
+
                 $regionPrice = ProductRegion::where('sku_id', $cart->sku_id)
                     ->where('region_id', $cart->region_id)
                     ->where('currency', $currency)
@@ -75,6 +84,17 @@ class OrderService
                 ];
             }
 
+            // 优惠券服务端应用：按 validate 规则计算折扣并写入 discount / total
+            $discount = '0';
+            if ($couponCode) {
+                $coupon = \App\Order\Model\Coupon::where('code', $couponCode)->first();
+                if (!$coupon || !$coupon->isValid()) {
+                    throw new \InvalidArgumentException('Coupon is invalid or expired');
+                }
+                $discount = bcadd($discount, (string) $coupon->calculateDiscount((float) $subtotal), 4);
+            }
+            $total = bcsub($subtotal, $discount, 4);
+
             $order = Order::create([
                 'order_no' => $this->generateOrderNo(),
                 'user_id'  => $userId,
@@ -82,7 +102,8 @@ class OrderService
                 'status'   => 'pending',
                 'currency' => $currency,
                 'subtotal' => $subtotal,
-                'total'    => $subtotal,
+                'discount' => $discount,
+                'total'    => $total,
                 'exchange_rate' => $this->getExchangeRate($currency),
             ]);
 

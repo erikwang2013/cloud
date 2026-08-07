@@ -373,7 +373,7 @@ Route::group('/admin/api', function () {
     Route::post('/affiliate/earnings/{id}/approve', [App\Admin\Controller\AffiliateController::class, 'approveEarning']);
     Route::get('/affiliate/payouts', [App\Admin\Controller\AffiliateController::class, 'payouts']);
     Route::post('/affiliate/payouts/{id}/approve', [App\Admin\Controller\AffiliateController::class, 'approvePayout']);
-})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class]);
+})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class, Common\Security\RateLimitMiddleware::class]);
 
 // === Admin sensitive operations (requires password confirmation) ===
 Route::group('/admin/api', function () {
@@ -386,4 +386,4 @@ Route::group('/admin/api', function () {
     Route::post('/suppliers/{id}/settle', [App\Admin\Controller\SupplierController::class, 'generateSettlement']);
     Route::post('/suppliers/withdraws/{id}/approve', [App\Admin\Controller\SupplierController::class, 'approveWithdraw']);
     Route::put('/system/config', [App\Admin\Controller\SystemController::class, 'updateConfig']);
-})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class, Common\Confirmation\ConfirmationMiddleware::class]);
+})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class, Common\Confirmation\ConfirmationMiddleware::class, Common\Security\RateLimitMiddleware::class]);

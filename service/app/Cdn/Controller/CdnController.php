@@ -37,7 +37,7 @@ class CdnController
 
         $urls = $request->input('urls', []);
         if (empty($urls)) {
-            return json(Response::error('urls array is required'));
+            return json(Response::error(400, 'urls array is required'));
         }
 
         try {
@@ -46,9 +46,9 @@ class CdnController
                 $result = $provider->purgeCache($cdn->resource, $urls);
                 return json(Response::success($result, 'Cache purge requested'));
             }
-            return json(Response::error('Provider does not support cache purge'));
+            return json(Response::error(400, 'Provider does not support cache purge'));
         } catch (\Throwable $e) {
-            return json(Response::error('Purge failed: ' . $e->getMessage()));
+            return json(Response::error(400, 'Purge failed: ' . $e->getMessage()));
         }
     }
 

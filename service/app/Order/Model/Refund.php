@@ -10,6 +10,7 @@ class Refund extends Model
     protected $table = 'refunds';
     protected $fillable = [
         'order_id', 'user_id', 'amount', 'reason', 'status',
+        'handled_by', 'reject_reason',
     ];
 
     public function order()

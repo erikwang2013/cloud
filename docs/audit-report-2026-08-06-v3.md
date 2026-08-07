@@ -114,7 +114,7 @@ Redis 路径（验证码、限流、JWT 黑名单存储）全部实测可用。
 1. **CSP 头**（见 §三）
 2. **WAF body 读取优化**（见 §三）
 3. **补 DB_PASSWORD 后重测 DB 全链路**（register→login→refresh→logout 真实流程 + JWT 黑名单失效验证）
-4. **supervisor 无 cron 进程**：Billing\Cron\SuspendCheck 等定时任务无守护入口，建议确认部署侧 crontab 或补 process.php cron worker
+4. ~~**supervisor 无 cron 进程**：Billing\Cron\SuspendCheck 等定时任务无守护入口~~ **已解决（2026-08-07）：** 新增 `App\Cron\CronRunner` 进程（每分钟评估 config/cron.php 5 字段表达式），并注册 `queue_consumer` 进程消费 provisioning/notification 队列；cron.php 中两个指向脚本文件的失效注册改为 `ResourceMonitor` 可调用方法
 5. **CI composer-validate 步骤**：因第三方插件冲突，建议加容错（见 §四-3）
 
 ---
@@ -130,6 +130,16 @@ Redis 路径（验证码、限流、JWT 黑名单存储）全部实测可用。
 
 ---
 
+## 八、第五轮补充修复（2026-08-07）
+
+1. **自动交付接通（P0）**：`ProvisioningService::handleOrderPaid` 创建交付任务后投递 `provisioning` 队列；`process.php` 注册 `queue_consumer` 进程（扫描 app/ 下所有 `Webman\RedisQueue\Consumer` 实现）。
+2. **定时任务可执行（P0）**：新增 `App\Cron\CronRunner` 进程（每分钟评估 config/cron.php 5 字段表达式，支持 `*/n`/`,`/`-` 语法）；cron.php 中两个指向脚本文件（非类）的失效注册改为 `ResourceMonitor::collectAllMetrics`/`checkSslCertificates` 可调用方法，并移除与 ExpirationCheck 重复的 checkExpirations 注册。
+3. **通知类不存在（P0）**：AuthService/AuthController/ExpirationCheck 中 4 处 `\Common\Notification\NotificationDispatcher::send()`（类不存在）统一改为 `\App\Notification\Service\NotificationDispatcher::dispatch($userId, ...)`。
+4. **表名三套体系统一（P0）**：install.sql 中 39 张 `erik_*` 业务表改为无前缀（与 Eloquent 默认命名、migrations 一致），`wa_*` 管理表保留；安装向导（install/index.php）改为「写 .env → 子进程补跑 service migrations（30 个迁移文件）→ install.sql（IF NOT EXISTS 跳过已建表）」，安装后库表完整。
+5. **P1/P2 组（由子代理完成，316 测试验证通过）**：事件接线、汇率逐币种写入、`Response::error` 单参补 400（10 处）、退款执行器（RefundService 新建）、审批幂等、admin 敏感操作审计、noNeedAuth 移除、管理 API 限流、WebSocket 改 Redis Pub/Sub、SSL 查询 bug、币种/欠费、credentials 脱敏、优惠券应用、数量校验、CI 容错、ES_HOST 透传。
+
+**测试基线**：service 316/316（502 断言）、admin 67/67（124 断言）全绿；全部改动文件 `php -l` 通过。
+
 ## 结论
 
-本轮从"代码可读"推进到"**可启动、可运行**"：8 处 P0 级故障全部修复并实测，316 个测试全绿，完整中间件链冒烟通过。剩余阻塞仅一项环境缺口（DB_PASSWORD），补入后即可全链路验证。第四轮（2026-08-07）进一步完成计费原子性、并发幂等、限流/注入防护等 20+ 项加固。
+本轮从"代码可读"推进到"**可启动、可运行**"：8 处 P0 级故障全部修复并实测，316 个测试全绿，完整中间件链冒烟通过。剩余阻塞仅一项环境缺口（DB_PASSWORD），补入后即可全链路验证。第四轮（2026-08-07）进一步完成计费原子性、并发幂等、限流/注入防护等 20+ 项加固；第五轮（2026-08-07）完成自动交付、cron 调度、通知类、表名体系等 4 项 P0 与 P1/P2 组全部修复，测试保持全绿。

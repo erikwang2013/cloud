@@ -6,6 +6,7 @@ use App\Supplier\Model\SupplierWithdraw;
 use App\Supplier\Service\SupplierService;
 use Common\ExcelExport;
 use Common\Helper\Response;
+use Common\Security\AuditLogger;
 
 class SupplierController
 {
@@ -45,6 +46,12 @@ class SupplierController
     {
         $service = new SupplierService();
         $service->approve($id, $request->userId);
+
+        AuditLogger::record('admin_supplier_approve', [
+            'user_id' => $request->userId,
+            'input'   => ['supplier_id' => $id],
+        ], $request);
+
         return json(Response::success(null, 'Supplier approved'));
     }
 
@@ -56,6 +63,17 @@ class SupplierController
             $request->input('period_start'),
             $request->input('period_end')
         );
+
+        AuditLogger::record('admin_supplier_settlement', [
+            'user_id' => $request->userId,
+            'input'   => [
+                'supplier_id'   => $id,
+                'period_start'  => $request->input('period_start'),
+                'period_end'    => $request->input('period_end'),
+                'settlement_id' => $settlement->id ?? null,
+            ],
+        ], $request);
+
         return json(Response::success($settlement, 'Settlement generated'));
     }
 
@@ -63,6 +81,16 @@ class SupplierController
     {
         $withdraw = SupplierWithdraw::findOrFail($id);
         $withdraw->update(['status' => 'completed']);
+
+        AuditLogger::record('admin_supplier_withdraw_approve', [
+            'user_id' => $request->userId,
+            'input'   => [
+                'withdraw_id' => $id,
+                'supplier_id' => $withdraw->supplier_id,
+                'amount'      => $withdraw->amount,
+            ],
+        ], $request);
+
         return json(Response::success(null, 'Withdrawal approved'));
     }
 

@@ -33,10 +33,11 @@ return [
     '43 7,19 * * *' => [App\Cron\SslCertificateCheck::class, 'run'],
 
     // Resource metrics collection — every 5 minutes
-    '*/5 * * * *'  => [App\Monitor\Cron\CollectMetrics::class, 'run'],
+    '*/5 * * * *'  => [App\Monitor\Service\ResourceMonitor::class, 'collectAllMetrics'],
 
-    // Resource expiration check — every 30 minutes
-    '*/30 * * * *' => [App\Monitor\Cron\CheckExpirations::class, 'run'],
+    // Online SSL certificate probe for domain resources — every 30 minutes
+    // (expiration notifications covered by ExpirationCheck + SslCertificateCheck)
+    '*/30 * * * *' => [App\Monitor\Service\ResourceMonitor::class, 'checkSslCertificates'],
 
     // Usage aggregation — hourly at :07
     '7 * * * *'    => [App\Billing\Service\UsageAggregator::class, 'aggregate'],

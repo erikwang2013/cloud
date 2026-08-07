@@ -53,11 +53,11 @@
 
 **1. 多币种余额账户**
 
-`erik_user_balances` 按 `(user_id, currency)` 分币种记账（唯一索引 `uk_user_currency`）。注册时默认创建 USD + CNY 两个币种账户，余额与冻结余额按币种独立管理，可扩展任意 Stripe 支持的币种。
+`user_balances` 按 `(user_id, currency)` 分币种记账（唯一索引 `uk_user_currency`）。注册时默认创建 USD + CNY 两个币种账户，余额与冻结余额按币种独立管理，可扩展任意 Stripe 支持的币种。
 
 **2. 多币种区域定价**
 
-`erik_product_regions` 支持同一 SKU 在同一区域按多个币种定价（唯一索引 `uk_sku_region_currency`）。前端按用户首选币种展示价格，下单时 `OrderService` 按 `(sku_id, region_id, currency)` 精确取价。
+`product_regions` 支持同一 SKU 在同一区域按多个币种定价（唯一索引 `uk_sku_region_currency`）。前端按用户首选币种展示价格，下单时 `OrderService` 按 `(sku_id, region_id, currency)` 精确取价。
 
 **3. 汇率体系**
 
@@ -65,11 +65,11 @@
 
 **4. 多币种支付**
 
-`erik_payment_channels.currency_support` 声明各支付通道支持的币种白名单，`PaymentRouter` 按 币种 / 金额区间 / 可见区域 动态过滤可用通道。Stripe PaymentIntent 直接以订单币种收款，内置 16 种零小数币种（JPY / KRW / VND 等）的小数位处理，Webhook 回调校验金额与币种一致性。
+`payment_channels.currency_support` 声明各支付通道支持的币种白名单，`PaymentRouter` 按 币种 / 金额区间 / 可见区域 动态过滤可用通道。Stripe PaymentIntent 直接以订单币种收款，内置 16 种零小数币种（JPY / KRW / VND 等）的小数位处理，Webhook 回调校验金额与币种一致性。
 
 **5. 结算与报表**
 
-支付交易（`erik_payment_transactions`）、供应商结算（`erik_supplier_settlements`）、营收报表均保留币种与汇率字段，按币种统计汇总。
+支付交易（`payment_transactions`）、供应商结算（`supplier_settlements`）、营收报表均保留币种与汇率字段，按币种统计汇总。
 
 ## 功能模块总览
 
@@ -152,7 +152,7 @@ cloud-php/
 │   │   ├── Captcha/Controller/ # 点击验证码
 │   │   ├── Command/            # 控制台命令（Migrate / Rollback / Status / DbBackup）
 │   │   ├── Controller/         # 公共控制器（Health / Status / Help / Upload）
-│   │   ├── Cron/               # 定时任务（ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck）
+│   │   ├── Cron/               # 定时任务（CronRunner 调度器 + ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck）
 │   │   ├── Domain/             # 域名注册 / DNS 管理（Controller / Model / Service）
 │   │   ├── Model/              # 公共模型（HelpArticle / Role / Permission）
 │   │   ├── Monitor/            # 资源监控 / 告警（Controller / Cron / Model / Service）
@@ -185,10 +185,10 @@ cloud-php/
 │   │   └── plugin/             # 插件配置
 │   │       ├── erikwang2013/   # encryptable / hashids / jwt / poster / season / webman-scout
 │   │       └── webman/         # event / redis-queue
-│   ├── database/migrations/    # 数据库迁移文件（12 个迁移）
+│   ├── database/migrations/    # 数据库迁移文件（30 个迁移）
 │   ├── i18n/                   # 多语言资源（en-US / zh-CN）
 │   ├── support/                # Bootstrap 引导（Eloquent / Redis / Event / 加密 / 雪花ID / Hashids / Scout / MigrationRunner）
-│   ├── tests/                  # 单元测试（PHPUnit 10, 295 tests）
+│   ├── tests/                  # 单元测试（PHPUnit 10, 316 tests）
 │   │   ├── Admin/              # ImportExport
 │   │   ├── Captcha/            # CaptchaService
 │   │   ├── Common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
@@ -278,7 +278,7 @@ php install.php
 ```
 
 安装完成后，向导会自动：
-- 创建全部 46 张数据库表（wa_* 管理表 + erik_* 业务表）
+- 创建全部 46 张数据库表（wa_* 管理表 + 无前缀业务表）
 - 创建超级管理员角色和账号
 - 生成 `service/.env` 和 `admin/.env` 配置文件（含自动生成的 JWT/加密密钥）
 
@@ -573,7 +573,7 @@ ProviderInterface
 
 ## 待办事项
 
-- [x] 数据库 DDL（`install.sql`，46 张表，wa_* 管理表 + erik_* 业务表，BigInt 非自增主键）
+- [x] 数据库 DDL（`install.sql`，46 张表，wa_* 管理表 + 无前缀业务表，BigInt 非自增主键）
 - [x] 雪花 ID 生成（`erikwang2013/snowflake-php`）
 - [x] JWT 认证（`erikwang2013/jwt-webman`，HS256 + Redis 黑名单）
 - [x] API ID 混淆（`erikwang2013/hashids`，请求自动解码 + 响应自动编码）
@@ -592,7 +592,7 @@ ProviderInterface
 - [x] FCM 推送真实集成（kreait/firebase-php，含无效 token 清理）
 - [x] 点击验证码（erikwang2013/poster-php，登录/注册敏感操作验证）
 - [x] 二次确认（ConfirmationMiddleware，敏感操作密码复核，5次失败锁定15分钟）
-- [x] 服务端单元测试（295 tests, 455 assertions）
+- [x] 服务端单元测试（316 tests, 502 assertions）
 - [x] 客户端平台识别（ClientPlatformMiddleware，X-Client-Platform 头支持 8 种平台）
 - [x] WAF 安全增强（8 类 45+ 规则: SQL注入/XSS/命令注入/文件包含/头注入/SSRF/NoSQL注入/开放重定向 + 请求大小限制 + Content-Type 校验）
 - [x] Security Plugin（erikwang2013/security-php，31 种攻击检测 + IP 黑名单自动封禁 + 日志轮转）
