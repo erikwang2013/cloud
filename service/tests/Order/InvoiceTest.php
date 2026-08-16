@@ -21,10 +21,12 @@ final class InvoiceTest extends TestCase
         $this->assertContains('file_url', $fillable);
     }
 
-    public function testInvoiceTypeDefaultsToPersonal(): void
+    public function testInvoiceUsesSnowflakeId(): void
     {
         $invoice = new Invoice();
-        $this->assertTrue(true); // Business logic tested via controller
+        $this->assertSame('order_invoices', $invoice->getTable());
+        $this->assertFalse($invoice->getIncrementing());
+        $this->assertSame('int', $invoice->getKeyType());
     }
 
     public function testInvoiceBelongsToOrder(): void
