@@ -3,11 +3,14 @@ namespace App\Supplier\Service;
 
 use App\Supplier\Model\SupplierRating;
 use App\Supplier\Model\Supplier;
+use App\Order\Model\Order;
 use App\Order\Model\OrderItem;
-use Illuminate\Database\Capsule\Manager as Capsule;
 
 class SupplierRatingService
 {
+    // 与 RefundService 的订单可操作状态集保持一致：已支付或已完成交付才允许评分
+    private const RATEABLE_ORDER_STATUSES = ['paid', 'completed'];
+
     public function rate(int $userId, int $supplierId, int $orderId, array $data): SupplierRating
     {
         $existing = SupplierRating::where('user_id', $userId)
@@ -17,12 +20,38 @@ class SupplierRatingService
             throw new \RuntimeException('You have already rated this order');
         }
 
-        $hasPurchased = OrderItem::whereHas('order', function ($q) use ($userId, $orderId) {
-            $q->where('user_id', $userId)->where('id', $orderId);
-        })->exists();
+        $order = Order::find($orderId);
+        if (!$order) {
+            throw new \RuntimeException('Order not found');
+        }
+        if ((int) $order->user_id !== $userId) {
+            throw new \RuntimeException('You can only rate your own orders');
+        }
+        if (!in_array($order->status, self::RATEABLE_ORDER_STATUSES, true)) {
+            throw new \RuntimeException('Order status does not allow rating');
+        }
 
-        if (!$hasPurchased) {
-            throw new \RuntimeException('You can only rate products you have purchased');
+        // 订单必须包含该供应商的商品（order_items→product_skus→products.supplier_id）
+        $hasSupplierProduct = OrderItem::where('order_id', $orderId)
+            ->whereHas('sku', function ($q) use ($supplierId) {
+                $q->whereHas('product', function ($q2) use ($supplierId) {
+                    $q2->where('supplier_id', $supplierId);
+                });
+            })
+            ->exists();
+        if (!$hasSupplierProduct) {
+            throw new \RuntimeException('Order does not contain products from this supplier');
+        }
+
+        // rating 强制 1-5；子维度 0-5（0 = 未评分，与省略等价，对齐 DB 默认语义）
+        $scoreRanges = ['rating' => 1, 'quality' => 0, 'support' => 0, 'delivery_speed' => 0, 'value' => 0];
+        foreach ($scoreRanges as $scoreField => $min) {
+            if (isset($data[$scoreField]) && $data[$scoreField] !== '') {
+                $score = (int) $data[$scoreField];
+                if ($score < $min || $score > 5) {
+                    throw new \RuntimeException('Rating scores must be between ' . $min . ' and 5');
+                }
+            }
         }
 
         $rating = SupplierRating::create([
