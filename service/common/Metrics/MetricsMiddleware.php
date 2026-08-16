@@ -9,6 +9,10 @@ class MetricsMiddleware implements MiddlewareInterface
 {
     public function process(Request $request, callable $handler): Response
     {
+        if (!\Common\Feature\FeatureFlags::isEnabled('prometheus_metrics')) {
+            return $handler($request);
+        }
+
         $start = microtime(true);
 
         $response = $handler($request);

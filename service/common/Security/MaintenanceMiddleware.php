@@ -1,11 +1,16 @@
 <?php
 namespace Common\Security;
 
+use Common\Feature\FeatureFlags;
+
 class MaintenanceMiddleware
 {
     public function process($request, callable $next)
     {
-        if (!getenv('MAINTENANCE_MODE') || getenv('MAINTENANCE_MODE') !== 'true') {
+        $maintenance = getenv('MAINTENANCE_MODE') === 'true'
+            || FeatureFlags::isEnabled('maintenance_redirect');
+
+        if (!$maintenance) {
             return $next($request);
         }
 

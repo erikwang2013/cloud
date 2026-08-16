@@ -10,11 +10,17 @@ class GraphqlController
 {
     public function handle($request)
     {
+        if (!\Common\Feature\FeatureFlags::isEnabled('graphql_api')) {
+            return json(Response::error(403, 'GraphQL API is disabled'));
+        }
         return $this->execute($request, Schema::full());
     }
 
     public function publicHandle($request)
     {
+        if (!\Common\Feature\FeatureFlags::isEnabled('graphql_api')) {
+            return json(Response::error(403, 'GraphQL API is disabled'));
+        }
         return $this->execute($request, Schema::publicSchema());
     }
 

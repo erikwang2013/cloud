@@ -5,6 +5,7 @@ use App\User\Service\AuthService;
 use App\User\Service\OAuthService;
 use Common\Auth\JwtAuth;
 use Common\Auth\TotpService;
+use Common\Feature\FeatureFlags;
 use Common\Captcha\CaptchaService;
 use Common\Helper\Response;
 use Common\Helper\Validator;
@@ -43,7 +44,7 @@ class AuthController
 
         try {
             $refCode = $request->input('ref');
-            if ($refCode) {
+            if ($refCode && FeatureFlags::isEnabled('affiliate_program')) {
                 $data['affiliate_code'] = $refCode;
             }
             $tokens = $this->auth->register($data, $this->clientPlatform($request));
@@ -171,6 +172,9 @@ class AuthController
 
     public function totpSetup($request)
     {
+        if (!FeatureFlags::isEnabled('totp_two_factor')) {
+            return json(Response::error(403, 'Two-factor authentication is disabled'));
+        }
         $user = User::findOrFail($request->userId);
         $secret = TotpService::generateSecret();
 
@@ -186,6 +190,9 @@ class AuthController
 
     public function totpVerify($request)
     {
+        if (!FeatureFlags::isEnabled('totp_two_factor')) {
+            return json(Response::error(403, 'Two-factor authentication is disabled'));
+        }
         $user = User::findOrFail($request->userId);
         $code = $request->input('code');
 
@@ -215,6 +222,9 @@ class AuthController
 
     public function totpDisable($request)
     {
+        if (!FeatureFlags::isEnabled('totp_two_factor')) {
+            return json(Response::error(403, 'Two-factor authentication is disabled'));
+        }
         $user     = User::findOrFail($request->userId);
         $password = $request->input('password');
 
@@ -229,6 +239,9 @@ class AuthController
 
     public function oauthRedirect($request, string $provider)
     {
+        if (!FeatureFlags::isEnabled("{$provider}_oauth")) {
+            return json(Response::error(403, 'OAuth login is disabled'));
+        }
         try {
             $url = $this->oauth->authorizeUrl($provider);
             return json(Response::success(['url' => $url]));
@@ -239,6 +252,9 @@ class AuthController
 
     public function oauthCallback($request, string $provider)
     {
+        if (!FeatureFlags::isEnabled("{$provider}_oauth")) {
+            return json(Response::error(403, 'OAuth login is disabled'));
+        }
         try {
             $tokens = $this->oauth->completeLogin(
                 $provider,
@@ -344,6 +360,9 @@ class AuthController
 
     public function totpRecoveryCodes($request)
     {
+        if (!FeatureFlags::isEnabled('totp_two_factor')) {
+            return json(Response::error(403, 'Two-factor authentication is disabled'));
+        }
         $user = User::findOrFail($request->userId);
         if (!$user->totp_enabled) {
             return json(Response::error(400, 'TOTP is not enabled'));
@@ -366,6 +385,9 @@ class AuthController
 
     public function loginWithRecoveryCode($request)
     {
+        if (!FeatureFlags::isEnabled('totp_two_factor')) {
+            return json(Response::error(403, 'Two-factor authentication is disabled'));
+        }
         $login    = $request->input('login');
         $password = $request->input('password');
         $code     = $request->input('recovery_code');

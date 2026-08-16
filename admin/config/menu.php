@@ -121,6 +121,13 @@ return array_merge($businessMenu, [
                 'type' => 1,
                 'weight' => 500,
             ],
+            [
+                'title' => '功能开关',
+                'key' => 'app\\controller\\FeatureController',
+                'href' => '/app/admin/feature/index',
+                'type' => 1,
+                'weight' => 400,
+            ],
         ]
     ],
     [

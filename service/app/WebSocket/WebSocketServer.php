@@ -83,6 +83,9 @@ class WebSocketServer
      */
     public static function send(int $userId, string $event, array $data): void
     {
+        if (!\Common\Feature\FeatureFlags::isEnabled('websocket_push')) {
+            return;
+        }
         $payload = json_encode([
             'type'      => 'event',
             'event'     => $event,

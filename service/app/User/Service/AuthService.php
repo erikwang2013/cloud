@@ -79,7 +79,8 @@ class AuthService
             throw new \InvalidArgumentException('Account temporarily locked, try again later');
         }
 
-        if (!empty($user->totp_enabled) && !empty($user->totp_secret)) {
+        if (!empty($user->totp_enabled) && !empty($user->totp_secret)
+            && \Common\Feature\FeatureFlags::isEnabled('totp_two_factor')) {
             if (empty($totpCode)) {
                 throw new \InvalidArgumentException('TOTP code required');
             }
