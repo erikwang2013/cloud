@@ -29,7 +29,10 @@ class SupplierController
         if ($status = $request->input('status')) $query->where('status', $status);
 
         $maxRows = 10000;
-        $items = $query->orderBy('created_at', 'desc')->limit($maxRows)->get()->toArray();
+        // 模型 $hidden 默认隐藏联系人 PII；导出为受控 admin 功能，显式恢复
+        $items = $query->orderBy('created_at', 'desc')->limit($maxRows)->get()
+            ->makeVisible(['contact_name', 'contact_email', 'contact_phone'])
+            ->toArray();
 
         $columns = ['id', 'user_id', 'status', 'contact_name', 'contact_email', 'contact_phone', 'created_at'];
         $labels = [

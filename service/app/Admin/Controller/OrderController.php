@@ -60,14 +60,14 @@ class OrderController
     public function refund($request, int $id)
     {
         $order  = Order::findOrFail($id);
-        $amount = (float) $request->input('amount');
+        $amount = (string) $request->input('amount');
         $reason = $request->input('reason');
 
-        // 金额校验：>0 且 ≤ 订单已付金额
-        if ($amount <= 0) {
+        // 金额校验：>0 且 ≤ 订单已付金额（bccomp 字符串比较，避免 float 精度误差）
+        if (!is_numeric($amount) || bccomp($amount, '0', 4) <= 0) {
             return json(Response::error(422, 'Refund amount must be greater than 0'));
         }
-        if ($amount > (float) $order->total) {
+        if (bccomp($amount, (string) $order->total, 4) > 0) {
             return json(Response::error(422, 'Refund amount cannot exceed order total'));
         }
 
@@ -83,6 +83,8 @@ class OrderController
 
         try {
             $refund = (new RefundService())->execute($order, $amount, $reason, $request->userId);
+        } catch (\InvalidArgumentException $e) {
+            return json(Response::error(422, $e->getMessage()));
         } catch (\RuntimeException $e) {
             return json(Response::error(422, 'Refund failed: ' . $e->getMessage()));
         }

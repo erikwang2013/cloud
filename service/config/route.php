@@ -264,6 +264,7 @@ Route::group('/admin/api', function () {
     Route::put('/payments/channels/{id}', [App\Admin\Controller\PaymentController::class, 'updateChannel']);
     Route::get('/payments/transactions', [App\Admin\Controller\PaymentController::class, 'transactions']);
     Route::get('/payments/reconcile', [App\Admin\Controller\PaymentController::class, 'reconcile']);
+    Route::post('/payments/reconcile/run', [App\Admin\Controller\PaymentController::class, 'reconcileRun']);
 
     // Supplier management (read)
     Route::get('/suppliers', [App\Admin\Controller\SupplierController::class, 'index']);

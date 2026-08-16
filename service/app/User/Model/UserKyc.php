@@ -20,6 +20,9 @@ class UserKyc extends Model
         'real_name'           => Encryptable::class,
     ];
 
+    // 序列化一律不输出证件号（real_name 需供 KYC 审核展示，不隐藏）
+    protected $hidden = ['id_number_encrypted'];
+
     public function user()
     {
         return $this->belongsTo(User::class);

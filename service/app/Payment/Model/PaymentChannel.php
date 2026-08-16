@@ -23,4 +23,7 @@ class PaymentChannel extends Model
         'api_key_encrypted' => Encryptable::class,
         'webhook_secret'    => Encryptable::class,
     ];
+
+    // 序列化一律不输出密钥字段（Encryptable cast 在 toArray/toJson 时会自动解密）
+    protected $hidden = ['api_key_encrypted', 'webhook_secret'];
 }

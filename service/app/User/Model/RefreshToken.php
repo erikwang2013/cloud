@@ -17,4 +17,7 @@ class RefreshToken extends Model
         'token_hash'        => Encryptable::class,
         'device_fingerprint' => Encryptable::class,
     ];
+
+    // 序列化一律不输出 token 哈希与设备指纹
+    protected $hidden = ['token_hash', 'device_fingerprint'];
 }

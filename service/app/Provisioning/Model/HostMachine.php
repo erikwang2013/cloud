@@ -20,6 +20,9 @@ class HostMachine extends Model
         'api_token_encrypted' => Encryptable::class,
     ];
 
+    // 序列化一律不输出凭据字段
+    protected $hidden = ['api_token_encrypted'];
+
     public function region()
     {
         return $this->belongsTo(Region::class);

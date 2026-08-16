@@ -6,4 +6,5 @@ return [
     \App\Command\MigrateStatusCommand::class,
     \App\Command\DbBackupCommand::class,
     \App\Command\I18nSyncCommand::class,
+    \App\Command\ReconcileCommand::class,
 ];

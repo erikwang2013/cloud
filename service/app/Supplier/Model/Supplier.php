@@ -23,6 +23,9 @@ class Supplier extends Model
         'contact_email'  => Encryptable::class,
     ];
 
+    // 序列化一律不输出联系人 PII（Encryptable cast 在 toArray/toJson 自动解密）
+    protected $hidden = ['contact_name', 'contact_phone', 'contact_email'];
+
     public function user()
     {
         return $this->belongsTo(User::class);

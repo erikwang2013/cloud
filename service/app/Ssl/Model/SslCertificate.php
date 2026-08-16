@@ -24,6 +24,9 @@ class SslCertificate extends Model
         'last_checked_at'   => 'datetime',
     ];
 
+    // 序列化一律不输出私钥
+    protected $hidden = ['private_key_encrypted'];
+
     public function resource()
     {
         return $this->belongsTo(\App\Provisioning\Model\Resource::class, 'resource_id');

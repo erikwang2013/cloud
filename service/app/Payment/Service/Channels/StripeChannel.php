@@ -7,6 +7,7 @@ use App\Payment\Model\PaymentTransaction;
 use App\Order\Model\Order;
 use App\Order\Model\OrderTimeline;
 use App\Payment\Event\OrderPaid;
+use Common\Webhook\WebhookDispatcher;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Support\Facades\Event;
 use Stripe\Exception\ApiErrorException;
@@ -162,6 +163,12 @@ class StripeChannel
 
         if ($order && class_exists(Event::class)) {
             Event::dispatch(new OrderPaid($order));
+
+            WebhookDispatcher::dispatch(WebhookDispatcher::EVENT_ORDER_PAID, [
+                'order_id' => $order->id,
+                'amount'   => (string) $order->total,
+                'currency' => $order->currency,
+            ]);
         }
     }
 
@@ -171,5 +178,53 @@ class StripeChannel
             return (int) round((float) $total);
         }
         return (int) round((float) bcmul($total, '100', 2));
+    }
+
+    public static function isZeroDecimal(string $currency): bool
+    {
+        return in_array(strtoupper($currency), self::ZERO_DECIMAL_CURRENCIES, true);
+    }
+
+    public static function smallestToMajor(int $smallest, string $currency): string
+    {
+        $currency = strtoupper($currency);
+        if (in_array($currency, self::ZERO_DECIMAL_CURRENCIES, true)) {
+            return (string) $smallest;
+        }
+        return bcdiv((string) $smallest, '100', 4);
+    }
+
+    /**
+     * 拉取某自然日（UTC 边界）已 succeeded 的 PaymentIntent，按币种汇总实收金额（major unit）。
+     * 本地 created_at 按服务器时区查询，此处按 UTC 日界拉 Stripe 报表，服务器时区接近 UTC 时两者一致。
+     */
+    public function fetchReport(string $date): array
+    {
+        if (!getenv('STRIPE_SECRET_KEY')) {
+            throw new \RuntimeException('STRIPE_SECRET_KEY is not configured');
+        }
+
+        $from = strtotime($date . ' 00:00:00 UTC');
+        $to   = $from + 86400;
+
+        $totals = [];
+        $count  = 0;
+        $intents = $this->stripe()->paymentIntents->all([
+            'created' => ['gte' => $from, 'lt' => $to],
+            'status'  => 'succeeded',
+            'limit'   => 100,
+        ]);
+
+        foreach ($intents->autoPagingIterator() as $pi) {
+            $currency = strtoupper((string) ($pi->currency ?? ''));
+            if ($currency === '') {
+                continue;
+            }
+            $amount = (int) ($pi->amount_received ?? $pi->amount ?? 0);
+            $totals[$currency] = bcadd($totals[$currency] ?? '0', self::smallestToMajor($amount, $currency), 4);
+            $count++;
+        }
+
+        return ['by_currency' => $totals, 'count' => $count];
     }
 }

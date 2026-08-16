@@ -15,4 +15,7 @@ class ProviderApi extends Model
         'api_key_encrypted'    => Encryptable::class,
         'api_secret_encrypted' => Encryptable::class,
     ];
+
+    // 序列化一律不输出凭据字段
+    protected $hidden = ['api_key_encrypted', 'api_secret_encrypted', 'webhook_secret'];
 }
