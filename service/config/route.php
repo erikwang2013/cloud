@@ -24,14 +24,11 @@ Route::group('/api/auth', function () {
     Route::post('/register', [App\User\Controller\AuthController::class, 'register']);
     Route::post('/login', [App\User\Controller\AuthController::class, 'login']);
     Route::post('/refresh', [App\User\Controller\AuthController::class, 'refresh']);
-})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Security\RateLimitMiddleware::class]);
+})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class]);
 
 // Password reset (public)
-Route::post('/api/auth/forgot-password', [App\User\Controller\AuthController::class, 'forgotPassword'])
-    ->middleware([Common\Security\RateLimitMiddleware::class]);
-Route::post('/api/auth/reset-password', [App\User\Controller\AuthController::class, 'resetPassword'])
-    ->middleware([Common\Security\RateLimitMiddleware::class]);
-
+Route::post('/api/auth/forgot-password', [App\User\Controller\AuthController::class, 'forgotPassword']);
+Route::post('/api/auth/reset-password', [App\User\Controller\AuthController::class, 'resetPassword']);
 // Email verification (public)
 Route::get('/api/auth/verify-email', [App\User\Controller\AuthController::class, 'verifyEmail']);
 
@@ -40,24 +37,16 @@ Route::get('/api/status', [App\Controller\StatusController::class, 'index']);
 
 // OAuth (public) — generic provider routes: google, apple, facebook, x, microsoft, linkedin, github
 // POST callback is required by Apple (response_mode=form_post)
-Route::get('/api/auth/{provider}', [App\User\Controller\AuthController::class, 'oauthRedirect'])
-    ->middleware([Common\Security\RateLimitMiddleware::class]);
-Route::get('/api/auth/{provider}/callback', [App\User\Controller\AuthController::class, 'oauthCallback'])
-    ->middleware([Common\Security\RateLimitMiddleware::class]);
-Route::post('/api/auth/{provider}/callback', [App\User\Controller\AuthController::class, 'oauthCallback'])
-    ->middleware([Common\Security\RateLimitMiddleware::class]);
-
+Route::get('/api/auth/{provider}', [App\User\Controller\AuthController::class, 'oauthRedirect']);
+Route::get('/api/auth/{provider}/callback', [App\User\Controller\AuthController::class, 'oauthCallback']);
+Route::post('/api/auth/{provider}/callback', [App\User\Controller\AuthController::class, 'oauthCallback']);
 // TOTP recovery login (public)
-Route::post('/api/auth/login/recovery', [App\User\Controller\AuthController::class, 'loginWithRecoveryCode'])
-    ->middleware([Common\Security\RateLimitMiddleware::class]);
-
+Route::post('/api/auth/login/recovery', [App\User\Controller\AuthController::class, 'loginWithRecoveryCode']);
 // SMS verification (public)
-Route::post('/api/auth/send-sms', [App\User\Controller\AuthController::class, 'sendSmsVerify'])
-    ->middleware([Common\Security\RateLimitMiddleware::class]);
-
+Route::post('/api/auth/send-sms', [App\User\Controller\AuthController::class, 'sendSmsVerify']);
 // Captcha route (public, generates click captcha for login/register)
 Route::post('/api/captcha/create', [App\Captcha\Controller\CaptchaController::class, 'create'])
-    ->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Security\RateLimitMiddleware::class]);
+    ->middleware([Common\Encryption\Middleware\EncryptionMiddleware::class]);
 
 // Product routes (public)
 Route::get('/api/products', [App\Product\Controller\ProductController::class, 'index']);
@@ -231,7 +220,7 @@ Route::group('/api', function () {
     Route::get('/supplier/external/withdraws', [App\Supplier\Controller\External\WithdrawController::class, 'index']);
     Route::get('/supplier/external/products', [App\Supplier\Controller\External\ProductController::class, 'index']);
     Route::post('/supplier/external/products', [App\Supplier\Controller\External\ProductController::class, 'store']);
-})->middleware([Common\Version\Middleware\VersionMiddleware::class, Common\Auth\Middleware\SupplierApiKeyMiddleware::class, Common\Security\RateLimitMiddleware::class]);
+})->middleware([Common\Version\Middleware\VersionMiddleware::class, Common\Auth\Middleware\SupplierApiKeyMiddleware::class]);
 
 // === Admin routes ===
 Route::group('/admin/api', function () {
@@ -377,7 +366,7 @@ Route::group('/admin/api', function () {
     Route::post('/affiliate/earnings/{id}/approve', [App\Admin\Controller\AffiliateController::class, 'approveEarning']);
     Route::get('/affiliate/payouts', [App\Admin\Controller\AffiliateController::class, 'payouts']);
     Route::post('/affiliate/payouts/{id}/approve', [App\Admin\Controller\AffiliateController::class, 'approvePayout']);
-})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class, Common\Security\RateLimitMiddleware::class]);
+})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class]);
 
 // === Admin sensitive operations (requires password confirmation) ===
 Route::group('/admin/api', function () {
@@ -390,4 +379,4 @@ Route::group('/admin/api', function () {
     Route::post('/suppliers/{id}/settle', [App\Admin\Controller\SupplierController::class, 'generateSettlement'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.settle')]);
     Route::post('/suppliers/withdraws/{id}/approve', [App\Admin\Controller\SupplierController::class, 'approveWithdraw'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.withdraw_review')]);
     Route::put('/system/config', [App\Admin\Controller\SystemController::class, 'updateConfig'])->middleware([new Common\Auth\Middleware\RbacMiddleware('system.config')]);
-})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class, Common\Confirmation\ConfirmationMiddleware::class, Common\Security\RateLimitMiddleware::class]);
+})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class, Common\Confirmation\ConfirmationMiddleware::class]);

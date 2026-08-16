@@ -31,6 +31,9 @@ return [
         // Security Plugin — 31 种攻击检测（XSS/SQL注入/命令注入/SSRF/反序列化等）
         Erikwang2013\Security\Middleware\Webman\SecurityMiddleware::class,
 
+        // 统一限流中间件：全路由生效（per-IP + per-token 双桶），覆盖 /graphql 等原缺口
+        Common\Security\RateLimitMiddleware::class,
+
         // 多语言中间件：解析 Accept-Language，设置当前区域
         Common\I18n\Middleware\LocaleMiddleware::class,
 
