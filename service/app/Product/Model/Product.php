@@ -44,7 +44,7 @@ class Product extends Model
 
     public function reviews()
     {
-        return $this->hasMany(ProductReview::class)->where('status', 'published');
+        return $this->hasMany(ProductReview::class)->where('status', ReviewStatus::Approved->value);
     }
 
     public function scopePublished($query)

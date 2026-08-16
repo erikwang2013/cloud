@@ -9,6 +9,6 @@ namespace app\model;
 
 class ProductReview extends Base
 {
-    protected $table = 'erik_product_reviews';
+    protected $table = 'product_reviews';
     protected $fillable = ['user_id', 'product_id', 'order_id', 'rating', 'content', 'status'];
 }

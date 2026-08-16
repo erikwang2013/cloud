@@ -116,7 +116,7 @@ if (!Capsule::schema()->hasTable('product_reviews')) {
         $table->unsignedBigInteger('order_id')->nullable();
         $table->tinyInteger('rating')->unsigned();
         $table->text('content')->nullable();
-        $table->string('status', 20)->default('published');
+        $table->string('status', 20)->default('pending');
         $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
         $table->unique(['user_id', 'product_id', 'order_id']);
