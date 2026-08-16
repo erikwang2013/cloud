@@ -130,6 +130,16 @@ class RateLimitMiddleware
         if (str_starts_with($path, '/api/supplier/external/')) {
             return 'supplier_api';
         }
+        // 支付/上传/供应商提现：路由含动态段，需正则匹配（对应 config/security.php 的 rate_limits 键）
+        if (preg_match('#^/api/orders/\d+/pay$#', $path)) {
+            return 'pay';
+        }
+        if ($path === '/api/upload') {
+            return 'upload';
+        }
+        if ($path === '/api/supplier/withdraw') {
+            return 'supplier_withdraw';
+        }
         return 'default';
     }
 }

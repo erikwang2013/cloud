@@ -24,7 +24,10 @@ class ConfirmationMiddleware
             if (Redis::exists($lockKey)) {
                 return json(Response::error(429, 'Too many confirmation attempts, try again later'));
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+            // Redis 不可用时 fail-closed：资金/破坏性操作不得绕过锁定计数
+            return json(Response::error(503, 'Confirmation service temporarily unavailable'));
+        }
 
         $password = $request->input('confirm_password', '');
         if (empty($password)) {
@@ -32,7 +35,9 @@ class ConfirmationMiddleware
         }
 
         if (!$this->verifyPassword($userId, $password)) {
-            $this->recordFailure($userId, $lockKey);
+            if (!$this->recordFailure($userId, $lockKey)) {
+                return json(Response::error(503, 'Confirmation service temporarily unavailable'));
+            }
             AuditLogger::record('confirm_failed', ['user_id' => $userId], $request);
             return json(Response::error(403, 'Password verification failed'));
         }
@@ -52,7 +57,7 @@ class ConfirmationMiddleware
         return $user && Hash::check($password, $user->password_hash);
     }
 
-    private function recordFailure(int $userId, string $lockKey): void
+    private function recordFailure(int $userId, string $lockKey): bool
     {
         try {
             $key = "confirm_failed:{$userId}";
@@ -62,6 +67,10 @@ class ConfirmationMiddleware
             if ($count >= self::MAX_FAILURES) {
                 Redis::setex($lockKey, self::LOCK_TTL, '1');
             }
-        } catch (\Exception $e) {}
+            return true;
+        } catch (\Exception $e) {
+            // 计数无法落盘时不得放行（fail-closed），由调用方返回 503
+            return false;
+        }
     }
 }

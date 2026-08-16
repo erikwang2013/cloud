@@ -13,6 +13,12 @@ class HashidService
     {
         if (self::$manager === null) {
             $config = config('hashids');
+            $default = $config['default'] ?? 'main';
+            $salt = $config['connections'][$default]['salt'] ?? '';
+            // 默认盐是公开已知值：任何 ID 均可解码（IDOR 枚举放大面），未配置时启动即失败，与 JwtAuth fail-fast 对齐
+            if ($salt === '' || $salt === 'cloud-platform-hashids') {
+                throw new \RuntimeException('HASHIDS_SALT must be set to a unique random value');
+            }
             self::$manager = new HashidsManager($config, new HashidsFactory());
         }
         return self::$manager;

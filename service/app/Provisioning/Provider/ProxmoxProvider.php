@@ -52,8 +52,6 @@ class ProxmoxProvider implements ProviderInterface
 
             $api->post("/nodes/{$host->proxmox_node}/qemu/{$vmid}/status/start");
 
-            $this->incrementHostAllocation($host, $specs, $diskSize);
-
             $resource = Resource::find($task->resource_id);
             Disk::create([
                 'resource_id'     => $resource->id,
@@ -65,6 +63,8 @@ class ProxmoxProvider implements ProviderInterface
                 'device_path'     => 'scsi0',
                 'status'          => 'active',
             ]);
+
+            $this->recalculateHostAllocation($host);
 
             return ProvisionResult::success([
                 'vmid'       => $vmid,
@@ -88,23 +88,24 @@ class ProxmoxProvider implements ProviderInterface
                 $api->put("/nodes/{$host->proxmox_node}/qemu/{$disk->vm_id}/config", [
                     'cores' => $newSpecs['cpu'],
                 ]);
-                $hostSpecs = json_decode($host->specs, true);
-                $oldCpu = ($resource->specs['cpu'] ?? 1);
-                $hostSpecs['cpu_allocated'] = ($hostSpecs['cpu_allocated'] - $oldCpu) + $newSpecs['cpu'];
-                $host->specs = json_encode($hostSpecs);
-                $host->save();
+                $specs = $resource->specs;
+                $specs['cpu'] = $newSpecs['cpu'];
+                $resource->specs = $specs;
+                $resource->save();
             }
 
             if (isset($newSpecs['ram'])) {
                 $api->put("/nodes/{$host->proxmox_node}/qemu/{$disk->vm_id}/config", [
                     'memory' => $newSpecs['ram'] * 1024,
                 ]);
-                $hostSpecs = json_decode($host->specs, true);
-                $oldRam = ($resource->specs['ram'] ?? 2);
-                $hostSpecs['ram_allocated_gb'] = ($hostSpecs['ram_allocated_gb'] - $oldRam) + $newSpecs['ram'];
-                $host->specs = json_encode($hostSpecs);
-                $host->save();
+                $specs = $resource->specs;
+                $specs['ram'] = $newSpecs['ram'];
+                $resource->specs = $specs;
+                $resource->save();
             }
+
+            // 记账从增量改聚合重算：重试/部分失败不双重计数（增量叠加在 API 成功、DB 保存之间崩溃会虚增）
+            $this->recalculateHostAllocation($host);
 
             return ProvisionResult::success();
         } catch (\Exception $e) {
@@ -136,6 +137,7 @@ class ProxmoxProvider implements ProviderInterface
             ]);
 
             $disk->update(['size_gb' => $newSizeGb]);
+            $this->recalculateHostAllocation($host);
 
             return ProvisionResult::success();
         } catch (\Exception $e) {
@@ -227,19 +229,11 @@ class ProxmoxProvider implements ProviderInterface
 
             IpAllocation::where('resource_id', $resource->id)->update(['released_at' => date('Y-m-d H:i:s')]);
 
-            $hostSpecs = json_decode($host->specs, true);
-            $hostSpecs['cpu_allocated'] -= ($resource->specs['cpu'] ?? 1);
-            $hostSpecs['ram_allocated_gb'] -= ($resource->specs['ram'] ?? 2);
-            $totalDisk = Disk::where('host_machine_id', $host->id)
-                ->where('vm_id', $disk->vm_id)
-                ->sum('size_gb');
-            $hostSpecs['disk_allocated_gb'] -= $totalDisk;
-            $host->specs = json_encode($hostSpecs);
-            $host->save();
-
             Disk::where('host_machine_id', $host->id)
                 ->where('vm_id', $disk->vm_id)
                 ->update(['status' => 'destroyed']);
+
+            $this->recalculateHostAllocation($host);
 
             return ProvisionResult::success();
         } catch (\Exception $e) {
@@ -325,12 +319,28 @@ class ProxmoxProvider implements ProviderInterface
         throw new \RuntimeException('No available IP in pool');
     }
 
-    private function incrementHostAllocation(HostMachine $host, array $specs, int $diskGb): void
+    // 单一事实源聚合：active 资源 specs 之和 + active 磁盘大小之和，天然幂等（create/upgrade/destroy 重试安全）
+    private function recalculateHostAllocation(HostMachine $host): void
     {
+        $activeDisks = Disk::where('host_machine_id', $host->id)
+            ->where('status', 'active')
+            ->get();
+
+        $cpu = $ram = 0;
+        foreach ($activeDisks as $disk) {
+            $resource = Resource::find($disk->resource_id);
+            if (!$resource) {
+                continue;
+            }
+            $cpu += $resource->specs['cpu'] ?? 1;
+            $ram += $resource->specs['ram'] ?? 2;
+        }
+        $diskGb = $activeDisks->sum('size_gb');
+
         $h = json_decode($host->specs, true);
-        $h['cpu_allocated']    = ($h['cpu_allocated'] ?? 0) + ($specs['cpu'] ?? 1);
-        $h['ram_allocated_gb'] = ($h['ram_allocated_gb'] ?? 0) + ($specs['ram'] ?? 2);
-        $h['disk_allocated_gb'] = ($h['disk_allocated_gb'] ?? 0) + $diskGb;
+        $h['cpu_allocated']     = $cpu;
+        $h['ram_allocated_gb']  = $ram;
+        $h['disk_allocated_gb'] = $diskGb;
         $host->specs = json_encode($h);
         $host->save();
     }

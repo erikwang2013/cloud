@@ -2,11 +2,32 @@
 namespace Tests\Confirmation;
 
 use Common\Confirmation\ConfirmationMiddleware;
+use Illuminate\Support\Facades\Redis as RedisFacade;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class ConfirmationMiddlewareTest extends TestCase
 {
+    private ?object $redisRoot = null;
+
+    protected function setUp(): void
+    {
+        // 无 Redis 环境下用内存 fake 注入 facade（swap 不影响其他测试：tearDown 恢复原实例）
+        $this->redisRoot = RedisFacade::getFacadeRoot();
+        RedisFacade::swap(new class {
+            public function exists(...$args) { return 0; }
+            public function incr(...$args) { return 1; }
+            public function expire(...$args) { return true; }
+            public function setex(...$args) { return true; }
+            public function del(...$args) { return 1; }
+        });
+    }
+
+    protected function tearDown(): void
+    {
+        RedisFacade::swap($this->redisRoot);
+    }
+
     private function createRequest(array $post = [], ?int $userId = null)
     {
         return new class($post, $userId) {
@@ -138,6 +159,20 @@ class ConfirmationMiddlewareTest extends TestCase
     {
         $m = $this->createMiddleware();
         $this->assertInstanceOf(ConfirmationMiddleware::class, $m);
+    }
+
+    public function testReturns503WhenRedisUnavailable(): void
+    {
+        // fail-closed：Redis 故障时拒绝确认操作，而非放行（可无限暴力尝试）
+        RedisFacade::swap(new class {
+            public function exists(...$args) { throw new \Exception('redis down'); }
+        });
+        $middleware = $this->createMiddleware(false);
+        $request    = $this->createRequest(['confirm_password' => 'x'], 12345);
+
+        $response = $middleware->process($request, function () {});
+        $body = $this->decodeResponse($response);
+        $this->assertEquals(503, $body['code']);
     }
 
     #[DataProvider('maxFailureProvider')]

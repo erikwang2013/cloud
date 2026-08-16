@@ -316,14 +316,26 @@ class UploadController extends Crud
         }
 
         $ext = strtolower($ext);
-        $ext_forbidden_map = ['php', 'php3', 'php5', 'css', 'js', 'html', 'htm', 'asp', 'jsp'];
+        // svg 内嵌脚本在同源路径可执行（存储型 XSS）；黑名单 + 内容嗅探双层拦截
+        $ext_forbidden_map = ['php', 'php3', 'php5', 'css', 'js', 'html', 'htm', 'asp', 'jsp', 'svg'];
         if (in_array($ext, $ext_forbidden_map)) {
             throw new BusinessException('不支持该格式的文件上传', 400);
+        }
+        if ($file_size > 10 * 1024 * 1024) {
+            throw new BusinessException('文件大小超过 10MB 上限', 400);
         }
 
         $relative_path = $relative_dir . '/' . bin2hex(pack('Nn', time(), random_int(1, 65535))) . ".$ext";
         $full_path = $base_dir . $relative_path;
         $file->move($full_path);
+
+        // 内容嗅探：polyglot 文件伪造扩展名上传（finfo 读真实 MIME）
+        $real_mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer((string) file_get_contents($full_path));
+        if (in_array($real_mime, ['text/html', 'text/x-php', 'application/x-php', 'application/x-httpd-php', 'text/javascript', 'application/javascript', 'image/svg+xml'], true)) {
+            @unlink($full_path);
+            throw new BusinessException('文件内容与格式不符', 400);
+        }
+
         $image_with = $image_height = 0;
         if ($img_info = getimagesize($full_path)) {
             [$image_with, $image_height] = $img_info;
