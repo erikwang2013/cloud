@@ -14,7 +14,7 @@ use support\Request;
 /**
  * A minimal Request stub that returns known GET/POST data without a server connection.
  */
-final class RequestMock extends Request
+class RequestMock extends Request
 {
     private array $getParams;
     private array $postParams;
