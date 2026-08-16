@@ -235,64 +235,64 @@ Route::group('/api', function () {
 
 // === Admin routes ===
 Route::group('/admin/api', function () {
-    Route::get('/dashboard', [App\Admin\Controller\DashboardController::class, 'index']);
+    Route::get('/dashboard', [App\Admin\Controller\DashboardController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('report.view')]);
 
     // Users (read)
-    Route::get('/users', [App\Admin\Controller\UserController::class, 'index']);
-    Route::get('/users/export', [App\Admin\Controller\UserController::class, 'export']);
-    Route::get('/users/{id}', [App\Admin\Controller\UserController::class, 'show']);
-    Route::put('/users/{id}/status', [App\Admin\Controller\UserController::class, 'updateStatus']);
-    Route::get('/kyc', [App\Admin\Controller\DashboardController::class, 'kycList']);
+    Route::get('/users', [App\Admin\Controller\UserController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('user.view')]);
+    Route::get('/users/export', [App\Admin\Controller\UserController::class, 'export'])->middleware([new Common\Auth\Middleware\RbacMiddleware('user.view')]);
+    Route::get('/users/{id}', [App\Admin\Controller\UserController::class, 'show'])->middleware([new Common\Auth\Middleware\RbacMiddleware('user.view')]);
+    Route::put('/users/{id}/status', [App\Admin\Controller\UserController::class, 'updateStatus'])->middleware([new Common\Auth\Middleware\RbacMiddleware('user.update')]);
+    Route::get('/kyc', [App\Admin\Controller\DashboardController::class, 'kycList'])->middleware([new Common\Auth\Middleware\RbacMiddleware('user.kyc_review')]);
 
     // Products (read/write)
-    Route::post('/products', [App\Admin\Controller\ProductController::class, 'store']);
-    Route::put('/products/{id}', [App\Admin\Controller\ProductController::class, 'update']);
-    Route::post('/products/{productId}/skus', [App\Admin\Controller\ProductController::class, 'storeSku']);
-    Route::put('/skus/{id}', [App\Admin\Controller\ProductController::class, 'updateSku']);
-    Route::post('/skus/{skuId}/region-price', [App\Admin\Controller\ProductController::class, 'setRegionPrice']);
+    Route::post('/products', [App\Admin\Controller\ProductController::class, 'store'])->middleware([new Common\Auth\Middleware\RbacMiddleware('product.create')]);
+    Route::put('/products/{id}', [App\Admin\Controller\ProductController::class, 'update'])->middleware([new Common\Auth\Middleware\RbacMiddleware('product.update')]);
+    Route::post('/products/{productId}/skus', [App\Admin\Controller\ProductController::class, 'storeSku'])->middleware([new Common\Auth\Middleware\RbacMiddleware('product.create')]);
+    Route::put('/skus/{id}', [App\Admin\Controller\ProductController::class, 'updateSku'])->middleware([new Common\Auth\Middleware\RbacMiddleware('product.update')]);
+    Route::post('/skus/{skuId}/region-price', [App\Admin\Controller\ProductController::class, 'setRegionPrice'])->middleware([new Common\Auth\Middleware\RbacMiddleware('product.update')]);
 
     // Orders (read)
-    Route::get('/orders', [App\Admin\Controller\OrderController::class, 'index']);
-    Route::get('/orders/export', [App\Admin\Controller\OrderController::class, 'export']);
-    Route::get('/orders/{id}', [App\Admin\Controller\OrderController::class, 'show']);
+    Route::get('/orders', [App\Admin\Controller\OrderController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('order.view')]);
+    Route::get('/orders/export', [App\Admin\Controller\OrderController::class, 'export'])->middleware([new Common\Auth\Middleware\RbacMiddleware('order.view')]);
+    Route::get('/orders/{id}', [App\Admin\Controller\OrderController::class, 'show'])->middleware([new Common\Auth\Middleware\RbacMiddleware('order.view')]);
 
     // Provisioning (read + retry)
-    Route::get('/provisioning/tasks', [App\Provisioning\Controller\TaskController::class, 'index']);
-    Route::post('/provisioning/tasks/{id}/retry', [App\Provisioning\Controller\TaskController::class, 'retry']);
-    Route::post('/provisioning/resources/{id}/upgrade', [App\Provisioning\Controller\ResourceController::class, 'upgrade']);
-    Route::get('/provisioning/hosts', [App\Provisioning\Controller\HostController::class, 'index']);
+    Route::get('/provisioning/tasks', [App\Provisioning\Controller\TaskController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('resource.view')]);
+    Route::post('/provisioning/tasks/{id}/retry', [App\Provisioning\Controller\TaskController::class, 'retry'])->middleware([new Common\Auth\Middleware\RbacMiddleware('resource.update')]);
+    Route::post('/provisioning/resources/{id}/upgrade', [App\Provisioning\Controller\ResourceController::class, 'upgrade'])->middleware([new Common\Auth\Middleware\RbacMiddleware('resource.update')]);
+    Route::get('/provisioning/hosts', [App\Provisioning\Controller\HostController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('resource.view')]);
 
     // Payment
-    Route::get('/payments/channels', [App\Admin\Controller\PaymentController::class, 'channels']);
-    Route::put('/payments/channels/{id}', [App\Admin\Controller\PaymentController::class, 'updateChannel']);
-    Route::get('/payments/transactions', [App\Admin\Controller\PaymentController::class, 'transactions']);
-    Route::get('/payments/reconcile', [App\Admin\Controller\PaymentController::class, 'reconcile']);
-    Route::post('/payments/reconcile/run', [App\Admin\Controller\PaymentController::class, 'reconcileRun']);
+    Route::get('/payments/channels', [App\Admin\Controller\PaymentController::class, 'channels'])->middleware([new Common\Auth\Middleware\RbacMiddleware('payment.view')]);
+    Route::put('/payments/channels/{id}', [App\Admin\Controller\PaymentController::class, 'updateChannel'])->middleware([new Common\Auth\Middleware\RbacMiddleware('payment.channel_config')]);
+    Route::get('/payments/transactions', [App\Admin\Controller\PaymentController::class, 'transactions'])->middleware([new Common\Auth\Middleware\RbacMiddleware('payment.view')]);
+    Route::get('/payments/reconcile', [App\Admin\Controller\PaymentController::class, 'reconcile'])->middleware([new Common\Auth\Middleware\RbacMiddleware('payment.reconcile')]);
+    Route::post('/payments/reconcile/run', [App\Admin\Controller\PaymentController::class, 'reconcileRun'])->middleware([new Common\Auth\Middleware\RbacMiddleware('payment.reconcile')]);
 
     // Supplier management (read)
-    Route::get('/suppliers', [App\Admin\Controller\SupplierController::class, 'index']);
-    Route::get('/suppliers/export', [App\Admin\Controller\SupplierController::class, 'export']);
+    Route::get('/suppliers', [App\Admin\Controller\SupplierController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.view')]);
+    Route::get('/suppliers/export', [App\Admin\Controller\SupplierController::class, 'export'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.view')]);
 
     // Tickets
-    Route::get('/tickets', [App\Ticket\Controller\TicketController::class, 'index']);
-    Route::post('/tickets/{id}/assign', [App\Ticket\Controller\TicketController::class, 'assign']);
-    Route::post('/tickets/{id}/close', [App\Ticket\Controller\TicketController::class, 'close']);
+    Route::get('/tickets', [App\Ticket\Controller\TicketController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('ticket.view')]);
+    Route::post('/tickets/{id}/assign', [App\Ticket\Controller\TicketController::class, 'assign'])->middleware([new Common\Auth\Middleware\RbacMiddleware('ticket.assign')]);
+    Route::post('/tickets/{id}/close', [App\Ticket\Controller\TicketController::class, 'close'])->middleware([new Common\Auth\Middleware\RbacMiddleware('ticket.view')]);
 
     // System
     Route::get('/audit-logs', [App\Admin\Controller\SystemController::class, 'auditLogs']);
 
     // Feature flags
-    Route::get('/features', [App\Admin\Controller\SystemController::class, 'features']);
-    Route::put('/features/{name}', [App\Admin\Controller\SystemController::class, 'toggleFeature']);
+    Route::get('/features', [App\Admin\Controller\SystemController::class, 'features'])->middleware([new Common\Auth\Middleware\RbacMiddleware('system.config')]);
+    Route::put('/features/{name}', [App\Admin\Controller\SystemController::class, 'toggleFeature'])->middleware([new Common\Auth\Middleware\RbacMiddleware('system.config')]);
 
     // Reports
-    Route::get('/reports/revenue', [App\Report\Controller\ReportController::class, 'revenue']);
-    Route::get('/reports/supplier', [App\Report\Controller\ReportController::class, 'supplier']);
-    Route::get('/reports/region', [App\Report\Controller\ReportController::class, 'byRegion']);
+    Route::get('/reports/revenue', [App\Report\Controller\ReportController::class, 'revenue'])->middleware([new Common\Auth\Middleware\RbacMiddleware('report.view')]);
+    Route::get('/reports/supplier', [App\Report\Controller\ReportController::class, 'supplier'])->middleware([new Common\Auth\Middleware\RbacMiddleware('report.view')]);
+    Route::get('/reports/region', [App\Report\Controller\ReportController::class, 'byRegion'])->middleware([new Common\Auth\Middleware\RbacMiddleware('report.view')]);
 
     // Monitoring
-    Route::get('/monitor/dashboard', [App\Monitor\Controller\MonitorController::class, 'dashboard']);
-    Route::get('/monitor/resources/{id}', [App\Monitor\Controller\MonitorController::class, 'resourceMetrics']);
+    Route::get('/monitor/dashboard', [App\Monitor\Controller\MonitorController::class, 'dashboard'])->middleware([new Common\Auth\Middleware\RbacMiddleware('resource.view')]);
+    Route::get('/monitor/resources/{id}', [App\Monitor\Controller\MonitorController::class, 'resourceMetrics'])->middleware([new Common\Auth\Middleware\RbacMiddleware('resource.view')]);
 
     // Domain management
     Route::get('/domains/tlds', [App\Admin\Controller\DomainController::class, 'tlds']);
@@ -302,9 +302,9 @@ Route::group('/admin/api', function () {
     Route::get('/domains/zones', [App\Admin\Controller\DomainController::class, 'zones']);
 
     // Notification management
-    Route::get('/notifications/templates', [App\Admin\Controller\NotificationController::class, 'templates']);
-    Route::put('/notifications/templates/{id}', [App\Admin\Controller\NotificationController::class, 'updateTemplate']);
-    Route::get('/notifications/log', [App\Admin\Controller\NotificationController::class, 'sendLog']);
+    Route::get('/notifications/templates', [App\Admin\Controller\NotificationController::class, 'templates'])->middleware([new Common\Auth\Middleware\RbacMiddleware('notification.template')]);
+    Route::put('/notifications/templates/{id}', [App\Admin\Controller\NotificationController::class, 'updateTemplate'])->middleware([new Common\Auth\Middleware\RbacMiddleware('notification.template')]);
+    Route::get('/notifications/log', [App\Admin\Controller\NotificationController::class, 'sendLog'])->middleware([new Common\Auth\Middleware\RbacMiddleware('notification.send')]);
 
     // Coupon management
     Route::get('/coupons', [App\Admin\Controller\CouponController::class, 'index']);
@@ -312,14 +312,14 @@ Route::group('/admin/api', function () {
     Route::delete('/coupons/{id}', [App\Admin\Controller\CouponController::class, 'destroy']);
 
     // Provider API management
-    Route::get('/providers', [App\Admin\Controller\ProviderApiController::class, 'index']);
-    Route::post('/providers', [App\Admin\Controller\ProviderApiController::class, 'store']);
-    Route::put('/providers/{id}', [App\Admin\Controller\ProviderApiController::class, 'update']);
-    Route::delete('/providers/{id}', [App\Admin\Controller\ProviderApiController::class, 'destroy']);
+    Route::get('/providers', [App\Admin\Controller\ProviderApiController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('provider.config')]);
+    Route::post('/providers', [App\Admin\Controller\ProviderApiController::class, 'store'])->middleware([new Common\Auth\Middleware\RbacMiddleware('provider.config')]);
+    Route::put('/providers/{id}', [App\Admin\Controller\ProviderApiController::class, 'update'])->middleware([new Common\Auth\Middleware\RbacMiddleware('provider.config')]);
+    Route::delete('/providers/{id}', [App\Admin\Controller\ProviderApiController::class, 'destroy'])->middleware([new Common\Auth\Middleware\RbacMiddleware('provider.config')]);
 
     // Invoice management
-    Route::get('/invoices', [App\Admin\Controller\InvoiceController::class, 'index']);
-    Route::post('/invoices/{orderId}/generate', [App\Admin\Controller\InvoiceController::class, 'generate']);
+    Route::get('/invoices', [App\Admin\Controller\InvoiceController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('order.view')]);
+    Route::post('/invoices/{orderId}/generate', [App\Admin\Controller\InvoiceController::class, 'generate'])->middleware([new Common\Auth\Middleware\RbacMiddleware('order.update')]);
 
     // Supplier API keys
     Route::get('/suppliers/{id}/api-keys', [App\Admin\Controller\SupplierController::class, 'apiKeys']);
@@ -338,7 +338,7 @@ Route::group('/admin/api', function () {
 
     // Product import/export
     Route::get('/products/export', [App\Admin\Controller\ImportExportController::class, 'exportProducts']);
-    Route::post('/products/import', [App\Admin\Controller\ImportExportController::class, 'importProducts']);
+    Route::post('/products/import', [App\Admin\Controller\ImportExportController::class, 'importProducts'])->middleware([new Common\Auth\Middleware\RbacMiddleware('product.create')]);
 
     // Webhook management
     Route::get('/webhooks', [App\Admin\Controller\WebhookController::class, 'index']);
@@ -366,9 +366,9 @@ Route::group('/admin/api', function () {
     Route::put('/cdn/domains/{id}', [App\Admin\Controller\CdnController::class, 'updatePlan']);
 
     // Supplier rating moderation
-    Route::get('/suppliers/{id}/ratings', [App\Admin\Controller\RatingController::class, 'supplierRatings']);
-    Route::post('/suppliers/ratings/{id}/approve', [App\Admin\Controller\RatingController::class, 'approve']);
-    Route::post('/suppliers/ratings/{id}/hide', [App\Admin\Controller\RatingController::class, 'hide']);
+    Route::get('/suppliers/{id}/ratings', [App\Admin\Controller\RatingController::class, 'supplierRatings'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.view')]);
+    Route::post('/suppliers/ratings/{id}/approve', [App\Admin\Controller\RatingController::class, 'approve'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.review')]);
+    Route::post('/suppliers/ratings/{id}/hide', [App\Admin\Controller\RatingController::class, 'hide'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.review')]);
 
     // Affiliate management
     Route::get('/affiliate/plans', [App\Admin\Controller\AffiliateController::class, 'plans']);
@@ -381,13 +381,13 @@ Route::group('/admin/api', function () {
 
 // === Admin sensitive operations (requires password confirmation) ===
 Route::group('/admin/api', function () {
-    Route::delete('/products/{id}', [App\Admin\Controller\ProductController::class, 'destroy']);
-    Route::post('/orders/{id}/refund', [App\Admin\Controller\OrderController::class, 'refund']);
-    Route::post('/provisioning/resources/{id}/destroy', [App\Provisioning\Controller\ResourceController::class, 'destroy']);
-    Route::post('/kyc/{id}/approve', [App\Admin\Controller\DashboardController::class, 'kycApprove']);
-    Route::post('/kyc/{id}/reject', [App\Admin\Controller\DashboardController::class, 'kycReject']);
-    Route::post('/suppliers/{id}/approve', [App\Admin\Controller\SupplierController::class, 'approve']);
-    Route::post('/suppliers/{id}/settle', [App\Admin\Controller\SupplierController::class, 'generateSettlement']);
-    Route::post('/suppliers/withdraws/{id}/approve', [App\Admin\Controller\SupplierController::class, 'approveWithdraw']);
-    Route::put('/system/config', [App\Admin\Controller\SystemController::class, 'updateConfig']);
+    Route::delete('/products/{id}', [App\Admin\Controller\ProductController::class, 'destroy'])->middleware([new Common\Auth\Middleware\RbacMiddleware('product.delete')]);
+    Route::post('/orders/{id}/refund', [App\Admin\Controller\OrderController::class, 'refund'])->middleware([new Common\Auth\Middleware\RbacMiddleware('order.refund')]);
+    Route::post('/provisioning/resources/{id}/destroy', [App\Provisioning\Controller\ResourceController::class, 'destroy'])->middleware([new Common\Auth\Middleware\RbacMiddleware('resource.destroy')]);
+    Route::post('/kyc/{id}/approve', [App\Admin\Controller\DashboardController::class, 'kycApprove'])->middleware([new Common\Auth\Middleware\RbacMiddleware('user.kyc_review')]);
+    Route::post('/kyc/{id}/reject', [App\Admin\Controller\DashboardController::class, 'kycReject'])->middleware([new Common\Auth\Middleware\RbacMiddleware('user.kyc_review')]);
+    Route::post('/suppliers/{id}/approve', [App\Admin\Controller\SupplierController::class, 'approve'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.review')]);
+    Route::post('/suppliers/{id}/settle', [App\Admin\Controller\SupplierController::class, 'generateSettlement'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.settle')]);
+    Route::post('/suppliers/withdraws/{id}/approve', [App\Admin\Controller\SupplierController::class, 'approveWithdraw'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.withdraw_review')]);
+    Route::put('/system/config', [App\Admin\Controller\SystemController::class, 'updateConfig'])->middleware([new Common\Auth\Middleware\RbacMiddleware('system.config')]);
 })->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class, Common\Confirmation\ConfirmationMiddleware::class, Common\Security\RateLimitMiddleware::class]);
