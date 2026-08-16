@@ -27,6 +27,14 @@ class ProxmoxProvider implements ProviderInterface
         $params = json_decode($task->params, true);
         $specs  = $params['specs'] ?? [];
 
+        // 分布式锁串行化同区域 VM 创建：宿主机容量选择是 check-then-act（读 specs 快照），
+        // 无锁并发会超售。Redis 在本栈恒在（限流/队列/会话均依赖），单机与分布式部署同用一把锁。
+        $lockKey   = "lock:provision:region:{$task->region_id}";
+        $lockToken = bin2hex(random_bytes(8));
+        if (!\support\Redis::set($lockKey, $lockToken, ['EX' => 300, 'NX'])) {
+            return ProvisionResult::retryable('Provisioning in progress for this region');
+        }
+
         try {
             $host = $this->selector->select($task->region_id, $specs);
             $ip = $this->allocateIp($host->id);
@@ -74,6 +82,13 @@ class ProxmoxProvider implements ProviderInterface
 
         } catch (\Exception $e) {
             return ProvisionResult::retryable($e->getMessage());
+        } finally {
+            // Lua 保证 token 匹配才释放：TTL 过期后新持有者的锁不会被误删
+            \support\Redis::eval(
+                "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+                [$lockKey, $lockToken],
+                1
+            );
         }
     }
 

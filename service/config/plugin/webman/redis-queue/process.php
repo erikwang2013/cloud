@@ -30,4 +30,10 @@ return [
         'handler' => App\Notification\Queue\PushSender::class,
         'count'   => 20, // 20 个消费者，Push 为高频即时推送
     ],
+
+    // Webhook 投递队列：请求路径不阻塞于外部 HTTP，异步投递给注册的 webhook URL
+    'webhook' => [
+        'handler' => App\Webhook\Queue\WebhookSender::class,
+        'count'   => 2,
+    ],
 ];

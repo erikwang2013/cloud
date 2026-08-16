@@ -26,7 +26,8 @@ class WebhookDispatcher
     }
 
     /**
-     * Dispatch an event to all registered webhook URLs.
+     * Dispatch an event to all registered webhook URLs（异步：请求路径不阻塞于外部 HTTP，
+     * 投递由 redis-queue 消费端执行）。
      */
     public static function dispatch(string $event, array $payload): void
     {
@@ -37,7 +38,12 @@ class WebhookDispatcher
         $sig  = self::signature($body);
 
         foreach ($urls as $url) {
-            self::sendToUrl($url, $body, $sig, $event);
+            \Webman\RedisQueue\Client::send('webhook', [
+                'url'   => $url,
+                'body'  => $body,
+                'sig'   => $sig,
+                'event' => $event,
+            ]);
         }
     }
 
@@ -69,7 +75,7 @@ class WebhookDispatcher
         return $secret ? 'sha256=' . hash_hmac('sha256', $body, $secret) : '';
     }
 
-    private static function sendToUrl(string $url, string $body, string $sig, string $event): bool
+    public static function sendToUrl(string $url, string $body, string $sig, string $event): bool
     {
         try {
             $ch = curl_init($url);
