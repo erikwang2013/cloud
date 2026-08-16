@@ -229,6 +229,8 @@ Route::group('/api', function () {
     Route::get('/supplier/external/settlements/{id}', [App\Supplier\Controller\External\SettlementController::class, 'show']);
     Route::post('/supplier/external/withdraw', [App\Supplier\Controller\External\WithdrawController::class, 'store']);
     Route::get('/supplier/external/withdraws', [App\Supplier\Controller\External\WithdrawController::class, 'index']);
+    Route::get('/supplier/external/products', [App\Supplier\Controller\External\ProductController::class, 'index']);
+    Route::post('/supplier/external/products', [App\Supplier\Controller\External\ProductController::class, 'store']);
 })->middleware([Common\Version\Middleware\VersionMiddleware::class, Common\Auth\Middleware\SupplierApiKeyMiddleware::class, Common\Security\RateLimitMiddleware::class]);
 
 // === Admin routes ===

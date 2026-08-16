@@ -19,6 +19,9 @@ class StorageBucket extends Model
         'policy'   => 'array',
     ];
 
+    // 序列化一律不输出凭据字段
+    protected $hidden = ['access_key_encrypted', 'secret_key_encrypted'];
+
     public function resource()
     {
         return $this->belongsTo(\App\Provisioning\Model\Resource::class, 'resource_id');
