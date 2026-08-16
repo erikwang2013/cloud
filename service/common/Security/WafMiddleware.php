@@ -41,7 +41,10 @@ class WafMiddleware
         }
         $url = mb_substr($request->path() . '?' . $request->queryString(), 0, 2048);
         $ua  = $request->header('User-Agent', '');
-        $raw = file_get_contents('php://input') ?: '';
+        // 仅对可能携带 body 的方法读取原始 body，GET 等请求跳过，避免全量读入
+        $raw = in_array(strtoupper($request->method()), ['POST', 'PUT', 'PATCH', 'DELETE'], true)
+            ? $this->readRawBody()
+            : '';
 
         static $patterns = null;
         if ($patterns === null) {
@@ -73,6 +76,11 @@ class WafMiddleware
             }
         }
         return $next($request);
+    }
+
+    protected function readRawBody(): string
+    {
+        return file_get_contents('php://input') ?: '';
     }
 
     protected function match(string $pattern, string $subject): bool

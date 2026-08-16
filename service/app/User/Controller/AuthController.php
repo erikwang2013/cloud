@@ -463,7 +463,20 @@ class AuthController
             return json(Response::error(500, 'Logout failed'));
         }
 
+        // 注销会话：撤销随请求携带的 refresh token，防止其继续换新 access token
+        $this->revokeRefreshToken($request->input('refresh_token'));
+
         return json(Response::success(null, 'Logged out'));
+    }
+
+    // 查库口径与 AuthService::refreshToken 一致（sha256 哈希比对 token_hash）
+    protected function revokeRefreshToken(mixed $refreshToken): void
+    {
+        if (!is_string($refreshToken) || $refreshToken === '') {
+            return;
+        }
+        \App\User\Model\RefreshToken::where('token_hash', hash('sha256', $refreshToken))
+            ->update(['revoked' => true]);
     }
 
     // --- Account deletion ---
