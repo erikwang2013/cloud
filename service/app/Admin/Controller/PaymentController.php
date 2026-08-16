@@ -58,6 +58,12 @@ class PaymentController
             ->orderBy('channel_id')
             ->get();
 
+        // D5 恒等式断言：total - subtotal - tax + discount == 0 必须恒成立（DECIMAL 列，MySQL 精确算术）
+        $identityDrift = \Illuminate\Database\Capsule\Manager::table('orders')
+            ->whereDate('created_at', $date)
+            ->whereRaw('(COALESCE(total,0) - COALESCE(subtotal,0) - COALESCE(tax,0) + COALESCE(discount,0)) <> 0')
+            ->count();
+
         return json(Response::success([
             'stale_pending'    => $pending,
             'failed_today'     => $failed,
@@ -66,6 +72,29 @@ class PaymentController
             'verified_count'   => $records->where('status', 'verified')->count(),
             'mismatch_count'   => $records->where('status', 'mismatch')->count(),
             'unverified_count' => $records->where('status', 'unverified')->count(),
+            'identity_drift'   => $identityDrift,
+        ]));
+    }
+
+    /**
+     * 审计查询（设计 D7）：列出恒等式 |total - subtotal - tax + discount| > 0 的订单供人工核。
+     * 历史订单尾差只记录不修补（补一笔会改变历史对账）。
+     */
+    public function feeDrift($request)
+    {
+        $limit = min((int) $request->input('limit', 50), 200);
+
+        $orders = \Illuminate\Database\Capsule\Manager::table('orders')
+            ->whereRaw('(COALESCE(total,0) - COALESCE(subtotal,0) - COALESCE(tax,0) + COALESCE(discount,0)) <> 0')
+            ->selectRaw('id, order_no, user_id, currency, subtotal, tax, discount, total, exchange_rate, created_at,
+                (COALESCE(total,0) - COALESCE(subtotal,0) - COALESCE(tax,0) + COALESCE(discount,0)) AS drift')
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get();
+
+        return json(Response::success([
+            'count'  => count($orders),
+            'orders' => $orders,
         ]));
     }
 

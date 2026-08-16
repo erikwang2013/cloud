@@ -8,6 +8,7 @@ use App\Payment\Service\PaymentRouter;
 use App\Order\Model\Order;
 use App\Order\Model\OrderTimeline;
 use App\Payment\Event\OrderPaid;
+use Common\Money\Money;
 use Common\Webhook\WebhookDispatcher;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Support\Facades\Event;
@@ -177,10 +178,11 @@ class StripeChannel
 
     private function toSmallestUnit(string $total, string $currency): int
     {
+        // D4：字符串 bcmath 舍入，不再经 (float)/round()（浮点精度隐患）
         if (in_array(strtoupper($currency), self::ZERO_DECIMAL_CURRENCIES, true)) {
-            return (int) round((float) $total);
+            return (int) Money::bcround($total, 0);
         }
-        return (int) round((float) bcmul($total, '100', 2));
+        return (int) Money::bcround(bcmul($total, '100', 2), 0);
     }
 
     public static function isZeroDecimal(string $currency): bool

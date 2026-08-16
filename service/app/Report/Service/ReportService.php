@@ -16,7 +16,8 @@ class ReportService
             ->orderBy('date')
             ->get();
 
-        $totalRevenue = $daily->sum('revenue');
+        // D4：汇总统一 bcmath（Eloquent sum() 走浮点），金额以字符串 4 位小数输出
+        $totalRevenue = array_reduce($daily->all(), fn ($c, $row) => bcadd($c, (string) $row->revenue, 4), '0.0000');
         $totalOrders  = $daily->sum('orders');
 
         $byCategory = DB::table('order_items')
@@ -39,8 +40,8 @@ class ReportService
             ->whereBetween('period_start', [$startDate, $endDate])
             ->get();
 
-        $totalPayable = $settlements->sum('payable');
-        $totalPaid    = $settlements->where('status', 'paid')->sum('payable');
+        $totalPayable = array_reduce($settlements->all(), fn ($c, $row) => bcadd($c, (string) $row->payable, 4), '0.0000');
+        $totalPaid    = array_reduce($settlements->where('status', 'paid')->all(), fn ($c, $row) => bcadd($c, (string) $row->payable, 4), '0.0000');
 
         return compact('settlements', 'totalPayable', 'totalPaid');
     }

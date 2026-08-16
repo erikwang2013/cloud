@@ -2,6 +2,7 @@
 namespace App\Order\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Common\Money\Money;
 use Common\Snowflake\HasSnowflakeId;
 
 class Coupon extends Model
@@ -28,19 +29,26 @@ class Coupon extends Model
         return true;
     }
 
-    public function calculateDiscount(float $orderTotal): float
+    public function calculateDiscount(string $orderTotal): string
     {
-        if ($orderTotal < (float) $this->min_amount) return 0;
-
-        if ($this->type === 'percentage') {
-            $discount = $orderTotal * ((float) $this->value / 100);
-            if ($this->max_discount !== null) {
-                $discount = min($discount, (float) $this->max_discount);
-            }
-            return round($discount, 4);
+        // D4：字符串 bcmath 路径，禁止 (float)/round() 混入金额计算链
+        if (bccomp($orderTotal, (string) $this->min_amount, 4) < 0) {
+            return '0.0000';
         }
 
-        // fixed
-        return min((float) $this->value, $orderTotal);
+        if ($this->type === 'percentage') {
+            $discount = bcmul($orderTotal, bcdiv((string) $this->value, '100', 8), 8);
+            if ($this->max_discount !== null && bccomp((string) $this->max_discount, '0', 4) > 0
+                && bccomp($discount, (string) $this->max_discount, 8) > 0) {
+                $discount = (string) $this->max_discount;
+            }
+            return Money::bcround($discount, 4);
+        }
+
+        // fixed：折扣不超过订单金额
+        if (bccomp((string) $this->value, $orderTotal, 4) > 0) {
+            return Money::bcround($orderTotal, 4);
+        }
+        return Money::bcround((string) $this->value, 4);
     }
 }

@@ -2,6 +2,7 @@
 namespace App\Payment\Service;
 
 use App\Payment\Model\PaymentChannel;
+use Common\Money\Money;
 
 class PaymentRouter
 {
@@ -29,18 +30,23 @@ class PaymentRouter
                 'code'         => $channel->code,
                 'amount'       => $context['amount'],
                 'fee'          => $fee,
-                'total_amount' => bcadd($context['amount'], $fee, 4),
+                // 对齐 amount 到 4 位再加 fee（D5：total_amount - amount - fee 精确为 0）
+                'total_amount' => bcadd(Money::bcround($context['amount'], 4), $fee, 4),
             ];
         }
 
         return $result;
     }
 
+    /**
+     * 通道费（D4）：先对齐 amount 到 4 位 → 乘率 → HALF_UP 到 4 位。
+     * 原实现 bcadd(..., 4) 截断少收 <0.0001/单，改为标准半舍入。
+     */
     public function calculateFee(string $amount, array $feeConfig): string
     {
         $fixed = $feeConfig['fixed'] ?? '0';
         $rate  = $feeConfig['rate'] ?? '0';
-        $fee = bcadd(bcmul($amount, $rate, 8), $fixed, 4);
+        $fee = Money::bcround(bcadd(bcmul(Money::bcround($amount, 4), $rate, 8), $fixed, 8), 4);
         return bccomp($fee, '0', 4) < 0 ? '0' : $fee;
     }
 }

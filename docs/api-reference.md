@@ -346,15 +346,18 @@ PUT /api/cart/{id}
   体: { quantity }
 ```
 
+> 金额字段约定（D4/P4.2 定案）：所有金额一律 string、4 位小数（如 "9.9900"），禁止 number/float——
+> 与 MySQL DECIMAL 列经 PDO 的原始输出一致，精度由 4dp 字符串本身承载。涉及订单/余额/报表全端点。
+
 ### 订单
 
 ```
 POST /api/orders
   → 从购物车创建订单
-  ← { order, order_no, items, subtotal, discount, tax, total }
+  ← { order, order_no, items, subtotal, discount, tax, total }   # subtotal/discount/tax/total: string 4dp
 
 GET /api/orders
-  参数: page, status
+  参数: page, status (pending/paid/provisioning/completed/refunded，非法值返回 400)
   → 我的订单列表
 
 GET /api/orders/{id}
@@ -373,7 +376,7 @@ POST /api/orders/{id}/pay    🔒 密码确认
 ```
 POST /api/coupons/validate
   体: { code, order_total }
-  → { coupon_id, discount, type }
+  → { coupon_id, discount, type }   # discount: string 4dp（如 "2.0000"）
 
 422: 无效/过期/不满足使用条件
 ```
@@ -670,8 +673,12 @@ POST /admin/api/webhooks/test           体: { url }
 
 ```
 GET /admin/api/reports/revenue           参数: from, to, granularity
+  → { daily: [{date, currency, revenue, orders}], total_revenue, total_orders, by_category }
+  # revenue/total_revenue: string 4dp（SUM(DECIMAL) 与 bcmath 汇总一致）
 GET /admin/api/reports/supplier          参数: from, to
+  → { settlements, total_payable, total_paid }   # payable/total_payable/total_paid: string 4dp
 GET /admin/api/reports/region            参数: from, to
+  → [{region, orders, revenue}]                  # revenue: string 4dp
 ```
 
 ### 监控

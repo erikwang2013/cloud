@@ -125,8 +125,8 @@ final class ReportServiceTest extends TestCase
     {
         $report = (new ReportService())->revenueReport('2026-08-01', '2026-08-09');
 
-        // O-1001 (100) + O-1002 (250) + O-1003 (600) = 950
-        $this->assertSame('950', (string) $report['totalRevenue']);
+        // O-1001 (100) + O-1002 (250) + O-1003 (600) = 950（bcmath 汇总，4 位小数）
+        $this->assertSame('950.0000', (string) $report['totalRevenue']);
         // 3 paid orders in range; refunded/pending/out-of-range excluded
         $this->assertSame(3, (int) $report['totalOrders']);
         // daily grouped by (date, currency): 08-01/USD, 08-02/USD, 08-02/CNY
@@ -168,8 +168,8 @@ final class ReportServiceTest extends TestCase
     {
         $report = (new ReportService())->supplierReport(5, '2026-08-01', '2026-08-31');
 
-        $this->assertSame('400', (string) $report['totalPayable']);
-        $this->assertSame('300', (string) $report['totalPaid']);
+        $this->assertSame('400.0000', (string) $report['totalPayable']);
+        $this->assertSame('300.0000', (string) $report['totalPaid']);
         $this->assertCount(2, $report['settlements']);
     }
 

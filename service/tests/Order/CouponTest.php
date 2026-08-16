@@ -70,24 +70,24 @@ final class CouponTest extends TestCase
         $this->assertTrue($coupon->isValid());
     }
 
-    // --- calculateDiscount: percentage ---
+    // --- calculateDiscount: percentage (D4 字符串 bcmath 路径，返回 4 位小数) ---
 
     public function testPercentageDiscount(): void
     {
-        $d = $this->coupon(['status' => 'active', 'type' => 'percentage', 'value' => 20.00])->calculateDiscount(100.0);
-        $this->assertSame(20.0, $d);
+        $d = $this->coupon(['status' => 'active', 'type' => 'percentage', 'value' => 20.00])->calculateDiscount('100.00');
+        $this->assertSame('20.0000', $d);
     }
 
     public function testPercentageDiscountWithMaxCap(): void
     {
         $coupon = $this->coupon(['status' => 'active', 'type' => 'percentage', 'value' => 50.00, 'max_discount' => 25.00]);
-        $this->assertSame(25.0, $coupon->calculateDiscount(100.0));
+        $this->assertSame('25.0000', $coupon->calculateDiscount('100.00'));
     }
 
     public function testPercentageDiscountBelowMinAmount(): void
     {
         $coupon = $this->coupon(['status' => 'active', 'type' => 'percentage', 'value' => 10.00, 'min_amount' => 50.00]);
-        $this->assertSame(0.0, $coupon->calculateDiscount(30.0));
+        $this->assertSame('0.0000', $coupon->calculateDiscount('30.00'));
     }
 
     // --- calculateDiscount: fixed ---
@@ -95,19 +95,19 @@ final class CouponTest extends TestCase
     public function testFixedDiscount(): void
     {
         $coupon = $this->coupon(['status' => 'active', 'type' => 'fixed', 'value' => 15.00]);
-        $this->assertSame(15.0, $coupon->calculateDiscount(100.0));
+        $this->assertSame('15.0000', $coupon->calculateDiscount('100.00'));
     }
 
     public function testFixedDiscountCannotExceedOrderTotal(): void
     {
         $coupon = $this->coupon(['status' => 'active', 'type' => 'fixed', 'value' => 50.00]);
-        $this->assertSame(30.0, $coupon->calculateDiscount(30.0));
+        $this->assertSame('30.0000', $coupon->calculateDiscount('30.00'));
     }
 
     public function testFixedDiscountBelowMinAmount(): void
     {
         $coupon = $this->coupon(['status' => 'active', 'type' => 'fixed', 'value' => 10.00, 'min_amount' => 100.00]);
-        $this->assertSame(0.0, $coupon->calculateDiscount(50.0));
+        $this->assertSame('0.0000', $coupon->calculateDiscount('50.00'));
     }
 
     // --- Edge cases ---
@@ -115,7 +115,14 @@ final class CouponTest extends TestCase
     public function testDiscountWithZeroOrderTotal(): void
     {
         $coupon = $this->coupon(['status' => 'active', 'type' => 'fixed', 'value' => 10.00]);
-        $this->assertSame(0.0, $coupon->calculateDiscount(0.0));
+        $this->assertSame('0.0000', $coupon->calculateDiscount('0.00'));
+    }
+
+    public function testPercentageDiscountRoundsHalfUpExactly(): void
+    {
+        // 5 位小数小计 × 10%：bcmath 字符串路径精确舍入，不经浮点
+        $coupon = $this->coupon(['status' => 'active', 'type' => 'percentage', 'value' => 10.00]);
+        $this->assertSame('0.0123', $coupon->calculateDiscount('0.12345'));
     }
 
     public function testModelMethodsMatchBusinessRules(): void
@@ -134,7 +141,7 @@ final class CouponTest extends TestCase
             'expires_at' => '2099-01-01',
         ]);
         $this->assertTrue($coupon->isValid());
-        $this->assertSame(12.0, $coupon->calculateDiscount(100.0));
+        $this->assertSame('12.0000', $coupon->calculateDiscount('100.00'));
     }
 }
 }

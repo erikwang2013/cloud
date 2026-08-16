@@ -9,7 +9,8 @@ class CouponController
     public function validate($request)
     {
         $code      = $request->input('code');
-        $orderTotal = (float) $request->input('order_total', 0);
+        // 边界输入直接以字符串进入 bcmath 链（D4：金额计算禁止 (float)）
+        $orderTotal = (string) $request->input('order_total', '0');
 
         if (empty($code)) {
             return json(Response::error(422, 'Coupon code required'));

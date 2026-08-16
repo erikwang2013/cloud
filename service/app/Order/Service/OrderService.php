@@ -6,6 +6,7 @@ use App\Order\Model\OrderItem;
 use App\Order\Model\OrderTimeline;
 use App\Order\Model\Cart;
 use App\Product\Model\ProductRegion;
+use Common\Money\Money;
 use Illuminate\Database\Capsule\Manager as DB;
 use Illuminate\Support\Facades\Redis;
 
@@ -38,16 +39,19 @@ class OrderService
 
     public function createFromCart(int $userId, array $cartIds, string $currency = 'USD', ?string $couponCode = null): Order
     {
-        $carts = Cart::whereIn('id', $cartIds)
-            ->where('user_id', $userId)
-            ->with(['sku.product'])
-            ->get();
+        return DB::transaction(function () use ($userId, $cartIds, $currency, $couponCode) {
+            // 幂等守卫：下单事务内行锁重读 cart（事务提交即清空 = 状态转移）。
+            // 并发重复提交时后到事务阻塞于此，前事务提交后重读为空集即抛错，同一 cart 只出一单（防 TOCTOU）。
+            $carts = Cart::whereIn('id', $cartIds)
+                ->where('user_id', $userId)
+                ->with(['sku.product'])
+                ->lockForUpdate()
+                ->get();
 
-        if ($carts->isEmpty()) {
-            throw new \InvalidArgumentException('Cart is empty');
-        }
+            if ($carts->isEmpty()) {
+                throw new \InvalidArgumentException('Cart is empty');
+            }
 
-        return DB::transaction(function () use ($userId, $cartIds, $carts, $currency, $couponCode) {
             $subtotal = '0';
             $items = [];
 
@@ -66,7 +70,8 @@ class OrderService
                     throw new \InvalidArgumentException("Insufficient stock for SKU {$cart->sku_id}");
                 }
 
-                $totalPrice = bcmul($regionPrice->price, (string)$cart->quantity, 4);
+                // D4：行项先乘后 bcround 到 4 位；subtotal 为同精度精确求和
+                $totalPrice = Money::bcround(bcmul($regionPrice->price, (string)$cart->quantity, 8), 4);
                 $subtotal   = bcadd($subtotal, $totalPrice, 4);
 
                 $items[] = [
@@ -92,9 +97,12 @@ class OrderService
                 if (!$coupon || !$coupon->isValid()) {
                     throw new \InvalidArgumentException('Coupon is invalid or expired');
                 }
-                $discount = bcadd($discount, (string) $coupon->calculateDiscount((float) $subtotal), 4);
+                $discount = bcadd($discount, $coupon->calculateDiscount($subtotal), 4);
             }
-            $total = bcsub($subtotal, $discount, 4);
+            // D5 恒等式：total = subtotal + tax - discount（同精度加减，精确）；
+            // 系统暂无税率来源（无 tax_rate 配置），tax 以 0 参与恒等式，留待税模块接入
+            $tax   = '0.0000';
+            $total = bcsub(bcadd($subtotal, $tax, 4), $discount, 4);
 
             $order = Order::create([
                 'order_no' => $this->generateOrderNo(),
@@ -104,11 +112,14 @@ class OrderService
                 'currency' => $currency,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'tax'      => $tax,
                 'total'    => $total,
                 'exchange_rate' => $this->getExchangeRate($currency),
             ]);
 
             if ($coupon) {
+                // user_coupons 不加 (user_id, coupon_id) 唯一约束：语义允许同一用户跨订单多次核销同一优惠券
+                //（max_uses 为总量上限，无每人限次）；并发由本事务内 coupon 行锁串行化，同一订单只插入一行。
                 $coupon->increment('used_count');
                 DB::table('user_coupons')->insert([
                     'user_id'    => $userId,

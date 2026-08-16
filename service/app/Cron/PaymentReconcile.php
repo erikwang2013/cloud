@@ -4,6 +4,7 @@ namespace App\Cron;
 use App\Payment\Model\PaymentChannel;
 use App\Payment\Model\PaymentTransaction;
 use App\Payment\Service\Channels\StripeChannel;
+use Common\Money\Money;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 class PaymentReconcile
@@ -108,11 +109,8 @@ class PaymentReconcile
 
     private static function roundToScale(string $value, int $scale): string
     {
-        $neg = bccomp($value, '0', 8) < 0;
-        $abs = $neg ? bcmul($value, '-1', 8) : $value;
-        $half = $scale === 0 ? '0.5' : '0.' . str_repeat('0', $scale) . '5';
-        $rounded = bcadd($abs, $half, $scale);
-        return $neg ? bcmul($rounded, '-1', $scale) : $rounded;
+        // 统一走 Common\Money\Money::bcround（D4 唯一金额舍入助手）
+        return Money::bcround($value, $scale);
     }
 
     private static function systemTotals(int $channelId, string $date): array
