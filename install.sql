@@ -134,6 +134,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     timezone        VARCHAR(64)     NOT NULL DEFAULT 'UTC',
     status          VARCHAR(32)     NOT NULL DEFAULT 'active',
     role            VARCHAR(32)     NOT NULL DEFAULT 'user',
+    affiliate_code  VARCHAR(32)     DEFAULT NULL,
     fcm_token       TEXT            DEFAULT NULL,
     fcm_platform    VARCHAR(16)     DEFAULT NULL,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -143,6 +144,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     UNIQUE INDEX uk_phone (phone),
     INDEX idx_status (status),
     INDEX idx_role (role),
+    INDEX idx_affiliate_code (affiliate_code),
     INDEX idx_fcm_token (fcm_token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -175,7 +177,7 @@ CREATE TABLE IF NOT EXISTS `user_kyc` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `user_balances` (
+CREATE TABLE IF NOT EXISTS `user_balance` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     currency        VARCHAR(3)      NOT NULL DEFAULT 'USD',
@@ -389,8 +391,10 @@ CREATE TABLE IF NOT EXISTS `refunds` (
     amount          DECIMAL(12,4)   NOT NULL,
     reason          VARCHAR(512)    DEFAULT NULL,
     status          VARCHAR(32)     NOT NULL DEFAULT 'pending',
+    pending_order_id BIGINT UNSIGNED GENERATED ALWAYS AS (IF(status = 'pending', order_id, NULL)) STORED,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uniq_refunds_pending_order (pending_order_id),
     INDEX idx_order (order_id),
     INDEX idx_user (user_id),
     INDEX idx_status (status)
@@ -640,6 +644,8 @@ CREATE TABLE IF NOT EXISTS `suppliers` (
     contact_phone       VARCHAR(32)     NOT NULL,
     contact_email       VARCHAR(255)    NOT NULL,
     status              VARCHAR(32)     NOT NULL DEFAULT 'pending',
+    rating_avg          DECIMAL(3,2)    NOT NULL DEFAULT 0.00,
+    rating_count        INT             NOT NULL DEFAULT 0,
     settlement_method   VARCHAR(32)     NOT NULL DEFAULT 'bank',
     approved_by         BIGINT          DEFAULT NULL,
     approved_at         DATETIME        DEFAULT NULL,
@@ -672,6 +678,8 @@ CREATE TABLE IF NOT EXISTS `supplier_withdraws` (
     method          VARCHAR(32)     NOT NULL DEFAULT 'bank',
     account_info    JSON            DEFAULT NULL,
     status          VARCHAR(32)     NOT NULL DEFAULT 'pending',
+    handled_by      BIGINT          DEFAULT NULL,
+    handled_at      DATETIME        DEFAULT NULL,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_supplier (supplier_id),
@@ -742,6 +750,466 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
     INDEX idx_action (action),
     INDEX idx_resource (resource_type, resource_id),
     INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== Coupon ========================
+
+CREATE TABLE IF NOT EXISTS `coupons` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    code            VARCHAR(50)     NOT NULL,
+    type            VARCHAR(20)     NOT NULL DEFAULT 'percentage',
+    value           DECIMAL(10,2)   NOT NULL,
+    min_amount      DECIMAL(16,4)   NOT NULL DEFAULT 0.0000,
+    max_discount    DECIMAL(16,4)   DEFAULT NULL,
+    max_uses        INT             NOT NULL DEFAULT 0,
+    used_count      INT             NOT NULL DEFAULT 0,
+    starts_at       DATETIME        DEFAULT NULL,
+    expires_at      DATETIME        DEFAULT NULL,
+    status          VARCHAR(20)     NOT NULL DEFAULT 'active',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_code (code),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `user_coupons` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    user_id         BIGINT          NOT NULL,
+    coupon_id       BIGINT          NOT NULL,
+    order_id        BIGINT          DEFAULT NULL,
+    used_at         DATETIME        DEFAULT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user (user_id),
+    INDEX idx_coupon (coupon_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== User ========================
+
+CREATE TABLE IF NOT EXISTS `user_balance_log` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    user_id         BIGINT          NOT NULL,
+    type            VARCHAR(30)     NOT NULL,
+    currency        VARCHAR(3)      NOT NULL,
+    amount          DECIMAL(16,4)   NOT NULL,
+    balance_before  DECIMAL(16,4)   NOT NULL,
+    balance_after   DECIMAL(16,4)   NOT NULL,
+    order_id        BIGINT          DEFAULT NULL,
+    remark          VARCHAR(500)    DEFAULT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user_created (user_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== Product ========================
+
+CREATE TABLE IF NOT EXISTS `product_attributes` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    product_id      BIGINT          NOT NULL,
+    `key`           VARCHAR(100)    NOT NULL,
+    value           VARCHAR(500)    NOT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_product (product_id),
+    INDEX idx_key (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== Order ========================
+
+CREATE TABLE IF NOT EXISTS `order_invoices` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    order_id        BIGINT          NOT NULL,
+    user_id         BIGINT          NOT NULL,
+    type            VARCHAR(20)     NOT NULL DEFAULT 'personal',
+    title           VARCHAR(200)    NOT NULL,
+    tax_number      VARCHAR(50)     DEFAULT NULL,
+    amount          DECIMAL(14,4)   NOT NULL,
+    file_url        VARCHAR(500)    DEFAULT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_order (order_id),
+    INDEX idx_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== Payment ========================
+
+CREATE TABLE IF NOT EXISTS `payment_reconcile` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    date            DATE            NOT NULL,
+    channel_id      BIGINT          NOT NULL,
+    channel_total   DECIMAL(14,4)   NOT NULL DEFAULT 0.0000,
+    system_total    DECIMAL(14,4)   NOT NULL DEFAULT 0.0000,
+    diff            DECIMAL(14,4)   NOT NULL DEFAULT 0.0000,
+    status          VARCHAR(20)     NOT NULL DEFAULT 'pending',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uniq_reconcile_channel_date (channel_id, date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== Provisioning ========================
+
+CREATE TABLE IF NOT EXISTS `resource_servers` (
+    id                       BIGINT          NOT NULL PRIMARY KEY,
+    resource_id              BIGINT          NOT NULL,
+    hostname                 VARCHAR(255)    DEFAULT NULL,
+    ip_address               VARCHAR(45)     DEFAULT NULL,
+    login_user               VARCHAR(50)     DEFAULT NULL,
+    login_password_encrypted VARCHAR(500)    DEFAULT NULL,
+    os                       VARCHAR(100)    DEFAULT NULL,
+    cpu                      INT             NOT NULL DEFAULT 0,
+    ram                      INT             NOT NULL DEFAULT 0,
+    disk                     INT             NOT NULL DEFAULT 0,
+    bandwidth                INT             NOT NULL DEFAULT 0,
+    panel_url                VARCHAR(500)    DEFAULT NULL,
+    created_at               DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at               DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_resource (resource_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `resource_ips` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    resource_id     BIGINT          NOT NULL,
+    ip_address      VARCHAR(45)     NOT NULL,
+    subnet          VARCHAR(45)     DEFAULT NULL,
+    gateway         VARCHAR(45)     DEFAULT NULL,
+    rdns            VARCHAR(255)    DEFAULT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_resource (resource_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `resource_disks` (
+    id                      BIGINT          NOT NULL PRIMARY KEY,
+    resource_id             BIGINT          NOT NULL,
+    disk_size               INT             NOT NULL,
+    disk_type               VARCHAR(10)     NOT NULL DEFAULT 'ssd',
+    attach_to_resource_id   BIGINT          DEFAULT NULL,
+    created_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_resource (resource_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `resource_domains` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    resource_id     BIGINT          NOT NULL,
+    domain_name     VARCHAR(255)    NOT NULL,
+    registrar       VARCHAR(50)     DEFAULT NULL,
+    dns_servers     JSON            DEFAULT NULL,
+    whois_privacy   TINYINT(1)      NOT NULL DEFAULT 0,
+    auto_renew      TINYINT(1)      NOT NULL DEFAULT 1,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_resource (resource_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `provider_apis` (
+    id                      BIGINT          NOT NULL PRIMARY KEY,
+    name                    VARCHAR(100)    NOT NULL,
+    code                    VARCHAR(50)     NOT NULL,
+    api_key_encrypted       VARCHAR(500)    DEFAULT NULL,
+    api_secret_encrypted    VARCHAR(500)    DEFAULT NULL,
+    webhook_secret          VARCHAR(255)    DEFAULT NULL,
+    status                  VARCHAR(20)     NOT NULL DEFAULT 'active',
+    created_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== Supplier ========================
+
+CREATE TABLE IF NOT EXISTS `supplier_products` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    supplier_id     BIGINT          NOT NULL,
+    product_id      BIGINT          NOT NULL,
+    approved_at     DATETIME        DEFAULT NULL,
+    commission_rate DECIMAL(5,4)    NOT NULL DEFAULT 0.1000,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_supplier_product (supplier_id, product_id),
+    INDEX idx_supplier (supplier_id),
+    INDEX idx_product (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `supplier_ratings` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    supplier_id     BIGINT          NOT NULL,
+    user_id         BIGINT          NOT NULL,
+    order_id        BIGINT          NOT NULL,
+    rating          TINYINT         NOT NULL,
+    quality         TINYINT         NOT NULL DEFAULT 0,
+    support         TINYINT         NOT NULL DEFAULT 0,
+    delivery_speed  TINYINT         NOT NULL DEFAULT 0,
+    value           TINYINT         NOT NULL DEFAULT 0,
+    content         TEXT            DEFAULT NULL,
+    status          VARCHAR(16)     NOT NULL DEFAULT 'published',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_user_order (user_id, order_id),
+    INDEX idx_supplier (supplier_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `supplier_api_keys` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    supplier_id     BIGINT          NOT NULL,
+    name            VARCHAR(64)     DEFAULT NULL,
+    key_hash        VARCHAR(64)     NOT NULL,
+    key_prefix      VARCHAR(10)     NOT NULL,
+    revoked         TINYINT(1)      NOT NULL DEFAULT 0,
+    last_used_at    DATETIME        DEFAULT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_key_hash (key_hash),
+    INDEX idx_supplier (supplier_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== Domain ========================
+
+CREATE TABLE IF NOT EXISTS `domain_transfers` (
+    id                      BIGINT          NOT NULL PRIMARY KEY,
+    domain_name             VARCHAR(255)    NOT NULL,
+    user_id                 BIGINT          NOT NULL,
+    auth_code_encrypted     VARCHAR(500)    NOT NULL,
+    from_registrar          VARCHAR(50)     NOT NULL,
+    status                  VARCHAR(20)     NOT NULL DEFAULT 'pending',
+    created_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user (user_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== Help ========================
+
+CREATE TABLE IF NOT EXISTS `help_articles` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    category        VARCHAR(50)     NOT NULL,
+    title           VARCHAR(200)    NOT NULL,
+    slug            VARCHAR(200)    NOT NULL,
+    content         TEXT            NOT NULL,
+    locale          VARCHAR(10)     NOT NULL DEFAULT 'en-US',
+    sort            INT             NOT NULL DEFAULT 0,
+    status          VARCHAR(20)     NOT NULL DEFAULT 'published',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_slug (slug),
+    INDEX idx_category_status (category, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== RBAC ========================
+
+CREATE TABLE IF NOT EXISTS `roles` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    name            VARCHAR(50)     NOT NULL,
+    display_name    VARCHAR(100)    NOT NULL,
+    description     TEXT            DEFAULT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `permissions` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    name            VARCHAR(100)    NOT NULL,
+    display_name    VARCHAR(100)    NOT NULL,
+    `group`         VARCHAR(50)     NOT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `role_permission` (
+    role_id         BIGINT          NOT NULL,
+    permission_id   BIGINT          NOT NULL,
+    PRIMARY KEY (role_id, permission_id),
+    INDEX idx_permission (permission_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== SSL ========================
+
+CREATE TABLE IF NOT EXISTS `ssl_plans` (
+    id                  BIGINT          NOT NULL PRIMARY KEY,
+    name                VARCHAR(128)    NOT NULL,
+    cert_type           VARCHAR(10)     NOT NULL DEFAULT 'DV',
+    brand               VARCHAR(64)     DEFAULT NULL,
+    validity_days       INT             NOT NULL DEFAULT 90,
+    validation_method   VARCHAR(16)     NOT NULL DEFAULT 'dns-01',
+    wildcard            TINYINT(1)      NOT NULL DEFAULT 0,
+    ca_provider         VARCHAR(64)     NOT NULL DEFAULT 'letsencrypt',
+    wholesale_price     DECIMAL(10,4)   NOT NULL DEFAULT 0.0000,
+    retail_price        DECIMAL(10,4)   NOT NULL DEFAULT 0.0000,
+    currency            VARCHAR(3)      NOT NULL DEFAULT 'USD',
+    status              VARCHAR(32)     NOT NULL DEFAULT 'active',
+    created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_cert_type (cert_type),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `resource_ssl_certs` (
+    id                      BIGINT          NOT NULL PRIMARY KEY,
+    resource_id             BIGINT          NOT NULL,
+    domain_name             VARCHAR(255)    NOT NULL,
+    cert_type               VARCHAR(10)     NOT NULL DEFAULT 'DV',
+    wildcard                TINYINT(1)      NOT NULL DEFAULT 0,
+    validity_days           INT             NOT NULL DEFAULT 90,
+    status                  VARCHAR(32)     NOT NULL DEFAULT 'pending',
+    csr                     TEXT            DEFAULT NULL,
+    cert_pem                TEXT            DEFAULT NULL,
+    private_key_encrypted   TEXT            DEFAULT NULL,
+    issuer                  VARCHAR(128)    DEFAULT NULL,
+    issued_at               DATETIME        DEFAULT NULL,
+    expires_at              DATETIME        DEFAULT NULL,
+    auto_renew              TINYINT(1)      NOT NULL DEFAULT 1,
+    validation_method       VARCHAR(16)     NOT NULL DEFAULT 'http-01',
+    challenge               JSON            DEFAULT NULL,
+    last_checked_at         DATETIME        DEFAULT NULL,
+    created_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_resource (resource_id),
+    INDEX idx_status (status),
+    INDEX idx_expires (expires_at),
+    INDEX idx_status_expires (status, expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== Storage ========================
+
+CREATE TABLE IF NOT EXISTS `resource_storage_buckets` (
+    id                      BIGINT          NOT NULL PRIMARY KEY,
+    resource_id             BIGINT          NOT NULL,
+    bucket_name             VARCHAR(255)    NOT NULL,
+    endpoint                VARCHAR(512)    NOT NULL,
+    region                  VARCHAR(64)     DEFAULT NULL,
+    access_key_encrypted    TEXT            DEFAULT NULL,
+    secret_key_encrypted    TEXT            DEFAULT NULL,
+    quota_gb                INT             NOT NULL DEFAULT 10,
+    used_gb                 DECIMAL(12,4)   NOT NULL DEFAULT 0.0000,
+    status                  VARCHAR(32)     NOT NULL DEFAULT 'pending',
+    policy                  JSON            DEFAULT NULL,
+    provider_type           VARCHAR(32)     NOT NULL DEFAULT 's3',
+    created_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_resource (resource_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== Usage Billing ========================
+
+CREATE TABLE IF NOT EXISTS `resource_metrics` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    resource_id     BIGINT          NOT NULL,
+    metric          VARCHAR(32)     NOT NULL,
+    value           DECIMAL(20,4)   NOT NULL,
+    sample_at       DATETIME        NOT NULL,
+    INDEX idx_resource_metric_time (resource_id, metric, sample_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `usage_events` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    resource_id     BIGINT          NOT NULL,
+    order_item_id   BIGINT          DEFAULT NULL,
+    meter           VARCHAR(32)     NOT NULL,
+    quantity        DECIMAL(20,6)   NOT NULL,
+    period_start    DATETIME        NOT NULL,
+    period_end      DATETIME        NOT NULL,
+    status          VARCHAR(16)     NOT NULL DEFAULT 'open',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_event (resource_id, meter, period_start),
+    INDEX idx_status_period (status, period_end)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `usage_rates` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    sku_id          BIGINT          NOT NULL,
+    region_id       BIGINT          DEFAULT NULL,
+    meter           VARCHAR(32)     NOT NULL,
+    unit_price      DECIMAL(16,8)   NOT NULL,
+    currency        VARCHAR(3)      NOT NULL DEFAULT 'USD',
+    unit            VARCHAR(16)     NOT NULL DEFAULT 'GB',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_rate (sku_id, region_id, meter)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `usage_invoice_items` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    order_id        BIGINT          DEFAULT NULL,
+    resource_id     BIGINT          NOT NULL,
+    meter           VARCHAR(32)     NOT NULL,
+    quantity        DECIMAL(20,6)   NOT NULL,
+    amount          DECIMAL(16,4)   NOT NULL,
+    currency        VARCHAR(3)      NOT NULL DEFAULT 'USD',
+    period_start    DATETIME        NOT NULL,
+    period_end      DATETIME        NOT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_resource (resource_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== CDN ========================
+
+CREATE TABLE IF NOT EXISTS `resource_cdn` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    resource_id     BIGINT          NOT NULL,
+    cdn_domain      VARCHAR(255)    NOT NULL,
+    origin_type     VARCHAR(16)     NOT NULL DEFAULT 'server',
+    origin_value    VARCHAR(512)    NOT NULL,
+    plan            VARCHAR(32)     NOT NULL DEFAULT 'standard',
+    ssl             TINYINT(1)      NOT NULL DEFAULT 1,
+    cache_rules     JSON            DEFAULT NULL,
+    status          VARCHAR(32)     NOT NULL DEFAULT 'pending',
+    purged_at       DATETIME        DEFAULT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_resource (resource_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================== Affiliate ========================
+
+CREATE TABLE IF NOT EXISTS `affiliate_plans` (
+    id                      BIGINT          NOT NULL PRIMARY KEY,
+    name                    VARCHAR(128)    NOT NULL,
+    commission_rate         DECIMAL(5,2)    NOT NULL,
+    tier                    INT             NOT NULL DEFAULT 1,
+    min_payout              DECIMAL(12,4)   NOT NULL DEFAULT 50.0000,
+    lifetime_commissions    TINYINT(1)      NOT NULL DEFAULT 0,
+    created_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `affiliate_links` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    user_id         BIGINT          NOT NULL,
+    code            VARCHAR(32)     NOT NULL,
+    source          VARCHAR(64)     DEFAULT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_code (code),
+    UNIQUE INDEX uk_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `affiliate_earnings` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    affiliate_id    BIGINT          NOT NULL,
+    order_id        BIGINT          NOT NULL,
+    user_id         BIGINT          NOT NULL,
+    rate            DECIMAL(5,2)    NOT NULL,
+    amount          DECIMAL(12,4)   NOT NULL,
+    currency        VARCHAR(3)      NOT NULL DEFAULT 'USD',
+    status          VARCHAR(16)     NOT NULL DEFAULT 'pending',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_affiliate (affiliate_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `affiliate_payouts` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    affiliate_id    BIGINT          NOT NULL,
+    amount          DECIMAL(12,4)   NOT NULL,
+    status          VARCHAR(16)     NOT NULL DEFAULT 'pending',
+    admin_notes     TEXT            DEFAULT NULL,
+    paid_at         DATETIME        DEFAULT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_affiliate (affiliate_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
