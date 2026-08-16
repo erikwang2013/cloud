@@ -24,7 +24,7 @@ class SuspendCheck
                 $user = $resource->user;
                 if ($user) {
                     (new \App\Notification\Service\NotificationDispatcher())->dispatch(
-                        $user, 'resource_reactivated',
+                        $user->id, 'resource_reactivated',
                         ['resource_id' => $resource->id],
                         ['email', 'in_app']
                     );

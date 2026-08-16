@@ -53,6 +53,23 @@ class SslProvider implements ProviderInterface
                 'validation_method'      => $validation,
             ]);
 
+            // 通知资源所有者：新签发 / 排队自动续期成功（字面量 code，便于静态回归护栏覆盖）
+            if (!empty($result['cert_pem'])) {
+                try {
+                    $owner = \App\Provisioning\Model\Resource::find($task->resource_id);
+                    if ($owner && $owner->user_id) {
+                        $dispatcher = new \App\Notification\Service\NotificationDispatcher();
+                        if (($params['action'] ?? 'create') === 'renew') {
+                            $dispatcher->dispatch($owner->user_id, 'ssl_cert_renewed', ['domain' => $domain], ['email', 'in_app']);
+                        } else {
+                            $dispatcher->dispatch($owner->user_id, 'ssl_cert_issued', ['domain' => $domain], ['email', 'in_app']);
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // 通知非关键，失败不阻断交付结果，避免已签发证书被误判 retryable
+                }
+            }
+
             return ProvisionResult::success($result);
         } catch (\Throwable $e) {
             return ProvisionResult::retryable('SSL issuance failed: ' . $e->getMessage());
@@ -80,6 +97,19 @@ class SslProvider implements ProviderInterface
                 'expires_at'            => $result['expires_at'] ?? date('Y-m-d H:i:s', strtotime("+{$cert->validity_days} days")),
                 'last_checked_at'       => date('Y-m-d H:i:s'),
             ]);
+
+            // 通知资源所有者：直接续期成功（通知非关键，失败不阻断交付结果）
+            if (!empty($result['cert_pem']) && $resource->user_id) {
+                try {
+                    (new \App\Notification\Service\NotificationDispatcher())->dispatch(
+                        $resource->user_id, 'ssl_cert_renewed',
+                        ['domain' => $cert->domain_name],
+                        ['email', 'in_app']
+                    );
+                } catch (\Throwable) {
+                    // 忽略通知异常，续期结果已落库
+                }
+            }
 
             return ProvisionResult::success($result);
         } catch (\Throwable $e) {

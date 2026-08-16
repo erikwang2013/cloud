@@ -73,8 +73,9 @@ class ResourceMonitor
             foreach ($expiring as $resource) {
                 $dispatcher = new NotificationDispatcher();
                 $dispatcher->dispatch($resource->user_id, 'resource_expiring', [
+                    'resource_id'   => $resource->id,
                     'resource_type' => $resource->type,
-                    'days'          => (string)$days,
+                    'days_left'     => (string)$days,
                     'expired_at'    => $resource->expired_at,
                 ]);
             }

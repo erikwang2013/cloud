@@ -115,5 +115,16 @@ class AffiliateService
                 ->where('status', 'approved')
                 ->update(['status' => 'paid']);
         });
+
+        // 事务提交后通知推广人提现已处理（通知非关键，失败不影响提现结果）
+        try {
+            (new \App\Notification\Service\NotificationDispatcher())->dispatch(
+                $payout->affiliate_id, 'affiliate_payout_processed',
+                ['amount' => (string) $payout->amount, 'currency' => 'USD'],
+                ['email', 'in_app']
+            );
+        } catch (\Throwable) {
+            // 忽略通知异常
+        }
     }
 }

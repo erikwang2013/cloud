@@ -40,6 +40,20 @@ class SupplierRatingService
 
         $this->recomputeSupplierAvg($supplierId);
 
+        // 通知供应商收到新评分（通知非关键，失败不影响评分结果）
+        try {
+            $supplier = Supplier::find($supplierId);
+            if ($supplier && $supplier->user_id) {
+                (new \App\Notification\Service\NotificationDispatcher())->dispatch(
+                    $supplier->user_id, 'rating_received',
+                    ['rating' => (string) ($data['rating'] ?? 5)],
+                    ['email', 'in_app']
+                );
+            }
+        } catch (\Throwable) {
+            // 忽略通知异常
+        }
+
         return $rating;
     }
 

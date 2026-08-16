@@ -46,6 +46,17 @@ class AffiliateController
 
         $earning->update(['status' => 'approved']);
 
+        // 通知推广人佣金已入账（通知非关键，失败不影响审批结果）
+        try {
+            (new \App\Notification\Service\NotificationDispatcher())->dispatch(
+                $earning->affiliate_id, 'affiliate_earning_credited',
+                ['amount' => (string) $earning->amount, 'currency' => $earning->currency],
+                ['email', 'in_app']
+            );
+        } catch (\Throwable) {
+            // 忽略通知异常
+        }
+
         AuditLogger::record('admin_affiliate_earning_approve', [
             'user_id' => $request->userId,
             'input'   => ['earning_id' => $id],

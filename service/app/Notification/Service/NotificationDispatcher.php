@@ -24,7 +24,12 @@ class NotificationDispatcher
 
         if (empty($channels)) {
             $userChannels = $template->channels;
-            $channels = is_array($userChannels) ? $userChannels : explode(',', $template->channels ?? 'in_app');
+            // 兼容两种 schema：install.sql 的逗号字符串，或迁移 0009 的 JSON 数组字符串
+            if (is_string($userChannels) && $userChannels !== '') {
+                $decoded = json_decode($userChannels, true);
+                $userChannels = is_array($decoded) ? $decoded : explode(',', $userChannels);
+            }
+            $channels = is_array($userChannels) ? $userChannels : ['in_app'];
         }
 
         if (in_array('in_app', $channels)) {
@@ -32,7 +37,8 @@ class NotificationDispatcher
                 'user_id'       => $userId,
                 'channel'       => 'in_app',
                 'template_code' => $code,
-                'content'       => json_encode(['title' => $title, 'body' => $body]),
+                // 传数组即可：Notification 模型 content 有 array cast，自行编码一次
+                'content'       => ['title' => $title, 'body' => $body],
                 'send_status'   => 'sent',
             ]);
         }
