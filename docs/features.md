@@ -70,13 +70,16 @@ GET /api/auth/google → Google OAuth → callback?code=xxx
 
 ```
 1. POST /api/user/totp/setup
-     → 生成 secret + QR code URL
-     ← {secret, qr_code_url}
+     → 生成 secret + QR URL（Redis 暂存 10 分钟，未持久化）
+     ← {secret, qr_url, manual}
 2. POST /api/user/totp/verify
-     → 验证 TOTP code
+     → 验证 TOTP code（首次为启用 setup，之后为校验）
+     ← {verified: true}
+3. GET /api/user/totp/recovery-codes
+     → 生成 8 个一次性恢复码（需密码确认）
      ← {recovery_codes: [8 个]}
-3. 登录时：输入 TOTP code 或使用恢复码
-     → POST /api/auth/login/recovery
+4. 登录时：输入 TOTP code 或使用恢复码
+     → POST /api/auth/login/recovery (login, password, recovery_code)
 ```
 
 ### 1.5 会话管理
@@ -192,13 +195,13 @@ PUT /api/cart/{id}      → updateCartQuantity
      ← {coupon_id, discount, type: percent/fixed}
 
 3. GET /api/orders/{id}/payment-methods       获取可用支付通道
-     → PaymentRouter::route(order)
-     ← [{channel, fee, total, currency}]
+     → PaymentRouter::getAvailableChannels(order)
+     ← [{channel_id, name, code, amount, fee, total_amount}]
 
 4. POST /api/orders/{id}/pay                  发起支付
      → 密码二次确认 (ConfirmationMiddleware)
      → StripeChannel::createPaymentIntent()
-     ← {client_secret, transaction_no}
+     ← {client_secret, transaction_id}
 ```
 
 ### 3.3 订单生命周期
@@ -221,7 +224,7 @@ PUT /api/cart/{id}      → updateCartQuantity
                     │ refunded │ 已退款
                     └──────────┘
 
-退款条件: 服务器 72h 内 | 域名 5 天内 | IP 不可退款 | 促销商品不可退款
+退款条件: 服务器 72h 内 | 域名 5 天内 | IP 不可退款 | 促销商品不可退款（其他类型如 disk 无窗口限制；未知分类类型默认放行）
 退款流程: 用户申请 → Ticket 生成 → 客服审核 → admin 确认 → Provider.destroy() → Payment.refund()
 ```
 

@@ -117,6 +117,7 @@ GET /api/products/{id}
 
 GET /api/products/{productId}/reviews
   → 评价列表 + avg_rating + total + distribution
+  状态枚举: pending(待审核)/approved(已通过)/rejected(已拒绝)，仅返回 approved
 ```
 
 ### 域名
@@ -194,12 +195,13 @@ POST /api/auth/refresh
 
 ```
 GET /api/auth/{provider}            → { url }        # 跳转授权页（PKCE/nonce 防重放）
-GET /api/auth/{provider}/callback?code=xxx
-POST /api/auth/{provider}/callback  体: { code }
+GET /api/auth/{provider}/callback?code=xxx&state=yyy
+POST /api/auth/{provider}/callback  体: { code, state }
 ```
 
 - Apple/Microsoft 返回 id_token，服务端经 JWKS 校验签名、iss/aud/exp/nonce
-- 所有提供商要求 `email_verified=true` 才允许登录，否则 403
+- 所有提供商要求 `email_verified=true` 才允许登录，否则 422
+- `state` 缺失或不匹配 → 422（防 CSRF，5 分钟过期）
 - OAuth 流程限流：每 60 秒 10 次（redirect + callback）
 
 ### 密码重置
@@ -233,14 +235,14 @@ POST /api/auth/send-sms
 ### TOTP 两步验证
 
 ```
-POST /api/user/totp/setup        → { secret, qr_code_url }
-POST /api/user/totp/verify       体: { code } → { recovery_codes }
-POST /api/user/totp/disable      体: { code, password }      # 需密码确认，否则 403
-GET /api/user/totp/recovery-codes → { codes }                # 需密码确认，否则 403
-POST /api/auth/login/recovery    体: { login, recovery_code }
+POST /api/user/totp/setup        → { secret, qr_url }        # 未持久化，10 分钟内需 verify 生效
+POST /api/user/totp/verify       体: { code } → { verified: true }   # 首次启用时返回启用成功消息
+POST /api/user/totp/disable      体: { password }             # 需密码确认，否则 403
+GET /api/user/totp/recovery-codes → { recovery_codes }        # 每次生成 8 个一次性码，需密码确认，否则 403
+POST /api/auth/login/recovery    体: { login, password, recovery_code }
 ```
 
-- 用户启用 TOTP 后登录必须携带 `totp_code`，否则 400
+- 用户启用 TOTP 后登录必须携带 `totp_code`，否则 401
 - TOTP 连续错误 5 次 → 该用户锁定 15 分钟（login_lock）
 
 ---
@@ -362,8 +364,8 @@ GET /api/orders/{id}/payment-methods
   → 可用支付通道 + 各通道实付金额
 
 POST /api/orders/{id}/pay    🔒 密码确认
-  体: { channel_code, confirm_password }
-  → { client_secret, transaction_no }
+  体: { channel_id, confirm_password }
+  → { client_secret, transaction_id }
 ```
 
 ### 优惠券
@@ -556,7 +558,8 @@ POST /admin/api/orders/{id}/refund  🔒 密码确认
 GET /admin/api/payments/channels
 PUT /admin/api/payments/channels/{id}
 GET /admin/api/payments/transactions  参数: page, channel, status
-GET /admin/api/payments/reconcile     参数: date
+GET /admin/api/payments/reconcile     参数: date; records.status: verified/mismatch/unverified
+POST /admin/api/payments/reconcile/run  参数: date; 触发按日对账
 ```
 
 ### 资源与开通
@@ -780,3 +783,6 @@ GET /admin/api/orders/export             → Excel 下载
 | `Email already verified` | /api/user/resend-verify-email |
 | `Password too short` | /api/auth/register |
 | `Unknown feature: xxx` | /admin/api/features/{name} |
+| `Refund window expired: server orders are refundable within 72 hours of payment` | /admin/api/orders/{id}/refund |
+| `Refund window expired: domain orders are refundable within 5 days of payment` | /admin/api/orders/{id}/refund |
+| `This product type (IP) is not refundable` | /admin/api/orders/{id}/refund |
