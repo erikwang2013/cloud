@@ -4,6 +4,7 @@ namespace App\Payment\Service\Channels;
 
 use App\Payment\Model\PaymentChannel;
 use App\Payment\Model\PaymentTransaction;
+use App\Payment\Service\PaymentRouter;
 use App\Order\Model\Order;
 use App\Order\Model\OrderTimeline;
 use App\Payment\Event\OrderPaid;
@@ -43,6 +44,8 @@ class StripeChannel
     {
         $amount = $this->toSmallestUnit($order->total, $order->currency);
 
+        $fee = (new PaymentRouter())->calculateFee($order->total, $this->channel->fee_config ?? []);
+
         try {
             $intent = $this->stripe()->paymentIntents->create([
                 'amount' => $amount,
@@ -60,7 +63,7 @@ class StripeChannel
                 'amount' => $order->total,
                 'currency' => $order->currency,
                 'exchange_rate' => $order->exchange_rate,
-                'channel_fee' => 0,
+                'channel_fee' => $fee,
                 'transaction_no' => $intent->id,
                 'status' => 'pending',
             ]);

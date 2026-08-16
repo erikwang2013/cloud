@@ -36,7 +36,7 @@ class PaymentRouter
         return $result;
     }
 
-    private function calculateFee(string $amount, array $feeConfig): string
+    public function calculateFee(string $amount, array $feeConfig): string
     {
         $fixed = $feeConfig['fixed'] ?? '0';
         $rate  = $feeConfig['rate'] ?? '0';

@@ -47,7 +47,7 @@ class OrderService
             throw new \InvalidArgumentException('Cart is empty');
         }
 
-        return DB::transaction(function () use ($userId, $carts, $currency) {
+        return DB::transaction(function () use ($userId, $cartIds, $carts, $currency, $couponCode) {
             $subtotal = '0';
             $items = [];
 
@@ -84,10 +84,11 @@ class OrderService
                 ];
             }
 
-            // 优惠券服务端应用：按 validate 规则计算折扣并写入 discount / total
+            // 优惠券服务端应用：行锁 + 重校验（防并发超发），核销时递增 used_count 并写入 user_coupons
             $discount = '0';
+            $coupon = null;
             if ($couponCode) {
-                $coupon = \App\Order\Model\Coupon::where('code', $couponCode)->first();
+                $coupon = \App\Order\Model\Coupon::where('code', $couponCode)->lockForUpdate()->first();
                 if (!$coupon || !$coupon->isValid()) {
                     throw new \InvalidArgumentException('Coupon is invalid or expired');
                 }
@@ -106,6 +107,18 @@ class OrderService
                 'total'    => $total,
                 'exchange_rate' => $this->getExchangeRate($currency),
             ]);
+
+            if ($coupon) {
+                $coupon->increment('used_count');
+                DB::table('user_coupons')->insert([
+                    'user_id'    => $userId,
+                    'coupon_id'  => $coupon->id,
+                    'order_id'   => $order->id,
+                    'used_at'    => date('Y-m-d H:i:s'),
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]);
+            }
 
             foreach ($items as $item) {
                 $item['order_id'] = $order->id;

@@ -64,6 +64,30 @@ final class PaymentRouterTest extends TestCase
         $this->assertSame('3.2000', $fee);
     }
 
+    public function testCalculateFeeAppliesRateAndFixed(): void
+    {
+        $router = new \App\Payment\Service\PaymentRouter();
+        $this->assertSame('3.2000', $router->calculateFee('100.00', ['rate' => '0.029', 'fixed' => '0.30']));
+    }
+
+    public function testCalculateFeeWithoutConfigIsZero(): void
+    {
+        $router = new \App\Payment\Service\PaymentRouter();
+        $this->assertSame('0.0000', $router->calculateFee('100.00', []));
+    }
+
+    public function testCalculateFeeClampsNegativeRateToZero(): void
+    {
+        $router = new \App\Payment\Service\PaymentRouter();
+        $this->assertSame('0', $router->calculateFee('100.00', ['rate' => '-0.10']));
+    }
+
+    public function testCalculateFeeFixedOnly(): void
+    {
+        $router = new \App\Payment\Service\PaymentRouter();
+        $this->assertSame('0.5000', $router->calculateFee('50.00', ['fixed' => '0.50']));
+    }
+
     public function testChannelsSortedByFee(): void
     {
         $channels = [

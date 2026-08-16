@@ -8,6 +8,7 @@ use Common\ExcelExport;
 use Common\Helper\Response;
 use Common\Security\AuditLogger;
 use Common\Webhook\WebhookDispatcher;
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 class SupplierController
 {
@@ -84,7 +85,24 @@ class SupplierController
     public function approveWithdraw($request, int $id)
     {
         $withdraw = SupplierWithdraw::findOrFail($id);
-        $withdraw->update(['status' => 'completed']);
+
+        try {
+            Capsule::transaction(function () use ($withdraw, $id, $request) {
+                // 行锁 + 状态守卫：仅允许 pending 状态的提现审批，防止重复审批
+                $locked = SupplierWithdraw::where('id', $withdraw->id)->lockForUpdate()->first();
+                if (!$locked || $locked->status !== 'pending') {
+                    throw new \RuntimeException("Withdrawal #{$id} is not pending, cannot approve");
+                }
+
+                $withdraw->update([
+                    'status'     => 'completed',
+                    'handled_by' => $request->userId,
+                    'handled_at' => now(),
+                ]);
+            });
+        } catch (\RuntimeException $e) {
+            return json(Response::error(400, $e->getMessage()));
+        }
 
         WebhookDispatcher::dispatch(WebhookDispatcher::EVENT_WITHDRAWAL_APPROVED, [
             'withdraw_id' => $withdraw->id,
@@ -98,6 +116,7 @@ class SupplierController
                 'withdraw_id' => $id,
                 'supplier_id' => $withdraw->supplier_id,
                 'amount'      => $withdraw->amount,
+                'handled_by'  => $request->userId,
             ],
         ], $request);
 
