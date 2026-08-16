@@ -65,3 +65,14 @@ apps/flutter/# Android Studio will place build artifacts here
 apps/flutter//android/app/debug
 apps/flutter//android/app/profile
 apps/flutter//android/app/release
+
+# HarmonyOS (hvigor/DevEco) build artifacts
+apps/harmonyos/.hvigor/
+apps/harmonyos/oh_modules/
+apps/harmonyos/entry/oh_modules/
+apps/harmonyos/build/
+apps/harmonyos/entry/build/
+apps/harmonyos/.cxx/
+apps/harmonyos/.idea/
+apps/harmonyos/hvigorw
+apps/harmonyos/hvigorw.bat

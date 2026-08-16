@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "CloudPlatform entry module"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "CloudPlatform main ability"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "CloudPlatform"
+    }
+  ]
+}

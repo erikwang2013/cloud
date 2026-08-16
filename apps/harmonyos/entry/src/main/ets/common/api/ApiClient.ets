@@ -1,7 +1,6 @@
-import http from '@ohos.net.http';
+import { BASE_URL } from '../config/AppConfig';
 import { preferences } from '@kit.ArkData';
-
-const BASE_URL = 'https://api.example.com/api/v1';
+import http from '@ohos.net.http';
 
 export class ApiClient {
   private static instance: ApiClient;
@@ -14,11 +13,11 @@ export class ApiClient {
   }
 
   async get(path: string, params?: Record<string, string>): Promise<ApiResponse> {
-    return this.request('GET', path, params);
+    return this.request(http.RequestMethod.GET, path, params);
   }
 
   async post(path: string, body?: object): Promise<ApiResponse> {
-    return this.request('POST', path, undefined, body);
+    return this.request(http.RequestMethod.POST, path, undefined, body);
   }
 
   private async request(
@@ -28,27 +27,36 @@ export class ApiClient {
     body?: object
   ): Promise<ApiResponse> {
     const token = await this.getToken();
+    const query = this.buildQuery(params);
+    const url = BASE_URL + path + query;
 
     const request = http.createHttp();
-    const response = await request.request(BASE_URL + path, {
+    const response = await request.request(url, {
       method: method,
       header: {
         'Content-Type': 'application/json',
+        'X-Api-Version': 'v1',
         'Authorization': token ? `Bearer ${token}` : '',
         'Accept-Language': 'zh-CN',
       },
       extraData: body ? JSON.stringify(body) : undefined,
+      expectDataType: http.HttpDataType.STRING,
     });
 
     request.destroy();
 
-    const data = JSON.parse(response.result as string);
-    return {
-      code: data.code,
-      message: data.message,
-      data: data.data,
-      meta: data.meta,
-    };
+    return JSON.parse(response.result as string) as ApiResponse;
+  }
+
+  private buildQuery(params?: Record<string, string>): string {
+    if (!params || Object.keys(params).length === 0) {
+      return '';
+    }
+    const parts: string[] = [];
+    Object.keys(params).forEach((key: string) => {
+      parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`);
+    });
+    return '?' + parts.join('&');
   }
 
   private async getToken(): Promise<string> {
@@ -57,7 +65,7 @@ export class ApiClient {
   }
 }
 
-interface ApiResponse {
+export interface ApiResponse {
   code: number;
   message: string;
   data?: object;

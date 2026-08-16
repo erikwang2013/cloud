@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check HarmonyOS project structure
+      - name: Check required project files
         run: |
           required_files=(
             "apps/harmonyos/build-profile.json5"
@@ -98,6 +98,12 @@ jobs:
             "apps/harmonyos/hvigor/hvigor-config.json5"
             "apps/harmonyos/AppScope/app.json5"
             "apps/harmonyos/entry/oh-package.json5"
+            "apps/harmonyos/entry/build-profile.json5"
+            "apps/harmonyos/entry/hvigorfile.ts"
+            "apps/harmonyos/entry/src/main/module.json5"
+            "apps/harmonyos/entry/src/main/ets/entryability/EntryAbility.ets"
+            "apps/harmonyos/entry/src/main/ets/pages/LoginPage.ets"
+            "apps/harmonyos/entry/src/main/resources/base/profile/main_pages.json"
           )
           missing=0
           for f in "${required_files[@]}"; do
@@ -107,7 +113,56 @@ jobs:
             fi
           done
           if [ "$missing" -eq 1 ]; then
-            echo "::error::HarmonyOS 工程不可构建：apps/harmonyos 仅有 entry/src/main 下的 ETS 源码，缺少 hvigor/DevEco 工程配置（build-profile.json5、oh-package.json5、hvigorfile.ts、AppScope 等）。完整构建 job 需先补齐工程脚手架，当前仅做结构检查并显式报错。"
+            echo "::error::HarmonyOS 工程缺文件，见上方 MISSING 列表"
             exit 1
           fi
-          echo "HarmonyOS project structure OK"
+          echo "Required files OK"
+      - name: Validate JSON/JSON5 config files
+        run: |
+          python3 - <<'EOF'
+          import json, re, sys, glob
+          # ponytail: //-strip also removes URLs inside strings; no such json5 today, switch to a real json5 parser if one appears
+          def strip_json5(s):
+              s = re.sub(r'//[^\n]*', '', s)
+              s = re.sub(r',\s*([}\]])', r'\1', s)
+              return s
+          files = sorted(glob.glob('apps/harmonyos/**/*.json5', recursive=True)) + \
+                  sorted(glob.glob('apps/harmonyos/**/*.json', recursive=True))
+          ok = True
+          for f in files:
+              try:
+                  json.loads(strip_json5(open(f).read()))
+              except Exception as e:
+                  print(f'INVALID: {f}: {e}')
+                  ok = False
+          if not ok:
+              sys.exit(1)
+          print(f'All {len(files)} JSON/JSON5 config files parse')
+          EOF
+      - name: Scan ETS sources
+        run: |
+          python3 - <<'EOF'
+          import sys, glob
+          files = sorted(glob.glob('apps/harmonyos/**/*.ets', recursive=True))
+          ok = True
+          for f in files:
+              src = open(f).read()
+              if src.count('{') != src.count('}'):
+                  print(f'UNBALANCED BRACES: {f}')
+                  ok = False
+          if not ok:
+              sys.exit(1)
+          print(f'{len(files)} .ets files scanned OK')
+          EOF
+      # Full hvigor build requires the DevEco toolchain (hvigorw + HarmonyOS SDK),
+      # which is not preinstalled on this runner. When a runner provides it
+      # (install DevEco Studio, run `hvigorw --version` to verify), this step
+      # automatically runs the real assembleHap build instead of skipping.
+      - name: Full hvigor build (when toolchain available)
+        run: |
+          if command -v hvigorw >/dev/null 2>&1 || command -v hvigor >/dev/null 2>&1 || [ -n "$HARMONYOS_SDK" ]; then
+            echo "hvigor toolchain detected, running real build..."
+            hvigorw --mode module -p product=default -p buildMode=debug assembleHap --no-daemon
+          else
+            echo "::warning::hvigor/DevEco toolchain not installed on this runner - skipping real build. To enable: install DevEco Studio + SDK, add hvigorw to PATH (or set HARMONYOS_SDK); this step then runs 'hvigorw assembleHap' automatically."
+          fi
