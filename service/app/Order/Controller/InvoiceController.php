@@ -36,13 +36,56 @@ class InvoiceController
             }
         }
 
-        // 兜底：以规范 HTML 发票页呈现（含中文、可打印/另存为 PDF）。
-        // 此前以 application/pdf 头返回 HTML 字符串，下载的是损坏文件。
+        // 服务端生成真实 PDF（dompdf + 思源黑体 CJK 子集嵌入）
+        if (class_exists(\Dompdf\Dompdf::class)) {
+            $pdf = $this->renderPdf($invoice);
+            return response($pdf, 200, [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="invoice_' . $invoice->id . '.pdf"',
+            ]);
+        }
+
+        // 兜底：规范 HTML 发票页（含中文，可打印/另存为 PDF）
         $html = $this->renderHtmlInvoice($invoice);
         return response($html, 200, [
             'Content-Type'        => 'text/html; charset=utf-8',
             'Content-Disposition' => 'inline; filename="invoice_' . $invoice->id . '.html"',
         ]);
+    }
+
+    private function renderPdf(Invoice $invoice): string
+    {
+        $fontDir  = runtime_path('dompdf-fonts');
+        if (!is_dir($fontDir)) {
+            @mkdir($fontDir, 0755, true);
+        }
+
+        $options = new \Dompdf\Options([
+            'isRemoteEnabled' => false,
+            'fontDir'         => $fontDir,
+            'fontCache'       => $fontDir,
+            'chroot'          => [base_path(), $fontDir],
+            'defaultFont'     => 'DejaVu Sans',
+        ]);
+
+        $dompdf = new \Dompdf\Dompdf($options);
+
+        // 注册思源黑体（CJK），仅首次请求时写入字体缓存
+        $fontFile = base_path('resources/fonts/SourceHanSansSC-Regular.otf');
+        if (is_file($fontFile)) {
+            try {
+                $dompdf->getFontMetrics()->registerFont(
+                    ['family' => 'Source Han Sans SC', 'style' => 'normal', 'weight' => 'normal'],
+                    $fontFile
+                );
+            } catch (\Throwable) {
+                // 字体注册失败时回退默认字体，不阻断下载
+            }
+        }
+
+        $dompdf->loadHtml($this->renderHtmlInvoice($invoice));
+        $dompdf->render();
+        return $dompdf->output();
     }
 
     private function renderHtmlInvoice(Invoice $invoice): string
@@ -72,7 +115,7 @@ class InvoiceController
         return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
             . '<title>Invoice #' . $h($invoice->id) . '</title>'
             . '<style>'
-            . 'body{font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;'
+            . 'body{font-family:"Source Han Sans SC",-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;'
             . 'max-width:760px;margin:32px auto;padding:0 20px;color:#222;}'
             . 'h1{font-size:22px;margin-bottom:4px;}'
             . '.muted{color:#666;font-size:13px;}'

@@ -31,7 +31,7 @@ class PaymentController
         return json(Response::paginated($txns->items(), $txns->total(), $request->input('page', 1), 30));
     }
 
-    public function reconcile()
+    public function reconcile($request)
     {
         $pending = PaymentTransaction::where('status', 'pending')
             ->where('created_at', '<', date('Y-m-d H:i:s', strtotime('-1 hour')))
@@ -41,9 +41,19 @@ class PaymentController
             ->whereDate('created_at', date('Y-m-d'))
             ->count();
 
+        // 按日期返回对账记录（默认今天）；status=unverified 表示真实通道对账未完成
+        $date    = $request->input('date', date('Y-m-d'));
+        $records = \Illuminate\Database\Capsule\Manager::table('payment_reconcile')
+            ->where('date', $date)
+            ->orderBy('channel_id')
+            ->get();
+
         return json(Response::success([
-            'stale_pending' => $pending,
-            'failed_today'  => $failed,
+            'stale_pending'    => $pending,
+            'failed_today'     => $failed,
+            'reconcile_date'   => $date,
+            'records'          => $records,
+            'unverified_count' => $records->where('status', 'unverified')->count(),
         ]));
     }
 }
