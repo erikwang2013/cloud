@@ -22,7 +22,7 @@ if (!Capsule::schema()->hasTable('payment_channels')) {
 }
 
 
-// payment_transactions
+// payment_transactions — transaction_no 对齐 install.sql：NOT NULL/128/UNIQUE（回调幂等依赖唯一约束）
 if (!Capsule::schema()->hasTable('payment_transactions')) {
     Capsule::schema()->create('payment_transactions', function (Blueprint $table) {
         $table->id();
@@ -33,13 +33,24 @@ if (!Capsule::schema()->hasTable('payment_transactions')) {
         $table->string('currency', 5);
         $table->decimal('exchange_rate', 14, 6)->default(1.0);
         $table->decimal('channel_fee', 14, 4)->default(0);
-        $table->string('transaction_no', 100)->nullable();
+        $table->string('transaction_no', 128);
         $table->string('status', 20)->default('pending');
         $table->timestamp('callback_at')->nullable();
         $table->timestamps();
         $table->index(['order_id', 'status']);
-        $table->index(['transaction_no']);
+        $table->unique('transaction_no', 'uk_transaction_no');
     });
+} else {
+    // 旧库补齐：MODIFY 幂等（已是 128/NOT NULL 则无操作）；ADD/DROP 索引需存在性守卫
+    Capsule::statement('ALTER TABLE `payment_transactions` MODIFY COLUMN `transaction_no` VARCHAR(128) NOT NULL');
+    $unique = Capsule::select("SHOW INDEX FROM `payment_transactions` WHERE Key_name = 'uk_transaction_no'");
+    if (empty($unique)) {
+        Capsule::statement('ALTER TABLE `payment_transactions` ADD UNIQUE INDEX `uk_transaction_no` (`transaction_no`)');
+    }
+    $plain = Capsule::select("SHOW INDEX FROM `payment_transactions` WHERE Key_name = 'payment_transactions_transaction_no_index'");
+    if (!empty($plain)) {
+        Capsule::statement('ALTER TABLE `payment_transactions` DROP INDEX `payment_transactions_transaction_no_index`');
+    }
 }
 
 

@@ -10,7 +10,8 @@ use support\Redis;
 /**
  * WebSocket server for real-time client push.
  *
- * Clients connect with JWT token: ws://host:8282?token=xxx
+ * JWT 认证在连接后首条消息完成（{type:"auth", token}），避免 token 进
+ * nginx/代理访问日志。
  * Cross-process push via Redis Pub/Sub: HTTP 进程 publish 到 "ws:{userId}" /
  * "ws:broadcast"，各 WS worker 内 fork 的订阅子进程接收后经 socketpair
  * 转发给本进程对应连接，实现多进程（count=2）与 HTTP 进程间的互通。
@@ -36,35 +37,52 @@ class WebSocketServer
 
     public function onConnect(TcpConnection $connection): void
     {
-        // Parse JWT token from query string
-        $query = [];
-        parse_str($connection->queryString() ?? '', $query);
+        // 认证移到首条消息（避免 token 进访问日志）；30s 内未认证则关闭
+        $connection->authTimer = Timer::add(30, function () use ($connection) {
+            if (empty($connection->userId)) {
+                $connection->close();
+            }
+        }, [], false);
+    }
 
-        $token  = $query['token'] ?? '';
-        $userId = $this->authenticate($token);
+    public function onMessage(TcpConnection $connection, $data): void
+    {
+        $msg = json_decode($data, true);
+        if (!is_array($msg)) return;
 
+        if (empty($connection->userId)) {
+            $this->authenticateConnection($connection, $msg);
+            return;
+        }
+
+        // Heartbeat
+        if (($msg['type'] ?? '') === 'ping') {
+            $connection->send(json_encode(['type' => 'pong', 'ts' => time()]));
+        }
+    }
+
+    private function authenticateConnection(TcpConnection $connection, array $msg): void
+    {
+        if (($msg['type'] ?? '') !== 'auth') {
+            $connection->send(json_encode(['type' => 'error', 'message' => 'Authentication required']));
+            $connection->close();
+            return;
+        }
+
+        $userId = $this->authenticate((string) ($msg['token'] ?? ''));
         if (!$userId) {
             $connection->send(json_encode(['type' => 'error', 'message' => 'Authentication failed']));
             $connection->close();
             return;
         }
 
-        // Store connection
-        self::$connections[$userId][$connection->id] = $connection;
-        $connection->userId = $userId;
-
-        $connection->send(json_encode(['type' => 'connected', 'user_id' => $userId]));
-    }
-
-    public function onMessage(TcpConnection $connection, $data): void
-    {
-        $msg = json_decode($data, true);
-        if (!$msg) return;
-
-        // Heartbeat
-        if (($msg['type'] ?? '') === 'ping') {
-            $connection->send(json_encode(['type' => 'pong', 'ts' => time()]));
+        if (!empty($connection->authTimer)) {
+            Timer::del($connection->authTimer);
         }
+
+        $connection->userId = $userId;
+        self::$connections[$userId][$connection->id] = $connection;
+        $connection->send(json_encode(['type' => 'connected', 'user_id' => $userId]));
     }
 
     public function onClose(TcpConnection $connection): void

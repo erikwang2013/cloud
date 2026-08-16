@@ -2,6 +2,7 @@
 
 namespace Tests\Security;
 
+use Common\I18n\I18n;
 use Common\Security\RateLimitMiddleware;
 use PHPUnit\Framework\TestCase;
 use Webman\Http\Response;
@@ -118,7 +119,7 @@ final class RateLimitMiddlewareTest extends TestCase
         $this->assertSame('60', $result->getHeader('Retry-After'));
         $body = json_decode($result->rawBody(), true);
         $this->assertSame(429, $body['code']);
-        $this->assertSame('Too Many Requests', $body['message']);
+        $this->assertSame(I18n::trans('Too Many Requests'), $body['message']);
         $this->assertSame(60, $body['data']['retry_after']);
     }
 

@@ -7,10 +7,20 @@ use PHPUnit\Framework\TestCase;
 
 final class I18nTest extends TestCase
 {
+    private string $savedLocale;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->savedLocale = I18n::getLocale();
         I18n::setLocale('en-US');
+    }
+
+    protected function tearDown(): void
+    {
+        // 恢复进入前的 locale：I18n 为静态全局，泄漏会污染后续测试（如 429 消息翻译）
+        I18n::setLocale($this->savedLocale);
+        parent::tearDown();
     }
 
     public function testSetLocaleZhCn(): void

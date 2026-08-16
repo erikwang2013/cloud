@@ -12,11 +12,11 @@
 | Phase 0 止血 | ✅ 4/4 | 发票真实渲染、通知模板 6 类、对账显式 unverified、CSP 头/环境模板 |
 | Phase 1 近期 | ✅ 8/8 | 购物车改数量、评价状态统一、对账真实化（Stripe 报表+按日）、退款条件校验（72h/5 天+幂等+TOCTOU 索引）、供应商 7 类 webhook、Feature Flags 接线+管理端、文档同步、真实测试 |
 | Phase 2 中期 | ✅ 8/8 | 资金守卫 4 项、service/admin 测试债、install.sql 31 表、RbacMiddleware 挂载 57 路由、admin 入镜像+nginx 8788+CI 双端、audit 回归+login 全链路 |
-| Phase 3 远期 | ⏳ 未启动 | 网关 / 多币种 / HarmonyOS 工程化 / ES |
+| Phase 3 远期 | ✅ 9/9 | 网关+统一限流（P4.1）、多币种全链路（P4.2）、HarmonyOS 工程化+CI（P4.3）、ES 落地（P4.4）、观察项消化（P4.5）、文档背离 4 项（P3.1）、权限收敛（P3.2）、订单幂等键（P3.3）、供应商评分校验（P3.4）、i18n 7 语言（P3.6）；reviewer-gate 独立复核全 approve |
 
 ### 1.2 质量基线（实测，提交后串行验证）
 
-- service 套件：**491 tests / 1002 assertions**，9 skip（全部为 DB 环境缺口）
+- service 套件：**568 tests / 1279 assertions**，10 skip（全部为 DB 环境缺口）
 - admin 套件：**255 tests / 887 assertions**，1 skip（DB 写路径）
 - CI 6 job：PHP Syntax / Admin Tests / Service Tests / Flutter Build / HarmonyOS Project Check /（docker 相关）
 - 资金/安全全部双人复核（security-auditor + reviewer 独立结论一致）；git 按任务分组提交，工作树干净

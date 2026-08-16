@@ -733,17 +733,21 @@ GET /admin/api/orders/export             → Excel 下载
 
 ## 十一、WebSocket 事件
 
-**连接:** `ws://host:8282?token=<jwt_access_token>`（docker 部署下 WS 经 nginx 反代，连接地址为 `ws://host/ws/?token=<jwt_access_token>`，8282 仅容器内暴露）
+**连接:** `ws://host:8282`（docker 部署下 WS 经 nginx 反代，连接地址为 `ws://host/ws/`，8282 仅容器内暴露）
+
+认证走连接后首条消息（token 不进 URL/访问日志）：连接建立后须先发 `auth` 消息，30 秒内未认证会被断开；认证失败返回 `error` 并断开。
 
 ### 客户端 → 服务端
 
 ```json
+{ "type": "auth", "token": "<jwt_access_token>" }
 { "type": "ping" }
 ```
 
 ### 服务端 → 客户端
 
 ```json
+{ "type": "connected", "user_id": 123 }
 { "type": "pong", "ts": 1680000000 }
 ```
 
