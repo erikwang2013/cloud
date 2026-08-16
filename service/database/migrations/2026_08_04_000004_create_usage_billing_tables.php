@@ -9,6 +9,11 @@ return new class extends Migration {
     {
         $schema = Capsule::schema();
 
+        // install.sql 已建全部表（现代 schema），迁移驱动安装才执行本文件
+        if ($schema->hasTable('resource_metrics') && $schema->hasTable('usage_events')
+            && $schema->hasTable('usage_rates') && $schema->hasTable('usage_invoice_items')) {
+            return;
+        }
         $schema->create('resource_metrics', function (Blueprint $table) {
             $table->bigInteger('id')->primary();
             $table->bigInteger('resource_id');
@@ -82,7 +87,7 @@ return new class extends Migration {
 
     private function hasColumn(string $table, string $column): bool
     {
-        $columns = Capsule::select("SHOW COLUMNS FROM `{$table}` LIKE ?", [$column]);
+        $columns = Capsule::select("SHOW COLUMNS FROM `{$table}` LIKE '" . addslashes($column) . "'");
         return !empty($columns);
     }
 };

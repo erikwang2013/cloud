@@ -16,16 +16,18 @@ return new class extends Migration {
             }
         });
 
-        // products — 前台产品列表 + 分类筛选
+        // products — 前台产品列表 + 分类筛选（install.sql 无 sort 列，跳过该索引）
         $schema->table('products', function (Blueprint $table) {
-            if (!$this->hasIndex('products', 'idx_products_status_category_sort')) {
+            if (Capsule::schema()->hasColumn('products', 'sort')
+                && !$this->hasIndex('products', 'idx_products_status_category_sort')) {
                 $table->index(['status', 'category_id', 'sort'], 'idx_products_status_category_sort');
             }
         });
 
-        // product_skus — SKU 按产品查找
+        // product_skus — SKU 按产品查找（install.sql 无 status 列，跳过该索引）
         $schema->table('product_skus', function (Blueprint $table) {
-            if (!$this->hasIndex('product_skus', 'idx_skus_product_status')) {
+            if (Capsule::schema()->hasColumn('product_skus', 'status')
+                && !$this->hasIndex('product_skus', 'idx_skus_product_status')) {
                 $table->index(['product_id', 'status'], 'idx_skus_product_status');
             }
         });

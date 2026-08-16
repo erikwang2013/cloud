@@ -11,7 +11,7 @@ return new class extends Migration {
 
         $schema->table('product_categories', function (Blueprint $table) {
             if (!$this->hasColumn('product_categories', 'type')) {
-                $table->string('type', 30)->nullable()->after('slug')->index();
+                $table->string('type', 30)->nullable()->index();
             }
         });
 
@@ -33,7 +33,7 @@ return new class extends Migration {
 
     private function hasColumn(string $table, string $column): bool
     {
-        $columns = Capsule::select("SHOW COLUMNS FROM `{$table}` LIKE ?", [$column]);
+        $columns = Capsule::select("SHOW COLUMNS FROM `{$table}` LIKE '" . addslashes($column) . "'");
         return !empty($columns);
     }
 };

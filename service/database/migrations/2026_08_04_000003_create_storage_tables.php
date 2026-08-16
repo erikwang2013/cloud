@@ -9,6 +9,10 @@ return new class extends Migration {
     {
         $schema = Capsule::schema();
 
+        // install.sql 已建该表（现代 schema），迁移驱动安装才执行本文件
+        if ($schema->hasTable('resource_storage_buckets')) {
+            return;
+        }
         $schema->create('resource_storage_buckets', function (Blueprint $table) {
             $table->bigInteger('id')->primary();
             $table->bigInteger('resource_id');

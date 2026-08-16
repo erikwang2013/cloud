@@ -7,6 +7,10 @@ use support\Migration;
 return new class extends Migration {
     public function up(): void
     {
+        // install.sql 已建该表（现代 schema），迁移驱动安装才执行本文件
+        if (Capsule::schema()->hasTable('resource_cdn')) {
+            return;
+        }
         Capsule::schema()->create('resource_cdn', function (Blueprint $table) {
             $table->bigInteger('id')->primary();
             $table->bigInteger('resource_id');

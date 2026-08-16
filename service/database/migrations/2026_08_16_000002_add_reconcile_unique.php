@@ -25,7 +25,7 @@ return new class extends Migration {
 
     private function hasIndex(string $table, string $indexName): bool
     {
-        $indexes = Capsule::select('SHOW INDEX FROM `' . $table . '` WHERE Key_name = ?', [$indexName]);
+        $indexes = Capsule::select("SHOW INDEX FROM `{$table}` WHERE Key_name = '" . addslashes($indexName) . "'");
         return !empty($indexes);
     }
 };

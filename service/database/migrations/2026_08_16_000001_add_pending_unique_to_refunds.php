@@ -11,9 +11,11 @@ return new class extends Migration {
     public function up(): void
     {
         if (!$this->hasColumn('refunds', 'pending_order_id')) {
+            // VIRTUAL：legacy 库 refunds 带 FK（refunds_order_id_foreign），STORED 生成列在 FK 存在时
+            // ALTER 报 1215；VIRTUAL 不受影响，唯一索引照常物化生效
             Capsule::statement('ALTER TABLE refunds
                 ADD COLUMN pending_order_id BIGINT UNSIGNED
-                GENERATED ALWAYS AS (IF(status = \'pending\', order_id, NULL)) STORED,
+                GENERATED ALWAYS AS (IF(status = \'pending\', order_id, NULL)) VIRTUAL,
                 ADD UNIQUE INDEX uniq_refunds_pending_order (pending_order_id)');
         }
     }
@@ -29,7 +31,7 @@ return new class extends Migration {
 
     private function hasColumn(string $table, string $column): bool
     {
-        $columns = Capsule::select("SHOW COLUMNS FROM `{$table}` LIKE ?", [$column]);
+        $columns = Capsule::select("SHOW COLUMNS FROM `{$table}` LIKE '" . addslashes($column) . "'");
         return !empty($columns);
     }
 };

@@ -46,12 +46,19 @@ class MigrationRunner
 
                 Capsule::connection()->beginTransaction();
                 try {
-                    $instance->up();
+                    if ($instance !== null) {
+                        $instance->up();
+                    }
                     $this->record($file['name'], $batch);
-                    Capsule::connection()->commit();
+                    // MySQL DDL 隐式提交会结束事务（transactionLevel 仍为 1），以 PDO 实际状态为准
+                    if (Capsule::connection()->getPdo()->inTransaction()) {
+                        Capsule::connection()->commit();
+                    }
                     $ran[] = $file['name'];
                 } catch (\Throwable $e) {
-                    Capsule::connection()->rollBack();
+                    if (Capsule::connection()->getPdo()->inTransaction()) {
+                        Capsule::connection()->rollBack();
+                    }
                     throw $e;
                 }
             }
@@ -96,12 +103,19 @@ class MigrationRunner
 
                 Capsule::connection()->beginTransaction();
                 try {
-                    $instance->down();
+                    if ($instance !== null) {
+                        $instance->down();
+                    }
                     Capsule::table($this->table)->where('id', $row->id)->delete();
-                    Capsule::connection()->commit();
+                    // MySQL DDL 隐式提交会结束事务（transactionLevel 仍为 1），以 PDO 实际状态为准
+                    if (Capsule::connection()->getPdo()->inTransaction()) {
+                        Capsule::connection()->commit();
+                    }
                     $rolled[] = $row->migration;
                 } catch (\Throwable $e) {
-                    Capsule::connection()->rollBack();
+                    if (Capsule::connection()->getPdo()->inTransaction()) {
+                        Capsule::connection()->rollBack();
+                    }
                     throw $e;
                 }
             }
@@ -174,11 +188,15 @@ class MigrationRunner
         return $files;
     }
 
-    private function resolve(string $filePath): object
+    private function resolve(string $filePath): ?object
     {
         $instance = require $filePath;
+        // 无 return 的旧式直接执行文件，require 返回 int(1)（PHP 约定）或显式裸 return 的 null
+        if ($instance === 1 || $instance === null) {
+            return null;
+        }
         if (!$instance instanceof \support\Migration) {
-            throw new \RuntimeException("Migration file must return a \support\Migration instance: $filePath");
+            throw new \RuntimeException("Migration file must return a \support\Migration instance or execute directly: $filePath");
         }
         return $instance;
     }

@@ -9,6 +9,11 @@ return new class extends Migration {
     {
         $schema = Capsule::schema();
 
+        // install.sql 已建全部表（现代 schema），迁移驱动安装才执行本文件
+        if ($schema->hasTable('affiliate_plans') && $schema->hasTable('affiliate_links')
+            && $schema->hasTable('affiliate_earnings') && $schema->hasTable('affiliate_payouts')) {
+            return;
+        }
         $schema->create('affiliate_plans', function (Blueprint $table) {
             $table->bigInteger('id')->primary();
             $table->string('name', 128);
@@ -78,7 +83,7 @@ return new class extends Migration {
 
     private function hasColumn(string $table, string $column): bool
     {
-        $cols = Capsule::select("SHOW COLUMNS FROM `{$table}` LIKE ?", [$column]);
+        $cols = Capsule::select("SHOW COLUMNS FROM `{$table}` LIKE '" . addslashes($column) . "'");
         return !empty($cols);
     }
 };

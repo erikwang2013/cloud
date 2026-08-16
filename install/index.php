@@ -231,9 +231,14 @@ if ($isPost && $requestedStep === 4) {
                 $stmt = $pdo->prepare("INSERT INTO wa_admin_roles (id, role_id, admin_id) VALUES (?, ?, ?)");
                 $stmt->execute([$arId, $roleId, $adminId]);
 
-                $pdo->commit();
+                // MySQL DDL 隐式提交会结束事务，此时无需也不能再 commit/rollBack
+                if ($pdo->inTransaction()) {
+                    $pdo->commit();
+                }
             } catch (Exception $e) {
-                $pdo->rollBack();
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
                 throw $e;
             }
 
@@ -295,7 +300,10 @@ if (class_exists(Dotenv::class)) {
 Config::clear();
 support\App::loadAllConfig(['route']);
 $capsule = new Capsule;
-$capsule->addConnection(config('database.connections.mysql'), 'default');
+$default = config('database.default');
+foreach (config('database.connections') as $name => $conn) {
+    $capsule->addConnection($conn, $name === $default ? 'default' : $name);
+}
 $capsule->setAsGlobal();
 $capsule->bootEloquent();
 $runner = new \support\MigrationRunner(__MIGRATIONS__);
