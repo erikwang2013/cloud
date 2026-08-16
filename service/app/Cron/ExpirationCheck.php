@@ -28,6 +28,19 @@ class ExpirationCheck
                         'days_left'     => $days,
                     ], ['email', 'in_app']);
                 }
+
+                // 进入 7 天窗口时向供应商发一次 webhook（warnDays 30→1 降序，days=7 仅命中一次）
+                if ($days === 7) {
+                    \Common\Webhook\WebhookDispatcher::dispatch(
+                        \Common\Webhook\WebhookDispatcher::EVENT_RESOURCE_EXPIRING,
+                        [
+                            'resource_id' => $resource->id,
+                            'type'        => $resource->type,
+                            'expired_at'  => $resource->expired_at,
+                            'days_left'   => $days,
+                        ]
+                    );
+                }
             }
         }
 

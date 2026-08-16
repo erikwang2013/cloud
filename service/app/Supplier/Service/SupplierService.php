@@ -6,6 +6,7 @@ use App\Supplier\Model\SupplierSettlement;
 use App\Supplier\Model\SupplierWithdraw;
 use App\Order\Model\OrderItem;
 use App\User\Model\User;
+use Common\Webhook\WebhookDispatcher;
 
 class SupplierService
 {
@@ -65,7 +66,7 @@ class SupplierService
         });
         $payable = bcsub($totalSales, $commission, 4);
 
-        return SupplierSettlement::create([
+        $settlement = SupplierSettlement::create([
             'supplier_id'  => $supplierId,
             'period_start' => $periodStart,
             'period_end'   => $periodEnd,
@@ -74,6 +75,16 @@ class SupplierService
             'payable'      => $payable,
             'status'       => 'pending',
         ]);
+
+        WebhookDispatcher::dispatch(WebhookDispatcher::EVENT_SETTLEMENT_CREATED, [
+            'settlement_id' => $settlement->id,
+            'supplier_id'   => $supplierId,
+            'amount'        => (string) $payable,
+            'period_start'  => $periodStart,
+            'period_end'    => $periodEnd,
+        ]);
+
+        return $settlement;
     }
 
     public function requestWithdraw(int $supplierId, string $amount, array $accountInfo): void

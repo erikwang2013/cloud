@@ -7,6 +7,7 @@ use App\Supplier\Service\SupplierService;
 use Common\ExcelExport;
 use Common\Helper\Response;
 use Common\Security\AuditLogger;
+use Common\Webhook\WebhookDispatcher;
 
 class SupplierController
 {
@@ -84,6 +85,12 @@ class SupplierController
     {
         $withdraw = SupplierWithdraw::findOrFail($id);
         $withdraw->update(['status' => 'completed']);
+
+        WebhookDispatcher::dispatch(WebhookDispatcher::EVENT_WITHDRAWAL_APPROVED, [
+            'withdraw_id' => $withdraw->id,
+            'supplier_id' => $withdraw->supplier_id,
+            'amount'      => (string) $withdraw->amount,
+        ]);
 
         AuditLogger::record('admin_supplier_withdraw_approve', [
             'user_id' => $request->userId,

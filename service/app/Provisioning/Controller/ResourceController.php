@@ -4,6 +4,7 @@ namespace App\Provisioning\Controller;
 use App\Provisioning\Model\Resource;
 use App\Provisioning\Service\ProviderFactory;
 use Common\Helper\Response;
+use Common\Webhook\WebhookDispatcher;
 
 class ResourceController
 {
@@ -73,6 +74,12 @@ class ResourceController
 
         if ($result->status === 'success') {
             $resource->update(['status' => 'destroyed']);
+
+            WebhookDispatcher::dispatch(WebhookDispatcher::EVENT_RESOURCE_DESTROYED, [
+                'resource_id' => $resource->id,
+                'type'        => $resource->type,
+            ]);
+
             return json(Response::success());
         }
         return json(Response::error(500, $result->errorMessage));

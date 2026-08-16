@@ -5,6 +5,26 @@ use Illuminate\Support\Facades\Redis;
 
 class WebhookDispatcher
 {
+    public const EVENT_ORDER_PAID           = 'order.paid';
+    public const EVENT_ORDER_REFUNDED       = 'order.refunded';
+    public const EVENT_RESOURCE_PROVISIONED = 'resource.provisioned';
+    public const EVENT_RESOURCE_EXPIRING    = 'resource.expiring';
+    public const EVENT_RESOURCE_DESTROYED   = 'resource.destroyed';
+    public const EVENT_SETTLEMENT_CREATED   = 'settlement.created';
+    public const EVENT_WITHDRAWAL_APPROVED  = 'withdrawal.approved';
+
+    /**
+     * Verify an incoming webhook signature: HMAC-SHA256(payload, secret), prefixed "sha256=".
+     */
+    public static function verifySignature(string $body, string $signature, ?string $secret = null): bool
+    {
+        $secret = $secret ?? (getenv('WEBHOOK_SECRET') ?: '');
+        if ($secret === '' || !str_starts_with($signature, 'sha256=')) {
+            return false;
+        }
+        return hash_equals('sha256=' . hash_hmac('sha256', $body, $secret), $signature);
+    }
+
     /**
      * Dispatch an event to all registered webhook URLs.
      */

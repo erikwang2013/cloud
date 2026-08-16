@@ -7,6 +7,7 @@ use App\Provisioning\Model\Resource;
 use App\Provisioning\Event\ProvisionFailed;
 use App\Order\Model\Order;
 use App\Order\Model\OrderTimeline;
+use Common\Webhook\WebhookDispatcher;
 use Illuminate\Support\Facades\Event;
 use Webman\RedisQueue\Consumer;
 
@@ -46,6 +47,12 @@ class ProvisionWorker implements Consumer
                 if ($result->status === 'success') {
                     $resource->update(['status' => 'active', 'provisioned_at' => date('Y-m-d H:i:s')]);
                     $task->update(['status' => 'completed']);
+
+                    WebhookDispatcher::dispatch(WebhookDispatcher::EVENT_RESOURCE_PROVISIONED, [
+                        'resource_id'   => $resource->id,
+                        'type'          => $resource->type,
+                        'order_item_id' => $task->order_item_id,
+                    ]);
 
                     $this->checkOrderComplete($task->order_id);
 

@@ -33,7 +33,7 @@ class SupplierSettlement
                 $commission = $totalSales * ((float) ($supplier->commission_rate ?? 10) / 100);
                 $payable    = $totalSales - $commission;
 
-                \App\Supplier\Model\SupplierSettlement::create([
+                $settlement = \App\Supplier\Model\SupplierSettlement::create([
                     'supplier_id'  => $supplier->id,
                     'period_start' => $weekStart,
                     'period_end'   => $weekEnd,
@@ -42,6 +42,17 @@ class SupplierSettlement
                     'payable'      => $payable,
                     'status'       => 'pending',
                 ]);
+
+                \Common\Webhook\WebhookDispatcher::dispatch(
+                    \Common\Webhook\WebhookDispatcher::EVENT_SETTLEMENT_CREATED,
+                    [
+                        'settlement_id' => $settlement->id,
+                        'supplier_id'   => $supplier->id,
+                        'amount'        => (string) $payable,
+                        'period_start'  => $weekStart,
+                        'period_end'    => $weekEnd,
+                    ]
+                );
 
                 echo "  Supplier #{$supplier->id}: Sales={$totalSales}, Payable={$payable}\n";
             } catch (\Throwable $e) {
