@@ -48,31 +48,22 @@ return [
 
         // 各模型索引定义（settings + mappings）
         // 索引在 scout:import 时自动创建
+        // ponytail: 单节点配置（shards=1/replicas=0）；生产集群需改回多分片+副本。
+        // 分词用内置 standard：docker 官方镜像无 ik 插件，索引创建会失败；
+        // 生产如需中文分词，装 ik 插件后改回 ik_max_word/ik_smart。
         'indices' => [
             // 产品索引 — 支持多语言全文搜索、分类筛选、价格排序
             'products' => [
                 'settings' => [
-                    'number_of_shards'   => 3,
-                    'number_of_replicas' => 1,
-                    'analysis' => [
-                        'analyzer' => [
-                            'ik_max_word_analyzer' => [
-                                'type'      => 'custom',
-                                'tokenizer' => 'ik_max_word',
-                            ],
-                            'ik_smart_analyzer' => [
-                                'type'      => 'custom',
-                                'tokenizer' => 'ik_smart',
-                            ],
-                        ],
-                    ],
+                    'number_of_shards'   => 1,
+                    'number_of_replicas' => 0,
                 ],
                 'mappings' => [
                     'properties' => [
                         'id'          => ['type' => 'long'],
                         'category_id' => ['type' => 'keyword'],
-                        'name'        => ['type' => 'text', 'analyzer' => 'ik_max_word', 'search_analyzer' => 'ik_smart'],
-                        'description' => ['type' => 'text', 'analyzer' => 'ik_max_word', 'search_analyzer' => 'ik_smart'],
+                        'name'        => ['type' => 'text', 'analyzer' => 'standard'],
+                        'description' => ['type' => 'text', 'analyzer' => 'standard'],
                         'status'      => ['type' => 'keyword'],
                         'base_price'  => ['type' => 'double'],
                         'created_at'  => ['type' => 'date'],
@@ -85,7 +76,7 @@ return [
             'users' => [
                 'settings' => [
                     'number_of_shards'   => 1,
-                    'number_of_replicas' => 1,
+                    'number_of_replicas' => 0,
                 ],
                 'mappings' => [
                     'properties' => [
@@ -105,8 +96,8 @@ return [
             // 订单索引 — 用户/管理后台搜索订单
             'orders' => [
                 'settings' => [
-                    'number_of_shards'   => 3,
-                    'number_of_replicas' => 1,
+                    'number_of_shards'   => 1,
+                    'number_of_replicas' => 0,
                 ],
                 'mappings' => [
                     'properties' => [
@@ -127,20 +118,8 @@ return [
             // 工单索引 — 用户/管理后台搜索工单
             'tickets' => [
                 'settings' => [
-                    'number_of_shards'   => 2,
-                    'number_of_replicas' => 1,
-                    'analysis' => [
-                        'analyzer' => [
-                            'ik_max_word_analyzer' => [
-                                'type'      => 'custom',
-                                'tokenizer' => 'ik_max_word',
-                            ],
-                            'ik_smart_analyzer' => [
-                                'type'      => 'custom',
-                                'tokenizer' => 'ik_smart',
-                            ],
-                        ],
-                    ],
+                    'number_of_shards'   => 1,
+                    'number_of_replicas' => 0,
                 ],
                 'mappings' => [
                     'properties' => [
@@ -150,7 +129,7 @@ return [
                         'resource_id'  => ['type' => 'long'],
                         'category'     => ['type' => 'keyword'],
                         'priority'     => ['type' => 'keyword'],
-                        'title'        => ['type' => 'text', 'analyzer' => 'ik_max_word', 'search_analyzer' => 'ik_smart'],
+                        'title'        => ['type' => 'text', 'analyzer' => 'standard'],
                         'status'       => ['type' => 'keyword'],
                         'assigned_to'  => ['type' => 'long'],
                         'sla_deadline' => ['type' => 'date'],

@@ -24,10 +24,8 @@ class ProductService
                 });
             }
             if (!empty($filters['keyword'])) {
-                $query->where(function ($q) use ($filters) {
-                    $q->whereJsonContains('name', $filters['keyword'])
-                      ->orWhere('slug', 'like', "%{$filters['keyword']}%");
-                });
+                $ids = $this->searchKeywordIds($filters['keyword']);
+                $query->whereIn('id', $ids);
             }
             if (!empty($filters['supplier_id'])) {
                 $query->where('supplier_id', $filters['supplier_id']);
@@ -59,5 +57,28 @@ class ProductService
     public static function invalidateCache(): void
     {
         CacheService::forgetPattern('products:*');
+    }
+
+    /**
+     * ES 主路径搜索商品 id；ES 不可用时降级 SQL 模糊匹配，避免搜索接口因 ES 故障 500。
+     * ponytail: 结果截断 200 条；数据量超过时需改游标分页。
+     */
+    private function searchKeywordIds(string $keyword): array
+    {
+        try {
+            return Product::search(self::escapeQueryString($keyword))->take(200)->keys()->all();
+        } catch (\Throwable) {
+            return Product::whereJsonContains('name', $keyword)
+                ->orWhere('slug', 'like', "%{$keyword}%")
+                ->pluck('id')->all();
+        }
+    }
+
+    /**
+     * 转义 ES query_string 保留字（引擎拼接 `*{$query}*` 无转义，特殊字符会抛解析异常）。
+     */
+    public static function escapeQueryString(string $keyword): string
+    {
+        return preg_replace('/([+\-=&|><!(){}[\]^"~*?:\\\\\/])/', '\\\\$1', $keyword);
     }
 }
