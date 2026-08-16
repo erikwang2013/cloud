@@ -133,6 +133,7 @@ Route::group('/api', function () {
     Route::post('/cart', [App\Order\Controller\OrderController::class, 'addToCart']);
     Route::get('/cart', [App\Order\Controller\OrderController::class, 'cart']);
     Route::delete('/cart/{id}', [App\Order\Controller\OrderController::class, 'removeFromCart']);
+    Route::put('/cart/{id}', [App\Order\Controller\OrderController::class, 'updateCartItem']);
     Route::post('/orders', [App\Order\Controller\OrderController::class, 'store']);
     Route::get('/orders', [App\Order\Controller\OrderController::class, 'myOrders']);
     Route::get('/orders/{id}', [App\Order\Controller\OrderController::class, 'show']);

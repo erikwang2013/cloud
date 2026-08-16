@@ -68,6 +68,16 @@ class OrderController
         return json(Response::success(null, 'Removed from cart'));
     }
 
+    public function updateCartItem($request, string $id)
+    {
+        try {
+            $cart = $this->cartService->updateQuantity($request->userId, (int)$id, $request->input('quantity'));
+            return json(Response::success($cart, 'Cart updated'));
+        } catch (\InvalidArgumentException $e) {
+            return json(Response::error(422, $e->getMessage()));
+        }
+    }
+
     public function show($request, int $id)
     {
         $order = Order::with(['items', 'timeline'])
