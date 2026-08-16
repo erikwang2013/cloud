@@ -54,7 +54,7 @@ class WebhookDispatcher
         return self::sendToUrl($url, $body, self::signature($body), $event);
     }
 
-    private static function buildPayload(string $event, array $payload): string
+    protected static function buildPayload(string $event, array $payload): string
     {
         return json_encode([
             'event'     => $event,
@@ -63,9 +63,9 @@ class WebhookDispatcher
         ]);
     }
 
-    private static function signature(string $body): string
+    protected static function signature(string $body, ?string $secret = null): string
     {
-        $secret = getenv('WEBHOOK_SECRET') ?: '';
+        $secret = $secret ?? (getenv('WEBHOOK_SECRET') ?: '');
         return $secret ? 'sha256=' . hash_hmac('sha256', $body, $secret) : '';
     }
 

@@ -19,6 +19,8 @@ Capsule::schema()->create('coupons', function (Blueprint $table) {
 });
 
 // user_coupons — tracks which users redeemed which coupons
+// 有意不加 (user_id, coupon_id) 唯一约束：同一用户可跨订单多次核销同一优惠券（max_uses 为总量上限）；
+// 每行对应一次订单核销，并发由 OrderService 内 coupon 行锁 + 事务保证。
 Capsule::schema()->create('user_coupons', function (Blueprint $table) {
     $table->id();
     $table->unsignedBigInteger('user_id');

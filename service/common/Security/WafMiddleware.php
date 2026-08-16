@@ -10,6 +10,7 @@ class WafMiddleware
         $path = $request->path();
 
         // Request size limits (only for API routes)
+        $baseType = '';
         if (str_starts_with($path, '/api/') || str_starts_with($path, '/admin/api/')) {
             // Content-Type validation
             $contentType = strtolower(trim($request->header('Content-Type', '')));
@@ -42,8 +43,10 @@ class WafMiddleware
         $url = mb_substr($request->path() . '?' . $request->queryString(), 0, 2048);
         $ua  = $request->header('User-Agent', '');
         // 仅对可能携带 body 的方法读取原始 body，GET 等请求跳过，避免全量读入
+        // multipart 原始体含文件二进制：解析字段已入 $input 扫描，跳过 raw 全量读取，
+        // 避免大文件上传触发误报（二进制字节匹配正则）与内存放大
         $raw = in_array(strtoupper($request->method()), ['POST', 'PUT', 'PATCH', 'DELETE'], true)
-            ? $this->readRawBody()
+            ? ($this->shouldScanRawBody($baseType) ? $this->readRawBody() : '')
             : '';
 
         static $patterns = null;
@@ -76,6 +79,11 @@ class WafMiddleware
             }
         }
         return $next($request);
+    }
+
+    protected function shouldScanRawBody(string $baseType): bool
+    {
+        return $baseType !== 'multipart/form-data';
     }
 
     protected function readRawBody(): string
