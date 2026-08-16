@@ -801,19 +801,6 @@ CREATE TABLE IF NOT EXISTS `user_balance_log` (
     INDEX idx_user_created (user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ======================== Product ========================
-
-CREATE TABLE IF NOT EXISTS `product_attributes` (
-    id              BIGINT          NOT NULL PRIMARY KEY,
-    product_id      BIGINT          NOT NULL,
-    `key`           VARCHAR(100)    NOT NULL,
-    value           VARCHAR(500)    NOT NULL,
-    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_product (product_id),
-    INDEX idx_key (`key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- ======================== Order ========================
 
 CREATE TABLE IF NOT EXISTS `order_invoices` (
@@ -1024,6 +1011,10 @@ CREATE TABLE IF NOT EXISTS `role_permission` (
     INDEX idx_permission (permission_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 权限模型唯一事实源为 service/common/Auth/Rbac.php；
+-- 种子数据由迁移系统维护（service/database/migrations/2026_08_17_000001_seed_rbac_permissions.php），
+-- 本文件仅含表结构
+
 -- ======================== SSL ========================
 
 CREATE TABLE IF NOT EXISTS `ssl_plans` (
@@ -1153,7 +1144,7 @@ CREATE TABLE IF NOT EXISTS `resource_cdn` (
     origin_type     VARCHAR(16)     NOT NULL DEFAULT 'server',
     origin_value    VARCHAR(512)    NOT NULL,
     plan            VARCHAR(32)     NOT NULL DEFAULT 'standard',
-    ssl             TINYINT(1)      NOT NULL DEFAULT 1,
+    `ssl`           TINYINT(1)      NOT NULL DEFAULT 1,
     cache_rules     JSON            DEFAULT NULL,
     status          VARCHAR(32)     NOT NULL DEFAULT 'pending',
     purged_at       DATETIME        DEFAULT NULL,

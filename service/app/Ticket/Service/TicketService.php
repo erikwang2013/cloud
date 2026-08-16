@@ -5,6 +5,7 @@ use App\User\Model\User;
 use App\Ticket\Model\Ticket;
 use App\Ticket\Model\TicketMessage;
 use App\Ticket\Event\TicketCreated;
+use App\Ticket\Event\TicketStatusChanged;
 use Illuminate\Support\Facades\Event;
 
 class TicketService
@@ -51,8 +52,10 @@ class TicketService
             throw new \InvalidArgumentException('Ticket is closed');
         }
 
+        $changed = false;
         if ($ticket->status === 'on_hold' && $senderType === 'user') {
             $ticket->update(['status' => 'open']);
+            $changed = true;
         }
 
         if ($senderType === 'staff' && $ticket->status === 'open') {
@@ -60,6 +63,11 @@ class TicketService
                 'status'      => 'in_progress',
                 'assigned_to' => $senderId,
             ]);
+            $changed = true;
+        }
+
+        if ($changed && class_exists(Event::class)) {
+            Event::dispatch(new TicketStatusChanged($ticket));
         }
 
         return TicketMessage::create([
@@ -72,11 +80,16 @@ class TicketService
 
     public function close(int $ticketId, int $staffId): void
     {
-        Ticket::where('id', $ticketId)->update([
+        $ticket = Ticket::findOrFail($ticketId);
+        $ticket->update([
             'status'     => 'closed',
             'closed_by'  => $staffId,
             'closed_at'  => date('Y-m-d H:i:s'),
         ]);
+
+        if (class_exists(Event::class)) {
+            Event::dispatch(new TicketStatusChanged($ticket));
+        }
     }
 
     public function assignTicket(int $ticketId, int $staffId): void

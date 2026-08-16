@@ -7,6 +7,7 @@ use App\Provisioning\Model\Resource;
 use App\Provisioning\Event\ProvisionFailed;
 use App\Order\Model\Order;
 use App\Order\Model\OrderTimeline;
+use App\WebSocket\WebSocketServer;
 use Common\Webhook\WebhookDispatcher;
 use Illuminate\Support\Facades\Event;
 use Webman\RedisQueue\Consumer;
@@ -52,6 +53,12 @@ class ProvisionWorker implements Consumer
                         'resource_id'   => $resource->id,
                         'type'          => $resource->type,
                         'order_item_id' => $task->order_item_id,
+                    ]);
+
+                    WebSocketServer::send($order->user_id, 'resource.provisioned', [
+                        'resource_id' => $resource->id,
+                        'type'        => $resource->type,
+                        'ip_address'  => $result->data['ip_address'] ?? null,
                     ]);
 
                     $this->checkOrderComplete($task->order_id);

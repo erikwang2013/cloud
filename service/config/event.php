@@ -31,9 +31,12 @@ return [
         \App\WebSocket\Listener\OrderPaidListener::class,
         \App\Affiliate\Listener\OrderPaidListener::class,
     ],
-    // 工单创建后自动分配 + WebSocket 实时推送
+    // 工单创建后自动分配
     \App\Ticket\Event\TicketCreated::class => [
         \App\Ticket\Listener\AutoAssignListener::class,
+    ],
+    // 工单状态变更 → WebSocket 实时推送（ticket.updated）
+    \App\Ticket\Event\TicketStatusChanged::class => [
         \App\WebSocket\Listener\TicketUpdatedListener::class,
     ],
 ];

@@ -1,6 +1,8 @@
 <?php
 namespace App\Cron;
 
+use App\WebSocket\WebSocketServer;
+
 class ExpirationCheck
 {
     public function run(): void
@@ -27,6 +29,12 @@ class ExpirationCheck
                         'expired_at'    => $resource->expired_at,
                         'days_left'     => $days,
                     ], ['email', 'in_app']);
+
+                    WebSocketServer::send($resource->user_id, 'resource.expiring', [
+                        'resource_id' => $resource->id,
+                        'expired_at'  => $resource->expired_at,
+                        'days_left'   => $days,
+                    ]);
                 }
 
                 // 进入 7 天窗口时向供应商发一次 webhook（warnDays 30→1 降序，days=7 仅命中一次）

@@ -4,6 +4,7 @@ namespace App\Notification\Service;
 use App\User\Model\User;
 use App\Notification\Model\Notification;
 use App\Notification\Model\NotificationTemplate;
+use App\WebSocket\WebSocketServer;
 use Common\I18n\I18n;
 use Webman\RedisQueue\Client;
 
@@ -33,13 +34,19 @@ class NotificationDispatcher
         }
 
         if (in_array('in_app', $channels)) {
-            Notification::create([
+            $notification = Notification::create([
                 'user_id'       => $userId,
                 'channel'       => 'in_app',
                 'template_code' => $code,
                 // 传数组即可：Notification 模型 content 有 array cast，自行编码一次
                 'content'       => ['title' => $title, 'body' => $body],
                 'send_status'   => 'sent',
+            ]);
+
+            WebSocketServer::send($userId, 'notification.new', [
+                'notification_id' => $notification->id,
+                'title'           => $title,
+                'body'            => $body,
             ]);
         }
 

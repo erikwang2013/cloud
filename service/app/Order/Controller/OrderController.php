@@ -8,6 +8,8 @@ use Common\Helper\Response;
 
 class OrderController
 {
+    public const ORDER_STATUSES = ['pending', 'paid', 'provisioning', 'completed', 'refunded'];
+
     private OrderService $orderService;
     private CartService $cartService;
 
@@ -48,8 +50,14 @@ class OrderController
     {
         $page     = (int)$request->input('page', 1);
         $pageSize = (int)$request->input('page_size', 10);
+        $status   = $request->input('status');
+
+        if ($status !== null && !in_array($status, self::ORDER_STATUSES, true)) {
+            return json(Response::error(400, 'Invalid status: ' . $status));
+        }
 
         $orders = Order::where('user_id', $request->userId)
+            ->when($status, fn ($q) => $q->where('status', $status))
             ->with('items')
             ->orderBy('created_at', 'desc')
             ->paginate($pageSize, ['*'], 'page', $page);
