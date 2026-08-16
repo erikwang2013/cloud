@@ -5,6 +5,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+      target: app
     ports:
       - "80:80"
     environment:
@@ -18,6 +19,26 @@ services:
       - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
       - ENCRYPTION_MASTER_KEY=${ENCRYPTION_MASTER_KEY}
       - ES_HOST=${ES_HOST:-elasticsearch}
+    depends_on:
+      - mysql
+      - redis
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: admin
+    ports:
+      - "8788:80"
+    environment:
+      - APP_DEBUG=false
+      - DB_HOST=mysql
+      - DB_DATABASE=cloud_platform
+      - DB_USERNAME=app_user
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+      - ENCRYPTION_MASTER_KEY=${ENCRYPTION_MASTER_KEY}
     depends_on:
       - mysql
       - redis

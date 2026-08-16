@@ -66,3 +66,48 @@ jobs:
         # security-php 等第三方包的已知 composer 冲突不应阻断 CI
         continue-on-error: true
         run: composer validate -d service --strict
+
+  flutter-build:
+    name: Flutter Build (apps/flutter)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install Flutter dependencies
+        run: cd apps/flutter && flutter pub get
+      - name: Analyze
+        # warning 级 lint 不阻断，error 级仍失败
+        run: cd apps/flutter && flutter analyze --no-fatal-warnings
+      - name: Build debug APK
+        run: cd apps/flutter && flutter build apk --debug
+
+  harmonyos-check:
+    name: HarmonyOS Project Check (apps/harmonyos)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check HarmonyOS project structure
+        run: |
+          required_files=(
+            "apps/harmonyos/build-profile.json5"
+            "apps/harmonyos/oh-package.json5"
+            "apps/harmonyos/hvigorfile.ts"
+            "apps/harmonyos/hvigor/hvigor-config.json5"
+            "apps/harmonyos/AppScope/app.json5"
+            "apps/harmonyos/entry/oh-package.json5"
+          )
+          missing=0
+          for f in "${required_files[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "MISSING: $f"
+              missing=1
+            fi
+          done
+          if [ "$missing" -eq 1 ]; then
+            echo "::error::HarmonyOS 工程不可构建：apps/harmonyos 仅有 entry/src/main 下的 ETS 源码，缺少 hvigor/DevEco 工程配置（build-profile.json5、oh-package.json5、hvigorfile.ts、AppScope 等）。完整构建 job 需先补齐工程脚手架，当前仅做结构检查并显式报错。"
+            exit 1
+          fi
+          echo "HarmonyOS project structure OK"
