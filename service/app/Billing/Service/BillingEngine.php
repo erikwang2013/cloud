@@ -20,15 +20,17 @@ class BillingEngine
             ->get()
             ->groupBy('resource_id');
 
-        // 预取费率映射（meter => [region_id => rate]），避免循环内 N+1 查询
+        // 预取费率映射（meter => [region_id => rate]）与资源（含 user），避免循环内 N+1 查询
         $rateMap = [];
         foreach (Capsule::table('usage_rates')->get() as $rate) {
             $rateMap[$rate->meter][$rate->region_id ?? 'null'] = $rate;
         }
+        $resourceIds = array_keys($events->toArray());
+        $resources = Resource::with('user')->whereIn('id', $resourceIds)->get()->keyBy('id');
 
         foreach ($events as $resourceId => $resourceEvents) {
-            Capsule::transaction(function () use ($resourceId, $resourceEvents, $yesterdayStart, $yesterdayEnd) {
-                $resource = Resource::with('user')->find($resourceId);
+            Capsule::transaction(function () use ($resourceId, $resourceEvents, $resources, $yesterdayStart, $yesterdayEnd) {
+                $resource = $resources[$resourceId] ?? null;
                 if (!$resource) return;
 
                 // 按费率币种分桶累计（usage_invoice_items 的 currency 与费率一致）

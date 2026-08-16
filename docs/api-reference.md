@@ -733,7 +733,7 @@ GET /admin/api/orders/export             → Excel 下载
 
 ## 十一、WebSocket 事件
 
-**连接:** `ws://host:8282?token=<jwt_access_token>`
+**连接:** `ws://host:8282?token=<jwt_access_token>`（docker 部署下 WS 经 nginx 反代，连接地址为 `ws://host/ws/?token=<jwt_access_token>`，8282 仅容器内暴露）
 
 ### 客户端 → 服务端
 
