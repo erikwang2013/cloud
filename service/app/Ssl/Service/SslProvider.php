@@ -59,7 +59,8 @@ class SslProvider implements ProviderInterface
                     $owner = \App\Provisioning\Model\Resource::find($task->resource_id);
                     if ($owner && $owner->user_id) {
                         $dispatcher = new \App\Notification\Service\NotificationDispatcher();
-                        if (($params['action'] ?? 'create') === 'renew') {
+                        // action 是任务顶层列（SslCertificateCheck 排队续期置 'renew'），params JSON 内无此键
+                        if (($task->action ?? 'create') === 'renew') {
                             $dispatcher->dispatch($owner->user_id, 'ssl_cert_renewed', ['domain' => $domain], ['email', 'in_app']);
                         } else {
                             $dispatcher->dispatch($owner->user_id, 'ssl_cert_issued', ['domain' => $domain], ['email', 'in_app']);

@@ -111,5 +111,22 @@ class ProvisionWorker implements Consumer
         if (class_exists(Event::class)) {
             Event::dispatch(new ProvisionFailed($task));
         }
+
+        // SSL 自动续期最终失败：通知资源所有者手动续期（客户侧通知，区别于上面的值班告警）
+        try {
+            if ($task->product_type === 'ssl' && ($task->action ?? '') === 'renew') {
+                $params   = json_decode((string) $task->params, true);
+                $resource = $task->resource_id ? Resource::find($task->resource_id) : null;
+                if ($resource && $resource->user_id && !empty($params['domain'])) {
+                    (new \App\Notification\Service\NotificationDispatcher())->dispatch(
+                        $resource->user_id, 'ssl_cert_renewal_failed',
+                        ['domain' => $params['domain']],
+                        ['email', 'in_app']
+                    );
+                }
+            }
+        } catch (\Throwable) {
+            // 通知非关键，失败不影响交付状态
+        }
     }
 }
