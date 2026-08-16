@@ -687,6 +687,7 @@ CREATE TABLE IF NOT EXISTS `notifications` (
     template_code   VARCHAR(128)    NOT NULL,
     content         JSON            NOT NULL,
     send_status     VARCHAR(32)     NOT NULL DEFAULT 'queued',
+    read_at         DATETIME        DEFAULT NULL,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_user (user_id),
