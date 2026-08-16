@@ -1,12 +1,12 @@
 <?php
 return [
-    'storage.bucket_created'    => 'Bucket created',
-    'storage.bucket_deleted'    => 'Bucket deleted',
-    'storage.bucket_not_found'  => 'Bucket not found',
-    'storage.quota_exceeded'    => 'Storage quota exceeded',
-    'storage.key_required'      => 'Object key is required',
-    'storage.upload_url'        => 'Upload URL generated',
-    'storage.download_url'      => 'Download URL generated',
-    'storage.credentials'       => 'Bucket credentials',
-    'storage.quota_updated'     => 'Storage quota updated',
+    'storage.bucket_created'    => 'Bucket de stockage créé',
+    'storage.bucket_deleted'    => 'Bucket de stockage supprimé',
+    'storage.bucket_not_found'  => 'Bucket de stockage introuvable',
+    'storage.quota_exceeded'    => 'Quota de stockage dépassé',
+    'storage.key_required'      => 'Clé d\'objet requise',
+    'storage.upload_url'        => 'URL de téléversement générée',
+    'storage.download_url'      => 'URL de téléchargement générée',
+    'storage.credentials'       => 'Identifiants du bucket de stockage',
+    'storage.quota_updated'     => 'Quota de stockage mis à jour',
 ];

@@ -1,13 +1,13 @@
 <?php
 return [
-    'billing.rate_created'      => 'Rate created',
-    'billing.rate_updated'      => 'Rate updated',
-    'billing.rate_deleted'      => 'Rate deleted',
-    'billing.resource_suspended' => 'Resource suspended due to insufficient balance',
-    'billing.resource_reactivated' => 'Resource reactivated',
-    'billing.usage_deducted'    => 'Usage fees deducted',
-    'billing.insufficient_balance' => 'Insufficient balance for usage billing',
-    'billing.sku_id_required'   => 'SKU ID is required',
-    'billing.meter_required'    => 'Meter type is required',
-    'billing.unit_price_required' => 'Unit price is required',
+    'billing.rate_created'      => 'Tarif créé',
+    'billing.rate_updated'      => 'Tarif mis à jour',
+    'billing.rate_deleted'      => 'Tarif supprimé',
+    'billing.resource_suspended' => 'Ressource suspendue en raison d\'un solde insuffisant',
+    'billing.resource_reactivated' => 'Ressource réactivée',
+    'billing.usage_deducted'    => 'Frais d\'utilisation déduits',
+    'billing.insufficient_balance' => 'Solde insuffisant pour le paiement des frais d\'utilisation',
+    'billing.sku_id_required'   => 'L\'ID SKU est requis',
+    'billing.meter_required'    => 'Le type de compteur est requis',
+    'billing.unit_price_required' => 'Le prix unitaire est requis',
 ];
