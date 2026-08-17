@@ -1,0 +1,22 @@
+[package]
+name = "kvm-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "KVM provisioning server (libvirt backend skeleton) for CloudPlatform"
+
+[dependencies]
+ecat = { path = "../ecat" }
+ecat-config = { path = "../ecat-config" }
+ecat-data = { path = "../ecat-data" }
+ecat-data-sqlx = { path = "../ecat-data-sqlx" }
+ecat-data-redis = { path = "../ecat-data-redis" }
+ecat-lock = { path = "../ecat-lock" }
+ecat-logging = { path = "../ecat-logging" }
+ecat-transport-http = { path = "../ecat-transport-http" }
+axum.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true

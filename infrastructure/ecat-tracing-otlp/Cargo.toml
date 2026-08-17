@@ -1,0 +1,17 @@
+[package]
+name = "ecat-tracing-otlp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "OpenTelemetry OTLP tracing export for e-cat"
+
+[dependencies]
+opentelemetry = { version = "0.27", default-features = false, features = ["trace"] }
+opentelemetry_sdk = { version = "0.27", features = ["trace", "rt-tokio"] }
+opentelemetry-otlp = { version = "0.27", default-features = false, features = ["grpc-tonic", "trace"] }
+tracing.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter", "registry"] }
+tracing-opentelemetry = "0.28"
+
+[dev-dependencies]
+tokio.workspace = true

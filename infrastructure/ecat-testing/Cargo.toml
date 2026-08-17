@@ -1,0 +1,12 @@
+[package]
+name = "ecat-testing"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Test utilities and helpers for e-cat"
+
+[dependencies]
+ecat-transport = { path = "../ecat-transport" }
+tokio.workspace = true
+async-trait.workspace = true
+axum.workspace = true

@@ -1,0 +1,16 @@
+[package]
+name = "ecat-mq-nats"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "NATS message queue backend for e-cat"
+
+[dependencies]
+ecat-mq = { path = "../ecat-mq" }
+bytes.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+futures-core.workspace = true
+async-nats = "0.38"

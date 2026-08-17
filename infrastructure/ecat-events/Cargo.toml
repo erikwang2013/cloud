@@ -1,0 +1,18 @@
+[package]
+name = "ecat-events"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Event bus abstraction for e-cat"
+
+[dependencies]
+ecat-mq = { path = "../ecat-mq" }
+bytes.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+async-trait.workspace = true

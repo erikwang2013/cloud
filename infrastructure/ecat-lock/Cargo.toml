@@ -1,0 +1,11 @@
+[package]
+name = "ecat-lock"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Distributed lock abstraction for e-cat"
+
+[dependencies]
+tokio.workspace = true
+async-trait.workspace = true
+thiserror.workspace = true
