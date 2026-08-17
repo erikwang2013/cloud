@@ -1,4 +1,5 @@
 import { BASE_URL } from '../config/AppConfig';
+import { CryptoService } from '../crypto/CryptoService';
 import { preferences } from '@kit.ArkData';
 import http from '@ohos.net.http';
 
@@ -30,22 +31,35 @@ export class ApiClient {
     const query = this.buildQuery(params);
     const url = BASE_URL + path + query;
 
+    const header: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-Api-Version': 'v1',
+      'Authorization': token ? `Bearer ${token}` : '',
+      'Accept-Language': 'zh-CN',
+    };
+    // 服务端 EncryptionMiddleware 仅当收到 X-Encrypted 头时解密请求体并加密响应
+    const encrypted = body !== undefined;
+    if (encrypted) {
+      header['X-Encrypted'] = '1';
+    }
+
     const request = http.createHttp();
     const response = await request.request(url, {
       method: method,
-      header: {
-        'Content-Type': 'application/json',
-        'X-Api-Version': 'v1',
-        'Authorization': token ? `Bearer ${token}` : '',
-        'Accept-Language': 'zh-CN',
-      },
-      extraData: body ? JSON.stringify(body) : undefined,
+      header: header,
+      extraData: encrypted
+        ? JSON.stringify({ payload: await CryptoService.encrypt(JSON.stringify(body)) })
+        : JSON.stringify(body),
       expectDataType: http.HttpDataType.STRING,
     });
 
     request.destroy();
 
-    return JSON.parse(response.result as string) as ApiResponse;
+    const parsed = JSON.parse(response.result as string) as RawResponse;
+    if (encrypted && parsed.payload !== undefined) {
+      return JSON.parse(await CryptoService.decrypt(parsed.payload)) as ApiResponse;
+    }
+    return parsed as ApiResponse;
   }
 
   private buildQuery(params?: Record<string, string>): string {
@@ -70,4 +84,13 @@ export interface ApiResponse {
   message: string;
   data?: object;
   meta?: object;
+}
+
+// 加密响应信封 { payload, request_id } 与未加密响应结构的并集
+interface RawResponse {
+  code?: number;
+  message?: string;
+  data?: object;
+  meta?: object;
+  payload?: string;
 }

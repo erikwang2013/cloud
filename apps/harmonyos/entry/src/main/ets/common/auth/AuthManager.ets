@@ -6,6 +6,13 @@ interface TokenPayload {
   refresh_token: string;
 }
 
+interface LoginRequest {
+  login: string;
+  password: string;
+  captcha_key?: string;
+  captcha_points?: number[][];
+}
+
 export class AuthManager {
   private static instance: AuthManager;
 
@@ -16,8 +23,13 @@ export class AuthManager {
     return AuthManager.instance;
   }
 
-  async login(login: string, password: string): Promise<void> {
-    const resp = await ApiClient.getInstance().post('/auth/login', { login, password });
+  async login(login: string, password: string, captchaKey?: string, captchaPoints?: number[][]): Promise<void> {
+    const body: LoginRequest = { login, password };
+    if (captchaKey !== undefined && captchaPoints !== undefined) {
+      body.captcha_key = captchaKey;
+      body.captcha_points = captchaPoints;
+    }
+    const resp = await ApiClient.getInstance().post('/auth/login', body);
     if (resp.code !== 0) {
       throw new AuthError(resp.code, resp.message);
     }
