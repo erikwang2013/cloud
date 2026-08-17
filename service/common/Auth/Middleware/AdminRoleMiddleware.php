@@ -5,7 +5,7 @@ use Common\Helper\Response;
 
 class AdminRoleMiddleware
 {
-    private const ALLOWED_ROLES = ['admin', 'super_admin', 'support'];
+    private const ALLOWED_ROLES = ['admin', 'super_admin', 'support', 'finance'];
 
     public function process($request, callable $next)
     {

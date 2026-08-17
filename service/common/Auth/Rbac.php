@@ -16,10 +16,12 @@ class Rbac
             'notification.template', 'notification.send',
             'report.view', 'report.export',
             'system.config',
+            'help.manage', 'ssl.plan', 'billing.rate', 'cdn.manage',
+            'affiliate.approve', 'domain.tld', 'domain.transfer_approve', 'webhook.manage',
         ],
         'finance' => [
             'order.view', 'order.refund',
-            'payment.view', 'payment.channel_config', 'payment.reconcile',
+            'payment.view', 'payment.reconcile',
             'supplier.settle', 'supplier.withdraw_review',
             'report.view', 'report.export',
         ],

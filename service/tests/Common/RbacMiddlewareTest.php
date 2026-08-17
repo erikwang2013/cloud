@@ -1,6 +1,7 @@
 <?php
 namespace Tests\Common;
 
+use Common\Auth\Middleware\AdminRoleMiddleware;
 use Common\Auth\Middleware\RbacMiddleware;
 use Common\Auth\Rbac;
 use PHPUnit\Framework\TestCase;
@@ -98,6 +99,28 @@ class RbacMiddlewareTest extends TestCase
         $nextCalled = false;
         $this->invoke(new RbacMiddleware('ticket.view'), 'support', $nextCalled);
         $this->assertTrue($nextCalled);
+    }
+
+    public function testAdminRoleMiddlewareAllowsFinance(): void
+    {
+        $nextCalled = false;
+        $response = (new AdminRoleMiddleware())->process($this->createRequest('finance'), function () use (&$nextCalled) {
+            $nextCalled = true;
+            return 'next-result';
+        });
+        $this->assertTrue($nextCalled);
+        $this->assertEquals('next-result', $response);
+    }
+
+    public function testAdminRoleMiddlewareStillDeniesUser(): void
+    {
+        $nextCalled = false;
+        $response = (new AdminRoleMiddleware())->process($this->createRequest('user'), function () use (&$nextCalled) {
+            $nextCalled = true;
+        });
+        $body = $this->decodeResponse($response);
+        $this->assertEquals(403, $body['code']);
+        $this->assertFalse($nextCalled);
     }
 
     public function testRbacModelDirect(): void

@@ -268,7 +268,7 @@ Route::group('/admin/api', function () {
     Route::post('/tickets/{id}/close', [App\Ticket\Controller\TicketController::class, 'close'])->middleware([new Common\Auth\Middleware\RbacMiddleware('ticket.view')]);
 
     // System
-    Route::get('/audit-logs', [App\Admin\Controller\SystemController::class, 'auditLogs']);
+    Route::get('/audit-logs', [App\Admin\Controller\SystemController::class, 'auditLogs'])->middleware([new Common\Auth\Middleware\RbacMiddleware('system.config')]);
 
     // Feature flags
     Route::get('/features', [App\Admin\Controller\SystemController::class, 'features'])->middleware([new Common\Auth\Middleware\RbacMiddleware('system.config')]);
@@ -284,11 +284,11 @@ Route::group('/admin/api', function () {
     Route::get('/monitor/resources/{id}', [App\Monitor\Controller\MonitorController::class, 'resourceMetrics'])->middleware([new Common\Auth\Middleware\RbacMiddleware('resource.view')]);
 
     // Domain management
-    Route::get('/domains/tlds', [App\Admin\Controller\DomainController::class, 'tlds']);
-    Route::post('/domains/tlds', [App\Admin\Controller\DomainController::class, 'storeTld']);
-    Route::put('/domains/tlds/{id}', [App\Admin\Controller\DomainController::class, 'updateTld']);
-    Route::delete('/domains/tlds/{id}', [App\Admin\Controller\DomainController::class, 'deleteTld']);
-    Route::get('/domains/zones', [App\Admin\Controller\DomainController::class, 'zones']);
+    Route::get('/domains/tlds', [App\Admin\Controller\DomainController::class, 'tlds'])->middleware([new Common\Auth\Middleware\RbacMiddleware('domain.tld')]);
+    Route::post('/domains/tlds', [App\Admin\Controller\DomainController::class, 'storeTld'])->middleware([new Common\Auth\Middleware\RbacMiddleware('domain.tld')]);
+    Route::put('/domains/tlds/{id}', [App\Admin\Controller\DomainController::class, 'updateTld'])->middleware([new Common\Auth\Middleware\RbacMiddleware('domain.tld')]);
+    Route::delete('/domains/tlds/{id}', [App\Admin\Controller\DomainController::class, 'deleteTld'])->middleware([new Common\Auth\Middleware\RbacMiddleware('domain.tld')]);
+    Route::get('/domains/zones', [App\Admin\Controller\DomainController::class, 'zones'])->middleware([new Common\Auth\Middleware\RbacMiddleware('domain.tld')]);
 
     // Notification management
     Route::get('/notifications/templates', [App\Admin\Controller\NotificationController::class, 'templates'])->middleware([new Common\Auth\Middleware\RbacMiddleware('notification.template')]);
@@ -296,9 +296,9 @@ Route::group('/admin/api', function () {
     Route::get('/notifications/log', [App\Admin\Controller\NotificationController::class, 'sendLog'])->middleware([new Common\Auth\Middleware\RbacMiddleware('notification.send')]);
 
     // Coupon management
-    Route::get('/coupons', [App\Admin\Controller\CouponController::class, 'index']);
-    Route::post('/coupons', [App\Admin\Controller\CouponController::class, 'store']);
-    Route::delete('/coupons/{id}', [App\Admin\Controller\CouponController::class, 'destroy']);
+    Route::get('/coupons', [App\Admin\Controller\CouponController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('order.view')]);
+    Route::post('/coupons', [App\Admin\Controller\CouponController::class, 'store'])->middleware([new Common\Auth\Middleware\RbacMiddleware('order.update')]);
+    Route::delete('/coupons/{id}', [App\Admin\Controller\CouponController::class, 'destroy'])->middleware([new Common\Auth\Middleware\RbacMiddleware('order.update')]);
 
     // Provider API management
     Route::get('/providers', [App\Admin\Controller\ProviderApiController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('provider.config')]);
@@ -311,48 +311,48 @@ Route::group('/admin/api', function () {
     Route::post('/invoices/{orderId}/generate', [App\Admin\Controller\InvoiceController::class, 'generate'])->middleware([new Common\Auth\Middleware\RbacMiddleware('order.update')]);
 
     // Supplier API keys
-    Route::get('/suppliers/{id}/api-keys', [App\Admin\Controller\SupplierController::class, 'apiKeys']);
-    Route::post('/suppliers/{id}/api-keys', [App\Admin\Controller\SupplierController::class, 'createApiKey']);
-    Route::delete('/suppliers/api-keys/{id}', [App\Admin\Controller\SupplierController::class, 'revokeApiKey']);
+    Route::get('/suppliers/{id}/api-keys', [App\Admin\Controller\SupplierController::class, 'apiKeys'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.review')]);
+    Route::post('/suppliers/{id}/api-keys', [App\Admin\Controller\SupplierController::class, 'createApiKey'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.review')]);
+    Route::delete('/suppliers/api-keys/{id}', [App\Admin\Controller\SupplierController::class, 'revokeApiKey'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.review')]);
 
     // Help articles management
-    Route::get('/help', [App\Admin\Controller\HelpController::class, 'index']);
-    Route::post('/help', [App\Admin\Controller\HelpController::class, 'store']);
-    Route::put('/help/{id}', [App\Admin\Controller\HelpController::class, 'update']);
-    Route::delete('/help/{id}', [App\Admin\Controller\HelpController::class, 'destroy']);
+    Route::get('/help', [App\Admin\Controller\HelpController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('help.manage')]);
+    Route::post('/help', [App\Admin\Controller\HelpController::class, 'store'])->middleware([new Common\Auth\Middleware\RbacMiddleware('help.manage')]);
+    Route::put('/help/{id}', [App\Admin\Controller\HelpController::class, 'update'])->middleware([new Common\Auth\Middleware\RbacMiddleware('help.manage')]);
+    Route::delete('/help/{id}', [App\Admin\Controller\HelpController::class, 'destroy'])->middleware([new Common\Auth\Middleware\RbacMiddleware('help.manage')]);
 
     // Domain transfers
-    Route::get('/domains/transfers', [App\Admin\Controller\DomainController::class, 'transfers']);
-    Route::post('/domains/transfers/{id}/approve', [App\Admin\Controller\DomainController::class, 'approveTransfer']);
+    Route::get('/domains/transfers', [App\Admin\Controller\DomainController::class, 'transfers'])->middleware([new Common\Auth\Middleware\RbacMiddleware('domain.tld')]);
+    Route::post('/domains/transfers/{id}/approve', [App\Admin\Controller\DomainController::class, 'approveTransfer'])->middleware([new Common\Auth\Middleware\RbacMiddleware('domain.transfer_approve')]);
 
     // Product import/export
-    Route::get('/products/export', [App\Admin\Controller\ImportExportController::class, 'exportProducts']);
+    Route::get('/products/export', [App\Admin\Controller\ImportExportController::class, 'exportProducts'])->middleware([new Common\Auth\Middleware\RbacMiddleware('product.update')]);
     Route::post('/products/import', [App\Admin\Controller\ImportExportController::class, 'importProducts'])->middleware([new Common\Auth\Middleware\RbacMiddleware('product.create')]);
 
     // Webhook management
-    Route::get('/webhooks', [App\Admin\Controller\WebhookController::class, 'index']);
-    Route::post('/webhooks', [App\Admin\Controller\WebhookController::class, 'store']);
-    Route::delete('/webhooks', [App\Admin\Controller\WebhookController::class, 'destroy']);
-    Route::post('/webhooks/test', [App\Admin\Controller\WebhookController::class, 'test']);
+    Route::get('/webhooks', [App\Admin\Controller\WebhookController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('webhook.manage')]);
+    Route::post('/webhooks', [App\Admin\Controller\WebhookController::class, 'store'])->middleware([new Common\Auth\Middleware\RbacMiddleware('webhook.manage')]);
+    Route::delete('/webhooks', [App\Admin\Controller\WebhookController::class, 'destroy'])->middleware([new Common\Auth\Middleware\RbacMiddleware('webhook.manage')]);
+    Route::post('/webhooks/test', [App\Admin\Controller\WebhookController::class, 'test'])->middleware([new Common\Auth\Middleware\RbacMiddleware('webhook.manage')]);
 
     // SSL certificate management
-    Route::get('/ssl/plans', [App\Admin\Controller\SslController::class, 'plans']);
-    Route::post('/ssl/plans', [App\Admin\Controller\SslController::class, 'storePlan']);
-    Route::put('/ssl/plans/{id}', [App\Admin\Controller\SslController::class, 'updatePlan']);
-    Route::delete('/ssl/plans/{id}', [App\Admin\Controller\SslController::class, 'destroyPlan']);
-    Route::get('/ssl/certs', [App\Admin\Controller\SslController::class, 'certs']);
-    Route::post('/ssl/certs/{id}/revoke', [App\Admin\Controller\SslController::class, 'revokeCert']);
+    Route::get('/ssl/plans', [App\Admin\Controller\SslController::class, 'plans'])->middleware([new Common\Auth\Middleware\RbacMiddleware('ssl.plan')]);
+    Route::post('/ssl/plans', [App\Admin\Controller\SslController::class, 'storePlan'])->middleware([new Common\Auth\Middleware\RbacMiddleware('ssl.plan')]);
+    Route::put('/ssl/plans/{id}', [App\Admin\Controller\SslController::class, 'updatePlan'])->middleware([new Common\Auth\Middleware\RbacMiddleware('ssl.plan')]);
+    Route::delete('/ssl/plans/{id}', [App\Admin\Controller\SslController::class, 'destroyPlan'])->middleware([new Common\Auth\Middleware\RbacMiddleware('ssl.plan')]);
+    Route::get('/ssl/certs', [App\Admin\Controller\SslController::class, 'certs'])->middleware([new Common\Auth\Middleware\RbacMiddleware('ssl.plan')]);
+    Route::post('/ssl/certs/{id}/revoke', [App\Admin\Controller\SslController::class, 'revokeCert'])->middleware([new Common\Auth\Middleware\RbacMiddleware('ssl.plan')]);
 
     // Usage billing management
-    Route::get('/billing/rates', [App\Admin\Controller\BillingController::class, 'rates']);
-    Route::post('/billing/rates', [App\Admin\Controller\BillingController::class, 'storeRate']);
-    Route::put('/billing/rates/{id}', [App\Admin\Controller\BillingController::class, 'updateRate']);
-    Route::delete('/billing/rates/{id}', [App\Admin\Controller\BillingController::class, 'destroyRate']);
-    Route::get('/billing/usage', [App\Admin\Controller\BillingController::class, 'usage']);
+    Route::get('/billing/rates', [App\Admin\Controller\BillingController::class, 'rates'])->middleware([new Common\Auth\Middleware\RbacMiddleware('billing.rate')]);
+    Route::post('/billing/rates', [App\Admin\Controller\BillingController::class, 'storeRate'])->middleware([new Common\Auth\Middleware\RbacMiddleware('billing.rate')]);
+    Route::put('/billing/rates/{id}', [App\Admin\Controller\BillingController::class, 'updateRate'])->middleware([new Common\Auth\Middleware\RbacMiddleware('billing.rate')]);
+    Route::delete('/billing/rates/{id}', [App\Admin\Controller\BillingController::class, 'destroyRate'])->middleware([new Common\Auth\Middleware\RbacMiddleware('billing.rate')]);
+    Route::get('/billing/usage', [App\Admin\Controller\BillingController::class, 'usage'])->middleware([new Common\Auth\Middleware\RbacMiddleware('billing.rate')]);
 
     // CDN management
-    Route::get('/cdn/domains', [App\Admin\Controller\CdnController::class, 'index']);
-    Route::put('/cdn/domains/{id}', [App\Admin\Controller\CdnController::class, 'updatePlan']);
+    Route::get('/cdn/domains', [App\Admin\Controller\CdnController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('cdn.manage')]);
+    Route::put('/cdn/domains/{id}', [App\Admin\Controller\CdnController::class, 'updatePlan'])->middleware([new Common\Auth\Middleware\RbacMiddleware('cdn.manage')]);
 
     // Supplier rating moderation
     Route::get('/suppliers/{id}/ratings', [App\Admin\Controller\RatingController::class, 'supplierRatings'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.view')]);
@@ -360,12 +360,12 @@ Route::group('/admin/api', function () {
     Route::post('/suppliers/ratings/{id}/hide', [App\Admin\Controller\RatingController::class, 'hide'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.review')]);
 
     // Affiliate management
-    Route::get('/affiliate/plans', [App\Admin\Controller\AffiliateController::class, 'plans']);
-    Route::post('/affiliate/plans', [App\Admin\Controller\AffiliateController::class, 'storePlan']);
-    Route::get('/affiliate/earnings', [App\Admin\Controller\AffiliateController::class, 'earnings']);
-    Route::post('/affiliate/earnings/{id}/approve', [App\Admin\Controller\AffiliateController::class, 'approveEarning']);
-    Route::get('/affiliate/payouts', [App\Admin\Controller\AffiliateController::class, 'payouts']);
-    Route::post('/affiliate/payouts/{id}/approve', [App\Admin\Controller\AffiliateController::class, 'approvePayout']);
+    Route::get('/affiliate/plans', [App\Admin\Controller\AffiliateController::class, 'plans'])->middleware([new Common\Auth\Middleware\RbacMiddleware('affiliate.approve')]);
+    Route::post('/affiliate/plans', [App\Admin\Controller\AffiliateController::class, 'storePlan'])->middleware([new Common\Auth\Middleware\RbacMiddleware('affiliate.approve')]);
+    Route::get('/affiliate/earnings', [App\Admin\Controller\AffiliateController::class, 'earnings'])->middleware([new Common\Auth\Middleware\RbacMiddleware('affiliate.approve')]);
+    Route::post('/affiliate/earnings/{id}/approve', [App\Admin\Controller\AffiliateController::class, 'approveEarning'])->middleware([new Common\Auth\Middleware\RbacMiddleware('affiliate.approve')]);
+    Route::get('/affiliate/payouts', [App\Admin\Controller\AffiliateController::class, 'payouts'])->middleware([new Common\Auth\Middleware\RbacMiddleware('affiliate.approve')]);
+    Route::post('/affiliate/payouts/{id}/approve', [App\Admin\Controller\AffiliateController::class, 'approvePayout'])->middleware([new Common\Auth\Middleware\RbacMiddleware('affiliate.approve')]);
 })->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class]);
 
 // === Admin sensitive operations (requires password confirmation) ===

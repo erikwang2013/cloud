@@ -99,6 +99,14 @@ return new class extends Migration {
             ['report.view', 'View Reports', 'report'],
             ['report.export', 'Export Reports', 'report'],
             ['system.config', 'System Config', 'system'],
+            ['help.manage', 'Manage Help Articles', 'content'],
+            ['ssl.plan', 'Manage SSL Plans/Certs', 'ssl'],
+            ['billing.rate', 'Manage Billing Rates', 'billing'],
+            ['cdn.manage', 'Manage CDN Domains', 'cdn'],
+            ['affiliate.approve', 'Approve Affiliate Earnings/Payouts', 'affiliate'],
+            ['domain.tld', 'Manage Domain TLDs', 'domain'],
+            ['domain.transfer_approve', 'Approve Domain Transfers', 'domain'],
+            ['webhook.manage', 'Manage Webhooks', 'webhook'],
         ];
     }
 
@@ -118,10 +126,12 @@ return new class extends Migration {
                 'notification.template', 'notification.send',
                 'report.view', 'report.export',
                 'system.config',
+                'help.manage', 'ssl.plan', 'billing.rate', 'cdn.manage',
+                'affiliate.approve', 'domain.tld', 'domain.transfer_approve', 'webhook.manage',
             ],
             'finance' => [
                 'order.view', 'order.refund',
-                'payment.view', 'payment.channel_config', 'payment.reconcile',
+                'payment.view', 'payment.reconcile',
                 'supplier.settle', 'supplier.withdraw_review',
                 'report.view', 'report.export',
             ],

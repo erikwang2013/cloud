@@ -835,6 +835,8 @@ CREATE TABLE IF NOT EXISTS `user_coupons` (
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_user (user_id),
     INDEX idx_coupon (coupon_id)
+    -- 决策：不加 (user_id, coupon_id) 唯一约束；行语义 = 一用户多行（多次领取/一券多单），
+    -- 券为权益非资金流，重复使用由业务校验兜底。若未来产品收紧"一人一券"，再加约束 + 领取端 INSERT IGNORE。
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ======================== User ========================
