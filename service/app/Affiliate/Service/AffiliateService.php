@@ -7,6 +7,7 @@ use App\Affiliate\Model\AffiliatePayout;
 use App\User\Model\User;
 use App\User\Model\UserBalance;
 use App\User\Model\UserBalanceLog;
+use Common\Money\Money;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 class AffiliateService
@@ -32,12 +33,12 @@ class AffiliateService
         if (!$affiliate) return;
 
         $plan = Capsule::table('affiliate_plans')->orderBy('tier')->first();
-        $rate = $plan ? (float) $plan->commission_rate : 10.00;
+        $rate = $plan ? (string) $plan->commission_rate : '10';
 
         $order = \App\Order\Model\Order::find($orderId);
         if (!$order) return;
 
-        $amount = bcmul((string) $order->total, (string) ($rate / 100), 4);
+        $amount = self::earningAmount((string) $order->total, $rate);
 
         AffiliateEarning::create([
             'affiliate_id' => $affiliate->user_id,
@@ -48,6 +49,12 @@ class AffiliateService
             'currency'     => $order->currency,
             'status'       => 'pending',
         ]);
+    }
+
+    // D4：佣金 = total × (rate%/100)，字符串 bcmath（率可能是 12.55 等非整百分比），写 DECIMAL 前 bcround 到 4 位
+    public static function earningAmount(string $total, string $ratePercent): string
+    {
+        return Money::bcround(bcmul($total, bcdiv($ratePercent, '100', 8), 8), 4);
     }
 
     public function requestPayout(int $userId): AffiliatePayout

@@ -1,6 +1,8 @@
 <?php
 namespace App\Cron;
 
+use Common\Money\Money;
+
 class SupplierSettlement
 {
     public function run(): void
@@ -29,9 +31,12 @@ class SupplierSettlement
                     ->exists();
                 if ($exists) continue;
 
-                $totalSales = $orders->sum('total');
-                $commission = $totalSales * ((float) ($supplier->commission_rate ?? 10) / 100);
-                $payable    = $totalSales - $commission;
+                // D4：结算金额全程字符串 bcmath（Collection sum 会走浮点，逐行同精度累加）
+                $totalSales = '0.0000';
+                foreach ($orders as $order) {
+                    $totalSales = bcadd($totalSales, (string) $order->total, 4);
+                }
+                [$totalSales, $commission, $payable] = self::settle($totalSales, (string) ($supplier->commission_rate ?? 10));
 
                 $settlement = \App\Supplier\Model\SupplierSettlement::create([
                     'supplier_id'  => $supplier->id,
@@ -61,5 +66,13 @@ class SupplierSettlement
         }
 
         echo date('Y-m-d H:i:s') . " SupplierSettlement: Done.\n";
+    }
+
+    // D4：佣金 = total × (rate%/100)，写 DECIMAL(14,4) 前 bcround 到 4 位
+    public static function settle(string $totalSales, string $ratePercent): array
+    {
+        $total      = Money::bcround($totalSales, 4);
+        $commission = Money::bcround(bcmul($total, bcdiv($ratePercent, '100', 8), 8), 4);
+        return [$total, $commission, bcsub($total, $commission, 4)];
     }
 }

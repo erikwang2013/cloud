@@ -5,6 +5,7 @@ use App\Product\Model\Product;
 use App\Product\Model\ProductSku;
 use App\Product\Model\ProductRegion;
 use Common\Helper\Response;
+use Common\Money\Money;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 class ImportExportController
@@ -86,10 +87,14 @@ class ImportExportController
                         ]);
                     }
 
-                    // Upsert region price
+                    // Upsert region price（D4：价格字符串 bcmath 路径，写 DECIMAL(14,4) 前 bcround；空串/0 归一为 '0'）
                     ProductRegion::updateOrCreate(
                         ['sku_id' => $sku->id, 'region_id' => (int) ($data['RegionID'] ?? 0)],
-                        ['price' => (float) ($data['Price'] ?? 0), 'original_price' => (float) ($data['OriginalPrice'] ?? 0), 'stock' => (int) ($data['Stock'] ?? 0)]
+                        [
+                            'price'          => Money::bcround((string) ($data['Price'] ?: 0), 4),
+                            'original_price' => Money::bcround((string) ($data['OriginalPrice'] ?: 0), 4),
+                            'stock'          => (int) ($data['Stock'] ?? 0),
+                        ]
                     );
 
                     $imported++;
