@@ -13,7 +13,12 @@ ecat-data-sqlx = { path = "../ecat-data-sqlx" }
 ecat-data-redis = { path = "../ecat-data-redis" }
 ecat-lock = { path = "../ecat-lock" }
 ecat-logging = { path = "../ecat-logging" }
+ecat-protos = { path = "../ecat-protos" }
+ecat-registry = { path = "../ecat-registry" }
+ecat-registry-etcd = { path = "../ecat-registry-etcd" }
+ecat-transport-grpc = { path = "../ecat-transport-grpc" }
 ecat-transport-http = { path = "../ecat-transport-http" }
+tonic.workspace = true
 axum.workspace = true
 serde.workspace = true
 serde_json.workspace = true

@@ -2980,11 +2980,16 @@ dependencies = [
  "ecat-data-sqlx",
  "ecat-lock",
  "ecat-logging",
+ "ecat-protos",
+ "ecat-registry",
+ "ecat-registry-etcd",
+ "ecat-transport-grpc",
  "ecat-transport-http",
  "serde",
  "serde_json",
  "thiserror 2.0.19",
  "tokio",
+ "tonic",
  "tracing",
 ]
 

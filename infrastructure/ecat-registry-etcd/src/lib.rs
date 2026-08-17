@@ -67,15 +67,15 @@ impl EtcdRegistry {
 #[async_trait]
 impl Registry for EtcdRegistry {
     async fn register(&self, service: ServiceInfo) -> Result<Registration, RegistryError> {
-        let id = format!("{}/{}", self.prefix, service.name);
+        // id 含实例 uuid：多副本同名前缀互不干扰，deregister 精确删本实例
+        let instance_id = uuid::Uuid::new_v4();
+        let id = format!("{}/{}/{}", self.prefix, service.name, instance_id);
         let lease_id = create_lease(&self.client, self.base_url(), self.lease_ttl)
             .await
             .map_err(RegistryError::Other)?;
         let key = format!(
             "/ecat/services/{}/{}/{}",
-            self.prefix,
-            service.name,
-            uuid::Uuid::new_v4()
+            self.prefix, service.name, instance_id
         );
         let value = serde_json::to_string(&service)
             .map_err(|e| RegistryError::Other(format!("serialize: {e}")))?;
@@ -98,8 +98,8 @@ impl Registry for EtcdRegistry {
         if let Some(handle) = self.keepalives.lock().unwrap().remove(id) {
             handle.abort();
         }
-        // 注册键为 /ecat/services/{id}/{uuid}，用范围删除前缀匹配的所有实例键
-        let prefix = format!("/ecat/services/{id}/");
+        // 注册键为 /ecat/services/{id}（无尾斜杠），范围删除精确匹配本实例
+        let prefix = format!("/ecat/services/{id}");
         self.client
             .post(format!("{}/v3/kv/deleterange", self.base_url()))
             .json(&serde_json::json!({
@@ -258,5 +258,63 @@ mod tests {
 
         reg.deregister(&registration.id).await.unwrap();
         assert!(reg.keepalives.lock().unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn registration_ids_unique_per_instance() {
+        let (base_url, _) = spawn_mock_etcd().await;
+        let reg = EtcdRegistry::new(vec![base_url], "ecat").lease_ttl(3);
+        let r1 = reg.register(ServiceInfo::new("svc", "1.0")).await.unwrap();
+        let r2 = reg.register(ServiceInfo::new("svc", "1.0")).await.unwrap();
+        assert_ne!(r1.id, r2.id);
+
+        reg.deregister(&r1.id).await.unwrap();
+        let keepalives = reg.keepalives.lock().unwrap();
+        assert!(!keepalives.contains_key(&r1.id));
+        assert!(keepalives.contains_key(&r2.id));
+    }
+
+    #[tokio::test]
+    async fn deregister_deletes_exact_instance_prefix() {
+        let deletes = Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+        let d = deletes.clone();
+        let app = axum::Router::new()
+            .route(
+                "/v3/lease/grant",
+                axum::routing::post(|| async { axum::Json(serde_json::json!({"ID": "123"})) }),
+            )
+            .route(
+                "/v3/kv/put",
+                axum::routing::post(|| async { axum::Json(serde_json::json!({"header": {}})) }),
+            )
+            .route(
+                "/v3/kv/deleterange",
+                axum::routing::post(move |body: axum::Json<serde_json::Value>| async move {
+                    let key = body
+                        .get("key")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    d.lock().unwrap().push(key);
+                    axum::Json(serde_json::json!({"header": {}}))
+                }),
+            );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+
+        let reg = EtcdRegistry::new(vec![format!("http://{addr}")], "ecat").lease_ttl(3);
+        let r = reg.register(ServiceInfo::new("svc", "1.0")).await.unwrap();
+        reg.deregister(&r.id).await.unwrap();
+
+        let deleted = deletes.lock().unwrap();
+        assert_eq!(deleted.len(), 1);
+        let key = base64::engine::general_purpose::STANDARD
+            .decode(&deleted[0])
+            .unwrap();
+        // 删除区间起点必须是注册 key 本身（无尾斜杠），否则范围删除无法命中
+        assert_eq!(String::from_utf8(key).unwrap(), format!("/ecat/services/{}", r.id));
     }
 }

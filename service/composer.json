@@ -43,7 +43,9 @@
         "psr-4": {
             "App\\": "app/",
             "Common\\": "common/",
-            "support\\": "support/"
+            "support\\": "support/",
+            "Ecat\\": "app/Grpc/Generated/Ecat/",
+            "GPBMetadata\\": "app/Grpc/Generated/GPBMetadata/"
         }
     },
     "autoload-dev": {

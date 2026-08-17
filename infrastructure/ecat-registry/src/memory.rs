@@ -118,4 +118,37 @@ mod tests {
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].name, "gw");
     }
+
+    #[tokio::test]
+    async fn watch_fires_on_peer_set_change() {
+        let reg = Arc::new(MemoryRegistry::new());
+        let (tx, mut rx) = tokio::sync::mpsc::channel(8);
+        reg.clone()
+            .watch("service", Arc::new(move |instances| {
+                let _ = tx.try_send(instances);
+            }))
+            .await
+            .unwrap();
+
+        let r = reg.register(test_service("service")).await.unwrap();
+        let first = tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            rx.recv(),
+        )
+        .await
+        .expect("watch callback never fired")
+        .expect("channel closed");
+        assert_eq!(first.len(), 1);
+        assert_eq!(first[0].name, "service");
+
+        reg.deregister(&r.id).await.unwrap();
+        let second = tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            rx.recv(),
+        )
+        .await
+        .expect("watch callback never fired after deregister")
+        .expect("channel closed");
+        assert!(second.is_empty());
+    }
 }

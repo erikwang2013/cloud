@@ -1,0 +1,37 @@
+// KVM provisioning domain — shared by Rust (kvm-server) and PHP (service/admin).
+syntax = "proto3";
+
+package ecat.kvm.v1;
+
+option php_namespace = "Ecat\\Kvm\\V1";
+
+message PingRequest {}
+
+message PingResponse {
+  string pong = 1;
+}
+
+message CreateVMRequest {
+  int64 resource_id = 1;
+  int64 region_id = 2;
+  // specs JSON: {"cpu":..,"ram":..,"system_disk":..}; empty = provider defaults
+  string specs_json = 3;
+}
+
+message VmStatusRequest {
+  int64 resource_id = 1;
+}
+
+// Mirrors kvm-server HTTP ActionResponse; data_json is a JSON string.
+message ActionReply {
+  bool ok = 1;
+  bool retryable = 2;
+  string message = 3;
+  string data_json = 4;
+}
+
+service KvmService {
+  rpc Ping(PingRequest) returns (PingResponse);
+  rpc CreateVM(CreateVMRequest) returns (ActionReply);
+  rpc VMStatus(VmStatusRequest) returns (ActionReply);
+}

@@ -7,6 +7,10 @@ pub mod metadata {
     tonic::include_proto!("ecat.metadata");
 }
 
+pub mod kvm {
+    tonic::include_proto!("ecat.kvm.v1");
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

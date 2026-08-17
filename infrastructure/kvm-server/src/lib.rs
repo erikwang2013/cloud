@@ -1,5 +1,6 @@
 pub mod api;
 pub mod driver;
+pub mod grpc;
 pub mod model;
 pub mod naming;
 pub mod orchestrator;

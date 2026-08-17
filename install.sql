@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     status          VARCHAR(32)     NOT NULL DEFAULT 'active',
     role            VARCHAR(32)     NOT NULL DEFAULT 'user',
     affiliate_code  VARCHAR(32)     DEFAULT NULL,
-    fcm_token       TEXT            DEFAULT NULL,
+    fcm_token       VARCHAR(255)    DEFAULT NULL,
     fcm_platform    VARCHAR(16)     DEFAULT NULL,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

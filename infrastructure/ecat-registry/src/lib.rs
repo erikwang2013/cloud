@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ServiceInfo {
     pub name: String,
     pub version: String,
@@ -64,12 +64,45 @@ impl Drop for Registration {
     }
 }
 
+pub type ChangeHandler = Arc<dyn Fn(Vec<ServiceInfo>) + Send + Sync>;
+
 #[async_trait]
 pub trait Registry: Send + Sync {
     async fn register(&self, service: ServiceInfo) -> Result<Registration, RegistryError>;
     async fn deregister(&self, id: &str) -> Result<(), RegistryError>;
     async fn discover(&self, name: &str) -> Result<Vec<ServiceInfo>, RegistryError>;
     async fn list_services(&self) -> Result<Vec<String>, RegistryError>;
+
+    /// 监听某服务的前缀实例集合变更，变化时调用 on_change。
+    /// ponytail: etcd HTTP JSON gateway 无 watch 流端点，降级为 5s 轮询快照对比；
+    /// 语义等价（lease 过期剔除 ~15s 内反映），待接入 etcd gRPC watch 流再升级。
+    async fn watch(self: Arc<Self>, prefix: &str, on_change: ChangeHandler) -> Result<(), RegistryError>
+    where
+        Self: Sized + 'static,
+    {
+        let me: Arc<dyn Registry> = self;
+        let prefix = prefix.to_string();
+        tokio::spawn(async move {
+            let mut snapshot: Vec<ServiceInfo> = Vec::new();
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(5));
+            interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+            interval.tick().await;
+            loop {
+                interval.tick().await;
+                match me.discover(&prefix).await {
+                    Ok(instances) => {
+                        if instances != snapshot {
+                            tracing::info!(name = %prefix, count = instances.len(), "registry watch: peer set changed");
+                            snapshot = instances.clone();
+                            on_change(instances);
+                        }
+                    }
+                    Err(e) => tracing::warn!(name = %prefix, error = %e, "registry watch poll failed"),
+                }
+            }
+        });
+        Ok(())
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
