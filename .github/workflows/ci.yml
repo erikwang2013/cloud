@@ -154,15 +154,84 @@ jobs:
               sys.exit(1)
           print(f'{len(files)} .ets files scanned OK')
           EOF
-      # Full hvigor build requires the DevEco toolchain (hvigorw + HarmonyOS SDK),
-      # which is not preinstalled on this runner. When a runner provides it
-      # (install DevEco Studio, run `hvigorw --version` to verify), this step
-      # automatically runs the real assembleHap build instead of skipping.
-      - name: Full hvigor build (when toolchain available)
+
+  harmonyos-build:
+    name: HarmonyOS Build (apps/harmonyos)
+    runs-on: ubuntu-latest
+    # 真实构建无条件执行、fail-fast（无 continue-on-error）
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'        # hvigor 5.x 要求 JDK 17
+      - name: Cache CLT zip
+        id: clt-cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/clt.zip
+          key: clt-6.1.1.280
+      - name: Cache hvigor artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.hvigor
+            apps/harmonyos/oh_modules
+            apps/harmonyos/entry/oh_modules
+          key: hvigor-cache-clt-6.1.1.280
+      - name: Download CLT zip
+        if: steps.clt-cache.outputs.cache-hit != 'true'
         run: |
-          if command -v hvigorw >/dev/null 2>&1 || command -v hvigor >/dev/null 2>&1 || [ -n "$HARMONYOS_SDK" ]; then
-            echo "hvigor toolchain detected, running real build..."
-            hvigorw --mode module -p product=default -p buildMode=debug assembleHap --no-daemon
+          # 主镜像 CLT 6.1.1.280（第三方）sha256 强校验（版本决策见 researcher 复核：hvigor 6.x 接受 modelVersion 5.0.0 工程）
+          if wget -q -O /tmp/clt.zip https://image.cdn.dog/commandline-tools-linux-x64-6.1.1.280.zip; then
+            echo "b9caf7b73c541b90e6c8f3c7c3de7f2bea9b35e41e80cd3525f2f759ebf16cf4  /tmp/clt.zip" | sha256sum -c - || { echo "::error::SHA256 mismatch"; exit 1; }
           else
-            echo "::warning::hvigor/DevEco toolchain not installed on this runner - skipping real build. To enable: install DevEco Studio + SDK, add hvigorw to PATH (or set HARMONYOS_SDK); this step then runs 'hvigorw assembleHap' automatically."
+            # 备选：GitHub 分发 CLT 26.0.0.461（分片拼接，README 提供 sha256）
+            echo "::warning::主镜像不可用，改用 GitHub 分发 CLT 26.0.0.461（sha256 强校验）"
+            wget -q -O /tmp/clt.part00 https://github.com/jerry-271828/harmonyos-commandline-tools/releases/download/v26.0.0.461/clt.zip.part00 || exit 1
+            wget -q -O /tmp/clt.part01 https://github.com/jerry-271828/harmonyos-commandline-tools/releases/download/v26.0.0.461/clt.zip.part01 || exit 1
+            cat /tmp/clt.part00 /tmp/clt.part01 > /tmp/clt.zip
+            rm -f /tmp/clt.part00 /tmp/clt.part01
+            echo "b046da0a1a06fe13b3d82d198738abc54788d79c6c9d07c36617ec7fc31a3a3b  /tmp/clt.zip" | sha256sum -c - || { echo "::error::SHA256 mismatch"; exit 1; }
           fi
+      - name: Install HarmonyOS Command Line Tools
+        env:
+          COMMANDLINE_TOOL_DIR: ${{ runner.temp }}/harmonyos-tools
+        run: |
+          mkdir -p "$COMMANDLINE_TOOL_DIR"
+          unzip -q /tmp/clt.zip -d "$COMMANDLINE_TOOL_DIR"
+          chmod -R +x "$COMMANDLINE_TOOL_DIR"/command-line-tools/bin
+      - name: Verify toolchain (hvigor + SDK)
+        env:
+          COMMANDLINE_TOOL_DIR: ${{ runner.temp }}/harmonyos-tools
+        run: |
+          export PATH="$COMMANDLINE_TOOL_DIR/command-line-tools/bin:$PATH"
+          hvigorw --version
+          echo "--- SDK components ---"
+          ls "$COMMANDLINE_TOOL_DIR"/command-line-tools/sdk/default/
+      # 两个下载源均失效时的最后手段（候选 3，人工操作）：把本地已验证的 CLT 5.1.1.820
+      # 工具链上传本仓库 GitHub Release（如 tag ci-toolchain-5.1.1.820），再在下载步骤改指该 Release
+      - name: Install oh-package dependencies
+        working-directory: apps/harmonyos
+        env:
+          COMMANDLINE_TOOL_DIR: ${{ runner.temp }}/harmonyos-tools
+          DEVECO_SDK_HOME: ${{ runner.temp }}/harmonyos-tools/command-line-tools/sdk
+          HDC_HOME: ${{ runner.temp }}/harmonyos-tools/command-line-tools/sdk/default/openharmony/toolchains
+        run: |
+          export PATH="$COMMANDLINE_TOOL_DIR/command-line-tools/bin:$PATH"
+          ohpm install --all
+      - name: Build HAP (debug, unsigned)
+        working-directory: apps/harmonyos
+        env:
+          COMMANDLINE_TOOL_DIR: ${{ runner.temp }}/harmonyos-tools
+          DEVECO_SDK_HOME: ${{ runner.temp }}/harmonyos-tools/command-line-tools/sdk
+          HDC_HOME: ${{ runner.temp }}/harmonyos-tools/command-line-tools/sdk/default/openharmony/toolchains
+        run: |
+          export PATH="$COMMANDLINE_TOOL_DIR/command-line-tools/bin:$PATH"
+          hvigorw clean --no-daemon
+          hvigorw assembleHap --mode module -p product=default -p buildMode=debug --no-daemon
+      - name: Verify HAP artifact
+        run: |
+          hap=$(ls apps/harmonyos/entry/build/default/outputs/default/*.hap 2>/dev/null | head -1)
+          [ -n "$hap" ] && echo "OK: $hap ($(stat -c%s "$hap") bytes)" || { echo "::error::no HAP output"; exit 1; }
