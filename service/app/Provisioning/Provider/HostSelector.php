@@ -5,9 +5,10 @@ use App\Provisioning\Model\HostMachine;
 
 class HostSelector
 {
-    public function select(int $regionId, array $specs): HostMachine
+    public function select(int $regionId, array $specs, ?string $hypervisor = null): HostMachine
     {
         return HostMachine::where('region_id', $regionId)
+            ->when($hypervisor, fn($q) => $q->where('hypervisor', $hypervisor))
             ->where('status', 'online')
             ->whereRaw("JSON_EXTRACT(specs, '$.cpu_total') - JSON_EXTRACT(specs, '$.cpu_allocated') >= ?", [$specs['cpu'] ?? 1])
             ->whereRaw("JSON_EXTRACT(specs, '$.ram_total_gb') - JSON_EXTRACT(specs, '$.ram_allocated_gb') >= ?", [$specs['ram'] ?? 1])

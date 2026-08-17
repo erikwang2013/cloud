@@ -492,12 +492,15 @@ CREATE TABLE IF NOT EXISTS `host_machines` (
     proxmox_node        VARCHAR(128)    NOT NULL,
     storage_pool        VARCHAR(128)    NOT NULL DEFAULT 'local-lvm',
     api_token_encrypted VARCHAR(1024)   NOT NULL,
+    hypervisor          VARCHAR(16)     NOT NULL DEFAULT 'proxmox',
+    kvm_connection      VARCHAR(255)    DEFAULT NULL,
     specs               JSON            NOT NULL,
     status              VARCHAR(32)     NOT NULL DEFAULT 'active',
     created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_region (region_id),
-    INDEX idx_status (status)
+    INDEX idx_status (status),
+    INDEX idx_hypervisor (hypervisor)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `ip_pools` (
@@ -597,6 +600,54 @@ CREATE TABLE IF NOT EXISTS `disk_resizes` (
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_disk (disk_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- KVM 服务隔离模型：每 VM 一条网络/防火墙/交换器服务记录即隔离单元
+CREATE TABLE IF NOT EXISTS `network_services` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    host_machine_id BIGINT          NOT NULL,
+    resource_id     BIGINT          NOT NULL,
+    vm_id           VARCHAR(128)    NOT NULL,
+    bridge_name     VARCHAR(64)     NOT NULL,
+    subnet          VARCHAR(45)     DEFAULT NULL,
+    gateway_ip      VARCHAR(45)     DEFAULT NULL,
+    status          VARCHAR(20)     NOT NULL DEFAULT 'creating',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_host_bridge (host_machine_id, bridge_name),
+    INDEX idx_host_resource (host_machine_id, resource_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `firewall_services` (
+    id              BIGINT          NOT NULL PRIMARY KEY,
+    host_machine_id BIGINT          NOT NULL,
+    resource_id     BIGINT          NOT NULL,
+    vm_id           VARCHAR(128)    NOT NULL,
+    table_name      VARCHAR(64)     NOT NULL,
+    default_policy  VARCHAR(16)     NOT NULL DEFAULT 'drop',
+    rules           JSON            DEFAULT NULL,
+    status          VARCHAR(20)     NOT NULL DEFAULT 'creating',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_host_table (host_machine_id, table_name),
+    INDEX idx_host_resource (host_machine_id, resource_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `switch_services` (
+    id                  BIGINT          NOT NULL PRIMARY KEY,
+    host_machine_id     BIGINT          NOT NULL,
+    resource_id         BIGINT          NOT NULL,
+    vm_id               VARCHAR(128)    NOT NULL,
+    network_service_id  BIGINT          NOT NULL,
+    veth_host           VARCHAR(64)     NOT NULL,
+    veth_guest          VARCHAR(64)     NOT NULL,
+    mac_address         VARCHAR(32)     DEFAULT NULL,
+    status              VARCHAR(20)     NOT NULL DEFAULT 'creating',
+    created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_host_veth (host_machine_id, veth_host),
+    INDEX idx_host_resource (host_machine_id, resource_id),
+    INDEX idx_network_service (network_service_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ======================== Ticket ========================

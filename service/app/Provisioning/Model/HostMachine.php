@@ -13,6 +13,7 @@ class HostMachine extends Model
     protected $fillable = [
         'region_id', 'name', 'ip_address', 'proxmox_node',
         'storage_pool', 'api_token_encrypted', 'specs', 'status',
+        'hypervisor', 'kvm_connection',
     ];
 
     protected $casts = [

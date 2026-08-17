@@ -18,6 +18,11 @@ class ProviderFactory
         self::register('disk', 'proxmox', fn() => new \App\Provisioning\Provider\ProxmoxProvider());
         self::register('ip', 'proxmox', fn() => new \App\Provisioning\Provider\ProxmoxProvider());
 
+        // KVM (libvirt) — 与 Proxmox 并存，product.provider='kvm' 时切换
+        self::register('server', 'kvm', fn() => new \App\Provisioning\Provider\Kvm\KvmProvider());
+        self::register('disk', 'kvm', fn() => new \App\Provisioning\Provider\Kvm\KvmProvider());
+        self::register('ip', 'kvm', fn() => new \App\Provisioning\Provider\Kvm\KvmProvider());
+
         // SSL certificate providers
         self::register('ssl', 'letsencrypt', fn() => new \App\Ssl\Service\SslProvider());
         self::register('ssl', 'zerossl', fn() => new \App\Ssl\Service\SslProvider());

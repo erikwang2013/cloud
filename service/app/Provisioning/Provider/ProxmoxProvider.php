@@ -31,7 +31,7 @@ class ProxmoxProvider implements ProviderInterface
         // 无锁并发会超售。Redis 在本栈恒在（限流/队列/会话均依赖），单机与分布式部署同用一把锁。
         $lockKey   = "lock:provision:region:{$task->region_id}";
         $lockToken = bin2hex(random_bytes(8));
-        if (!\support\Redis::set($lockKey, $lockToken, ['EX' => 300, 'NX'])) {
+        if (!\support\Redis::set($lockKey, $lockToken, 'EX', 300, 'NX')) {
             return ProvisionResult::retryable('Provisioning in progress for this region');
         }
 
@@ -86,8 +86,9 @@ class ProxmoxProvider implements ProviderInterface
             // Lua 保证 token 匹配才释放：TTL 过期后新持有者的锁不会被误删
             \support\Redis::eval(
                 "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
-                [$lockKey, $lockToken],
-                1
+                1,
+                $lockKey,
+                $lockToken
             );
         }
     }
@@ -352,11 +353,11 @@ class ProxmoxProvider implements ProviderInterface
         }
         $diskGb = $activeDisks->sum('size_gb');
 
-        $h = json_decode($host->specs, true);
+        $h = $host->specs; // specs 已 cast array
         $h['cpu_allocated']     = $cpu;
         $h['ram_allocated_gb']  = $ram;
         $h['disk_allocated_gb'] = $diskGb;
-        $host->specs = json_encode($h);
+        $host->specs = $h;
         $host->save();
     }
 }
