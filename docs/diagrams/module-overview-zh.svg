@@ -96,7 +96,7 @@
     <rect x="842" y="350" width="200" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
     <text x="942" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Provisioning 交付</text>
     <text x="942" y="392" text-anchor="middle" fill="#3b82f6" font-size="10">Provider插件·队列·重试</text>
-    <text x="942" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">Proxmox·主机选择</text>
+    <text x="942" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">kvm-server gRPC·主机选择</text>
 
     <rect x="50" y="438" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
     <text x="140" y="462" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Supplier 供应商</text>

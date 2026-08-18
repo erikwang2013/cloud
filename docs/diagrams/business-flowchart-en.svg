@@ -69,7 +69,7 @@
 
     <rect x="710" y="245" width="180" height="62" rx="10" fill="url(#provGrad)" stroke="#86efac" stroke-width="1.5"/>
     <text x="800" y="272" text-anchor="middle" fill="#166534" font-size="14" font-weight="bold">VM / Resource Create</text>
-    <text x="800" y="292" text-anchor="middle" fill="#64748b" font-size="11">Proxmox · Host Select · IP Alloc</text>
+    <text x="800" y="292" text-anchor="middle" fill="#64748b" font-size="11">kvm-server · Host Select · IP Alloc</text>
 
     <path d="M890,276 L920,276" stroke="#94a3b8" stroke-width="2"/>
 

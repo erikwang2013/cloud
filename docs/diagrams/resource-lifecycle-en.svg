@@ -47,7 +47,7 @@
   <g font-size="10" fill="#64748b">
     <text x="45" y="495" font-weight="bold" fill="#334155">States:</text><text x="130" y="495">7 states + 10 lifecycle events</text>
     <text x="45" y="512" font-weight="bold" fill="#334155">Delivery:</text><text x="130" y="512">Event-driven · Async Queue · Exponential Backoff · Failure Alert</text>
-    <text x="45" y="529" font-weight="bold" fill="#334155">Providers:</text><text x="130" y="529">Proxmox (Self-op) · Aliyun (Planned) · AWS (Planned)</text>
+    <text x="45" y="529" font-weight="bold" fill="#334155">Providers:</text><text x="130" y="529">kvm-server (Rust gRPC self-op) · Proxmox · Aliyun/AWS (Planned)</text>
   </g>
 <g opacity="0.5">
     <text x="1084" y="565" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="rgba(0,0,0,0.18)">https://erik.xyz</text>

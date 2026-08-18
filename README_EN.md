@@ -222,6 +222,12 @@ cloud-php/
 │   ├── docker-compose.yml      # Service orchestration
 │   ├── nginx.conf              # Nginx config
 │   └── supervisor.conf         # Supervisor process manager
+├── infrastructure/             # Rust infrastructure (e-cat workspace)
+│   ├── kvm-server/             # Self-operated cloud: VM provisioning gRPC service (:50051, etcd registry)
+│   │   ├── src/                # main / grpc / driver (mock driver, libvirt = Phase 2)
+│   │   ├── tests/              # Integration tests
+│   │   └── Cargo.toml          # e-cat workspace member
+│   └── ecat-*/                 # e-cat crates (transport-grpc / registry-etcd / protos / config / data etc.)
 ├── docs/                       # Documentation
 │   ├── admin-design.md         # Admin panel design doc
 │   ├── supplier-api.md         # Supplier API reference

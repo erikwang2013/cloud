@@ -229,6 +229,12 @@ cloud-php/
 │   ├── docker-compose.yml      # 服务编排
 │   ├── nginx.conf              # Nginx 配置
 │   └── supervisor.conf         # Supervisor 进程守护
+├── infrastructure/             # Rust 基础设施（e-cat workspace）
+│   ├── kvm-server/             # 自有云服务：VM 供应 gRPC 服务（:50051，etcd 注册）
+│   │   ├── src/                # main / grpc / driver（模拟驱动，libvirt 为 Phase 2）
+│   │   ├── tests/              # 集成测试
+│   │   └── Cargo.toml          # e-cat workspace 成员声明
+│   └── ecat-*/                 # e-cat 基础设施 crate（transport-grpc / registry-etcd / protos / config / data 等）
 ├── docs/                       # 文档
 │   ├── admin-design.md         # 管理后台设计文档
 │   ├── supplier-api.md         # 供应商 API 文档

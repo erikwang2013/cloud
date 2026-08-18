@@ -74,7 +74,7 @@
 
     <rect x="710" y="245" width="180" height="62" rx="10" fill="url(#provGrad)" stroke="#86efac" stroke-width="1.5"/>
     <text x="800" y="272" text-anchor="middle" fill="#166534" font-size="14" font-weight="bold">VM / 资源创建</text>
-    <text x="800" y="292" text-anchor="middle" fill="#64748b" font-size="11">Proxmox · 主机选择 · IP 分配</text>
+    <text x="800" y="292" text-anchor="middle" fill="#64748b" font-size="11">kvm-server · 主机选择 · IP 分配</text>
 
     <path d="M890,276 L920,276" stroke="#94a3b8" stroke-width="2"/>
 

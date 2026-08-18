@@ -19,7 +19,7 @@ CloudPlatform 是一个面向全球的云资源交易平台，支持自营物理
 | 字段加密 | AES-128-ECB | Eloquent Cast 自动加解密，ECB 确定性加密支持查询 |
 | 消息队列 | Redis Queue | 异步处理支付回调、通知分发、资源开通 |
 | 搜索引擎 | Elasticsearch 8.x | 中文全文搜索（IK 分词）、产品/用户/工单索引 |
-| 虚拟化 | Proxmox VE | 开源免费（AGPLv3），REST API 全生命周期管理 |
+| 虚拟化 | Proxmox VE + kvm-server | 自营 VM 由 Rust kvm-server（gRPC :50051，e-cat/etcd 注册发现）供应；驱动层当前为模拟驱动，libvirt 真实驱动 Phase 2 |
 | 客户端 | Flutter | 单代码库 iOS/macOS/Windows/Linux/Web 五端 + HarmonyOS |
 
 ### 1.2 系统边界

@@ -47,7 +47,7 @@
   <g font-size="10" fill="#64748b">
     <text x="45" y="495" font-weight="bold" fill="#334155">状态数量：</text><text x="130" y="495">7 个状态 + 10 个生命周期事件</text>
     <text x="45" y="512" font-weight="bold" fill="#334155">交付模式：</text><text x="130" y="512">事件驱动 · 队列异步 · 指数退避重试 · 失败告警</text>
-    <text x="45" y="529" font-weight="bold" fill="#334155">Provider：</text><text x="130" y="529">Proxmox (自营) · Aliyun (规划中) · AWS (规划中)</text>
+    <text x="45" y="529" font-weight="bold" fill="#334155">Provider：</text><text x="130" y="529">kvm-server (Rust gRPC 自营) · Proxmox · Aliyun/AWS (规划中)</text>
   </g>
 <g opacity="0.5">
     <text x="1084" y="565" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="rgba(0,0,0,0.18)">https://erik.xyz</text>
