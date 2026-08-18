@@ -11,8 +11,9 @@
 | PHP | 8.2+ | 8.3 |
 | MySQL | 8.0 | 8.0 |
 | Redis | 7.x | 7.x |
+| Rust | 1.75+（kvm-server 供应服务） | 1.75+ |
 
-**需开放端口**：80 (HTTP)、443 (HTTPS)、8787 (webman 内部，仅内网)
+**需开放端口**：80 (HTTP)、443 (HTTPS)、8787 (webman 内部，仅内网)、8788 (admin，仅内网)、50051 (kvm-server gRPC，仅内网)、2379 (etcd，仅内网，若启用 kvm-server 注册)
 
 ---
 
@@ -26,6 +27,11 @@ sudo apt update && sudo apt upgrade -y
 
 # 基础工具
 sudo apt install -y curl wget git unzip nginx mysql-server redis-server
+
+# Rust (kvm-server 供应服务)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.75
+source "$HOME/.cargo/env"
+rustc --version
 
 # PHP 8.3 + 扩展 (通过 ppa:ondrej/php)
 sudo add-apt-repository ppa:ondrej/php -y
@@ -536,6 +542,51 @@ sudo systemctl start cloud-platform cloud-platform-admin
 sudo systemctl status cloud-platform cloud-platform-admin
 ```
 
+### 9.4 启动 kvm-server（Rust 供应服务）
+
+kvm-server 是独立的 Rust gRPC 供应服务（`infrastructure/kvm-server`，e-cat workspace），
+提供 VM 创建/状态查询，并通过 etcd 注册 + lease 心跳供 PHP 侧（KvmClient/RegistryProcess）
+发现。**当前驱动为模拟驱动（simulated），libvirt（virsh）真实驱动为 Phase 2**——部署时
+必须显式设 `KVM_DRIVER=simulated`，否则默认 virsh 驱动将返回 NotImplemented。
+
+```bash
+cd /home/wwwroot/cloud-php/infrastructure
+cargo build --release -p kvm-server
+
+cat > /etc/systemd/system/kvm-server.service <<'EOF'
+[Unit]
+Description=CloudPlatform KVM Server (Rust gRPC provisioning)
+After=network.target mysql.service redis-server.service etcd.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/wwwroot/cloud-php/infrastructure/kvm-server
+ExecStart=/home/wwwroot/cloud-php/infrastructure/target/release/kvm-server
+EnvironmentFile=/home/wwwroot/cloud-php/infrastructure/kvm-server/.env
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable kvm-server
+sudo systemctl start kvm-server
+```
+
+环境变量（`infrastructure/kvm-server/.env`，参考 `service/.env` 对应值）：
+
+| 变量 | 必填 | 说明 |
+|------|:---:|------|
+| `KVM_DB_URL` | ✅ | MySQL DSN（SQLx，与 service 同库） |
+| `KVM_REDIS_URL` | ✅ | Redis URL |
+| `KVM_AUTH_TOKEN` | ✅ | gRPC 调用方鉴权 token（与 PHP 侧配置一致） |
+| `KVM_DRIVER` | ✅ | `simulated`（当前唯一可用；`virsh` 为 Phase 2） |
+| `KVM_ADDR` | — | HTTP 管理接口地址，默认 `0.0.0.0:8000` |
+| `KVM_GRPC_ADDR` | — | gRPC 地址，默认 `0.0.0.0:50051` |
+| `KVM_ETCD_URL` | — | etcd 端点，设置后启用注册/发现（如 `http://127.0.0.1:2379`） |
+
 ---
 
 ## 十、定时任务
@@ -576,6 +627,8 @@ php start.php status
 - [ ] Redis 可连接：`redis-cli ping` → `PONG`
 - [ ] PHP 版本 >= 8.2：`php -v`
 - [ ] Composer 依赖安装成功
+- [ ] Rust 工具链已装（kvm-server）：`rustc --version`
+- [ ] kvm-server 运行中：`ss -tlnp | grep 50051`；`curl http://127.0.0.1:8000/health` 通过
 
 ### 应用配置
 - [ ] `.env` 文件所有必填项已配置

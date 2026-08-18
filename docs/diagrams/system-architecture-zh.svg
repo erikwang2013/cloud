@@ -190,10 +190,10 @@ Prometheus · Grafana 可观测</text>
 <!-- proxmox -->
 <g id="node13" class="node">
 <title>proxmox</title>
-<path fill="#cfd8dc" stroke="black" d="M746.5,-62C746.5,-64.21 730.14,-66 710,-66 689.86,-66 673.5,-64.21 673.5,-62 673.5,-62 673.5,-26 673.5,-26 673.5,-23.79 689.86,-22 710,-22 730.14,-22 746.5,-23.79 746.5,-26 746.5,-26 746.5,-62 746.5,-62"/>
-<path fill="none" stroke="black" d="M746.5,-62C746.5,-59.79 730.14,-58 710,-58 689.86,-58 673.5,-59.79 673.5,-62"/>
-<text text-anchor="middle" x="710" y="-47.2" font-family="sans-serif" font-size="11.00">Proxmox VE / AWS EC2 / S3 / Cloudflare</text>
-<text text-anchor="middle" x="710" y="-35.2" font-family="sans-serif" font-size="11.00">虚拟化交付</text>
+<path fill="#cfd8dc" stroke="black" d="M830,-62C830,-64.21 776.14,-66 710,-66 643.86,-66 590,-64.21 590,-62 590,-62 590,-26 590,-26 590,-23.79 643.86,-22 710,-22 776.14,-22 830,-23.79 830,-26 830,-26 830,-62 830,-62"/>
+<path fill="none" stroke="black" d="M830,-62C830,-59.79 776.14,-58 710,-58 643.86,-58 590,-59.79 590,-62"/>
+<text text-anchor="middle" x="710" y="-47.2" font-family="sans-serif" font-size="10.00">Proxmox VE / AWS EC2 / S3 / Cloudflare</text>
+<text text-anchor="middle" x="710" y="-35.2" font-family="sans-serif" font-size="10.00">kvm-server (Rust gRPC · 模拟驱动)</text>
 </g>
 <!-- api&#45;&gt;proxmox -->
 <g id="edge14" class="edge">

@@ -27,7 +27,7 @@
 | 队列 | webman redis-queue |
 | 数据库 | MySQL 8.0（主库 + 审计库双连接） |
 | 搜索引擎 | Elasticsearch 8.x |
-| 虚拟化 | Proxmox VE REST API |
+| 虚拟化 | Proxmox VE（Rust kvm-server gRPC 通道，e-cat/etcd 注册） |
 | 客户端 | Flutter (iOS/Android/Web/Linux/macOS/Windows) + HarmonyOS ArkTS |
 | GraphQL | webonyx/graphql-php ^15.0 |
 | 对象存储 | AWS S3 SDK PHP ^3.300 |
@@ -472,6 +472,8 @@ phpunit.xml (PHPUnit 11)
       → ProxmoxProvider.create()
         → HostSelector 选最空闲物理机
         → ProxmoxApi 创建 VM / 挂载磁盘 / 分配 IP
+          （Rust kvm-server gRPC 供应服务已入库：e-cat/etcd 注册发现，
+           PHP 侧 KvmClient 接线；模拟驱动，libvirt 真实驱动为 Phase 2）
         → 创建 Resource / Disk 记录
       → 更新 Order 状态为 completed
 ```

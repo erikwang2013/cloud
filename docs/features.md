@@ -353,6 +353,12 @@ ProvisionWorker (Redis Queue 消费)
   1min → 5min → 15min → 1h → 6h → 24h (6 次后标记失败 + 告警)
 ```
 
+> **供应通道演进**：Rust kvm-server（`infrastructure/kvm-server`，e-cat workspace）已入库——
+> gRPC `ping/create_vm/vm_status`（:50051）+ etcd 注册发现，PHP 侧 KvmClient /
+> RegistryProcess（`service/app/Grpc/`）已接线。驱动层当前为**模拟驱动**（libvirt 真实
+> 驱动为 Phase 2），开通链路暂仍走 ProxmoxProvider 直连；kvm-server 接管 VM 创建后本节
+> 流程不变，仅通道切换。
+
 ### 5.3 Proxmox 操作汇总
 
 | 操作 | API | 热操作 |

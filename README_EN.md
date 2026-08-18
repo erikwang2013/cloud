@@ -25,7 +25,7 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 | Queue | webman redis-queue |
 | Database | MySQL 8.0 (main + audit dual connection) |
 | Search Engine | Elasticsearch 8.x |
-| Virtualization | Proxmox VE REST API |
+| Virtualization | Proxmox VE (Rust kvm-server gRPC channel, e-cat/etcd registry) |
 | Clients | Flutter (iOS/Android/Web/Linux/macOS/Windows) + HarmonyOS ArkTS |
 | Deployment | Docker Compose |
 
@@ -465,6 +465,8 @@ User places order → Payment succeeds → OrderPaid event
       → ProxmoxProvider.create()
         → HostSelector picks least-loaded physical host
         → ProxmoxApi creates VM / attaches disk / allocates IP
+          (Rust kvm-server gRPC provisioning service landed: e-cat/etcd registry
+           discovery, PHP-side KvmClient wired; mock driver, real libvirt = Phase 2)
         → Creates Resource / Disk records
       → Updates Order status to completed
 ```

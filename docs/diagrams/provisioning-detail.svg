@@ -106,8 +106,8 @@
 <!-- s8 -->
 <g id="node8" class="node">
 <title>s8</title>
-<path fill="#e1bee7" stroke="black" d="M242,-354.5C242,-354.5 164,-354.5 164,-354.5 158,-354.5 152,-348.5 152,-342.5 152,-342.5 152,-330.5 152,-330.5 152,-324.5 158,-318.5 164,-318.5 164,-318.5 242,-318.5 242,-318.5 248,-318.5 254,-324.5 254,-330.5 254,-330.5 254,-342.5 254,-342.5 254,-348.5 248,-354.5 242,-354.5"/>
-<text text-anchor="middle" x="203" y="-339.5" font-family="sans-serif" font-size="10.00">Proxmox VE API</text>
+<path fill="#e1bee7" stroke="black" d="M298,-354.5C298,-356.71 255.49,-358.5 203,-358.5 150.51,-358.5 108,-356.71 108,-354.5 108,-354.5 108,-318.5 108,-318.5 108,-316.29 150.51,-314.5 203,-314.5 255.49,-314.5 298,-316.29 298,-318.5 298,-318.5 298,-354.5 298,-354.5"/>
+<text text-anchor="middle" x="203" y="-339.5" font-family="sans-serif" font-size="10.00">Proxmox VE API · kvm-server gRPC</text>
 <text text-anchor="middle" x="203" y="-328.5" font-family="sans-serif" font-size="10.00">create VM / disk / IP</text>
 </g>
 <!-- s7&#45;&gt;s8 -->
