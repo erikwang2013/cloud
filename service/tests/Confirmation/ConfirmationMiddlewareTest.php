@@ -1,6 +1,7 @@
 <?php
 namespace Tests\Confirmation;
 
+use App\User\Model\User;
 use Common\Confirmation\ConfirmationMiddleware;
 use Illuminate\Support\Facades\Redis as RedisFacade;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -45,13 +46,31 @@ class ConfirmationMiddlewareTest extends TestCase
         };
     }
 
-    private function createMiddleware(bool $passwordResult = false): ConfirmationMiddleware
-    {
-        return new class($passwordResult) extends ConfirmationMiddleware {
+    private function createMiddleware(
+        bool $passwordResult = false,
+        bool $requireApprover = false,
+        bool $approverPasswordResult = true,
+        string $approverRole = 'admin'
+    ): ConfirmationMiddleware {
+        return new class($passwordResult, $requireApprover, $approverPasswordResult, $approverRole) extends ConfirmationMiddleware {
             private bool $passwordResult;
-            public function __construct(bool $passwordResult) { $this->passwordResult = $passwordResult; }
+            private bool $approverPasswordResult;
+            private string $approverRole;
+            public function __construct(bool $passwordResult, bool $requireApprover, bool $approverPasswordResult, string $approverRole) {
+                parent::__construct($requireApprover);
+                $this->passwordResult = $passwordResult;
+                $this->approverPasswordResult = $approverPasswordResult;
+                $this->approverRole = $approverRole;
+            }
             protected function verifyPassword(int $userId, string $password): bool {
                 return $this->passwordResult;
+            }
+            protected function findApprover(int $approverId): ?User {
+                // 不设 password_hash：Encryptable 属性赋值需要加密密钥，而 verifyApproverPassword 已被覆写
+                return new User(['id' => $approverId, 'role' => $this->approverRole]);
+            }
+            protected function verifyApproverPassword(User $approver, string $password): bool {
+                return $this->approverPasswordResult;
             }
         };
     }
@@ -190,5 +209,130 @@ class ConfirmationMiddlewareTest extends TestCase
             '5 failures triggers' => [5, true],
             '6 failures locked'   => [6, true],
         ];
+    }
+
+    public function testApproverModeReturns422WhenApproverIdMissing(): void
+    {
+        $middleware = $this->createMiddleware(true, true);
+        $request    = $this->createRequest(['confirm_password' => 'ok', 'approver_password' => 'ok'], 12345);
+        $nextCalled = false;
+
+        $response = $middleware->process($request, function ($req) use (&$nextCalled) { $nextCalled = true; });
+        $body = $this->decodeResponse($response);
+        $this->assertEquals(422, $body['code']);
+        $this->assertFalse($nextCalled);
+    }
+
+    public function testApproverModeReturns422WhenApproverSameAsOperator(): void
+    {
+        $middleware = $this->createMiddleware(true, true);
+        $request    = $this->createRequest(['confirm_password' => 'ok', 'approver_id' => 12345, 'approver_password' => 'ok'], 12345);
+        $nextCalled = false;
+
+        $response = $middleware->process($request, function ($req) use (&$nextCalled) { $nextCalled = true; });
+        $body = $this->decodeResponse($response);
+        $this->assertEquals(422, $body['code']);
+        $this->assertFalse($nextCalled);
+    }
+
+    public function testApproverModeReturns422WhenApproverPasswordMissing(): void
+    {
+        $middleware = $this->createMiddleware(true, true);
+        $request    = $this->createRequest(['confirm_password' => 'ok', 'approver_id' => 999], 12345);
+        $nextCalled = false;
+
+        $response = $middleware->process($request, function ($req) use (&$nextCalled) { $nextCalled = true; });
+        $body = $this->decodeResponse($response);
+        $this->assertEquals(422, $body['code']);
+        $this->assertStringContainsString('Approver password', $body['message']);
+        $this->assertFalse($nextCalled);
+    }
+
+    public function testApproverModeRejectsNonAdminApproverRole(): void
+    {
+        // 伪造 approver_id：finance 角色无权审批
+        $middleware = $this->createMiddleware(true, true, true, 'finance');
+        $request    = $this->createRequest(['confirm_password' => 'ok', 'approver_id' => 999, 'approver_password' => 'ok'], 12345);
+        $nextCalled = false;
+
+        $response = $middleware->process($request, function ($req) use (&$nextCalled) { $nextCalled = true; });
+        $body = $this->decodeResponse($response);
+        $this->assertEquals(403, $body['code']);
+        $this->assertFalse($nextCalled);
+    }
+
+    public function testApproverModeRejectsWrongApproverPasswordAndLocksApprover(): void
+    {
+        // approver 密码错误：403 且锁定计数挂在 approver 的 userId 上（防对任意 admin 爆破）
+        $fake = new class {
+            public array $lockedKeys = [];
+            public function exists(...$args) { return 0; }
+            public function incr(...$args) { return 5; }
+            public function expire(...$args) { return true; }
+            public function setex($key, $ttl, $value) { $this->lockedKeys[] = $key; return true; }
+            public function del(...$args) { return 1; }
+        };
+        RedisFacade::swap($fake);
+
+        $middleware = $this->createMiddleware(true, true, false);
+        $request    = $this->createRequest(['confirm_password' => 'ok', 'approver_id' => 888, 'approver_password' => 'wrong'], 12345);
+        $nextCalled = false;
+
+        $response = $middleware->process($request, function ($req) use (&$nextCalled) { $nextCalled = true; });
+        $body = $this->decodeResponse($response);
+        $this->assertEquals(403, $body['code']);
+        $this->assertFalse($nextCalled);
+        $this->assertContains('confirm_lock:888', $fake->lockedKeys);
+        $this->assertNotContains('confirm_lock:12345', $fake->lockedKeys);
+    }
+
+    public function testApproverModeBlocksWhenApproverLocked(): void
+    {
+        $fake = new class {
+            public function exists($key) { return str_contains($key, ':888') ? 1 : 0; }
+            public function incr(...$args) { return 1; }
+            public function expire(...$args) { return true; }
+            public function setex(...$args) { return true; }
+            public function del(...$args) { return 1; }
+        };
+        RedisFacade::swap($fake);
+
+        $middleware = $this->createMiddleware(true, true);
+        $request    = $this->createRequest(['confirm_password' => 'ok', 'approver_id' => 888, 'approver_password' => 'ok'], 12345);
+        $nextCalled = false;
+
+        $response = $middleware->process($request, function ($req) use (&$nextCalled) { $nextCalled = true; });
+        $body = $this->decodeResponse($response);
+        $this->assertEquals(429, $body['code']);
+        $this->assertFalse($nextCalled);
+    }
+
+    public function testApproverModePassesWithTwoIndependentPasswords(): void
+    {
+        $middleware = $this->createMiddleware(true, true);
+        $request    = $this->createRequest(['confirm_password' => 'op', 'approver_id' => 888, 'approver_password' => 'ap'], 12345);
+        $nextCalled = false;
+
+        $response = $middleware->process($request, function ($req) use (&$nextCalled) {
+            $nextCalled = true;
+            return 'approved';
+        });
+        $this->assertTrue($nextCalled);
+        $this->assertEquals('approved', $response);
+    }
+
+    public function testDefaultModeIgnoresApproverFields(): void
+    {
+        // 用户组（requireApprover=false）回归：带 approver 字段也不触发审批
+        $middleware = $this->createMiddleware(true);
+        $request    = $this->createRequest(['confirm_password' => 'ok', 'approver_id' => 888, 'approver_password' => 'whatever'], 12345);
+        $nextCalled = false;
+
+        $response = $middleware->process($request, function ($req) use (&$nextCalled) {
+            $nextCalled = true;
+            return 'next-result';
+        });
+        $this->assertTrue($nextCalled);
+        $this->assertEquals('next-result', $response);
     }
 }

@@ -36,6 +36,7 @@ final class RbacTest extends TestCase
             'admin system.config' => ['admin', 'system.config', true],
             'admin reconcile payments' => ['admin', 'payment.reconcile', true],
             'admin withdraw review' => ['admin', 'supplier.withdraw_review', true],
+            'admin coupon manage' => ['admin', 'coupon.manage', true],
 
             // finance — money paths only
             'finance payment.reconcile' => ['finance', 'payment.reconcile', true],
@@ -44,12 +45,14 @@ final class RbacTest extends TestCase
             'finance cannot edit users' => ['finance', 'user.update', false],
             'finance cannot create products' => ['finance', 'product.create', false],
             'finance cannot manage system config' => ['finance', 'system.config', false],
+            'finance cannot manage coupons' => ['finance', 'coupon.manage', false],
 
             // support — read-only ticket/user
             'support ticket.reply' => ['support', 'ticket.reply', true],
             'support user.view' => ['support', 'user.view', true],
             'support cannot refund' => ['support', 'order.refund', false],
             'support cannot edit users' => ['support', 'user.update', false],
+            'support cannot manage coupons' => ['support', 'coupon.manage', false],
 
             // supplier — own-scope only
             'supplier product.create' => ['supplier', 'product.create', true],

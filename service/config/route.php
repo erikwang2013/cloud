@@ -296,9 +296,9 @@ Route::group('/admin/api', function () {
     Route::get('/notifications/log', [App\Admin\Controller\NotificationController::class, 'sendLog'])->middleware([new Common\Auth\Middleware\RbacMiddleware('notification.send')]);
 
     // Coupon management
-    Route::get('/coupons', [App\Admin\Controller\CouponController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('order.view')]);
-    Route::post('/coupons', [App\Admin\Controller\CouponController::class, 'store'])->middleware([new Common\Auth\Middleware\RbacMiddleware('order.update')]);
-    Route::delete('/coupons/{id}', [App\Admin\Controller\CouponController::class, 'destroy'])->middleware([new Common\Auth\Middleware\RbacMiddleware('order.update')]);
+    Route::get('/coupons', [App\Admin\Controller\CouponController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('coupon.manage')]);
+    Route::post('/coupons', [App\Admin\Controller\CouponController::class, 'store'])->middleware([new Common\Auth\Middleware\RbacMiddleware('coupon.manage')]);
+    Route::delete('/coupons/{id}', [App\Admin\Controller\CouponController::class, 'destroy'])->middleware([new Common\Auth\Middleware\RbacMiddleware('coupon.manage')]);
 
     // Provider API management
     Route::get('/providers', [App\Admin\Controller\ProviderApiController::class, 'index'])->middleware([new Common\Auth\Middleware\RbacMiddleware('provider.config')]);
@@ -379,4 +379,4 @@ Route::group('/admin/api', function () {
     Route::post('/suppliers/{id}/settle', [App\Admin\Controller\SupplierController::class, 'generateSettlement'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.settle')]);
     Route::post('/suppliers/withdraws/{id}/approve', [App\Admin\Controller\SupplierController::class, 'approveWithdraw'])->middleware([new Common\Auth\Middleware\RbacMiddleware('supplier.withdraw_review')]);
     Route::put('/system/config', [App\Admin\Controller\SystemController::class, 'updateConfig'])->middleware([new Common\Auth\Middleware\RbacMiddleware('system.config')]);
-})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class, Common\Confirmation\ConfirmationMiddleware::class]);
+})->middleware([VersionMiddleware::class, Common\Encryption\Middleware\EncryptionMiddleware::class, Common\Auth\Middleware\AuthMiddleware::class, Common\Auth\Middleware\AdminRoleMiddleware::class, new Common\Confirmation\ConfirmationMiddleware(true)]);

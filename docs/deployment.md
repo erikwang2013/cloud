@@ -323,6 +323,19 @@ echo '0001 done\n';
 "
 ```
 
+### 6.3 迁移重跑与 RBAC 种子
+
+迁移由 `php webman migrate` 执行（`service/app/Command/MigrateCommand.php`），按文件名顺序应用未执行过的迁移。绝大多数迁移为一次性建表，无需重跑；**唯一例外是 RBAC 种子**：
+
+- `2026_08_17_000001_seed_rbac_permissions.php` 为 **reset 式种子**：执行时先 `delete` 掉 `role_permission` / `permissions` / `roles` 三表全部行，再按文件内矩阵重新插入。因此该迁移可安全重跑，且**重跑不会造成重复行**（显式 id，不受自增影响）。
+- 旧库（跑过 `2026_05_20_000006_create_rbac_permissions.php` 时代数据）升级时，需重跑种子才能得到收敛后的权限矩阵：
+  ```bash
+  cd /home/wwwroot/cloud-php/service
+  php webman migrate
+  ```
+- **注意**：运行时权限的唯一事实源是 `service/common/Auth/Rbac.php` 静态数组，**不依赖数据库**——`RbacMiddleware` 直接读该数组判断权限，DB 种子仅用于管理端展示。修改 `Rbac.php` 时**必须**同步更新种子文件（`permissions()` 并集 + `rolePerms()` 逐角色矩阵），`service/tests/Auth/RbacSeedTest.php` 会在测试中静态拦截两者漂移。
+- 回滚种子会清空全部角色与权限分配（`down()` 同样 delete 三表），生产环境执行 `php webman migrate:rollback` 前需确认无管理端在线操作。
+
 ---
 
 ## 七、Nginx 配置

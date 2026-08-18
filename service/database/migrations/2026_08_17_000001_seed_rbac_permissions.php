@@ -107,6 +107,7 @@ return new class extends Migration {
             ['domain.tld', 'Manage Domain TLDs', 'domain'],
             ['domain.transfer_approve', 'Approve Domain Transfers', 'domain'],
             ['webhook.manage', 'Manage Webhooks', 'webhook'],
+            ['coupon.manage', 'Manage Coupons', 'marketing'],
         ];
     }
 
@@ -128,6 +129,7 @@ return new class extends Migration {
                 'system.config',
                 'help.manage', 'ssl.plan', 'billing.rate', 'cdn.manage',
                 'affiliate.approve', 'domain.tld', 'domain.transfer_approve', 'webhook.manage',
+                'coupon.manage',
             ],
             'finance' => [
                 'order.view', 'order.refund',

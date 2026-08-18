@@ -18,6 +18,7 @@ class Rbac
             'system.config',
             'help.manage', 'ssl.plan', 'billing.rate', 'cdn.manage',
             'affiliate.approve', 'domain.tld', 'domain.transfer_approve', 'webhook.manage',
+            'coupon.manage',
         ],
         'finance' => [
             'order.view', 'order.refund',

@@ -12,6 +12,8 @@ class ConfirmationMiddleware
     private const MAX_FAILURES = 5;
     private const LOCK_TTL = 900;
 
+    public function __construct(private bool $requireApprover = false) {}
+
     public function process($request, callable $next)
     {
         $userId = $request->userId ?? null;
@@ -48,7 +50,72 @@ class ConfirmationMiddleware
         } catch (\Exception $e) {}
 
         AuditLogger::record('confirm_success', ['user_id' => $userId], $request);
+
+        if ($this->requireApprover) {
+            $approved = $this->verifyApprover($request, $userId);
+            if ($approved !== true) {
+                return $approved;
+            }
+        }
+
         return $next($request);
+    }
+
+    /**
+     * 第二人审批：approver 身份由 body 中的 approver_id + approver_password 证明，
+     * 角色必须查 DB（本请求中 approver 无 token，不信任任何请求体/JWT 角色声明）。
+     * approver 限定 admin/super_admin，防止 finance 等低权角色自批自审。
+     */
+    private function verifyApprover($request, int $userId)
+    {
+        $approverId = (int) $request->input('approver_id', 0);
+        $approverPassword = $request->input('approver_password', '');
+        if ($approverId <= 0 || $approverId === $userId) {
+            return json(Response::error(422, 'Approver required and must differ from operator'));
+        }
+        if (empty($approverPassword)) {
+            return json(Response::error(422, 'Approver password confirmation required for this operation'));
+        }
+
+        $approver = $this->findApprover($approverId);
+        if (!$approver || !in_array($approver->role, ['admin', 'super_admin'], true)) {
+            return json(Response::error(403, 'Approver not authorized'));
+        }
+
+        $approverLockKey = "confirm_lock:{$approverId}";
+        try {
+            if (Redis::exists($approverLockKey)) {
+                return json(Response::error(429, 'Too many confirmation attempts, try again later'));
+            }
+        } catch (\Exception $e) {
+            return json(Response::error(503, 'Confirmation service temporarily unavailable'));
+        }
+
+        if (!$this->verifyApproverPassword($approver, $approverPassword)) {
+            // 失败计入 approver 自己的锁定计数，防止对任意 admin 账号无限爆破
+            if (!$this->recordFailure($approverId, $approverLockKey)) {
+                return json(Response::error(503, 'Confirmation service temporarily unavailable'));
+            }
+            AuditLogger::record('confirm_approve_failed', ['user_id' => $userId, 'approver_id' => $approverId], $request);
+            return json(Response::error(403, 'Approver password verification failed'));
+        }
+
+        try {
+            Redis::del("confirm_failed:{$approverId}");
+        } catch (\Exception $e) {}
+
+        AuditLogger::record('confirm_approved', ['user_id' => $userId, 'approver_id' => $approverId], $request);
+        return true;
+    }
+
+    protected function findApprover(int $approverId): ?User
+    {
+        return User::find($approverId);
+    }
+
+    protected function verifyApproverPassword(User $approver, string $password): bool
+    {
+        return Hash::check($password, $approver->password_hash);
     }
 
     protected function verifyPassword(int $userId, string $password): bool
