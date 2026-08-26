@@ -2972,6 +2972,7 @@ dependencies = [
 name = "kvm-server"
 version = "3.0.1"
 dependencies = [
+ "async-trait",
  "axum 0.8.9",
  "ecat",
  "ecat-config",
