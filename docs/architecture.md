@@ -16,7 +16,7 @@ CloudPlatform 是一个面向全球的云资源交易平台，支持自营物理
 | ID 混淆 | Hashids | 对外隐藏真实 ID 规模，防爬虫遍历 |
 | 认证 | JWT HS256 | 无状态认证，Access 15min + Refresh 30d |
 | 传输加密 | AES-256-GCM | 中间件透明加解密，GCM 认证加密防篡改 |
-| 字段加密 | AES-128-ECB | Eloquent Cast 自动加解密，ECB 确定性加密支持查询 |
+| 字段加密 | AES-256-CBC | Eloquent Cast 自动加解密，CBC 随机 IV 不泄漏等值模式 |
 | 消息队列 | Redis Queue | 异步处理支付回调、通知分发、资源开通 |
 | 搜索引擎 | Elasticsearch 8.x | 中文全文搜索（IK 分词）、产品/用户/工单索引 |
 | 虚拟化 | Proxmox VE + kvm-server | 自营 VM 由 Rust kvm-server（gRPC :50051，e-cat/etcd 注册发现）供应；驱动层当前为模拟驱动，libvirt 真实驱动 Phase 2 |
@@ -38,8 +38,9 @@ CloudPlatform 是一个面向全球的云资源交易平台，支持自营物理
 ┌─────────────────────────┼────────────────────────────────────────┐
 │              webman 服务端 (多进程)                               │
 │  ┌─────────────────────────────────────────────────────────┐     │
-│  │ 全局中间件链: Version→CORS→ClientPlatform→WAF→Locale    │     │
-│  │             →Hashid→Maintenance→[路由中间件]             │     │
+│  │ 全局中间件链: Version→CORS→SecurityHeaders→ClientPlatform │     │
+│  │             →GeoBlock→WAF→SecurityPlugin→RateLimit→Locale │     │
+│  │             →Metrics→Hashid→Maintenance→[路由中间件]       │     │
 │  └─────────────────────────────────────────────────────────┘     │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────┐     │
 │  │  User   │ │ Product │ │  Order  │ │ Payment │ │Provision│    │
@@ -91,13 +92,13 @@ CloudPlatform 是一个面向全球的云资源交易平台，支持自营物理
                                │ SQL
   User/API ────────▶│   service/           │
                     │   port: 8787         │
-                    │   7 全局+6 路由中间件  │
+                    │   12 全局+6 路由中间件 │
                     └─────────────────────┘
 ```
 
 | 实例 | 端口 | 职责 | 中间件 |
 |------|------|------|--------|
-| **service** | 8787 | 用户 API + 管理 API + WebSocket | 全局 7 + 路由 6 + SupplierApiKey |
+| **service** | 8787 | 用户 API + 管理 API + WebSocket | 全局 12 + 路由 6 + SupplierApiKey |
 | **admin** | 8788 | 管理后台 HTML 面板 (Layui) | WafMiddleware + AccessControl |
 
 ### 2.2 模块分层结构
@@ -154,21 +155,34 @@ HTTP 请求
   ▼
 2. CorsMiddleware            ← OPTIONS 预检返回 CORS 头，Origin 反射
   ▼
-3. ClientPlatformMiddleware  ← X-Client-Platform 头识别（8 平台），注入 properties
+3. SecurityHeadersMiddleware ← HSTS / X-Frame-Options / CSP / Referrer-Policy 安全响应头
+  ▼
+4. ClientPlatformMiddleware  ← X-Client-Platform 头识别（8 平台），注入 properties
   │                            仅对 /api/ 和 /admin/api/ 生效
   ▼
-4. WafMiddleware             ← 8 类 45+ 规则扫描（JSON body + URL + UA + 原始体）
+5. GeoBlockMiddleware        ← GEO_BLOCKED_COUNTRIES 国家封锁（MaxMind GeoIP2）
+  ▼
+6. WafMiddleware             ← 8 类 45+ 规则扫描（JSON body + URL + UA + 原始体）
   │                          ← Content-Type 白名单 + 请求体 10MB 限制 + URL 2KB 限制
   │                            命中 → AuditLogger::threat() → 403
   ▼
-5. LocaleMiddleware          ← Accept-Language 解析，设置区域
+7. SecurityPlugin            ← 31 种攻击检测（XSS/SQL注入/SSRF/反序列化等），IP 黑白名单
   ▼
-6. HashidRequestMiddleware   ← 请求参数 hashid 字符串 → 真实整数 ID 解码
+8. RateLimitMiddleware       ← 全路由限流（per-IP + per-token 双桶）
   ▼
-7. MaintenanceMiddleware     ← MAINTENANCE_MODE 检查，白名单 IP 放行
+9. LocaleMiddleware          ← Accept-Language 解析，设置区域
+  ▼
+10. MetricsMiddleware        ← Prometheus HTTP 请求计数与延迟记录
+  ▼
+11. HashidRequestMiddleware  ← 请求参数 hashid 字符串 → 真实整数 ID 解码
+  ▼
+12. MaintenanceMiddleware    ← MAINTENANCE_MODE 检查，白名单 IP 放行
   │
   ▼
 [路由中间件 — 按路由组附加]
+  │
+  ├─ /health (内部监控) ────────────
+  │   InternalTokenMiddleware      ← 内部令牌校验 /health/live|ready|deps
   │
   ├─ /api/auth ─────────────────────
   │   EncryptionMiddleware          ← AES-256-GCM 请求/响应体加解密
@@ -207,18 +221,22 @@ HTTP 请求
 |--------|------|---------|------|
 | `VersionMiddleware` | common/Version | 全局 | 校验 `X-Api-Version`，缺失默认 v1 |
 | `CorsMiddleware` | common/Security | 全局 | OPTIONS 预检，Origin 反射 |
+| `SecurityHeadersMiddleware` | common/Security | 全局 | HSTS / X-Frame-Options / CSP / Referrer-Policy 安全响应头 |
 | `ClientPlatformMiddleware` | common/ClientPlatform | 全局 | `X-Client-Platform` 8 平台识别 |
+| `GeoBlockMiddleware` | common/Security | 全局 | GEO_BLOCKED_COUNTRIES 地域封锁（MaxMind GeoIP2） |
 | `WafMiddleware` | common/Security | 全局(service)+admin | 8 类 45+ 规则 + 请求限制 |
+| `SecurityPlugin` | Erikwang2013\Security | 全局 | 31 种攻击检测，IP 白/黑名单 |
+| `RateLimitMiddleware` | common/Security | 全局 | Redis 令牌桶限流（per-IP + per-token 双桶） |
 | `LocaleMiddleware` | common/I18n | 全局 | Accept-Language 解析 |
+| `MetricsMiddleware` | common/Metrics | 全局 | Prometheus HTTP 请求计数与延迟 |
 | `HashidRequestMiddleware` | common/Hashid | 全局 | hashid 请求解码 |
 | `MaintenanceMiddleware` | common/Security | 全局 | 维护模式 + IP 白名单 |
+| `InternalTokenMiddleware` | common/Security | 路由组 | `/health/live|ready|deps` 内部令牌校验 |
 | `EncryptionMiddleware` | common/Encryption | 路由组 | AES-256-GCM 加解密 |
 | `AuthMiddleware` | common/Auth | 路由组 | JWT Bearer Token 验证 |
 | `AdminRoleMiddleware` | common/Auth | 路由组 | 管理员 RBAC |
 | `ConfirmationMiddleware` | common/Confirmation | 路由组 | 密码二次确认 |
 | `SupplierApiKeyMiddleware` | common/Auth | 路由组 | sk_xxx API Key SHA256 验签 |
-| `RateLimitMiddleware` | common/Security | 按需 | Redis 令牌桶限流 |
-| `GeoBlockMiddleware` | common/Security | 按需 | MaxMind GeoIP2 地域封锁 |
 
 ---
 
@@ -277,7 +295,7 @@ HTTP 请求
 | 层级 | 算法 | 实现 | 用途 |
 |------|------|------|------|
 | 传输层 | AES-256-GCM | EncryptionMiddleware | API 请求/响应体加密，GCM 认证 |
-| 字段层 | AES-128-ECB | Encryptable Cast | 敏感字段自动加解密（支持查询） |
+| 字段层 | AES-256-CBC | Encryptable Cast | 敏感字段自动加解密（CBC 随机 IV，不泄漏等值模式） |
 | 哈希层 | bcrypt + SHA256 | JWT / API Key | 密码/Token 不可逆存储 |
 | 主键层 | Hashids | Response + Middleware | ID 对外混淆 |
 

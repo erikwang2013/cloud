@@ -15,7 +15,7 @@
 | 分布式主键 | Snowflake 雪花 ID ([erikwang2013/snowflake-php](https://github.com/erikwang2013/snowflake-php)) |
 | ID 混淆 | Hashids ([erikwang2013/hashids](https://github.com/erikwang2013/hashids)) |
 | 传输加密 | AES-256-GCM ([erikwang2013/encryption](https://github.com/erikwang2013/encryption)) |
-| 字段加密 | AES-128-ECB ([erikwang2013/encryptable](https://github.com/erikwang2013/encryptable)) |
+| 字段加密 | AES-256-CBC ([erikwang2013/encryptable](https://github.com/erikwang2013/encryptable)) |
 | 全文搜索 | Elasticsearch ([erikwang2013/webman-scout](https://github.com/erikwang2013/webman-scout)) |
 | 国家旗帜 | Unicode Flag Emoji ([erikwang2013/season](https://github.com/erikwang2013/season)) |
 | 点击验证码 | Click CAPTCHA ([erikwang2013/poster-php](https://github.com/erikwang2013/poster-php)) |
@@ -73,7 +73,7 @@
 
 ## 功能模块总览
 
-系统按四层架构组织：客户端层（6 平台接入）、API 网关层（14 项中间件）、业务服务层（20+ 功能模块）、基础设施层（8 个核心组件）。
+系统按四层架构组织：客户端层（6 平台接入）、API 网关层（12 项中间件）、业务服务层（20+ 功能模块）、基础设施层（8 个核心组件）。
 
 ![功能模块总览](docs/diagrams/module-overview-zh.svg)
 
@@ -88,10 +88,10 @@
 | 文档 | 说明 |
 |------|------|
 | [架构设计文档](docs/architecture.md) | 系统架构、组件关系、中间件管线、安全分层、数据架构、部署拓扑 |
-| [功能设计文档](docs/features.md) | 12 模块详细功能设计，含流程图、数据模型、交互说明 |
-| [API 接口文档](docs/api-reference.md) | 190+ 端点完整参考，按模块分组，含请求/响应示例、错误码 |
+| [功能设计文档](docs/features.md) | 21 模块详细功能设计，含流程图、数据模型、交互说明 |
+| [API 接口文档](docs/api-reference.md) | 200+ 端点完整参考，按模块分组，含请求/响应示例、错误码 |
 | [API 在线文档 (service)](http://localhost:8787/apidoc) | hg/apidoc 自动生成，按功能分组，支持在线调试 |
-| [API 在线文档 (admin)](http://localhost:8788/apidoc) | hg/apidoc 自动生成，60+ 控制器 15 组功能分组 |
+| [API 在线文档 (admin)](http://localhost:8788/apidoc) | hg/apidoc 自动生成，54 个控制器 13 组功能分组 |
 | [管理后台设计](docs/admin-design.md) | Admin 面板架构、包集成、ACL 权限、测试套件 |
 | [供应商 API 文档](docs/supplier-api.md) | 供应商 API 参考（内部 + 外部），SDK 示例 |
 | [部署清单](docs/deployment.md) | 服务器配置、环境变量、Nginx、HTTPS、定时任务 |
@@ -109,7 +109,7 @@ cloud-php/
 │   │   ├── bootstrap/          # 进程启动引导（Snowflake / Encryptable / Encryption）
 │   │   ├── command/            # 控制台命令（Migrate / Rollback / Status）
 │   │   ├── common/             # 工具类（Auth / Tree / Layui / Util / ExcelExport / Migration）
-│   │   ├── controller/         # 53 个控制器（Base / Crud 基类 + 各业务 CRUD）
+│   │   ├── controller/         # 54 个控制器文件（Base / Crud 基类 + 各业务 CRUD）
 │   │   ├── exception/          # 异常处理
 │   │   ├── middleware/          # 访问控制中间件（WafMiddleware + AccessControl）
 │   │   ├── model/              # 45 个 Eloquent 模型（Base 基类含 Snowflake PK + Encryptable）
@@ -506,7 +506,7 @@ ProviderInterface
 
 ### 5. 安全架构
 
-全局中间件链：`Version → CORS → SecurityHeaders → ClientPlatform → GeoBlock → WAF → SecurityPlugin → Locale → HashidRequest → Maintenance → [路由: Encryption → Captcha → Auth → Confirmation]`
+全局中间件链：`Version → CORS → SecurityHeaders → ClientPlatform → GeoBlock → WAF → SecurityPlugin → RateLimit → Locale → Metrics → HashidRequest → Maintenance → [路由: Encryption → Captcha → Auth → Confirmation]`
 
 ![安全中间件管道](docs/diagrams/security-middleware-zh.svg)
 
@@ -533,7 +533,7 @@ ProviderInterface
 | 层级 | 技术 | 说明 |
 |------|------|------|
 | 传输层 | AES-256-GCM | API 请求/响应体加密，GCM 认证加密防篡改 |
-| 字段层 | AES-128-ECB | 模型敏感字段自动加解密，ECB 确定性加密支持数据库查询 |
+| 字段层 | AES-256-CBC | 模型敏感字段自动加解密，CBC 随机 IV 不泄漏等值模式 |
 | 主键层 | Hashids | 对外 ID 混淆为 12 位字符串，隐藏真实数据规模 |
 
 **敏感字段加密：** 7 个模型的 14 个字段使用 `Encryptable::class` 自动加解密 —— `User(email, phone, password_hash)`, `UserKyc(id_number, real_name)`, `UserAddress(phone, address)`, `Supplier(contact_name, phone, email)`, `HostMachine(api_token)`, `PaymentChannel(api_key, webhook_secret)`, `RefreshToken(token_hash, device_fingerprint)`。

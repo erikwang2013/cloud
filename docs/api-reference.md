@@ -67,6 +67,7 @@
 | 路由组 | 中间件 | 前缀 |
 |--------|--------|------|
 | 公开 | 全局中间件链 | `/health`, `/api/*` |
+| `/health` (内部) | 全局 + InternalToken | `/health/live`, `/health/ready`, `/health/deps` |
 | `/api/auth` | 全局 + Encryption | `/api/auth/*` |
 | `/api` (用户) | 全局 + Encryption + Auth | `/api/user/*`, `/api/cart`, `/api/orders` |
 | `/api` (敏感) | 全局 + Encryption + Auth + Confirmation | `/api/orders/{id}/pay` |
@@ -731,7 +732,205 @@ GET /admin/api/orders/export             → Excel 下载
 
 ---
 
-## 十一、WebSocket 事件
+## 十一、SSL 证书
+
+### 用户端
+
+```
+GET /api/ssl/plans
+  → SSL 套餐列表（DV/OV/EV，价格含 register/renew/transfer）
+
+GET /api/ssl-certs
+  → 我的证书列表（含 status: pending/active/expired/revoked）
+
+GET /api/ssl-certs/{id}
+  → 证书详情（域名、签发机构、有效期、续期状态）
+
+GET /api/ssl-certs/{id}/download
+  → 下载证书文件（证书链 + 私钥）
+
+POST /api/ssl-certs/{id}/auto-renew
+  体: { auto_renew: true/false }
+  → 切换自动续期
+```
+
+### 管理端
+
+```
+GET /admin/api/ssl/plans              → 套餐列表
+POST /admin/api/ssl/plans             → 创建套餐
+PUT /admin/api/ssl/plans/{id}         → 更新套餐
+DELETE /admin/api/ssl/plans/{id}      → 删除套餐
+GET /admin/api/ssl/certs              → 全部证书
+POST /admin/api/ssl/certs/{id}/revoke → 吊销证书
+```
+
+---
+
+## 十二、对象存储
+
+S3 兼容对象存储，通过预签名 URL 上传/下载，密钥不外传。
+
+```
+GET /api/storage/buckets
+  → 我的存储桶列表（用量、状态）
+
+GET /api/storage/buckets/{id}
+  → 存储桶详情
+
+POST /api/storage/buckets/{id}/presign-upload
+  体: { filename, content_type, size }
+  → { upload_url, object_key } 预签名上传 URL（限时）
+
+POST /api/storage/buckets/{id}/presign-download
+  体: { object_key }
+  → 预签名下载 URL（限时）
+
+GET /api/storage/buckets/{id}/credentials
+  → 临时访问凭证（短期有效，用于 SDK 直传）
+```
+
+---
+
+## 十三、CDN 加速
+
+### 用户端
+
+```
+GET /api/cdn/domains
+  → 我的 CDN 域名列表（源站、状态、套餐）
+
+GET /api/cdn/domains/{id}
+  → CDN 域名详情
+
+POST /api/cdn/domains/{id}/purge
+  → 清除缓存（全站或指定 URL 列表）
+
+GET /api/cdn/domains/{id}/stats
+  参数: range (day/week/month)
+  → 流量/请求数/命中率统计
+```
+
+### 管理端
+
+```
+GET /admin/api/cdn/domains            → 全部 CDN 域名
+PUT /admin/api/cdn/domains/{id}       → 更新域名套餐/配置
+```
+
+---
+
+## 十四、按量计费
+
+```
+GET /admin/api/billing/rates          → 计费费率列表（按资源类型/规格）
+POST /admin/api/billing/rates         → 创建费率
+PUT /admin/api/billing/rates/{id}     → 更新费率
+DELETE /admin/api/billing/rates/{id}  → 删除费率
+GET /admin/api/billing/usage          → 用量汇总（按用户/资源聚合）
+```
+
+计费管线：ResourceMonitor 每 5 分钟采集 → UsageAggregator 每小时聚合 → BillingEngine 每日扣款，余额不足挂起资源。
+
+---
+
+## 十五、联盟佣金（Affiliate）
+
+### 用户端
+
+```
+GET /api/affiliate/summary
+  → 佣金总览（累计/待结算/可提现、链接数、转化率）
+
+POST /api/affiliate/links
+  体: { source? }
+  → 生成推广链接（?ref=CODE）
+
+GET /api/affiliate/earnings
+  参数: status, page
+  → 佣金明细（订单归属、比例、状态: pending/approved/paid）
+
+POST /api/affiliate/payout
+  体: { amount, method }
+  → 发起提现申请
+```
+
+### 管理端
+
+```
+GET /admin/api/affiliate/plans                → 佣金方案列表
+POST /admin/api/affiliate/plans               → 创建佣金方案
+GET /admin/api/affiliate/earnings             → 全部佣金记录
+POST /admin/api/affiliate/earnings/{id}/approve → 审核佣金
+GET /admin/api/affiliate/payouts              → 提现申请列表
+POST /admin/api/affiliate/payouts/{id}/approve → 审核/打款提现
+```
+
+---
+
+## 十六、GraphQL
+
+```
+POST /graphql
+  → 公开查询（商品、域名、帮助等只读数据）
+  限制: 查询深度 5 层，复杂度 100
+
+POST /api/graphql                          🔒 需认证
+  → 完整查询（含用户数据）
+```
+
+**敏感操作保持 REST-only：** 支付、提现、退款、KYC 审核不走 GraphQL。
+
+---
+
+## 十七、供应商评分与商品评价
+
+### 公开
+
+```
+GET /api/regions
+  → 可用区域列表（含货币/时区）
+
+GET /api/suppliers/{supplierId}/ratings
+  → 供应商评分列表（四维度: 质量/支持/交付速度/性价比，仅返回 approved）
+```
+
+### 用户端（需认证）
+
+```
+POST /api/products/{productId}/reviews
+  体: { rating, content, images? }
+  → 提交商品评价（每订单一次，审核后展示）
+
+POST /api/supplier/ratings
+  体: { supplier_id, quality, support, delivery_speed, value, comment? }
+  → 提交供应商评分（每订单一次）
+
+GET /api/supplier/ratings/me
+  → 我的评分记录
+```
+
+### 管理端
+
+```
+GET /admin/api/suppliers/{id}/ratings          → 全部评分（含 pending）
+POST /admin/api/suppliers/ratings/{id}/approve → 审核通过
+POST /admin/api/suppliers/ratings/{id}/hide    → 隐藏
+```
+
+---
+
+## 十八、支付 Webhook
+
+```
+POST /api/payments/webhook/stripe
+  头: Stripe-Signature: ...
+  → Stripe 回调（支付成功/退款/争议），签名校验失败返回 400
+```
+
+---
+
+## 十九、WebSocket 事件
 
 **连接:** `ws://host:8282`（docker 部署下 WS 经 nginx 反代，连接地址为 `ws://host/ws/`，8282 仅容器内暴露）
 
@@ -763,7 +962,7 @@ GET /admin/api/orders/export             → Excel 下载
 
 ---
 
-## 十二、错误码参考
+## 二十、错误码参考
 
 | code | 说明 |
 |------|------|
