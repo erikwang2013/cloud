@@ -4,9 +4,8 @@ namespace App\Order\Service;
 use App\Order\Model\Order;
 use App\Order\Model\Refund;
 use App\Payment\Model\PaymentTransaction;
+use Common\Money\Money;
 use Common\Webhook\WebhookDispatcher;
-use App\User\Model\UserBalance;
-use App\User\Model\UserBalanceLog;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\QueryException;
 use Stripe\Exception\ApiErrorException;
@@ -19,11 +18,6 @@ use support\Log;
  */
 class RefundService
 {
-    private const ZERO_DECIMAL_CURRENCIES = [
-        'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA',
-        'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF',
-    ];
-
     /**
      * 退款窗口规则：按商品分类 type 返回 [小时数, 越期文案]。
      * hours = 0 表示该类型不可退款；null 表示无窗口限制（disk/未知类型）。
@@ -128,7 +122,6 @@ class RefundService
             }
 
             $order->update(['status' => 'refunded']);
-            $this->creditBackIfDeducted($order, $refund->amount);
         });
 
         $refund = $refund->refresh();
@@ -172,41 +165,6 @@ class RefundService
         }
     }
 
-    /**
-     * 若该订单此前已从用户余额扣款，则加回余额并写余额流水。
-     */
-    private function creditBackIfDeducted(Order $order, string $amount): void
-    {
-        $deduction = UserBalanceLog::where('order_id', $order->id)
-            ->where('amount', '>', 0)
-            ->first();
-
-        if (!$deduction) {
-            return;
-        }
-
-        $balance = UserBalance::where('user_id', $order->user_id)
-            ->where('currency', $order->currency)
-            ->lockForUpdate()
-            ->first();
-
-        if (!$balance) {
-            return;
-        }
-
-        $balance->increment('balance', $amount);
-        UserBalanceLog::create([
-            'user_id'        => $order->user_id,
-            'type'           => 'refund',
-            'currency'       => $order->currency,
-            'amount'         => $amount,
-            'balance_before' => (string) bcsub((string) $balance->balance, (string) $amount, 4),
-            'balance_after'  => (string) $balance->balance,
-            'order_id'       => $order->id,
-            'remark'         => "Refund for order {$order->order_no}",
-        ]);
-    }
-
     private function markFailed(Refund $refund, string $reason): void
     {
         Capsule::table('refunds')
@@ -221,10 +179,6 @@ class RefundService
 
     public function toSmallestUnit(string $amount, string $currency): int
     {
-        // 纯字符串四舍五入到整数最小单位，避免 float 精度问题
-        if (in_array(strtoupper($currency), self::ZERO_DECIMAL_CURRENCIES, true)) {
-            return (int) bcadd($amount, '0.5', 0);
-        }
-        return (int) bcadd(bcmul($amount, '100', 2), '0.5', 0);
+        return Money::toSmallestUnit($amount, $currency);
     }
 }

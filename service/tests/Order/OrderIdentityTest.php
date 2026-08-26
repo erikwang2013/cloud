@@ -7,6 +7,7 @@ use Common\Money\Money;
 use Erikwang2013\WebmanScout\ModelObserver;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Redis as RedisFacade;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -183,14 +184,38 @@ final class OrderIdentityTest extends TestCase
             'id' => 1, 'user_id' => 100, 'sku_id' => 1, 'region_id' => 1, 'quantity' => 2, 'cycle' => 'monthly',
         ]);
 
-        $order = (new OrderService())->createFromCart(100, [1], 'EUR');
+        // 快照率写在订单行上；缺汇率时拒绝下单（见 testRejectsMultiCurrencyWithoutRate），
+        // 此处注入 fake Redis 提供 EUR 汇率验证快照
+        $redisRoot = RedisFacade::getFacadeRoot();
+        RedisFacade::swap(new class {
+            public function get(string $key) { return '0.900000'; }
+        });
 
-        // 快照率写在订单行上（测试环境无 Redis 外观容器，走 1.000000 fallback）；
-        // 换算点 = 结算写库时，恒等式与币种/汇率无关
-        $this->assertSame('EUR', $order->currency);
-        $this->assertSame('1.000000', (string) $order->exchange_rate);
-        $this->assertIdentity($order);
-        $this->assertSame(0, bccomp((string) $order->total, '24.6800', 4));
+        try {
+            $order = (new OrderService())->createFromCart(100, [1], 'EUR');
+
+            $this->assertSame('EUR', $order->currency);
+            $this->assertSame('0.900000', (string) $order->exchange_rate);
+            $this->assertIdentity($order);
+            $this->assertSame(0, bccomp((string) $order->total, '24.6800', 4));
+        } finally {
+            RedisFacade::swap($redisRoot);
+        }
+    }
+
+    public function testRejectsMultiCurrencyWithoutRate(): void
+    {
+        $this->insertBasics();
+        Capsule::table('product_regions')->insert([
+            'id' => 1, 'sku_id' => 1, 'region_id' => 1, 'currency' => 'EUR', 'price' => '12.3400', 'stock' => 10,
+        ]);
+        Capsule::table('carts')->insert([
+            'id' => 1, 'user_id' => 100, 'sku_id' => 1, 'region_id' => 1, 'quantity' => 2, 'cycle' => 'monthly',
+        ]);
+
+        // #8：非 USD 订单汇率缺失时拒绝下单（记 1.000000 会让发票/对账换算失真）
+        $this->expectException(\InvalidArgumentException::class);
+        (new OrderService())->createFromCart(100, [1], 'EUR');
     }
 
     public function testNoCouponOrderIdentity(): void

@@ -7,6 +7,8 @@ use App\Supplier\Model\SupplierWithdraw;
 use App\Order\Model\OrderItem;
 use App\User\Model\User;
 use Common\Webhook\WebhookDispatcher;
+use Illuminate\Database\Capsule\Manager as Capsule;
+use Illuminate\Database\QueryException;
 
 class SupplierService
 {
@@ -59,22 +61,35 @@ class SupplierService
             })
             ->get();
 
-        $totalSales = $items->sum('total_price');
-        $commission = $items->sum(function ($item) {
-            $rate = 0.10;
-            return bcmul($item->total_price, (string)$rate, 4);
-        });
+        // D4：逐行字符串 bcmath 累计（Collection sum 走浮点），佣金沿用逐项 10% 舍入语义
+        $totalSales = '0.0000';
+        $commission = '0.0000';
+        foreach ($items as $item) {
+            $totalSales  = bcadd($totalSales, (string) $item->total_price, 4);
+            $commission  = bcadd($commission, bcmul((string) $item->total_price, '0.1000', 4), 4);
+        }
         $payable = bcsub($totalSales, $commission, 4);
 
-        $settlement = SupplierSettlement::create([
-            'supplier_id'  => $supplierId,
-            'period_start' => $periodStart,
-            'period_end'   => $periodEnd,
-            'total_sales'  => $totalSales,
-            'commission'   => $commission,
-            'payable'      => $payable,
-            'status'       => 'pending',
-        ]);
+        try {
+            $settlement = SupplierSettlement::create([
+                'supplier_id'  => $supplierId,
+                'period_start' => $periodStart,
+                'period_end'   => $periodEnd,
+                'total_sales'  => $totalSales,
+                'commission'   => $commission,
+                'payable'      => $payable,
+                'status'       => 'pending',
+            ]);
+        } catch (QueryException $e) {
+            // 唯一索引 uniq_supplier_settlement_period 兜底：并发重复生成时返回既有结算单
+            if (($e->errorInfo[0] ?? '') !== '23000') {
+                throw $e;
+            }
+            return SupplierSettlement::where('supplier_id', $supplierId)
+                ->where('period_start', $periodStart)
+                ->where('period_end', $periodEnd)
+                ->firstOrFail();
+        }
 
         WebhookDispatcher::dispatch(WebhookDispatcher::EVENT_SETTLEMENT_CREATED, [
             'settlement_id' => $settlement->id,
@@ -89,26 +104,38 @@ class SupplierService
 
     public function requestWithdraw(int $supplierId, string $amount, array $accountInfo): void
     {
-        $available = SupplierSettlement::where('supplier_id', $supplierId)
-            ->where('status', 'completed')
-            ->sum('payable');
+        Capsule::transaction(function () use ($supplierId, $amount, $accountInfo) {
+            // 行锁串行化同一供应商并发提现（双击/重放），锁内重算余额再建单，防止超余额双提现
+            Supplier::where('id', $supplierId)->lockForUpdate()->firstOrFail();
 
-        $pending = SupplierWithdraw::where('supplier_id', $supplierId)
-            ->whereIn('status', ['pending', 'processing'])
-            ->sum('amount');
+            if (bccomp($amount, '0', 4) <= 0) {
+                throw new \InvalidArgumentException('Withdraw amount must be positive');
+            }
 
-        $withdrawable = bcsub($available, $pending, 4);
+            $available = (string) Capsule::table('supplier_settlements')
+                ->where('supplier_id', $supplierId)
+                ->where('status', 'completed')
+                ->value(Capsule::raw('COALESCE(SUM(payable), 0)'));
 
-        if (bccomp($amount, $withdrawable, 4) > 0) {
-            throw new \InvalidArgumentException('Insufficient withdrawable balance');
-        }
+            $pending = (string) Capsule::table('supplier_withdraws')
+                ->where('supplier_id', $supplierId)
+                ->whereIn('status', ['pending', 'processing'])
+                ->value(Capsule::raw('COALESCE(SUM(amount), 0)'));
 
-        SupplierWithdraw::create([
-            'supplier_id'  => $supplierId,
-            'amount'       => $amount,
-            'method'       => $accountInfo['method'],
-            'account_info' => json_encode($accountInfo),
-            'status'       => 'pending',
-        ]);
+            $withdrawable = bcsub($available, $pending, 4);
+
+            if (bccomp($amount, $withdrawable, 4) > 0) {
+                throw new \InvalidArgumentException('Insufficient withdrawable balance');
+            }
+
+            SupplierWithdraw::create([
+                'supplier_id'  => $supplierId,
+                'amount'       => $amount,
+                'method'       => $accountInfo['method'],
+                // array cast 会自动 json_encode，传入字符串会双编码存成字面量
+                'account_info' => $accountInfo,
+                'status'       => 'pending',
+            ]);
+        });
     }
 }

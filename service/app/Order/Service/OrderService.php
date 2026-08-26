@@ -160,9 +160,14 @@ class OrderService
         if ($currency === 'USD') return '1.000000';
         try {
             $rate = Redis::get("exchange_rate:{$currency}");
-            return $rate ?: '1.000000';
         } catch (\Exception $e) {
-            return '1.000000';
+            $rate = null;
         }
+        if (!$rate) {
+            // ponytail: 汇率缺失直接拒绝下单（记 1.000000 会让发票/对账换算失真）；
+            // 若需回源上游汇率，可在此补查询后返回
+            throw new \InvalidArgumentException("Exchange rate unavailable for {$currency}, please try again later");
+        }
+        return (string) $rate;
     }
 }

@@ -22,11 +22,6 @@ class StripeChannel
     private PaymentChannel $channel;
     private ?StripeClient $stripe = null;
 
-    private const ZERO_DECIMAL_CURRENCIES = [
-        'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA',
-        'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF',
-    ];
-
     public function __construct(PaymentChannel $channel)
     {
         $this->channel = $channel;
@@ -43,7 +38,7 @@ class StripeChannel
 
     public function createPaymentIntent(Order $order): array
     {
-        $amount = $this->toSmallestUnit($order->total, $order->currency);
+        $amount = Money::toSmallestUnit($order->total, $order->currency);
 
         $fee = (new PaymentRouter())->calculateFee($order->total, $this->channel->fee_config ?? []);
 
@@ -112,7 +107,7 @@ class StripeChannel
             }
 
             // Verify webhook amount matches stored transaction amount
-            $expectedSmallest = $this->toSmallestUnit($txn->amount, $txn->currency);
+            $expectedSmallest = Money::toSmallestUnit($txn->amount, $txn->currency);
             if ($amountReceived !== $expectedSmallest || strtoupper($txn->currency) !== $stripeCurrency) {
                 Log::error("Stripe amount mismatch: txn={$txn->id} expected={$expectedSmallest} received={$amountReceived}");
                 $txn->update(['status' => 'failed']);
@@ -176,27 +171,15 @@ class StripeChannel
         }
     }
 
-    private function toSmallestUnit(string $total, string $currency): int
-    {
-        // D4：字符串 bcmath 舍入，不再经 (float)/round()（浮点精度隐患）
-        if (in_array(strtoupper($currency), self::ZERO_DECIMAL_CURRENCIES, true)) {
-            return (int) Money::bcround($total, 0);
-        }
-        return (int) Money::bcround(bcmul($total, '100', 2), 0);
-    }
-
+    // 统一走 Common\Money（原 toSmallestUnit/isZeroDecimal/smallestToMajor 已合并，此处仅留委托保持调用方兼容）
     public static function isZeroDecimal(string $currency): bool
     {
-        return in_array(strtoupper($currency), self::ZERO_DECIMAL_CURRENCIES, true);
+        return Money::isZeroDecimal($currency);
     }
 
     public static function smallestToMajor(int $smallest, string $currency): string
     {
-        $currency = strtoupper($currency);
-        if (in_array($currency, self::ZERO_DECIMAL_CURRENCIES, true)) {
-            return (string) $smallest;
-        }
-        return bcdiv((string) $smallest, '100', 4);
+        return Money::smallestToMajor($smallest, $currency);
     }
 
     /**

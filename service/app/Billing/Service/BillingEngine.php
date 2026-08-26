@@ -34,7 +34,9 @@ class BillingEngine
                 if (!$resource) return;
 
                 // 按费率币种分桶累计（usage_invoice_items 的 currency 与费率一致）
+                // 账项先积攒不落库：余额不足时事件保持 open，次日重跑不能产生重复账项
                 $totals = [];
+                $invoiceItems = [];
                 foreach ($resourceEvents as $event) {
                     $rate = $rateMap[$event->meter][$resource->region_id ?? 'null']
                         ?? $rateMap[$event->meter]['null']
@@ -44,7 +46,7 @@ class BillingEngine
                     $amount = bcmul($event->quantity, $unitPrice, 8);
                     $currency = $rate ? $rate->currency : 'USD';
 
-                    Capsule::table('usage_invoice_items')->insert([
+                    $invoiceItems[] = [
                         'resource_id'  => $resource->id,
                         'meter'        => $event->meter,
                         'quantity'     => $event->quantity,
@@ -53,7 +55,7 @@ class BillingEngine
                         'period_start' => $event->period_start,
                         'period_end'   => $event->period_end,
                         'created_at'   => date('Y-m-d H:i:s'),
-                    ]);
+                    ];
 
                     $totals[$currency] = bcadd($totals[$currency] ?? '0', $amount, 8);
                 }
@@ -82,6 +84,11 @@ class BillingEngine
                 }
 
                 if ($sufficient) {
+                    // 余额校验通过后才落账项（与扣费同事务），避免余额不足重跑产生重复账项
+                    foreach ($invoiceItems as $item) {
+                        Capsule::table('usage_invoice_items')->insert($item);
+                    }
+
                     foreach ($deductions as $d) {
                         $d['balance']->decrement('balance', $d['amount']);
                         UserBalanceLog::create([

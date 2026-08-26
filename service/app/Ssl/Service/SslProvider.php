@@ -7,6 +7,7 @@ use App\Provisioning\Model\ProvisionResult;
 use App\Provisioning\Model\Resource;
 use App\Provisioning\Model\ResourceStatus;
 use App\Ssl\Model\SslCertificate;
+use support\Log;
 
 class SslProvider implements ProviderInterface
 {
@@ -131,7 +132,9 @@ class SslProvider implements ProviderInterface
             try {
                 $ca = $this->getCa($cert);
                 $ca->revoke($cert->cert_pem);
-            } catch (\Throwable) {}
+            } catch (\Throwable $e) {
+                Log::error("SSL certificate revocation failed: resource={$resource->id} cert={$cert->id}: {$e->getMessage()}");
+            }
             $cert->update(['status' => 'revoked']);
         }
         return ProvisionResult::success([]);

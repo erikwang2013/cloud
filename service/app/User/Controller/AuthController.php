@@ -141,6 +141,10 @@ class AuthController
         if (empty($email) || empty($code) || empty($password)) {
             return json(Response::error(422, 'Email, code, and password are required'));
         }
+        // 先校验格式再进错码计数逻辑，防止任意邮箱刷错码锁 600s（放大攻击面）
+        if (!\Common\Helper\Validator::email($email)) {
+            return json(Response::error(422, 'Invalid email format'));
+        }
         if (!\Common\Helper\Validator::minLength($password, 8)) {
             return json(Response::error(422, 'Password must be at least 8 characters'));
         }

@@ -9,6 +9,36 @@ namespace Common\Money;
  */
 class Money
 {
+    public const ZERO_DECIMAL_CURRENCIES = [
+        'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA',
+        'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF',
+    ];
+
+    public static function isZeroDecimal(string $currency): bool
+    {
+        return in_array(strtoupper($currency), self::ZERO_DECIMAL_CURRENCIES, true);
+    }
+
+    /**
+     * 金额转最小货币单位（分/零小数币种整数），全程字符串 bcmath HALF_UP。
+     * RefundService 与 StripeChannel 共用此实现（原各自一份，行为等价）。
+     */
+    public static function toSmallestUnit(string $amount, string $currency): int
+    {
+        if (self::isZeroDecimal($currency)) {
+            return (int) self::bcround($amount, 0);
+        }
+        return (int) self::bcround(bcmul($amount, '100', 2), 0);
+    }
+
+    public static function smallestToMajor(int $smallest, string $currency): string
+    {
+        if (self::isZeroDecimal($currency)) {
+            return (string) $smallest;
+        }
+        return bcdiv((string) $smallest, '100', 4);
+    }
+
     public static function bcround(string $value, int $scale = 4, int $mode = PHP_ROUND_HALF_UP): string
     {
         $neg = bccomp($value, '0', $scale + 2) < 0;

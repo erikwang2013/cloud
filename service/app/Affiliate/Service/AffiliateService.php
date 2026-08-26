@@ -70,15 +70,18 @@ class AffiliateService
                 return $existing;
             }
 
-            $totalEarned = AffiliateEarning::where('affiliate_id', $userId)
+            // D4：SUM 用 selectRaw 直接取 DECIMAL 字符串，Eloquent sum() 会经浮点丢失精度
+            $totalEarned = (string) Capsule::table('affiliate_earnings')
+                ->where('affiliate_id', $userId)
                 ->where('status', 'approved')
-                ->sum('amount');
+                ->value(Capsule::raw('COALESCE(SUM(amount), 0)'));
 
-            $totalPaid = AffiliatePayout::where('affiliate_id', $userId)
+            $totalPaid = (string) Capsule::table('affiliate_payouts')
+                ->where('affiliate_id', $userId)
                 ->where('status', 'paid')
-                ->sum('amount');
+                ->value(Capsule::raw('COALESCE(SUM(amount), 0)'));
 
-            $available = bcsub((string) $totalEarned, (string) $totalPaid, 4);
+            $available = bcsub($totalEarned, $totalPaid, 4);
             if (bccomp($available, '50', 4) < 0) {
                 throw new \RuntimeException('Minimum payout is 50.00 USD');
             }

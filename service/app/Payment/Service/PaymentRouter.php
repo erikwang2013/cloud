@@ -30,8 +30,9 @@ class PaymentRouter
                 'code'         => $channel->code,
                 'amount'       => $context['amount'],
                 'fee'          => $fee,
-                // 对齐 amount 到 4 位再加 fee（D5：total_amount - amount - fee 精确为 0）
-                'total_amount' => bcadd(Money::bcround($context['amount'], 4), $fee, 4),
+                // ponytail: 展示=实收（total_amount = amount）。createPaymentIntent 只按 order->total
+                // 扣款，fee 从未实收；若业务确认要收通道费，需在 StripeChannel 增加实际收取逻辑
+                'total_amount' => Money::bcround($context['amount'], 4),
             ];
         }
 

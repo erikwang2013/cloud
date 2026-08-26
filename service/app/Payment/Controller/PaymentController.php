@@ -34,7 +34,10 @@ class PaymentController
         // 行锁串行化同订单并发支付发起（双击/重放），锁内校验状态与已有 intent；
         // 单机与分布式部署同为 MySQL 行锁，语义一致。
         return \Illuminate\Database\Capsule\Manager::transaction(function () use ($request, $orderId, $channelId) {
+            // $orderId 已由路由层 hashids 解码，直接作为 id 条件；缺 id 条件时行锁只会
+            // 取该用户任意一条 pending 订单，导致支付订单 B 却按订单 A 金额扣款
             $order = Order::where('user_id', $request->userId)
+                ->where('id', $orderId)
                 ->lockForUpdate()
                 ->firstOrFail();
             if ($order->status !== 'pending') {
@@ -47,8 +50,9 @@ class PaymentController
             }
 
             // 已有待支付/已成功的 intent 则拒绝重复发起；已 failed/cancelled 的可重试
+            // 实际写入状态为 success（见 StripeChannel::confirmPayment），非 succeeded
             $exists = PaymentTransaction::where('order_id', $order->id)
-                ->whereIn('status', ['pending', 'succeeded'])
+                ->whereIn('status', ['pending', 'success'])
                 ->exists();
             if ($exists) {
                 return json(Response::error(422, 'Payment already initiated for this order'));

@@ -7,15 +7,15 @@
  */
 
 return [
-    // 数据库字段加密主密钥（16 字节，base64 编码）
+    // 数据库字段加密主密钥（32 字节，base64 编码；aes-256-cbc 需要 32 字节密钥）
     // 一旦设定请不要更改，否则已加密数据将无法解密
-    // 生成方式：echo -n "$(openssl rand -base64 16)" | base64 -w0
+    // 生成方式：openssl rand -base64 32
     'key'           => getenv('ENCRYPTION_KEY') ?: '',
 
-    // 加密算法：aes-128-ecb（确定性加密 — 相同明文产生相同密文）
-    // ECB 模式使加密列可查询（WHERE email = 'xxx'），但会泄漏等值模式
-    // 如需隐蔽模式可用 aes-256-cbc，但搜不到已加密字段
-    'cipher'        => getenv('ENCRYPTION_CIPHER') ?: 'aes-128-ecb',
+    // 加密算法：aes-256-cbc（随机 IV — 相同明文产生不同密文，不泄漏等值模式）
+    // 注意：存量以 aes-128-ecb 加密的数据无法用 CBC 解密，升级需重加密迁移
+    //（读出明文 → 换 cipher 后写回）；encryptable 包支持任何 OpenSSL cipher + 随机 IV
+    'cipher'        => getenv('ENCRYPTION_CIPHER') ?: 'aes-256-cbc',
 
     // 旧密钥列表（逗号分隔），用于零停机密钥轮换
     // 解密时依次尝试所有密钥，重加密时使用主密钥
