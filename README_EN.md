@@ -1,5 +1,9 @@
 # CloudPlatform — Global Cloud Resource Marketplace
 
+<p align="center">
+  <img src="docs/diagrams/c.svg" alt="CloudPlatform Project Pet" width="220">
+</p>
+
 A cloud resource trading platform serving global users. Supports purchasing servers (VM), IP addresses, cloud disks, and domains with automatic provisioning. Self-operated bare-metal servers are virtualized via Proxmox VE, while third-party suppliers can onboard and sell through the marketplace.
 
 ## Tech Stack

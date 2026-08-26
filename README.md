@@ -2,6 +2,10 @@
 
 > [English Documentation](README_EN.md)
 
+<p align="center">
+  <img src="docs/diagrams/c.svg" alt="CloudPlatform 项目宠物" width="220">
+</p>
+
 面向全球用户的云资源交易平台，支持服务器（VM）、IP 地址、云磁盘、域名、SSL 证书、对象存储（S3）、CDN 加速等产品的在线购买与自动交付。自营物理机通过 Proxmox VE 虚拟化交付，同时支持第三方供应商入驻售卖。提供按量计费、推荐分销、GraphQL API 及 Prometheus/Grafana 可观测性。提供按量计费、推荐分销、GraphQL API 及 Prometheus/Grafana 可观测性。
 
 ## 技术栈
