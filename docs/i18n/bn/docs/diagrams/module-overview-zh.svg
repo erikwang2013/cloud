@@ -1,0 +1,246 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 970" font-family="'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif">
+  <defs>
+    <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1e40af"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/></filter>
+    <marker id="arrD" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/></marker>
+  </defs>
+
+  <rect width="1100" height="970" fill="#f8fafc" rx="12"/>
+  <rect x="0" y="0" width="1100" height="50" fill="url(#hdr)" rx="12"/>
+  <rect x="0" y="12" width="1100" height="38" fill="url(#hdr)"/>
+  <text x="550" y="34" text-anchor="middle" fill="#fff" font-size="18" font-weight="bold">Cloud Platform — 功能模块架构图</text>
+
+  <!-- Layer 1: Clients -->
+  <g filter="url(#sh)">
+    <rect x="30" y="68" width="1040" height="100" rx="8" fill="#faf5ff" stroke="#c4b5fd" stroke-width="1.5"/>
+    <text x="50" y="90" fill="#6b21a8" font-size="13" font-weight="bold">客户端层 — 多平台接入</text>
+    <rect x="50" y="100" width="150" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
+    <text x="125" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">Flutter iOS</text>
+    <text x="125" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">iPhone / iPad</text>
+    <rect x="215" y="100" width="150" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
+    <text x="290" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">Flutter Android</text>
+    <text x="290" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">Phone / Tablet</text>
+    <rect x="380" y="100" width="150" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
+    <text x="455" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">Flutter Web</text>
+    <text x="455" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">PWA / Browser</text>
+    <rect x="545" y="100" width="150" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
+    <text x="620" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">Flutter Desktop</text>
+    <text x="620" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">Win / Mac / Linux</text>
+    <rect x="710" y="100" width="150" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
+    <text x="785" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">HarmonyOS</text>
+    <text x="785" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">ArkTS Native</text>
+    <rect x="875" y="100" width="170" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
+    <text x="960" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">管理后台 Web</text>
+    <text x="960" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">Layui · webman-admin</text>
+  </g>
+
+  <path d="M550,168 L550,185" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrD)"/>
+
+  <!-- Layer 2: Middleware -->
+  <g filter="url(#sh)">
+    <rect x="30" y="190" width="1040" height="100" rx="8" fill="#ecfeff" stroke="#67e8f9" stroke-width="1.5"/>
+    <text x="50" y="212" fill="#0e7490" font-size="13" font-weight="bold">API 网关层 — 全局中间件链</text>
+    <rect x="50" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/>
+    <text x="107" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">Version</text>
+    <text x="107" y="260" text-anchor="middle" fill="#64748b" font-size="9">版本校验</text>
+    <rect x="175" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/>
+    <text x="232" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">CORS</text>
+    <text x="232" y="260" text-anchor="middle" fill="#64748b" font-size="9">跨域处理</text>
+    <rect x="300" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/>
+    <text x="357" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">WAF</text>
+    <text x="357" y="260" text-anchor="middle" fill="#64748b" font-size="9">45+ 规则</text>
+    <rect x="425" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/>
+    <text x="482" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">SecurityPlugin</text>
+    <text x="482" y="260" text-anchor="middle" fill="#64748b" font-size="9">31种检测</text>
+    <rect x="550" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/>
+    <text x="607" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">GeoBlock</text>
+    <text x="607" y="260" text-anchor="middle" fill="#64748b" font-size="9">地理封锁</text>
+    <rect x="675" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/>
+    <text x="732" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">Encryption</text>
+    <text x="732" y="260" text-anchor="middle" fill="#64748b" font-size="9">AES-256-GCM</text>
+    <rect x="800" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/>
+    <text x="857" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">Auth</text>
+    <text x="857" y="260" text-anchor="middle" fill="#64748b" font-size="9">JWT · RBAC</text>
+    <rect x="925" y="225" width="115" height="45" rx="5" fill="#cffafe" stroke="#22d3ee"/>
+    <text x="982" y="244" text-anchor="middle" fill="#0e7490" font-size="11" font-weight="bold">RateLimit</text>
+    <text x="982" y="260" text-anchor="middle" fill="#64748b" font-size="9">频率限制</text>
+  </g>
+
+  <path d="M550,290 L550,307" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrD)"/>
+
+  <!-- Layer 3: Service Modules -->
+  <g filter="url(#sh)">
+    <rect x="30" y="312" width="1040" height="458" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+    <text x="50" y="336" fill="#1e40af" font-size="13" font-weight="bold">业务服务层 — 20+ 功能模块</text>
+
+    <rect x="50" y="350" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="140" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">User 用户</text>
+    <text x="140" y="392" text-anchor="middle" fill="#3b82f6" font-size="10">注册·登录·JWT·KYC</text>
+    <text x="140" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">余额·地址·实名认证</text>
+
+    <rect x="248" y="350" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="338" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Product 产品</text>
+    <text x="338" y="392" text-anchor="middle" fill="#3b82f6" font-size="10">产品·SKU·分类·评价</text>
+    <text x="338" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">区域定价·ES搜索</text>
+
+    <rect x="446" y="350" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="536" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Order 订单</text>
+    <text x="536" y="392" text-anchor="middle" fill="#3b82f6" font-size="10">购物车·订单·优惠券</text>
+    <text x="536" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">发票·退款</text>
+
+    <rect x="644" y="350" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="734" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Payment 支付</text>
+    <text x="734" y="392" text-anchor="middle" fill="#3b82f6" font-size="10">Stripe集成·路由</text>
+    <text x="734" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">Webhook·对账</text>
+
+    <rect x="842" y="350" width="200" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="942" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Provisioning 交付</text>
+    <text x="942" y="392" text-anchor="middle" fill="#3b82f6" font-size="10">Provider插件·队列·重试</text>
+    <text x="942" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">kvm-server gRPC·主机选择</text>
+
+    <rect x="50" y="438" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="140" y="462" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Supplier 供应商</text>
+    <text x="140" y="480" text-anchor="middle" fill="#3b82f6" font-size="10">入驻·结算·提现</text>
+    <text x="140" y="496" text-anchor="middle" fill="#3b82f6" font-size="10">外部API</text>
+
+    <rect x="248" y="438" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="338" y="462" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Ticket 工单</text>
+    <text x="338" y="480" text-anchor="middle" fill="#3b82f6" font-size="10">提交·回复·关闭</text>
+    <text x="338" y="496" text-anchor="middle" fill="#3b82f6" font-size="10">事件分配</text>
+
+    <rect x="446" y="438" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="536" y="462" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Domain 域名</text>
+    <text x="536" y="480" text-anchor="middle" fill="#3b82f6" font-size="10">注册·续费·DNS</text>
+    <text x="536" y="496" text-anchor="middle" fill="#3b82f6" font-size="10">可用性检查</text>
+
+    <rect x="644" y="438" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="734" y="462" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Notification 通知</text>
+    <text x="734" y="480" text-anchor="middle" fill="#3b82f6" font-size="10">邮件·短信·推送</text>
+    <text x="734" y="496" text-anchor="middle" fill="#3b82f6" font-size="10">多语言模板</text>
+
+    <rect x="842" y="438" width="200" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="942" y="462" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Monitor 监控</text>
+    <text x="942" y="480" text-anchor="middle" fill="#3b82f6" font-size="10">资源指标·告警</text>
+    <text x="942" y="496" text-anchor="middle" fill="#3b82f6" font-size="10">定时采集</text>
+
+    <!-- New modules row -->
+
+    <rect x="50" y="526" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="140" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">SSL 证书</text>
+    <text x="140" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">DV/OV/EV·ACME</text>
+    <text x="140" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">自动签发·续期</text>
+
+    <rect x="248" y="526" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="338" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Storage 存储</text>
+    <text x="338" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">S3兼容·MinIO</text>
+    <text x="338" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">预签名·配额</text>
+
+    <rect x="446" y="526" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="536" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">CDN 加速</text>
+    <text x="536" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">Cloudflare</text>
+    <text x="536" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">缓存清除·统计</text>
+
+    <rect x="644" y="526" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="734" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Billing 计费</text>
+    <text x="734" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">按量采集·聚合</text>
+    <text x="734" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">余额扣款·挂起</text>
+
+    <rect x="842" y="526" width="200" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="942" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Affiliate 分销</text>
+    <text x="942" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">推荐链接·归因</text>
+    <text x="942" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">佣金·提现</text>
+    <rect x="50" y="604" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="140" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">SSL 证书</text>
+    <text x="140" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">DV/OV/EV·ACME</text>
+    <text x="140" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">自动签发·续期</text>
+
+    <rect x="248" y="604" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="338" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Storage 存储</text>
+    <text x="338" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">S3兼容·MinIO</text>
+    <text x="338" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">预签名·配额</text>
+
+    <rect x="446" y="604" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="536" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">CDN 加速</text>
+    <text x="536" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">Cloudflare</text>
+    <text x="536" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">缓存清除</text>
+
+    <rect x="644" y="604" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="734" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Billing 计费</text>
+    <text x="734" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">按量采集·聚合</text>
+    <text x="734" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">余额扣款·挂起</text>
+
+    <rect x="842" y="604" width="200" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="942" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Affiliate 分销</text>
+    <text x="942" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">推荐链接·归因</text>
+    <text x="942" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">佣金·提现</text>
+
+    <rect x="50" y="600" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="140" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Admin 后台</text>
+    <text x="140" y="646" text-anchor="middle" fill="#b45309" font-size="10">Dashboard·CRUD</text>
+    <text x="140" y="662" text-anchor="middle" fill="#b45309" font-size="10">53控制器·ACL</text>
+
+    <rect x="248" y="600" width="180" height="62" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
+    <text x="338" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Report 报表</text>
+    <text x="338" y="646" text-anchor="middle" fill="#b45309" font-size="10">营收·区域·供应商</text>
+    <text x="338" y="662" text-anchor="middle" fill="#b45309" font-size="10">Excel导出</text>
+
+    <rect x="446" y="600" width="180" height="62" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
+    <text x="536" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">WebSocket</text>
+    <text x="536" y="646" text-anchor="middle" fill="#b45309" font-size="10">实时推送·双向通信</text>
+    <text x="536" y="662" text-anchor="middle" fill="#b45309" font-size="10">订单/工单事件</text>
+
+    <rect x="644" y="600" width="180" height="62" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
+    <text x="734" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Captcha 验证码</text>
+    <text x="734" y="646" text-anchor="middle" fill="#b45309" font-size="10">点击验证·300s</text>
+    <text x="734" y="662" text-anchor="middle" fill="#b45309" font-size="10">GD绘图·Redis</text>
+
+    <rect x="842" y="604" width="200" height="72" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
+    <text x="942" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Cron 定时任务</text>
+    <text x="942" y="646" text-anchor="middle" fill="#b45309" font-size="10">汇率·对账·结算</text>
+    <text x="942" y="662" text-anchor="middle" fill="#b45309" font-size="10">到期检测·SSL检查</text>
+
+    <rect x="50" y="690" width="350" height="76" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
+    <text x="225" y="714" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">Common 公共库</text>
+    <text x="225" y="733" text-anchor="middle" fill="#4f46e5" font-size="9.5">Auth·Hashid·Snowflake·I18n·Encryption·Security·Version</text>
+    <text x="225" y="749" text-anchor="middle" fill="#4f46e5" font-size="9.5">ClientPlatform·Feature·Webhook·Confirmation·Helper</text>
+
+    <rect x="420" y="690" width="300" height="76" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
+    <text x="570" y="714" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">erikwang2013 生态包</text>
+    <text x="570" y="733" text-anchor="middle" fill="#4f46e5" font-size="9.5">snowflake-php·hashids·jwt-webman·encryption·encryptable</text>
+    <text x="570" y="749" text-anchor="middle" fill="#4f46e5" font-size="9.5">webman-scout·season·poster-php·security-php</text>
+
+    <rect x="740" y="690" width="302" height="76" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
+    <text x="891" y="714" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">外部服务 SDK</text>
+    <text x="891" y="733" text-anchor="middle" fill="#4f46e5" font-size="9.5">Stripe PHP·Twilio·Firebase·PhpSpreadsheet</text>
+    <text x="891" y="749" text-anchor="middle" fill="#4f46e5" font-size="9.5">GeoIP2·Sentry</text>
+  </g>
+
+  <path d="M550,692 L550,709" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrD)"/>
+
+  <!-- Layer 4: Infrastructure -->
+  <g filter="url(#sh)">
+    <rect x="30" y="792" width="1040" height="115" rx="8" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.5"/>
+    <text x="50" y="814" fill="#047857" font-size="13" font-weight="bold">基础设施层 — 数据 &amp; 部署</text>
+    <rect x="50" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
+    <text x="125" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">MySQL 8.0</text>
+    <text x="125" y="872" text-anchor="middle" fill="#059669" font-size="10">主库+审计库</text>
+    <rect x="218" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
+    <text x="293" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Redis 7</text>
+    <text x="293" y="872" text-anchor="middle" fill="#059669" font-size="10">缓存·队列·会话</text>
+    <rect x="386" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
+    <text x="461" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Elasticsearch 8</text>
+    <text x="461" y="872" text-anchor="middle" fill="#059669" font-size="10">IK分词·全文搜索</text>
+    <rect x="554" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
+    <text x="629" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Prometheus</text>
+    <text x="629" y="872" text-anchor="middle" fill="#059669" font-size="10">指标采集·告警</text>
+    <rect x="722" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
+    <text x="797" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Docker Compose</text>
+    <text x="797" y="872" text-anchor="middle" fill="#059669" font-size="10">Nginx·Supervisor</text>
+    <rect x="890" y="826" width="150" height="60" rx="6" fill="#d1fae5" stroke="#34d399"/>
+    <text x="965" y="852" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Grafana</text>
+    <text x="965" y="872" text-anchor="middle" fill="#059669" font-size="10">可视化仪表盘</text>
+  </g>
+<g opacity="0.5">
+    <text x="1084" y="958" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="rgba(0,0,0,0.18)">https://erik.xyz</text>
+  </g>
+</svg>
