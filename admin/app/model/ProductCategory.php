@@ -9,6 +9,6 @@ namespace app\model;
 
 class ProductCategory extends Base
 {
-    protected $table = 'erik_product_categories';
+    protected $table = 'product_categories';
     protected $fillable = ['parent_id', 'name', 'slug', 'type', 'sort', 'icon', 'status'];
 }

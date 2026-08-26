@@ -9,6 +9,6 @@ namespace app\model;
 
 class HostMachine extends Base
 {
-    protected $table = 'erik_host_machines';
+    protected $table = 'host_machines';
     protected $fillable = ['region_id', 'name', 'ip_address', 'proxmox_node', 'storage_pool', 'api_token_encrypted', 'specs', 'status'];
 }

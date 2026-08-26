@@ -9,6 +9,6 @@ namespace app\model;
 
 class OrderItem extends Base
 {
-    protected $table = 'erik_order_items';
+    protected $table = 'order_items';
     protected $fillable = ['order_id', 'sku_id', 'region_id', 'product_id', 'quantity', 'cycle', 'unit_price', 'total_price', 'resource_snapshot', 'status'];
 }

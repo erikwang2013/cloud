@@ -10,9 +10,17 @@ final class UserModelTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // config/encryptable.php reads ENCRYPTION_KEY; PHPUnit provides it
-        // nowhere, so inject a 16-byte key for aes-128-ecb here.
-        putenv('ENCRYPTION_KEY=' . base64_decode('dW5pdC10ZXN0LWtleS0xNg=='));
+        // AuthFullChainTest 会把 service/.env 注入 $_ENV/$_SERVER（cipher=aes-128-ecb、
+        // 24 字符非 base64 密钥），且 Encryptable 包进程级静态缓存解析结果 ——
+        // 本测试显式钉死 32 字节密钥 + aes-256-gcm 并重置包缓存，保证隔离。
+        $key = base64_decode('dW5pdC10ZXN0LW1hc3Rlci1rZXktMzJieXRlcy1hYmM=');
+        foreach (['_ENV', '_SERVER'] as $super) {
+            $GLOBALS[$super]['ENCRYPTION_KEY'] = $key;
+            $GLOBALS[$super]['ENCRYPTION_CIPHER'] = 'aes-256-gcm';
+        }
+        putenv('ENCRYPTION_KEY=' . $key);
+        putenv('ENCRYPTION_CIPHER=aes-256-gcm');
+        \Erikwang2013\Encryptable\Encryption::setFallbackConfig(null);
     }
 
     public function testPasswordHashNeverSerialized(): void

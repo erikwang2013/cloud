@@ -10,8 +10,10 @@ return [
     // 启用 webman-scout 插件：Elasticsearch 全文搜索与数据同步
     'enable' => true,
 
-    // 默认搜索引擎：elasticsearch
-    'driver' => 'elasticsearch',
+    // 默认引擎：database（DB LIKE 搜索）。ES 客户端（elasticsearch/elasticsearch）未安装，
+    // 用 elasticsearch 驱动会在模型保存/删除时抛异常导致 500；database 引擎写入为 no-op、
+    // 搜索走 SQL LIKE（产品搜索的 ES→SQL 降级见 ProductService::searchKeywordIds）。
+    'driver' => 'database',
 
     // 索引名称前缀（所有模型索引自动添加此前缀）
     'prefix' => getenv('SCOUT_PREFIX') ?: '',

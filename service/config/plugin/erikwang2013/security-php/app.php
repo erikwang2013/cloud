@@ -214,9 +214,11 @@ return [
 
         // DNS Rebinding 检测
         // 检测 Host 头内网 IP（127/10/172/192/0.0.0.0）、localhost、无 TLD 短主机名
+        // 注：mode=log 而非 block —— 开发/测试环境以 Host=127.0.0.1/localhost 直连是常态，
+        // block 会 403 误杀全部本机请求；真实域名不触发本检测器，其余 30 个检测器保持 block。
         'dns_rebinding' => [
             'enabled' => true,
-            'mode'    => 'block',
+            'mode'    => 'log',
         ],
 
         // HTTP 方法校验

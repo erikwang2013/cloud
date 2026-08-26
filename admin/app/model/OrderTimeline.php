@@ -9,6 +9,6 @@ namespace app\model;
 
 class OrderTimeline extends Base
 {
-    protected $table = 'erik_order_timeline';
+    protected $table = 'order_timeline';
     protected $fillable = ['order_id', 'status', 'operator', 'remark'];
 }

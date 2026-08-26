@@ -9,6 +9,6 @@ namespace app\model;
 
 class PaymentTransaction extends Base
 {
-    protected $table = 'erik_payment_transactions';
+    protected $table = 'payment_transactions';
     protected $fillable = ['order_id', 'user_id', 'channel_id', 'amount', 'currency', 'exchange_rate', 'channel_fee', 'transaction_no', 'status', 'callback_at'];
 }

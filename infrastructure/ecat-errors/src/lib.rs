@@ -127,4 +127,56 @@ mod tests {
         assert!(s.contains("user_not_found"));
         assert!(s.contains("user 42 not found"));
     }
+
+    #[test]
+    fn test_from_status_maps_all_codes() {
+        let cases = [
+            (tonic::Status::ok(""), ErrorCode::Ok),
+            (tonic::Status::invalid_argument("bad"), ErrorCode::InvalidArgument),
+            (
+                tonic::Status::resource_exhausted("full"),
+                ErrorCode::ResourceExhausted,
+            ),
+            (tonic::Status::already_exists("dup"), ErrorCode::AlreadyExists),
+            (tonic::Status::unavailable("down"), ErrorCode::Unavailable),
+            (
+                tonic::Status::deadline_exceeded("slow"),
+                ErrorCode::DeadlineExceeded,
+            ),
+            (tonic::Status::unknown("?"), ErrorCode::Unknown),
+        ];
+        for (status, expected) in cases {
+            assert_eq!(Error::from_status(status).code, expected);
+        }
+    }
+
+    #[test]
+    fn test_from_status_unmapped_code_falls_back_to_internal() {
+        // OutOfRange 等未显式映射的 code 必须回退 Internal 而非误判
+        let status = tonic::Status::new(tonic::Code::OutOfRange, "out of range");
+        assert_eq!(Error::from_status(status).code, ErrorCode::Internal);
+    }
+
+    #[test]
+    fn test_message_accessor() {
+        let err = Error::new(ErrorCode::Ok, "r", "the message");
+        assert_eq!(err.message(), "the message");
+        assert_eq!(err.message(), err.message.as_str());
+    }
+
+    #[test]
+    fn test_to_http_status_matches_code() {
+        let err = Error::new(ErrorCode::NotFound, "r", "m");
+        assert_eq!(err.to_http_status(), StatusCode::NOT_FOUND);
+        assert_eq!(
+            err.to_http_status(),
+            ErrorCode::NotFound.http_status()
+        );
+    }
+
+    #[test]
+    fn test_cause_is_none_by_default() {
+        let err = Error::new(ErrorCode::Ok, "r", "m");
+        assert!(err.cause.is_none());
+    }
 }

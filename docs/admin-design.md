@@ -48,7 +48,7 @@ admin/
 │   │   ├── AdminController.php      # Admin CRUD + roles
 │   │   ├── RoleController.php       # Role CRUD + rule tree
 │   │   └── ...
-│   ├── model/            # 8 Eloquent models
+│   ├── model/            # 44 Eloquent models（36 个映射 service 无前缀业务表 + alerts（install.sql 定义）+ 7 个 wa_* 管理表）
 │   │   ├── Base.php     # Snowflake PK + Encryptable support
 │   │   ├── Admin.php    # Encryptable: password, email, mobile
 │   │   ├── User.php     # Encryptable: 6 fields + Searchable trait
@@ -63,11 +63,17 @@ admin/
 │   ├── plugin/erikwang2013/  # 7 plugin configs
 │   ├── hashids.php       # Hashids connections (main + alternative)
 │   └── encryption.php    # Encryption config (master key, cipher)
-├── tests/                # PHPUnit 11 test suite (67 tests, 124 assertions)
+├── tests/                # PHPUnit 11 test suite (286 tests, 962 assertions)
 │   ├── HashidsTest.php   # 21 tests
 │   ├── BaseJsonTest.php  # 13 tests
 │   ├── CrudHashidsTest.php # 14 tests
 │   ├── TreeTest.php      # 19 tests
+│   ├── AccessControlMiddlewareTest.php # 7 tests（401/403/放行）
+│   ├── AdminControllersTest.php        # 48 控制器反射回归
+│   ├── UtilTest.php      # 17 tests
+│   ├── DictTest.php      # 5 tests
+│   ├── ExcelExportTest.php # 4 tests
+│   ├── LayuiTest.php     # 5 tests
 │   └── support/          # RequestMock, TestableCrud
 ├── install.sql           # DDL (bigint unsigned PKs, no auto-increment)
 └── phpunit.xml
@@ -288,6 +294,11 @@ protected $noNeedAuth = ['select'];                         // Skip auth
 ```
 
 Checked by `api/Auth::canAccess()` via `ReflectionClass`.
+
+**AccessControlMiddleware 响应**（`middleware/AccessControl.php`）：
+- 未登录（`noNeedLogin` 之外）→ **HTTP 401**，body 为跳转登录页脚本
+- 已登录但权限不足 → **HTTP 403** 错误页（状态码 403，不再 500）
+- 放行名单内（登录页/验证码等）→ 正常放行
 
 ### Role-based
 
@@ -552,22 +563,24 @@ Each migration file returns a class extending `Migration` with timestamp-prefixe
 
 ### Service Migrations
 
-**Directory**: `service/database/migrations/` — 12 migration files
+**Directory**: `service/database/migrations/` — 38 migration files（表名无 erik_ 前缀，admin 模型直接映射）
 
 | Migration | Tables |
 |-----------|--------|
-| `0001_create_users_tables` | erik_users, erik_user_kyc, erik_user_addresses, erik_refresh_tokens, erik_user_balances |
-| `0002_create_product_tables` | erik_products, erik_product_skus, erik_region_prices |
-| `0003_create_order_tables` | erik_orders, erik_order_items, erik_cart_items |
-| `0004_create_payment_tables` | erik_payment_channels, erik_transactions, erik_payment_refunds |
-| `0005_create_provisioning_tables` | erik_provision_tasks, erik_resources, erik_resource_disks |
-| `0006_create_host_tables` | erik_host_machines, erik_host_nodes, erik_ip_pools |
-| `0007_create_supplier_tables` | erik_suppliers, erik_supplier_settlements, erik_supplier_withdrawals |
-| `0008_create_domain_tables` | erik_domain_registrations, erik_dns_records |
-| `0009_create_ticket_notification_tables` | erik_tickets, erik_ticket_replies, erik_notifications, erik_notification_templates |
-| `0010_create_audit_table` | erik_audit_logs |
+| `0001_create_users_tables` | users, user_profiles, user_kyc, user_balance, user_balance_log, user_addresses, refresh_tokens |
+| `0002_create_product_tables` | product_categories, regions, products, product_skus, product_regions, product_images, product_attributes, product_reviews |
+| `0003_create_order_tables` | carts, orders, order_items, order_timeline, order_invoices, refunds |
+| `0004_create_payment_tables` | payment_channels, payment_transactions, payment_reconcile |
+| `0005_create_provisioning_tables` | resources, resource_servers, resource_ips, resource_disks, resource_domains, provision_tasks, provider_apis |
+| `0006_create_host_tables` | host_machines, ip_pools, ip_allocations, disks, disk_resizes |
+| `0007_create_supplier_tables` | suppliers, supplier_products, supplier_settlements, supplier_withdraws |
+| `0008_create_domain_tables` | domain_tlds, domain_transfers, dns_zones, dns_records |
+| `0009_create_ticket_notification_tables` | tickets, ticket_messages, notifications, notification_templates |
+| `0010_create_audit_table` | audit_logs |
+| `0011_create_kvm_service_tables` | network_services, firewall_services, switch_services |
 | `2024_01_01_000001_create_initial_schema` | Runs `docs/database.sql` via `Capsule::unprepared()`, drops all in `down()` |
-| `2025_05_16_000002_add_fcm_token_to_users` | Adds `fcm_token`, `fcm_platform` columns + index to erik_users |
+| `2025_05_16_000002_add_fcm_token_to_users` | Adds `fcm_token`, `fcm_platform` columns + index to users |
+| `2026_08_26_000003_widen_encrypted_columns` | users.phone / user_addresses.phone / suppliers.contact_phone VARCHAR(20)→VARCHAR(255)（Encryptable 密文长度） |
 
 ### Admin Migrations
 
@@ -708,7 +721,7 @@ Replaced `error_log()` stub with real push delivery via `kreait/firebase-php` ^7
 
 ### Device Token Storage
 
-Added to `erik_users` table via migration:
+Added to `users` table via migration:
 - `fcm_token VARCHAR(512) DEFAULT NULL` — device registration token
 - `fcm_platform VARCHAR(16) DEFAULT NULL` — `ios` / `android` / `web`
 - `INDEX idx_fcm_token (fcm_token)` — lookup by token

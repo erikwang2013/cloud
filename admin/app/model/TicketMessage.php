@@ -9,6 +9,6 @@ namespace app\model;
 
 class TicketMessage extends Base
 {
-    protected $table = 'erik_ticket_messages';
+    protected $table = 'ticket_messages';
     protected $fillable = ['ticket_id', 'sender_id', 'sender_type', 'content'];
 }

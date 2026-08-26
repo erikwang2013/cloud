@@ -9,6 +9,6 @@ namespace app\model;
 
 class SupplierWithdraw extends Base
 {
-    protected $table = 'erik_supplier_withdraws';
+    protected $table = 'supplier_withdraws';
     protected $fillable = ['supplier_id', 'amount', 'method', 'account_info', 'status'];
 }

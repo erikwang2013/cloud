@@ -7,10 +7,11 @@
  */
 
 return [
-    // 数据库字段加密主密钥（32 字节，base64 编码；aes-256-cbc 需要 32 字节密钥）
+    // 数据库字段加密主密钥（base64 编码；长度取决于 cipher：aes-128-ecb=16 字节 / aes-256-cbc=32 字节）
     // 一旦设定请不要更改，否则已加密数据将无法解密
     // 生成方式：openssl rand -base64 32
-    'key'           => getenv('ENCRYPTION_KEY') ?: '',
+    // 注意：env 中为 base64 编码的原始密钥，必须解码后传给加密库（直接传 base64 串会抛 MissingEncryptionKeyException）
+    'key'           => base64_decode((string) getenv('ENCRYPTION_KEY'), true) ?: '',
 
     // 加密算法：aes-256-cbc（随机 IV — 相同明文产生不同密文，不泄漏等值模式）
     // 注意：存量以 aes-128-ecb 加密的数据无法用 CBC 解密，升级需重加密迁移

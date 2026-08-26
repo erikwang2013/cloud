@@ -9,6 +9,6 @@ namespace app\model;
 
 class DiskResize extends Base
 {
-    protected $table = 'erik_disk_resizes';
+    protected $table = 'disk_resizes';
     protected $fillable = ['disk_id', 'old_size_gb', 'new_size_gb', 'status', 'finished_at'];
 }

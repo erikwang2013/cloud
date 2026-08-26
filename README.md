@@ -133,7 +133,7 @@ cloud-php/
 │   │   ├── database.php        # 数据库连接
 │   │   └── ...                 # 18 个配置文件
 │   ├── database/migrations/    # 数据库迁移文件
-│   ├── tests/                  # 单元测试（PHPUnit 11, 255 tests）
+│   ├── tests/                  # 单元测试（PHPUnit 11, 286 tests / 962 assertions）
 │   │   ├── HashidsTest.php     # hashids 编解码（21 tests）
 │   │   ├── BaseJsonTest.php    # Base::json() ID 编码（13 tests）
 │   │   ├── CrudHashidsTest.php # Crud 输入解码（14 tests）
@@ -198,7 +198,7 @@ cloud-php/
 │   ├── database/migrations/    # 数据库迁移文件（37 个迁移）
 │   ├── i18n/                   # 多语言资源（en-US / zh-CN）
 │   ├── support/                # Bootstrap 引导（Eloquent / Redis / Event / 加密 / 雪花ID / Hashids / Scout / MigrationRunner）
-│   ├── tests/                  # 单元测试（PHPUnit 10, 661 tests）
+│   ├── tests/                  # 单元测试（PHPUnit 10, 672 tests / 1632 assertions）
 │   │   ├── admin/              # ImportExport / SupplierWithdrawApprove
 │   │   ├── affiliate/          # AffiliateService
 │   │   ├── auth/               # JwtAuth / RbacSeed / Rbac
@@ -477,11 +477,17 @@ php start.php stop              # 停止
 ### 测试覆盖
 
 ```
-phpunit.xml (PHPUnit 11)
-├── HashidsTest        (21 tests) encode/decode/encode_ids
-├── BaseJsonTest       (13 tests) Base::json/success/fail 编码
-├── CrudHashidsTest    (14 tests) Crud 输入解码 (select/update/delete)
-└── TreeTest           (19 tests) 树形结构 / 子孙 / 祖先 / 孤儿节点
+phpunit.xml (PHPUnit 11, 286 tests / 962 assertions)
+├── HashidsTest              (21 tests) encode/decode/encode_ids
+├── BaseJsonTest             (13 tests) Base::json/success/fail 编码
+├── CrudHashidsTest          (14 tests) Crud 输入解码 (select/update/delete)
+├── TreeTest                 (19 tests) 树形结构 / 子孙 / 祖先 / 孤儿节点
+├── AccessControlMiddlewareTest (7 tests) 未登录 401 / 403 页面 / 放行
+├── AdminControllersTest     (data provider) 48 控制器装配 / CRUD 面 / GET 视图路径
+├── UtilTest                 (17 tests) 密码 / 时间 / 字节 / 输入过滤 / 控件属性
+├── DictTest                 (5 tests) 字典名↔option 转换 / save/get/delete
+├── ExcelExportTest          (4 tests) 表头 / JSON 展平 / 行号 / 空单元格
+└── LayuiTest                (5 tests) input / inputNumber / label 转义 / switch / html
 ```
 
 ## 设计思路
@@ -571,7 +577,7 @@ ProviderInterface
 
 ### 7. 分布式 ID 生成
 
-采用 Twitter Snowflake 算法生成 64 位全局唯一 ID：`timestamp(41b) | datacenter(5b) | worker(5b) | sequence(12b)`。所有 38 个 Eloquent 模型在 `creating` 事件中自动生成雪花 ID，无数据库自增依赖，天然支持分库分表。
+采用 Twitter Snowflake 算法生成 64 位全局唯一 ID：`timestamp(41b) | datacenter(5b) | worker(5b) | sequence(12b)`。所有 46 个 Eloquent 模型在 `creating` 事件中自动生成雪花 ID，无数据库自增依赖，天然支持分库分表。
 
 ### 8. 多语言（i18n）
 
@@ -591,7 +597,7 @@ ProviderInterface
 
 ### 9. 全文搜索
 
-产品、用户、订单、工单 4 个模型通过 `Erikwang2013\WebmanScout\Searchable` Trait 自动同步到 Elasticsearch，支持：
+产品、用户、订单、工单 4 个模型通过 `Erikwang2013\WebmanScout\Searchable` Trait 接入搜索。驱动默认 `database`（写入 no-op、搜索走 SQL LIKE 降级，无 ES 依赖）；配置 Elasticsearch 驱动后自动同步索引，支持：
 
 - **多语言分词** — IK Analyzer（ik_max_word / ik_smart）
 - **中文全文搜索** — 产品名称、描述、工单标题
@@ -616,9 +622,9 @@ ProviderInterface
 - [x] API ID 混淆（`erikwang2013/hashids`，请求自动解码 + 响应自动编码）
 - [x] 传输加密（`erikwang2013/encryption`，AES-256-GCM 中间件）
 - [x] 字段级加密（`erikwang2013/encryptable`，敏感字段自动加解密）
-- [x] 全文搜索（`erikwang2013/webman-scout`，Elasticsearch + IK 分词）
+- [x] 全文搜索（`erikwang2013/webman-scout`，默认 database 驱动 SQL LIKE 降级，可选 Elasticsearch + IK 分词）
 - [x] 国家旗帜（`erikwang2013/season`，Unicode flag emoji）
-- [x] 管理后台（`admin/`，webman-admin + 7 包集成，67 单元测试）
+- [x] 管理后台（`admin/`，webman-admin + 7 包集成，286 单元测试）
 - [x] 代码审查（2 个关键修复 + 4 个重要修复已应用）
 - [x] Excel 导出（PhpSpreadsheet ^2.0，管理后台 Crud/Table + 服务端管理 API）
 - [x] 仪表板可视化（ECharts 图表 + 动画统计卡片 + 系统信息面板）
@@ -629,7 +635,7 @@ ProviderInterface
 - [x] FCM 推送真实集成（kreait/firebase-php，含无效 token 清理）
 - [x] 点击验证码（erikwang2013/poster-php，登录/注册敏感操作验证）
 - [x] 二次确认（ConfirmationMiddleware，敏感操作密码复核，5次失败锁定15分钟）
-- [x] 服务端单元测试（661 tests）
+- [x] 服务端单元测试（672 tests / 1632 assertions，15 skipped）
 - [x] 客户端平台识别（ClientPlatformMiddleware，X-Client-Platform 头支持 8 种平台）
 - [x] WAF 安全增强（8 类 45+ 规则: SQL注入/XSS/命令注入/文件包含/头注入/SSRF/NoSQL注入/开放重定向 + 请求大小限制 + Content-Type 校验）
 - [x] Security Plugin（erikwang2013/security-php，31 种攻击检测 + IP 黑名单自动封禁 + 日志轮转）

@@ -9,6 +9,6 @@ namespace app\model;
 
 class AuditLog extends Base
 {
-    protected $table = 'erik_audit_logs';
+    protected $table = 'audit_logs';
     protected $fillable = ['user_id', 'action', 'resource_type', 'resource_id', 'ip_address', 'user_agent', 'old_values', 'new_values'];
 }

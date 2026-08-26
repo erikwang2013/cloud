@@ -9,6 +9,6 @@ namespace app\model;
 
 class Ticket extends Base
 {
-    protected $table = 'erik_tickets';
+    protected $table = 'tickets';
     protected $fillable = ['ticket_no', 'user_id', 'resource_id', 'category', 'priority', 'title', 'status', 'assigned_to', 'sla_deadline', 'closed_by', 'closed_at'];
 }

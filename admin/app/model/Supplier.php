@@ -9,6 +9,6 @@ namespace app\model;
 
 class Supplier extends Base
 {
-    protected $table = 'erik_suppliers';
+    protected $table = 'suppliers';
     protected $fillable = ['user_id', 'company_name', 'contact_name', 'contact_phone', 'contact_email', 'status', 'settlement_method', 'approved_by', 'approved_at'];
 }

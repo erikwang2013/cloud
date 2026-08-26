@@ -9,6 +9,6 @@ namespace app\model;
 
 class UserAddress extends Base
 {
-    protected $table = 'erik_user_addresses';
+    protected $table = 'user_addresses';
     protected $fillable = ['user_id', 'type', 'name', 'phone', 'country', 'state', 'city', 'address', 'postcode', 'is_default'];
 }

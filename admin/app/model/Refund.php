@@ -9,6 +9,6 @@ namespace app\model;
 
 class Refund extends Base
 {
-    protected $table = 'erik_refunds';
+    protected $table = 'refunds';
     protected $fillable = ['order_id', 'user_id', 'amount', 'reason', 'status'];
 }

@@ -33,10 +33,8 @@ class AccessControl implements MiddlewareInterface
                 $response = json(['code' => $code, 'msg' => $msg, 'data' => []]);
             } else {
                 if ($code === 401) {
-                  $response = admin_error_401_script();
+                    $response = admin_error_401_script()->withStatus(401);
                 } else {
-                    $request->app = '';
-                    $request->plugin = 'admin';
                     $response = view('common/error/403')->withStatus(403);
                 }
             }

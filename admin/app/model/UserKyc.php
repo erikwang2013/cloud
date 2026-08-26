@@ -9,6 +9,6 @@ namespace app\model;
 
 class UserKyc extends Base
 {
-    protected $table = 'erik_user_kyc';
+    protected $table = 'user_kyc';
     protected $fillable = ['user_id', 'id_type', 'id_number_encrypted', 'real_name', 'front_image', 'back_image', 'status', 'reject_reason', 'verified_at', 'verified_by'];
 }

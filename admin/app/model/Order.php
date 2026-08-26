@@ -9,6 +9,6 @@ namespace app\model;
 
 class Order extends Base
 {
-    protected $table = 'erik_orders';
+    protected $table = 'orders';
     protected $fillable = ['order_no', 'user_id', 'type', 'status', 'currency', 'subtotal', 'discount', 'tax', 'total', 'exchange_rate', 'paid_at'];
 }

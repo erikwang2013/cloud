@@ -6,6 +6,7 @@ use App\user\model\UserProfile;
 use App\user\model\UserBalance;
 use App\user\model\RefreshToken;
 use Common\auth\JwtAuth;
+use Erikwang2013\Encryptable\Encryption;
 use Illuminate\Support\Facades\Redis;
 
 class AuthService
@@ -17,7 +18,7 @@ class AuthService
         $this->jwt = new JwtAuth();
     }
 
-    public function register(array $data, string $clientPlatform = ''): array
+    public function register(array $data, string $clientPlatform = '', string $deviceFingerprint = ''): array
     {
         $minLength = config('auth.password.min_length', 8);
 
@@ -25,11 +26,11 @@ class AuthService
             throw new \InvalidArgumentException('Password too short');
         }
 
-        if (!empty($data['email']) && User::where('email', $data['email'])->exists()) {
+        if (!empty($data['email']) && User::where('email', Encryption::php()->encrypt($data['email']))->exists()) {
             throw new \InvalidArgumentException('Email already registered');
         }
 
-        if (!empty($data['phone']) && User::where('phone', $data['phone'])->exists()) {
+        if (!empty($data['phone']) && User::where('phone', Encryption::php()->encrypt($data['phone']))->exists()) {
             throw new \InvalidArgumentException('Phone already registered');
         }
 
@@ -59,12 +60,14 @@ class AuthService
             ], ['email']);
         }
 
-        return $this->issueTokens($user->id, 'user', '', $clientPlatform);
+        return $this->issueTokens($user->id, 'user', $deviceFingerprint, $clientPlatform);
     }
 
     public function login(string $login, string $password, string $deviceFingerprint, string $clientPlatform = '', string $totpCode = ''): array
     {
-        $user = User::where('email', $login)->orWhere('phone', $login)->first();
+        // email/phone 是 Encryptable 加密列，明文 where 永不命中，须用确定性加密后的值查询
+        $cipher = Encryption::php()->encrypt($login);
+        $user   = User::where('email', $cipher)->orWhere('phone', $cipher)->first();
 
         if (!$user || !password_verify($password, $user->password_hash)) {
             throw new \InvalidArgumentException('Invalid credentials');
@@ -120,7 +123,7 @@ class AuthService
             throw new \InvalidArgumentException('Invalid token type');
         }
 
-        $stored = RefreshToken::where('token_hash', hash('sha256', $refreshToken))
+        $stored = RefreshToken::where('token_hash', Encryption::php()->encrypt(hash('sha256', $refreshToken)))
             ->where('revoked', false)
             ->first();
 
@@ -192,7 +195,7 @@ class AuthService
             Redis::expire($key, 900);
 
             if ($count >= 5) {
-                $user = User::where('email', $login)->orWhere('phone', $login)->first();
+                $user = User::where('email', Encryption::php()->encrypt($login))->orWhere('phone', Encryption::php()->encrypt($login))->first();
                 if ($user) {
                     Redis::setex("login_lock:{$user->id}", 900, '1');
                 }

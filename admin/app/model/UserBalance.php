@@ -9,6 +9,6 @@ namespace app\model;
 
 class UserBalance extends Base
 {
-    protected $table = 'erik_user_balances';
+    protected $table = 'user_balance';
     protected $fillable = ['user_id', 'currency', 'balance', 'frozen_balance'];
 }

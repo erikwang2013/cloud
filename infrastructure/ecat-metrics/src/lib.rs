@@ -75,6 +75,19 @@ mod tests {
         assert_eq!(text, "# no metrics registered\n", "got: {text}");
     }
 
+    /// 注册真实 counter 后，text 输出必须包含指标名与值——
+    /// 空 registry 输出 "# no metrics registered" 只是降级路径。
+    #[test]
+    fn metrics_text_includes_registered_metric() {
+        let reg = Registry::new();
+        let counter = prometheus::IntCounter::new("http_requests_total", "requests").unwrap();
+        counter.inc_by(42);
+        reg.register(Box::new(counter)).unwrap();
+
+        let text = metrics_text_for(&reg);
+        assert!(text.contains("http_requests_total 42"), "got: {text}");
+    }
+
     #[tokio::test]
     async fn metrics_router_serves_prometheus_text() {
         use tower::ServiceExt;

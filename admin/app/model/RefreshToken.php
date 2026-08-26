@@ -9,6 +9,6 @@ namespace app\model;
 
 class RefreshToken extends Base
 {
-    protected $table = 'erik_refresh_tokens';
+    protected $table = 'refresh_tokens';
     protected $fillable = ['user_id', 'token_hash', 'device_fingerprint', 'expires_at', 'revoked'];
 }

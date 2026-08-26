@@ -15,8 +15,8 @@ class UserAddress extends Model
     ];
 
     protected $casts = [
-        'phone'   => Encryptable::class,
         'address' => Encryptable::class,
+        'phone'   => Encryptable::class,
     ];
 
     public function user()

@@ -9,6 +9,6 @@ namespace app\model;
 
 class Notification extends Base
 {
-    protected $table = 'erik_notifications';
+    protected $table = 'notifications';
     protected $fillable = ['user_id', 'channel', 'template_code', 'content', 'send_status'];
 }

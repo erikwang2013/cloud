@@ -16,9 +16,9 @@ CloudPlatform 是一个面向全球的云资源交易平台，支持自营物理
 | ID 混淆 | Hashids | 对外隐藏真实 ID 规模，防爬虫遍历 |
 | 认证 | JWT HS256 | 无状态认证，Access 15min + Refresh 30d |
 | 传输加密 | AES-256-GCM | 中间件透明加解密，GCM 认证加密防篡改 |
-| 字段加密 | AES-256-CBC | Eloquent Cast 自动加解密，CBC 随机 IV 不泄漏等值模式 |
+| 字段加密 | AES-128-ECB | Eloquent Cast 自动加解密，确定性加密（密文可等值查询，登录/唯一性校验依赖）；仅支持 ECB |
 | 消息队列 | Redis Queue | 异步处理支付回调、通知分发、资源开通 |
-| 搜索引擎 | Elasticsearch 8.x | 中文全文搜索（IK 分词）、产品/用户/工单索引 |
+| 搜索引擎 | database（默认）/ Elasticsearch 8.x | webman-scout 默认 database 驱动（SQL LIKE 降级）；配置 ES 后启用 IK 分词索引 |
 | 虚拟化 | Proxmox VE + kvm-server | 自营 VM 由 Rust kvm-server（gRPC :50051，e-cat/etcd 注册发现）供应；驱动层当前为模拟驱动，libvirt 真实驱动 Phase 2 |
 | 客户端 | Flutter | 单代码库 iOS/macOS/Windows/Linux/Web 五端 + HarmonyOS |
 
@@ -295,7 +295,7 @@ HTTP 请求
 | 层级 | 算法 | 实现 | 用途 |
 |------|------|------|------|
 | 传输层 | AES-256-GCM | EncryptionMiddleware | API 请求/响应体加密，GCM 认证 |
-| 字段层 | AES-256-CBC | Encryptable Cast | 敏感字段自动加解密（CBC 随机 IV，不泄漏等值模式） |
+| 字段层 | AES-128-ECB | Encryptable Cast | 敏感字段自动加解密（确定性加密：相同明文→相同密文，登录/唯一性校验按密文等值查询；仅支持 ECB，换 cipher 需重加密迁移） |
 | 哈希层 | bcrypt + SHA256 | JWT / API Key | 密码/Token 不可逆存储 |
 | 主键层 | Hashids | Response + Middleware | ID 对外混淆 |
 

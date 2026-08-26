@@ -9,6 +9,6 @@ namespace app\model;
 
 class DomainTld extends Base
 {
-    protected $table = 'erik_domain_tlds';
+    protected $table = 'domain_tlds';
     protected $fillable = ['tld', 'registrar', 'retail_price', 'promo_price', 'promo_end_at'];
 }

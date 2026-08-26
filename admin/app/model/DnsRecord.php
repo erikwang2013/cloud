@@ -9,6 +9,6 @@ namespace app\model;
 
 class DnsRecord extends Base
 {
-    protected $table = 'erik_dns_records';
+    protected $table = 'dns_records';
     protected $fillable = ['zone_id', 'type', 'name', 'value', 'ttl', 'priority'];
 }

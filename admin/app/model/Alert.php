@@ -9,6 +9,6 @@ namespace app\model;
 
 class Alert extends Base
 {
-    protected $table = 'erik_alerts';
+    protected $table = 'alerts';
     protected $fillable = ['rule_code', 'severity', 'resource_id', 'user_id', 'context', 'status'];
 }

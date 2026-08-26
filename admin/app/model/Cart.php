@@ -9,6 +9,6 @@ namespace app\model;
 
 class Cart extends Base
 {
-    protected $table = 'erik_carts';
+    protected $table = 'carts';
     protected $fillable = ['user_id', 'sku_id', 'region_id', 'quantity', 'cycle'];
 }

@@ -25,9 +25,10 @@ impl HealthRegistry {
         Self::default()
     }
 
-    pub fn with_check(self, check: impl HealthCheck + 'static) -> Self {
+    // async：tokio RwLock 的 blocking_write 在运行时内调用会 panic
+    pub async fn with_check(self, check: impl HealthCheck + 'static) -> Self {
         let name = check.name().to_string();
-        self.checks.blocking_write().insert(name, Box::new(check));
+        self.checks.write().await.insert(name, Box::new(check));
         self
     }
 
@@ -150,10 +151,87 @@ mod tests {
         assert!(check.check().await.is_err());
     }
 
-    #[test]
-    fn registry_builds_with_checks() {
+    #[tokio::test]
+    async fn registry_builds_with_checks() {
         let _reg = HealthRegistry::new()
             .with_check(FnCheck::new("a", || async { Ok(()) }))
-            .with_check(FnCheck::new("b", || async { Err("err".into()) }));
+            .await
+            .with_check(FnCheck::new("b", || async { Err("err".into()) }))
+            .await;
+    }
+
+    async fn get(router: axum::Router, path: &str) -> (axum::http::StatusCode, String) {
+        use tower::ServiceExt;
+        let resp = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri(path)
+                    .body(axum::body::Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let (parts, body) = resp.into_parts();
+        let bytes = axum::body::to_bytes(body, 1 << 16).await.unwrap();
+        (
+            parts.status,
+            String::from_utf8_lossy(&bytes).into_owned(),
+        )
+    }
+
+    #[tokio::test]
+    async fn liveness_returns_200() {
+        let (status, _) = get(HealthRegistry::new().into_router(), "/health").await;
+        assert_eq!(status, axum::http::StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn readiness_empty_registry_returns_200() {
+        let (status, body) = get(HealthRegistry::new().into_router(), "/ready").await;
+        assert_eq!(status, axum::http::StatusCode::OK);
+        assert!(body.contains("no checks registered"));
+    }
+
+    #[tokio::test]
+    async fn readiness_all_healthy_returns_200_ok_json() {
+        let reg = HealthRegistry::new()
+            .with_check(FnCheck::new("db", || async { Ok(()) }))
+            .await
+            .with_check(FnCheck::new("cache", || async { Ok(()) }))
+            .await;
+        let (status, body) = get(reg.into_router(), "/ready").await;
+        assert_eq!(status, axum::http::StatusCode::OK);
+        let json: serde_json::Value = serde_json::from_str(&body).unwrap();
+        assert_eq!(json["results"].as_array().unwrap().len(), 2);
+        assert!(json["results"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|r| r["status"] == "ok"));
+    }
+
+    #[tokio::test]
+    async fn readiness_any_failure_returns_503_with_error() {
+        let reg = HealthRegistry::new()
+            .with_check(FnCheck::new("db", || async { Ok(()) }))
+            .await
+            .with_check(FnCheck::new("cache", || async {
+                Err("connection refused".into())
+            }))
+            .await;
+        let (status, body) = get(reg.into_router(), "/ready").await;
+        assert_eq!(status, axum::http::StatusCode::SERVICE_UNAVAILABLE);
+        let json: serde_json::Value = serde_json::from_str(&body).unwrap();
+        let results = json["results"].as_array().unwrap();
+        assert_eq!(results.len(), 2);
+        let failed = results.iter().find(|r| r["name"] == "cache").unwrap();
+        assert_eq!(failed["status"], "fail");
+        assert_eq!(failed["error"], "connection refused");
+    }
+
+    #[tokio::test]
+    async fn readiness_unknown_path_returns_404() {
+        let (status, _) = get(HealthRegistry::new().into_router(), "/nope").await;
+        assert_eq!(status, axum::http::StatusCode::NOT_FOUND);
     }
 }

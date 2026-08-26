@@ -146,13 +146,13 @@ Only has required(), email(), minLength(). Missing: max length, numeric validati
 | 24 | prototype_pollution | block | |
 | 25 | websocket | block | |
 | 26 | cors | block | |
-| 27 | dns_rebinding | block | |
+| 27 | dns_rebinding | **log** | loopback Host（127.0.0.1/localhost）不再 403（开发/测试常态，仅记录） |
 | 28 | http_method | block | |
 | 29 | body_size | block | |
 | 30 | content_type | block | |
 | 31 | csrf_origin | block | |
 
-All 31 detectors enabled. 3 in log-only mode (documented false-positive risk). Correct configuration.
+All 31 detectors enabled. 4 in log-only mode (documented false-positive risk). Correct configuration.
 
 ---
 

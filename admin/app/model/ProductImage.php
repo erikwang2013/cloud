@@ -9,6 +9,6 @@ namespace app\model;
 
 class ProductImage extends Base
 {
-    protected $table = 'erik_product_images';
+    protected $table = 'product_images';
     protected $fillable = ['product_id', 'url', 'sort'];
 }

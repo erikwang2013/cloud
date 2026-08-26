@@ -9,6 +9,6 @@ namespace app\model;
 
 class PaymentChannel extends Base
 {
-    protected $table = 'erik_payment_channels';
+    protected $table = 'payment_channels';
     protected $fillable = ['name', 'code', 'api_key_encrypted', 'currency_support', 'fee_config', 'is_visible', 'visible_regions', 'min_amount', 'max_amount', 'webhook_secret', 'status'];
 }

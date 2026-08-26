@@ -9,6 +9,6 @@ namespace app\model;
 
 class Disk extends Base
 {
-    protected $table = 'erik_disks';
+    protected $table = 'disks';
     protected $fillable = ['resource_id', 'host_machine_id', 'vm_id', 'size_gb', 'disk_type', 'storage_pool', 'device_path', 'status'];
 }

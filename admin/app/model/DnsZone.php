@@ -9,6 +9,6 @@ namespace app\model;
 
 class DnsZone extends Base
 {
-    protected $table = 'erik_dns_zones';
+    protected $table = 'dns_zones';
     protected $fillable = ['user_id', 'domain_name'];
 }

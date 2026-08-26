@@ -9,6 +9,6 @@ namespace app\model;
 
 class ProductSku extends Base
 {
-    protected $table = 'erik_product_skus';
+    protected $table = 'product_skus';
     protected $fillable = ['product_id', 'sku_code', 'specs', 'status'];
 }

@@ -163,31 +163,38 @@ POST /api/captcha/create
 ```
 POST /api/auth/register
   头: X-Encrypted: 1
-  体(加密): { email?, phone?, password, language? }
+  体(加密): { email?, phone?, password, language?, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
 
 限流: 3 req/min
 ```
+
+- `deviceFingerprint`（可选）：注册时记录设备指纹，登录/刷新时校验；未携带则跳过指纹绑定
+- email/phone 存储前经 Encryptable 确定性加密（ECB，密文等值查询），唯一性校验与登录查询均按密文进行
 
 ### 登录
 
 ```
 POST /api/auth/login
   头: X-Encrypted: 1
-  体(加密): { login (email/phone), password, captcha_key, captcha_points }
+  体(加密): { login (email/phone), password, captcha_key, captcha_points, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
 
 限流: 5 req/min, 5 次失败锁 15min
 ```
+
+- `login` 按密文等值查询（Encryptable 确定性加密），明文查询不命中加密列
 
 ### Token 刷新
 
 ```
 POST /api/auth/refresh
   头: X-Encrypted: 1
-  体(加密): { refresh_token }
+  体(加密): { refresh_token, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
 ```
+
+- `deviceFingerprint` 与注册时记录不一致 → 401 `Device mismatch`；刷新 token 以密文哈希查询
 
 ### OAuth
 
@@ -967,7 +974,7 @@ POST /api/payments/webhook/stripe
 | code | 说明 |
 |------|------|
 | 400 | 参数错误 / 不支持的 API 版本 / 不支持的客户端平台 |
-| 401 | 未认证 / Token 过期 / 无效 API Key |
+| 401 | 未认证 / Token 过期 / 无效 API Key / 设备指纹不匹配（Device mismatch） |
 | 403 | 无权限 / 非供应商角色 / WAF 拦截 / 密码确认失败 |
 | 404 | 资源不存在（firstOrFail/findOrFail 未命中统一映射 404） |
 | 413 | 请求体超过 10MB |

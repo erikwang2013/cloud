@@ -9,6 +9,6 @@ namespace app\model;
 
 class ProvisionTask extends Base
 {
-    protected $table = 'erik_provision_tasks';
+    protected $table = 'provision_tasks';
     protected $fillable = ['order_id', 'order_item_id', 'resource_id', 'product_type', 'provider', 'region_id', 'action', 'status', 'params', 'retry_count', 'last_error', 'next_retry_at'];
 }

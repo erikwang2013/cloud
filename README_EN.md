@@ -125,7 +125,7 @@ cloud-php/
 │   │   ├── database.php        # Database connections
 │   │   └── ...                 # 18 config files total
 │   ├── database/migrations/    # Database migration files
-│   ├── tests/                  # Unit tests (PHPUnit 11, 255 tests)
+│   ├── tests/                  # Unit tests (PHPUnit 11, 286 tests / 962 assertions)
 │   │   ├── HashidsTest.php     # hashids encode/decode (21 tests)
 │   │   ├── BaseJsonTest.php    # Base::json() ID encoding (13 tests)
 │   │   ├── CrudHashidsTest.php # Crud input decoding (14 tests)
@@ -191,7 +191,7 @@ cloud-php/
 │   ├── database/migrations/    # Database migration files (37 migrations)
 │   ├── i18n/                   # Internationalization resources (en-US / zh-CN)
 │   ├── support/                # Bootstrap (Eloquent / Redis / Event / encryption / snowflake / hashids / scout / MigrationRunner)
-│   ├── tests/                  # Unit tests (PHPUnit 10, 661 tests)
+│   ├── tests/                  # Unit tests (PHPUnit 10, 672 tests / 1632 assertions)
 │   │   ├── admin/              # ImportExport / SupplierWithdrawApprove
 │   │   ├── affiliate/          # AffiliateService
 │   │   ├── auth/               # JwtAuth / RbacSeed / Rbac
@@ -470,11 +470,17 @@ Login/Register: Captcha verify → Auth → Business logic
 ### Test Coverage
 
 ```
-phpunit.xml (PHPUnit 11)
-├── HashidsTest        (21 tests) encode/decode/encode_ids
-├── BaseJsonTest       (13 tests) Base::json/success/fail encoding
-├── CrudHashidsTest    (14 tests) Crud input decoding (select/update/delete)
-└── TreeTest           (19 tests) tree construction / descendants / ancestors / orphans
+phpunit.xml (PHPUnit 11, 286 tests / 962 assertions)
+├── HashidsTest              (21 tests) encode/decode/encode_ids
+├── BaseJsonTest             (13 tests) Base::json/success/fail encoding
+├── CrudHashidsTest          (14 tests) Crud input decoding (select/update/delete)
+├── TreeTest                 (19 tests) tree construction / descendants / ancestors / orphans
+├── AccessControlMiddlewareTest (7 tests) 401 unauthenticated / 403 page / pass-through
+├── AdminControllersTest     (data provider) 48 controllers assembly / CRUD / GET view paths
+├── UtilTest                 (17 tests) password / time / bytes / input filters / control props
+├── DictTest                 (5 tests) dict↔option conversion / save/get/delete
+├── ExcelExportTest          (4 tests) header / JSON flatten / row numbers / empty cells
+└── LayuiTest                (5 tests) input / inputNumber / label escape / switch / html
 ```
 
 ## Design Philosophy
@@ -564,7 +570,7 @@ Global middleware pipeline: `Version → CORS → SecurityHeaders → ClientPlat
 
 ### 7. Distributed ID Generation
 
-Twitter Snowflake algorithm generates 64-bit globally unique IDs: `timestamp(41b) | datacenter(5b) | worker(5b) | sequence(12b)`. All 38 Eloquent models auto-generate Snowflake IDs on the `creating` event. No database auto-increment dependency — natively supports sharding.
+Twitter Snowflake algorithm generates 64-bit globally unique IDs: `timestamp(41b) | datacenter(5b) | worker(5b) | sequence(12b)`. All 46 Eloquent models auto-generate Snowflake IDs on the `creating` event. No database auto-increment dependency — natively supports sharding.
 
 ### 8. Internationalization
 
@@ -574,7 +580,7 @@ Twitter Snowflake algorithm generates 64-bit globally unique IDs: `timestamp(41b
 
 ### 9. Full-Text Search
 
-Product, User, Order, and Ticket models are automatically synced to Elasticsearch via the `Erikwang2013\WebmanScout\Searchable` trait:
+Product, User, Order, and Ticket models use the `Erikwang2013\WebmanScout\Searchable` trait. Driver defaults to `database` (no-op writes, SQL LIKE search fallback, no ES dependency); with the Elasticsearch driver configured, indexes sync automatically:
 
 - **Multilingual tokenization** — IK Analyzer (ik_max_word / ik_smart)
 - **Chinese full-text search** — product names, descriptions, ticket titles
@@ -599,9 +605,9 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] API ID obfuscation (`erikwang2013/hashids`, auto decode requests + auto encode responses)
 - [x] Transport encryption (`erikwang2013/encryption`, AES-256-GCM middleware)
 - [x] Field-level encryption (`erikwang2013/encryptable`, auto encrypt/decrypt sensitive fields)
-- [x] Full-text search (`erikwang2013/webman-scout`, Elasticsearch + IK Analyzer)
+- [x] Full-text search (`erikwang2013/webman-scout`, database driver SQL LIKE fallback by default, optional Elasticsearch + IK Analyzer)
 - [x] Country flags (`erikwang2013/season`, Unicode flag emoji)
-- [x] Admin panel (`admin/`, webman-admin + 7 package integrations, 67 unit tests)
+- [x] Admin panel (`admin/`, webman-admin + 7 package integrations, 286 unit tests)
 - [x] Code review (2 critical + 4 important fixes applied)
 - [x] Excel export (PhpSpreadsheet ^2.0, admin Crud/Table + service admin API)
 - [x] Dashboard visualization (ECharts charts + animated stat cards + system info panel)
@@ -612,7 +618,7 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] FCM push notification production integration (kreait/firebase-php, with invalid token cleanup)
 - [x] Click CAPTCHA (erikwang2013/poster-php, login/register verification)
 - [x] Password confirmation (ConfirmationMiddleware, sensitive ops password re-entry, 5 fails → 15 min lock)
-- [x] Service-layer unit tests (661 tests)
+- [x] Service-layer unit tests (672 tests / 1632 assertions, 15 skipped)
 - [x] Client platform identification (ClientPlatformMiddleware, X-Client-Platform header, 8 platforms)
 - [x] WAF security enhancement (8 categories 45+ rules: SQLi/XSS/CMDi/file inclusion/header injection/SSRF/NoSQL injection/open redirect + size limits + Content-Type validation)
 - [x] Security Plugin (erikwang2013/security-php, 31 attack detectors + IP blacklist auto-ban + log rotation)

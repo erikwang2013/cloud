@@ -170,6 +170,25 @@ Common\snowflake\SnowflakeService::init();
 // Encryption
 Common\encryption\EncryptionService::init();
 
+// encryptable 字段加密：运行时无 Illuminate 容器绑定，Encryption::php() 走 EnvEncryptableConfig
+// fallback（直接读 env 原始 base64 串，密钥长度校验失败抛 MissingEncryptionKeyException）。
+// 显式指向插件配置（key 已在配置层 base64 解码），否则注册/登录/改资料等加密字段写入全部 500。
+\Erikwang2013\Encryptable\Encryption::setFallbackConfig(
+    new \Erikwang2013\Encryptable\Bridge\Webman\WebmanPluginEncryptableConfig()
+);
+
+// 确定性查询守卫：登录/刷新/注册唯一性等按密文等值匹配加密列，
+// 仅 ECB 无随机 IV（同明文同密文）；CBC/GCM 每次随机 IV，查询永不命中且无任何报错。
+// 换 cipher 前必须先对存量数据做重加密迁移（见 docs/test-reports/2026-08-26-fix-service.md）。
+$activeCipher = (new \Erikwang2013\Encryptable\PHPEncrypter(
+    new \Erikwang2013\Encryptable\Bridge\Webman\WebmanPluginEncryptableConfig()
+))->cipher();
+if (!in_array($activeCipher, ['aes-128-ecb', 'aes-256-ecb'], true)) {
+    throw new \RuntimeException(
+        "Encryptable cipher [{$activeCipher}] 非确定性加密：按密文等值查询的路径（登录/刷新/唯一性校验）将全部失效，仅支持 ECB。需先完成存量数据重加密迁移才能更换 cipher。"
+    );
+}
+
 // Hashids
 Common\hashid\HashidService::init();
 

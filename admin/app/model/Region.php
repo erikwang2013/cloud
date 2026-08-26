@@ -9,6 +9,6 @@ namespace app\model;
 
 class Region extends Base
 {
-    protected $table = 'erik_regions';
+    protected $table = 'regions';
     protected $fillable = ['name', 'continent', 'country', 'city', 'data_center', 'status'];
 }

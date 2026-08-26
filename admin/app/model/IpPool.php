@@ -9,6 +9,6 @@ namespace app\model;
 
 class IpPool extends Base
 {
-    protected $table = 'erik_ip_pools';
+    protected $table = 'ip_pools';
     protected $fillable = ['host_machine_id', 'ip_start', 'ip_end', 'gateway', 'total_count', 'used_count'];
 }

@@ -9,6 +9,6 @@ namespace app\model;
 
 class ProductRegion extends Base
 {
-    protected $table = 'erik_product_regions';
+    protected $table = 'product_regions';
     protected $fillable = ['sku_id', 'region_id', 'price', 'original_price', 'stock', 'currency'];
 }

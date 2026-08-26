@@ -9,6 +9,6 @@ namespace app\model;
 
 class Product extends Base
 {
-    protected $table = 'erik_products';
+    protected $table = 'products';
     protected $fillable = ['category_id', 'supplier_id', 'name', 'description', 'slug', 'status'];
 }

@@ -270,7 +270,7 @@
 						title: "头像",
 						field: "avatar",
 						templet: function (d) {
-							return '<img src="'+encodeURI(d['avatar'])+'" style="max-width:32px;max-height:32px;" alt="" />'
+							return d['avatar'] ? '<img src="'+encodeURI(d['avatar'])+'" style="max-width:32px;max-height:32px;" alt="" />' : ''
 						}
 					},{
 						title: "邮箱",

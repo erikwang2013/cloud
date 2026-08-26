@@ -9,6 +9,6 @@ namespace app\model;
 
 class Resource extends Base
 {
-    protected $table = 'erik_resources';
+    protected $table = 'resources';
     protected $fillable = ['order_item_id', 'user_id', 'product_id', 'type', 'provider', 'region_id', 'status', 'specs', 'provisioned_at', 'expired_at'];
 }
