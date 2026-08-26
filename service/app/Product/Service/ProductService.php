@@ -38,6 +38,17 @@ class ProductService
         });
     }
 
+    public function search(string $keyword, int $page = 1, int $perPage = 20): array
+    {
+        $ids = $this->searchKeywordIds($keyword);
+        $query = Product::whereIn('id', $ids);
+
+        $total = $query->count();
+        $items = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
+
+        return Response::paginated($items, $total, $page, $perPage);
+    }
+
     public function detail(int $id): Product
     {
         return CacheService::remember("products:detail:{$id}", CacheService::TTL_PRODUCT_DETAIL, function () use ($id) {

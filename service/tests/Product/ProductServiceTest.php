@@ -175,6 +175,20 @@ final class ProductServiceTest extends TestCase
         $this->assertArrayHasKey('total', $result['meta']);
     }
 
+    public function testSearchWithoutScoutReturnsPaginatedStructure(): void
+    {
+        // 回归：ProductController::search 曾裸调 Product::search()->paginate()，
+        // ES client 缺失时抛 ScoutException 500；现经 searchKeywordIds 兜底
+        $this->seedProduct(['slug' => 'vps-gold']);
+
+        $result = (new ProductService())->search('vps', 1, 10);
+
+        $this->assertArrayHasKey('data', $result);
+        $this->assertArrayHasKey('total', $result['meta']);
+        $this->assertSame(1, $result['meta']['page']);
+        $this->assertSame(10, $result['meta']['page_size']);
+    }
+
     public function testListFiltersByRegion(): void
     {
         $p1 = $this->seedProduct();

@@ -45,14 +45,6 @@ class ProductController
             return json(Response::error(422, 'Search query required'));
         }
 
-        $results = \App\Product\Model\Product::search($keyword)
-            ->paginate($perPage, 'page', $page);
-
-        return json(Response::paginated(
-            $results->items(),
-            $results->total(),
-            $page,
-            $perPage
-        ));
+        return json($this->service->search($keyword, $page, $perPage));
     }
 }
