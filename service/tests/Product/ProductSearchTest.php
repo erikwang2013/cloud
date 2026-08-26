@@ -6,6 +6,7 @@ use App\Product\Model\Product;
 use App\Product\Service\ProductService;
 use Illuminate\Database\Connection;
 use Illuminate\Database\ConnectionResolver;
+use Illuminate\Database\Eloquent\Model;
 use PHPUnit\Framework\TestCase;
 
 final class ProductSearchTest extends TestCase
@@ -13,6 +14,15 @@ final class ProductSearchTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // 必须先挂 dispatcher 再触碰模型：HasSnowflakeId 在 boot 时把 creating 监听器
+        // 注册到当前 dispatcher，无 dispatcher 则静默丢弃；模型 boot 进程内只发生一次，
+        // 一旦本文件先 boot 了 Product，后续文件（ProductServiceTest）save 后 id 为
+        // NULL、refresh 必挂（单独跑 tests/Product/ 目录时的 7 个错误）
+        if (!Model::getEventDispatcher()) {
+            Model::setEventDispatcher(
+                new \Illuminate\Events\Dispatcher(new \Illuminate\Container\Container)
+            );
+        }
         // 仅构建模型不执行查询，null PDO 足以构造关系，避免测试触库
         $resolver = new ConnectionResolver(['default' => new Connection(null)]);
         $resolver->setDefaultConnection('default');
