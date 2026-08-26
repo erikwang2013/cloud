@@ -67,7 +67,7 @@ The project has a solid multi-layered security architecture. The erikwang2013/se
 ## 2. Gaps and Recommendations
 
 ### Gap 1 (Medium): CORS is mirror-any-origin
-**File**: `service/common/Security/CorsMiddleware.php:12`
+**File**: `service/common/security/CorsMiddleware.php:12`
 
 ```php
 'Access-Control-Allow-Origin' => $origin ?: '*',
@@ -100,7 +100,7 @@ The admin panel has no rate_limits configuration. The admin WAF middleware only 
 **Recommendation**: Either add rate_limits to admin/config/security.php or apply the RateLimitMiddleware to admin routes.
 
 ### Gap 4 (Low): GeoBlockMiddleware defined but not activated
-**File**: `service/common/Security/GeoBlockMiddleware.php`
+**File**: `service/common/security/GeoBlockMiddleware.php`
 
 The middleware exists and is functional, but it is not registered in `service/config/middleware.php`. If geo-blocking is needed, add it to the stack.
 
@@ -110,7 +110,7 @@ Both WafMiddleware (custom, 40+ regex patterns) and SecurityMiddleware (plugin, 
 **Recommendation**: The security plugin is more comprehensive (31 detectors vs 8 categories) and has IP blacklisting, field whitelisting, and log dedup. Consider removing the custom WafMiddleware and relying solely on the plugin, or at minimum remove the overlapping patterns from WafMiddleware.
 
 ### Gap 6 (Info): Validator class is minimal
-**File**: `service/common/Helper/Validator.php`
+**File**: `service/common/helper/Validator.php`
 
 Only has required(), email(), minLength(). Missing: max length, numeric validation, string sanitization, URL validation, pattern matching. Controllers that do not use framework-level validation are at risk of accepting malformed input.
 
@@ -197,8 +197,8 @@ All 31 detectors enabled. 3 in log-only mode (documented false-positive risk). C
 ### Fixed
 | Gap | Fix | Files Changed |
 |-----|-----|---------------|
-| CORS mirror-any-origin | Whitelist mode with `CORS_ALLOWED_ORIGINS` env var, supports `*.example.com` wildcards and `*` for all | `service/common/Security/CorsMiddleware.php` |
-| Missing security headers | New `SecurityHeadersMiddleware` added to both service and admin stacks: X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-XSS-Protection, Permissions-Policy, HSTS (opt-in via env) | `service/common/Security/SecurityHeadersMiddleware.php`, `admin/app/middleware/SecurityHeadersMiddleware.php` |
+| CORS mirror-any-origin | Whitelist mode with `CORS_ALLOWED_ORIGINS` env var, supports `*.example.com` wildcards and `*` for all | `service/common/security/CorsMiddleware.php` |
+| Missing security headers | New `SecurityHeadersMiddleware` added to both service and admin stacks: X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-XSS-Protection, Permissions-Policy, HSTS (opt-in via env) | `service/common/security/SecurityHeadersMiddleware.php`, `admin/app/middleware/SecurityHeadersMiddleware.php` |
 | Admin no rate limiting | Added `rate_limits` config + `RateLimitMiddleware` to admin panel (default 60/min, login 5/min) | `admin/config/security.php`, `admin/app/middleware/RateLimitMiddleware.php` |
 | GeoBlock not activated | Registered `GeoBlockMiddleware` in service middleware stack | `service/config/middleware.php` |
 

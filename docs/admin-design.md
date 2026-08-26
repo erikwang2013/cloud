@@ -68,7 +68,7 @@ admin/
 │   ├── BaseJsonTest.php  # 13 tests
 │   ├── CrudHashidsTest.php # 14 tests
 │   ├── TreeTest.php      # 19 tests
-│   └── Support/          # RequestMock, TestableCrud
+│   └── support/          # RequestMock, TestableCrud
 ├── install.sql           # DDL (bigint unsigned PKs, no auto-increment)
 └── phpunit.xml
 ```
@@ -596,7 +596,7 @@ return [
 
 Replaced fake `random_bytes()` payment IDs with real Stripe API integration via `stripe/stripe-php` ^15.0.
 
-**File**: `service/app/Payment/Service/Channels/StripeChannel.php`
+**File**: `service/app/payment/service/channels/StripeChannel.php`
 
 ```
 Client-side                    Server-side                    Stripe API
@@ -668,7 +668,7 @@ public function handleWebhook(string $payload, string $signature): void
 
 Replaced `error_log()` stub with real SMS delivery via `twilio/sdk` ^8.0.
 
-**File**: `service/app/Notification/Queue/SmsSender.php`
+**File**: `service/app/notification/queue/SmsSender.php`
 
 ### Message Sending
 
@@ -704,7 +704,7 @@ Env vars: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
 
 Replaced `error_log()` stub with real push delivery via `kreait/firebase-php` ^7.0.
 
-**File**: `service/app/Notification/Queue/PushSender.php`
+**File**: `service/app/notification/queue/PushSender.php`
 
 ### Device Token Storage
 

@@ -132,7 +132,7 @@ cloud-php/
 │   │   ├── TreeTest.php        # Tree structure (19 tests)
 │   │   ├── AccessControlMiddlewareTest.php # RBAC access control
 │   │   ├── AdminControllersTest.php        # Controller regression
-│   │   └── Support/            # Test helpers
+│   │   └── support/            # Test helpers
 │   ├── public/                 # Document root (static assets)
 │   ├── vendor/                 # Composer dependencies
 │   ├── .env.example            # Environment template
@@ -143,47 +143,47 @@ cloud-php/
 │   └── install.sql             # Initial DDL
 ├── service/                    # Backend service (standalone webman instance)
 │   ├── app/                    # Business modules (PSR-4: App\), each with Controller/Model/Service layers
-│   │   ├── Admin/Controller/   # Admin API (15 controllers: Dashboard / User / Product / Order / Payment / Supplier / Coupon / Invoice / Domain / Webhook etc.)
-│   │   ├── Affiliate/          # Affiliate commissions / referral payouts (Controller / Listener / Model / Service)
-│   │   ├── Billing/            # Usage metering / billing (Cron / Service)
-│   │   ├── Captcha/Controller/ # Click CAPTCHA
-│   │   ├── Cdn/                # CDN resource hosting (Controller / Model / Provider / Service)
-│   │   ├── Command/            # Console commands (Migrate / Rollback / Status / DbBackup)
-│   │   ├── Controller/         # Public controllers (Health / Status / Help / Upload)
-│   │   ├── Cron/               # Scheduled tasks (CronRunner scheduler + ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck)
-│   │   ├── Domain/             # Domain registration / DNS (Controller / Model / Service)
-│   │   ├── Graphql/            # GraphQL API (Mutation / Query / Schema)
-│   │   ├── Grpc/               # kvm-server gRPC client + etcd registry (KvmClient / EtcdRegistry)
-│   │   ├── Model/              # Shared models (HelpArticle / Role / Permission)
-│   │   ├── Monitor/            # Resource monitoring / alerts (Controller / Cron / Model / Service)
-│   │   ├── Notification/       # Notifications (Controller / Model / Queue / Service)
-│   │   ├── Order/              # Cart / orders / coupons / invoices (Controller / Model / Service)
-│   │   ├── Payment/            # Payment routing / Stripe (Controller / Event / Model / Service)
-│   │   ├── Product/            # Products / SKUs / pricing / reviews (Controller / Model / Service)
-│   │   ├── Provisioning/       # Resource delivery engine (Controller / Event / Listener / Model / Provider / Queue / Service)
-│   │   ├── Report/             # Revenue / supplier / regional reports (Controller / Service)
-│   │   ├── Ssl/                # SSL certificate issuance / management (Controller / Model / Service)
-│   │   ├── Storage/            # Object storage resources (Controller / Model / Provider / Service)
-│   │   ├── Supplier/           # Supplier onboarding / settlement / withdrawal + external API (Controller / Model / Service)
-│   │   ├── Ticket/             # Support tickets (Controller / Event / Listener / Model / Service)
-│   │   ├── User/               # Users / auth / KYC / balances / addresses (Controller / Model / Service)
-│   │   ├── Webhook/            # Webhook message queue (Queue)
-│   │   └── WebSocket/          # WebSocket server + event listeners
+│   │   ├── admin/controller/   # Admin API (15 controllers: Dashboard / User / Product / Order / Payment / Supplier / Coupon / Invoice / Domain / Webhook etc.)
+│   │   ├── affiliate/          # Affiliate commissions / referral payouts (Controller / Listener / Model / Service)
+│   │   ├── billing/            # Usage metering / billing (Cron / Service)
+│   │   ├── captcha/controller/ # Click CAPTCHA
+│   │   ├── cdn/                # CDN resource hosting (Controller / Model / Provider / Service)
+│   │   ├── command/            # Console commands (Migrate / Rollback / Status / DbBackup)
+│   │   ├── controller/         # Public controllers (Health / Status / Help / Upload)
+│   │   ├── cron/               # Scheduled tasks (CronRunner scheduler + ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck)
+│   │   ├── domain/             # Domain registration / DNS (Controller / Model / Service)
+│   │   ├── graphql/            # GraphQL API (Mutation / Query / Schema)
+│   │   ├── grpc/               # kvm-server gRPC client + etcd registry (KvmClient / EtcdRegistry)
+│   │   ├── model/              # Shared models (HelpArticle / Role / Permission)
+│   │   ├── monitor/            # Resource monitoring / alerts (Controller / Cron / Model / Service)
+│   │   ├── notification/       # Notifications (Controller / Model / Queue / Service)
+│   │   ├── order/              # Cart / orders / coupons / invoices (Controller / Model / Service)
+│   │   ├── payment/            # Payment routing / Stripe (Controller / Event / Model / Service)
+│   │   ├── product/            # Products / SKUs / pricing / reviews (Controller / Model / Service)
+│   │   ├── provisioning/       # Resource delivery engine (Controller / Event / Listener / Model / Provider / Queue / Service)
+│   │   ├── report/             # Revenue / supplier / regional reports (Controller / Service)
+│   │   ├── ssl/                # SSL certificate issuance / management (Controller / Model / Service)
+│   │   ├── storage/            # Object storage resources (Controller / Model / Provider / Service)
+│   │   ├── supplier/           # Supplier onboarding / settlement / withdrawal + external API (Controller / Model / Service)
+│   │   ├── ticket/             # Support tickets (Controller / Event / Listener / Model / Service)
+│   │   ├── user/               # Users / auth / KYC / balances / addresses (Controller / Model / Service)
+│   │   ├── webhook/            # Webhook message queue (Queue)
+│   │   └── websocket/          # WebSocket server + event listeners
 │   ├── common/                 # Shared libraries (PSR-4: Common\)
-│   │   ├── Auth/Middleware/     # AuthMiddleware / AdminRoleMiddleware / RbacMiddleware / RoleMiddleware / SupplierApiKeyMiddleware
-│   │   ├── Captcha/            # Click CAPTCHA service
-│   │   ├── Confirmation/       # Password confirmation middleware
-│   │   ├── Encryption/Middleware/ # AES-256-GCM transport encryption middleware
-│   │   ├── Hashid/Middleware/   # Hashids request decode middleware + encode-decode service
-│   │   ├── Helper/             # Response formatting (auto hashid encoding)
-│   │   ├── Http/               # HTTP client utility (ApiRequest)
-│   │   ├── I18n/Middleware/     # Locale middleware
-│   │   ├── Security/           # CORS / WAF / rate limiting / geo-blocking / maintenance / audit logging
-│   │   ├── Snowflake/          # Snowflake ID service / Eloquent HasSnowflakeId trait
-│   │   ├── Version/Middleware/  # API version middleware (X-Api-Version header validation)
-│   │   ├── ClientPlatform/Middleware/  # Client platform middleware (X-Client-Platform header identification)
-│   │   ├── Feature/            # Feature Flags service
-│   │   └── Webhook/            # Webhook event dispatcher
+│   │   ├── auth/middleware/     # AuthMiddleware / AdminRoleMiddleware / RbacMiddleware / RoleMiddleware / SupplierApiKeyMiddleware
+│   │   ├── captcha/            # Click CAPTCHA service
+│   │   ├── confirmation/       # Password confirmation middleware
+│   │   ├── encryption/middleware/ # AES-256-GCM transport encryption middleware
+│   │   ├── hashid/middleware/   # Hashids request decode middleware + encode-decode service
+│   │   ├── helper/             # Response formatting (auto hashid encoding)
+│   │   ├── http/               # HTTP client utility (ApiRequest)
+│   │   ├── i18n/middleware/     # Locale middleware
+│   │   ├── security/           # CORS / WAF / rate limiting / geo-blocking / maintenance / audit logging
+│   │   ├── snowflake/          # Snowflake ID service / Eloquent HasSnowflakeId trait
+│   │   ├── version/middleware/  # API version middleware (X-Api-Version header validation)
+│   │   ├── clientplatform/middleware/  # Client platform middleware (X-Client-Platform header identification)
+│   │   ├── feature/            # Feature Flags service
+│   │   └── webhook/            # Webhook event dispatcher
 │   ├── config/                 # 17 config files (route / middleware / database / redis / cron / auth / security / i18n / ...)
 │   │   └── plugin/             # Plugin configs
 │   │       ├── erikwang2013/   # encryptable / hashids / jwt / poster / season / webman-scout
@@ -192,36 +192,36 @@ cloud-php/
 │   ├── i18n/                   # Internationalization resources (en-US / zh-CN)
 │   ├── support/                # Bootstrap (Eloquent / Redis / Event / encryption / snowflake / hashids / scout / MigrationRunner)
 │   ├── tests/                  # Unit tests (PHPUnit 10, 661 tests)
-│   │   ├── Admin/              # ImportExport / SupplierWithdrawApprove
-│   │   ├── Affiliate/          # AffiliateService
-│   │   ├── Auth/               # JwtAuth / RbacSeed / Rbac
-│   │   ├── Billing/            # MeterCollector / UsageAggregator / SuspendCheck
-│   │   ├── Captcha/            # CaptchaService
-│   │   ├── Cdn/                # ResourceCdn
-│   │   ├── ClientPlatform/     # ClientPlatformMiddleware
-│   │   ├── Common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
-│   │   ├── Confirmation/       # ConfirmationMiddleware
-│   │   ├── Cron/               # SupplierSettlement
-│   │   ├── Domain/             # DomainService / DomainTransfer
-│   │   ├── Graphql/            # Schema
-│   │   ├── Grpc/               # KvmClient / EtcdRegistry
-│   │   ├── Monitor/            # AlertEngine
-│   │   ├── Notification/       # NotificationDispatcher
-│   │   ├── Order/              # Coupon / Invoice
-│   │   ├── Payment/            # StripeChannel / PaymentRouter
-│   │   ├── Product/            # ProductService / Search / ReviewStatus
-│   │   ├── Provisioning/       # ProviderFactory / RetryLogic
-│   │   ├── Report/             # ReportService
-│   │   ├── Security/           # RateLimit / Maintenance / UploadSecurity
-│   │   ├── Ssl/                # SslCertificate
-│   │   ├── Storage/            # StorageBucket
-│   │   ├── Supplier/           # SupplierService / Settlement / Rating / Webhook
-│   │   ├── Ticket/             # TicketUpdatedWiring
-│   │   ├── User/               # AddressController
-│   │   ├── Version/            # VersionMiddleware
-│   │   ├── Webhook/            # WebhookDispatcher / WebhookE2E
-│   │   ├── WebSocket/          # WebSocketAuth / EventsWiring
-│   │   ├── Support/            # RequestMock
+│   │   ├── admin/              # ImportExport / SupplierWithdrawApprove
+│   │   ├── affiliate/          # AffiliateService
+│   │   ├── auth/               # JwtAuth / RbacSeed / Rbac
+│   │   ├── billing/            # MeterCollector / UsageAggregator / SuspendCheck
+│   │   ├── captcha/            # CaptchaService
+│   │   ├── cdn/                # ResourceCdn
+│   │   ├── clientplatform/     # ClientPlatformMiddleware
+│   │   ├── common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
+│   │   ├── confirmation/       # ConfirmationMiddleware
+│   │   ├── cron/               # SupplierSettlement
+│   │   ├── domain/             # DomainService / DomainTransfer
+│   │   ├── graphql/            # Schema
+│   │   ├── grpc/               # KvmClient / EtcdRegistry
+│   │   ├── monitor/            # AlertEngine
+│   │   ├── notification/       # NotificationDispatcher
+│   │   ├── order/              # Coupon / Invoice
+│   │   ├── payment/            # StripeChannel / PaymentRouter
+│   │   ├── product/            # ProductService / Search / ReviewStatus
+│   │   ├── provisioning/       # ProviderFactory / RetryLogic
+│   │   ├── report/             # ReportService
+│   │   ├── security/           # RateLimit / Maintenance / UploadSecurity
+│   │   ├── ssl/                # SslCertificate
+│   │   ├── storage/            # StorageBucket
+│   │   ├── supplier/           # SupplierService / Settlement / Rating / Webhook
+│   │   ├── ticket/             # TicketUpdatedWiring
+│   │   ├── user/               # AddressController
+│   │   ├── version/            # VersionMiddleware
+│   │   ├── webhook/            # WebhookDispatcher / WebhookE2E
+│   │   ├── websocket/          # WebSocketAuth / EventsWiring
+│   │   ├── support/            # RequestMock
 │   │   ├── bootstrap.php       # Test bootstrap
 │   │   └── TestCase.php        # Base test case
 │   ├── runtime/                # Runtime files (logs / cache)

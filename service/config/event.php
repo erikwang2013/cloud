@@ -26,17 +26,17 @@
 
 return [
     // 支付成功后触发资源交付流程 + WebSocket 实时推送
-    \App\Payment\Event\OrderPaid::class => [
-        \App\Provisioning\Listener\OrderPaidListener::class,
-        \App\WebSocket\Listener\OrderPaidListener::class,
-        \App\Affiliate\Listener\OrderPaidListener::class,
+    \App\payment\event\OrderPaid::class => [
+        \App\provisioning\listener\OrderPaidListener::class,
+        \App\websocket\listener\OrderPaidListener::class,
+        \App\affiliate\listener\OrderPaidListener::class,
     ],
     // 工单创建后自动分配
-    \App\Ticket\Event\TicketCreated::class => [
-        \App\Ticket\Listener\AutoAssignListener::class,
+    \App\ticket\event\TicketCreated::class => [
+        \App\ticket\listener\AutoAssignListener::class,
     ],
     // 工单状态变更 → WebSocket 实时推送（ticket.updated）
-    \App\Ticket\Event\TicketStatusChanged::class => [
-        \App\WebSocket\Listener\TicketUpdatedListener::class,
+    \App\ticket\event\TicketStatusChanged::class => [
+        \App\websocket\listener\TicketUpdatedListener::class,
     ],
 ];

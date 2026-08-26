@@ -36,7 +36,7 @@ return new class extends Migration {
 
             // install.sql 的 id 列无 AUTO_INCREMENT：legacy schema 首插必须显式提供 Snowflake 主键
             if ($legacy && !Capsule::table('notification_templates')->where('code', $code)->exists()) {
-                $payload['id'] = \Common\Snowflake\SnowflakeService::nextId();
+                $payload['id'] = \Common\snowflake\SnowflakeService::nextId();
             }
 
             Capsule::table('notification_templates')->updateOrInsert(['code' => $code], $payload);

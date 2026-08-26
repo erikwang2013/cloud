@@ -1,7 +1,7 @@
 <?php
 namespace support;
 
-use Common\Security\LogSanitizer;
+use Common\security\LogSanitizer;
 use Webman\Bootstrap;
 
 class SentryBootstrap implements Bootstrap

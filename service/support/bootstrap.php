@@ -152,36 +152,36 @@ $capsule->getContainer()->singleton('redis', fn() => support\Redis::manager());
 
 // Event listeners — 直接使用 dispatcher 实例（不依赖容器中的 events 服务）
 $dispatcher->listen(
-    App\Payment\Event\OrderPaid::class,
-    [App\Provisioning\Listener\OrderPaidListener::class, 'handle']
+    App\payment\event\OrderPaid::class,
+    [App\provisioning\listener\OrderPaidListener::class, 'handle']
 );
 $dispatcher->listen(
-    App\Ticket\Event\TicketCreated::class,
-    [App\Ticket\Listener\AutoAssignListener::class, 'handle']
+    App\ticket\event\TicketCreated::class,
+    [App\ticket\listener\AutoAssignListener::class, 'handle']
 );
 $dispatcher->listen(
-    App\Provisioning\Event\ProvisionFailed::class,
-    [App\Monitor\Service\AlertEngine::class, 'onProvisionFailed']
+    App\provisioning\event\ProvisionFailed::class,
+    [App\monitor\service\AlertEngine::class, 'onProvisionFailed']
 );
 
 // Snowflake ID generator
-Common\Snowflake\SnowflakeService::init();
+Common\snowflake\SnowflakeService::init();
 
 // Encryption
-Common\Encryption\EncryptionService::init();
+Common\encryption\EncryptionService::init();
 
 // Hashids
-Common\Hashid\HashidService::init();
+Common\hashid\HashidService::init();
 
 // Global helpers
 if (!function_exists('hashid_encode')) {
     function hashid_encode(int $id): string {
-        return Common\Hashid\HashidService::encode($id);
+        return Common\hashid\HashidService::encode($id);
     }
 }
 if (!function_exists('hashid_decode')) {
     function hashid_decode(string $hash): ?int {
-        return Common\Hashid\HashidService::decode($hash);
+        return Common\hashid\HashidService::decode($hash);
     }
 }
 
@@ -212,16 +212,16 @@ if (!function_exists('api_version')) {
 }
 
 // Register provisioning providers — called once at worker start
-if (class_exists(\App\Provisioning\Service\ProviderFactory::class)) {
+if (class_exists(\App\provisioning\service\ProviderFactory::class)) {
     try {
-        \App\Provisioning\Service\ProviderFactory::registerDefaults();
+        \App\provisioning\service\ProviderFactory::registerDefaults();
 
         // DB-backed AWS registrations (if provider_apis table has aws-ec2 entry)
-        $awsConfig = \App\Provisioning\Model\ProviderApi::where('code', 'aws-ec2')->where('status', 'active')->first();
+        $awsConfig = \App\provisioning\model\ProviderApi::where('code', 'aws-ec2')->where('status', 'active')->first();
         if ($awsConfig) {
-            \App\Provisioning\Service\ProviderFactory::register('server', 'aws-ec2', fn() => new \App\Provisioning\Provider\AwsEc2Provider($awsConfig));
-            \App\Provisioning\Service\ProviderFactory::register('disk', 'aws-ec2', fn() => new \App\Provisioning\Provider\AwsEc2Provider($awsConfig));
-            \App\Provisioning\Service\ProviderFactory::register('ip', 'aws-ec2', fn() => new \App\Provisioning\Provider\AwsEc2Provider($awsConfig));
+            \App\provisioning\service\ProviderFactory::register('server', 'aws-ec2', fn() => new \App\provisioning\provider\AwsEc2Provider($awsConfig));
+            \App\provisioning\service\ProviderFactory::register('disk', 'aws-ec2', fn() => new \App\provisioning\provider\AwsEc2Provider($awsConfig));
+            \App\provisioning\service\ProviderFactory::register('ip', 'aws-ec2', fn() => new \App\provisioning\provider\AwsEc2Provider($awsConfig));
         }
     } catch (\Throwable $e) {
         // DB or provider class not available — skip registration

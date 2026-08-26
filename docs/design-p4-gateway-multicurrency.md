@@ -12,7 +12,7 @@
 | 层 | 现状 |
 |----|------|
 | 边缘网关 | docker/nginx.conf 承担 service L7 网关：`limit_req_zone api 10r/s`（全局限流）、proxy_pass 8787（service）、8282（ws）。**admin 是独立容器**（Dockerfile admin target，nginx-admin.conf listen 8788 proxy 8788），**无 limit_req** |
-| 应用限流 | `service/common/Security/RateLimitMiddleware.php` 已存在：Redis INCR+expire 固定窗口，**仅 per-IP**，按 `ROUTE_MAP` 选规则，附到**显式路由**上（route.php 共 ~12 处） |
+| 应用限流 | `service/common/security/RateLimitMiddleware.php` 已存在：Redis INCR+expire 固定窗口，**仅 per-IP**，按 `ROUTE_MAP` 选规则，附到**显式路由**上（route.php 共 ~12 处） |
 | 规则配置 | `config/security.php rate_limits`：default/login/register/password_reset/oauth/captcha/sms/pay/upload/supplier_api/graphql，均含 rate/burst/per，但 **burst 字段当前未被使用** |
 | 全局中间件 | `config/middleware.php` `''` key 已支持对所有路由生效（WAF/GeoBlock/Security 等 10 项在此） |
 | 缺口 | `/graphql`（public + authenticated 两条路由）**无任何限流**；per-token 限流不存在；429 响应无 `Retry-After` 头；webhook 无豁免/专用规则 |
@@ -40,7 +40,7 @@
 
 | 项 | 改动 |
 |----|------|
-| `service/common/Security/RateLimitMiddleware.php` | 改造：per-token 桶、burst、Retry-After、graphql 规则 |
+| `service/common/security/RateLimitMiddleware.php` | 改造：per-token 桶、burst、Retry-After、graphql 规则 |
 | `service/config/middleware.php` | `''` 列表追加 RateLimitMiddleware；从 route.php 全部显式挂载点移除 |
 | `service/config/security.php` | 维持 `default` {60,10,60} 不动（验收阈值 = rate+burst = 70）；`graphql` {30,5,60} 原已存在，无需加；burst 字段沿用 |
 | `service/config/route.php` | 删 ~12 处显式 `RateLimitMiddleware::class` 挂载（以 grep 实际为准，auth/supplier/admin 组） |
@@ -62,7 +62,7 @@
 ### 现状（实读确认）
 
 - **存储**：`install.sql` 全部金额为 DECIMAL —— 余额/冻结 `(16,4)`，订单 subtotal/discount/tax/total、行项 unit_price/total_price `(12,4)`，`exchange_rate DECIMAL(12,6)` 已在 `orders`、`payment_transactions` 上；`user_balances` 按币种分行（分币种记账）。
-- **汇率来源**：`service/app/Cron/ExchangeRateSync.php` 已实现——外部免费 API（`EXCHANGE_RATE_API_URL` env 可配，默认 exchangerate-api.com）每小时同步到 Redis `exchange_rate:{CURRENCY}`；`OrderService::getExchangeRate` 下单时读 Redis 快照（USD 恒 1.0）写入订单 `exchange_rate` 字段。**已有外部依赖且 env 可换源，无需新增。**
+- **汇率来源**：`service/app/cron/ExchangeRateSync.php` 已实现——外部免费 API（`EXCHANGE_RATE_API_URL` env 可配，默认 exchangerate-api.com）每小时同步到 Redis `exchange_rate:{CURRENCY}`；`OrderService::getExchangeRate` 下单时读 Redis 快照（USD 恒 1.0）写入订单 `exchange_rate` 字段。**已有外部依赖且 env 可换源，无需新增。**
 - **fee 截断问题**：`PaymentRouter::calculateFee` = `bcadd(bcmul($amount, $rate, 8), $fixed, 4)` —— bcmath 按 scale **截断**（非四舍五入），方向**少收** <0.0001/单；且 `total_amount = amount + fee` 对 5+ 位小数的 amount（如 10.12345）截断后与订单 total 可能不一致。
 - **suspend 检查**已按币种余额判断（多币种），Billing 按 meter 计费（usage_rates 单价 DECIMAL(12,4)）。
 
@@ -70,7 +70,7 @@
 
 **D4：统一金额不变式 —— 每个币种一个内部精度，舍入只发生在单点。**
 - 内部计算统一 `DECIMAL(12,4)`（订单粒度）与 `DECIMAL(16,4)`（余额粒度），所有乘法后必须经 `bcround(x, 4, PHP_ROUND_HALF_UP)`，`bcadd/bcsub` 仅做同精度加减（本身精确）。
-- 新增唯一金额助手 `service/common/Money/Money.php`（约 40 行）：
+- 新增唯一金额助手 `service/common/money/Money.php`（约 40 行）：
   - `bcround(string $v, int $scale = 4, int $mode = PHP_ROUND_HALF_UP): string` —— 幂等；`round()` 对浮点有精度风险，必须字符串路径：`bcadd($v, '0', $scale+1)` 后按第 $scale+1 位判断 HALF-UP（实现注意负数处理，用 bccomp 对 abs 判断即可）。
   - 任何金额字段写库前必须过 `bcround(…, 4)`；**禁止**在计算链中途用 `(float)`/`round()`（现有 StripeChannel 的 `round((float) bcmul(...))` 即隐患）。
 - 现有 `calculateFee` 改为：`$fee = bcround(bcadd(bcmul(bcround($amount,4), $rate, 8), $fixed, 8), 4)` —— 先对齐 amount 到 4 位，再乘率、再 HALF_UP 到 4 位。**方向修正：少收 → 标准半舍入**（每单差异 ≤0.00005，期望值趋 0）。**负 fee 钳 0 保护保留**（现代码 PaymentRouter.php:44 行为不变）。
@@ -88,7 +88,7 @@
 **D7：改动清单（含既有多币种代码复核点）。**
 - 改：`PaymentRouter::calculateFee`、`StripeChannel`（金额入参对齐 + 移除 float round，含 convertToSmallest 改 bcround($total,2)）、`OrderService::createFromCart`（行项/subtotal/total 顺序舍入）、**`Order/Model/Coupon.php::calculateDiscount`（:31-44 现为 float+round，改 bcround 字符串路径）**、`PaymentController::reconcile*`（断言 D5 恒等式）、`Report/*`（汇总统一 bcround）。
 - 复核不改：Billing meters（单价已是 DECIMAL(12,4)，计费按 bcround 对齐即可）、suspend 检查（分币种余额判断，已正确）、`Cron/ExchangeRateSync.php`（写 Redis 保留 6 位原文，不动）。
-- 新增：`service/common/Money/Money.php` + 单测（HALF_UP 边界：0.00005 → 0.0001、0.00004 → 0.0000、**-0.00005 → -0.0001（负数远离零）**、幂等性）。
+- 新增：`service/common/money/Money.php` + 单测（HALF_UP 边界：0.00005 → 0.0001、0.00004 → 0.0000、**-0.00005 → -0.0001（负数远离零）**、幂等性）。
 - 迁移：`install.sql` 无结构变更（exchange_rate 列已存在）；若历史订单 fee 截断产生 <0.0001 尾差，属账面不可逆差异，**只记录不修补**（补一笔会改变历史对账），新增审计查询 `fee_drift` 列出 |total−subtotal−tax+discount|>0 的订单供人工核。
 
 ### 验收
@@ -114,18 +114,18 @@
 design:
   objective: "P4.1 统一限流全路由生效（含 graphql）+ P4.2 多币种舍入策略对齐、账务恒等式零漂移"
   files_affected:
-    - service/common/Security/RateLimitMiddleware.php
+    - service/common/security/RateLimitMiddleware.php
     - service/config/middleware.php
     - service/config/route.php
     - service/config/security.php
     - docker/nginx.conf
-    - service/common/Money/Money.php (new)
-    - service/app/Payment/Service/PaymentRouter.php
-    - service/app/Payment/Service/Channels/StripeChannel.php
-    - service/app/Order/Service/OrderService.php
-    - service/app/Order/Model/Coupon.php
-    - service/app/Payment/Controller/PaymentController.php
-    - service/app/Report/Controller/ReportController.php
+    - service/common/money/Money.php (new)
+    - service/app/payment/service/PaymentRouter.php
+    - service/app/payment/service/channels/StripeChannel.php
+    - service/app/order/service/OrderService.php
+    - service/app/order/model/Coupon.php
+    - service/app/payment/controller/PaymentController.php
+    - service/app/report/controller/ReportController.php
     - tests/ (middleware + money + 恒等式)
   modules_touched: ["Gateway/Route", "Security", "Payment", "Order", "Billing", "Report"]
   api_changes: [{method: "ALL", path: "/graphql", error_codes: ["429"]}, {method: "ALL", path: "ALL", error_codes: ["429 + Retry-After"]}]

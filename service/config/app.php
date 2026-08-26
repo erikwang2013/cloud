@@ -32,5 +32,5 @@ return [
     'error_reporting'   => E_ALL & ~E_DEPRECATED,
 
     // 请求类：API 版本从 X-Api-Version 头读取，不在 URL 中
-    'request_class'     => Common\Http\ApiRequest::class,
+    'request_class'     => Common\http\ApiRequest::class,
 ];

@@ -29,7 +29,7 @@ OK (314 tests, 494 assertions)
 
 | ID | 文件 | 问题 | 修复 |
 |----|------|------|------|
-| B1 | `service/common/Captcha/CaptchaService.php:31` | 读取 `$result['extra']['targets']`，但库返回 `extra.texts` → `target_count` 恒为 0 | 改为 `extra.texts` |
+| B1 | `service/common/captcha/CaptchaService.php:31` | 读取 `$result['extra']['targets']`，但库返回 `extra.texts` → `target_count` 恒为 0 | 改为 `extra.texts` |
 | B2 | `vendor/erikwang2013/poster-php/src/Captcha/ClickCaptcha.php:17` | 库默认 `targetCount = 5`，与库自身 README 契约（medium=3 目标）矛盾 → 3 项 Captcha 测试失败 | 默认值 5 → 3 |
 
 > B2 属于 vendored 库 bug（vendor/ 已被 git 跟踪，修复可持久）。建议同时向上游仓库提交修复。
@@ -39,7 +39,7 @@ OK (314 tests, 494 assertions)
 ## 三、严重安全问题（P0 / P1）
 
 ### P0-1. Apple `id_token` 未验签 —— 可直接账号接管
-**文件**: `service/app/User/Service/OAuthService.php:180-192`（`appleProfile()`）
+**文件**: `service/app/user/service/OAuthService.php:180-192`（`appleProfile()`）
 
 ```php
 $parts  = explode('.', $tokenData['id_token']);

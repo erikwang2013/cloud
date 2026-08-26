@@ -3,7 +3,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use support\Migration;
 
 /**
- * RBAC 权限模型种子（收敛后唯一事实源：Common\Auth\Rbac）。
+ * RBAC 权限模型种子（收敛后唯一事实源：Common\auth\Rbac）。
  * - 权限行 = Rbac::$permissions 并集（含 supplier own-scope 变体）
  * - 角色分配 = Rbac::$permissions 逐角色矩阵
  * 对已跑过旧版 000006 的库执行 reset 式重种（先删后插），对全新库幂等。
@@ -63,7 +63,7 @@ return new class extends Migration {
         Capsule::table('roles')->delete();
     }
 
-    /** [name, display_name, group] —— 与 Common\Auth\Rbac::$permissions 并集一致 */
+    /** [name, display_name, group] —— 与 Common\auth\Rbac::$permissions 并集一致 */
     private function permissions(): array
     {
         return [
@@ -111,7 +111,7 @@ return new class extends Migration {
         ];
     }
 
-    /** role => permission names —— 逐角色镜像 Common\Auth\Rbac::$permissions */
+    /** role => permission names —— 逐角色镜像 Common\auth\Rbac::$permissions */
     private function rolePerms(): array
     {
         return [

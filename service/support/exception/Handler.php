@@ -27,7 +27,7 @@ class Handler extends \Webman\Exception\ExceptionHandler
     public function render(Request $request, Throwable $exception): Response
     {
         if ($exception instanceof ModelNotFoundException) {
-            return json(\Common\Helper\Response::error(404, 'Resource not found'));
+            return json(\Common\helper\Response::error(404, 'Resource not found'));
         }
         return parent::render($request, $exception);
     }

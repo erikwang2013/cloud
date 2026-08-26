@@ -1,10 +1,10 @@
 <?php
 
 return [
-    \App\Command\MigrateCommand::class,
-    \App\Command\MigrateRollbackCommand::class,
-    \App\Command\MigrateStatusCommand::class,
-    \App\Command\DbBackupCommand::class,
-    \App\Command\I18nSyncCommand::class,
-    \App\Command\ReconcileCommand::class,
+    \App\command\MigrateCommand::class,
+    \App\command\MigrateRollbackCommand::class,
+    \App\command\MigrateStatusCommand::class,
+    \App\command\DbBackupCommand::class,
+    \App\command\I18nSyncCommand::class,
+    \App\command\ReconcileCommand::class,
 ];

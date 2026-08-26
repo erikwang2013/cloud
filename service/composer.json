@@ -44,8 +44,8 @@
             "App\\": "app/",
             "Common\\": "common/",
             "support\\": "support/",
-            "Ecat\\": "app/Grpc/Generated/Ecat/",
-            "GPBMetadata\\": "app/Grpc/Generated/GPBMetadata/"
+            "Ecat\\": "app/grpc/Generated/Ecat/",
+            "GPBMetadata\\": "app/grpc/Generated/GPBMetadata/"
         }
     },
     "autoload-dev": {

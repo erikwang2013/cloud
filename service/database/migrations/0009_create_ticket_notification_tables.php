@@ -53,7 +53,7 @@ if (!Capsule::schema()->hasTable('notifications')) {
 }
 
 // notification_templates
-// Canonical shape, aligned with install.sql and App\Notification\Model\NotificationTemplate
+// Canonical shape, aligned with install.sql and App\notification\model\NotificationTemplate
 // (title/body JSON locale maps + channels VARCHAR). Legacy installs created by the
 // previous shape (title_template/body_template JSON) keep working via model fallback.
 if (!Capsule::schema()->hasTable('notification_templates')) {

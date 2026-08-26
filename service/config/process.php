@@ -6,7 +6,7 @@
 return [
     // WebSocket server for real-time client push
     'websocket' => [
-        'handler'     => App\WebSocket\WebSocketServer::class,
+        'handler'     => App\websocket\WebSocketServer::class,
         'listen'      => 'websocket://0.0.0.0:' . (getenv('WS_PORT') ?: '8282'),
         'count'       => 2, // WebSocket worker count
         'constructor' => [], // Passed to handler constructor
@@ -14,7 +14,7 @@ return [
 
     // Prometheus metrics endpoint (independent process, no middleware)
     'metrics' => [
-        'handler'     => App\Monitor\Process\MetricsServer::class,
+        'handler'     => App\monitor\process\MetricsServer::class,
         'listen'      => 'http://127.0.0.1:' . (getenv('METRICS_PORT') ?: '9100'),
         'count'       => 1,
         'constructor' => [],
@@ -32,14 +32,14 @@ return [
 
     // Cron scheduler — evaluates config/cron.php 5-field expressions every minute
     'cron' => [
-        'handler'     => App\Cron\CronRunner::class,
+        'handler'     => App\cron\CronRunner::class,
         'count'       => 1,
         'constructor' => [],
     ],
 
     // etcd registry: lease keepalive + peer liveness polling (gRPC discovery)
     'grpc_registry' => [
-        'handler'     => App\Grpc\RegistryProcess::class,
+        'handler'     => App\grpc\RegistryProcess::class,
         'count'       => 1,
         'constructor' => [],
     ],

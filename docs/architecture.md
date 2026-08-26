@@ -107,37 +107,37 @@ CloudPlatform 是一个面向全球的云资源交易平台，支持自营物理
 
 ```
 app/{Module}/
-├── Controller/     # HTTP 层：参数校验、调用 Service、返回 Response
-│   └── External/   # 外部 API 控制器（供应商 API Key 认证）
-├── Service/        # 业务逻辑：无 HTTP 依赖，可被 Controller/Queue Worker 复用
-├── Model/          # Eloquent 数据模型：关系定义、查询作用域、Casts
-├── Event/          # 领域事件定义（OrderPaid、TicketCreated 等）
-├── Listener/       # 事件监听器（Provisioning、WebSocket 推送）
-├── Provider/       # 云厂商适配器（ProxmoxProvider 等）
-├── Queue/          # 队列消费者（ProvisionWorker、EmailSender 等）
-└── Cron/           # 定时任务（ExchangeRateSync、ExpirationCheck 等）
+├── controller/     # HTTP 层：参数校验、调用 Service、返回 Response
+│   └── external/   # 外部 API 控制器（供应商 API Key 认证）
+├── service/        # 业务逻辑：无 HTTP 依赖，可被 Controller/Queue Worker 复用
+├── model/          # Eloquent 数据模型：关系定义、查询作用域、Casts
+├── event/          # 领域事件定义（OrderPaid、TicketCreated 等）
+├── listener/       # 事件监听器（Provisioning、WebSocket 推送）
+├── provider/       # 云厂商适配器（ProxmoxProvider 等）
+├── queue/          # 队列消费者（ProvisionWorker、EmailSender 等）
+└── cron/           # 定时任务（ExchangeRateSync、ExpirationCheck 等）
 ```
 
 ### 2.3 公共库分层
 
 ```
 common/
-├── Auth/Middleware/     # AuthMiddleware, AdminRoleMiddleware, RbacMiddleware,
+├── auth/middleware/     # AuthMiddleware, AdminRoleMiddleware, RbacMiddleware,
 │                         RoleMiddleware, SupplierApiKeyMiddleware
-├── Captcha/             # 点击验证码服务
-├── ClientPlatform/      # ClientPlatformMiddleware（X-Client-Platform 头）
-├── Confirmation/        # 二次密码确认中间件
-├── Encryption/          # AES-256-GCM 传输加密中间件
-├── Feature/             # Feature Flags 功能开关
-├── Hashid/              # Hashids 请求解码中间件 + 编解码服务
-├── Helper/              # Response 格式化 + CacheService
-├── Http/                # HTTP 客户端工具
-├── I18n/Middleware/     # 多语言 LocaleMiddleware
-├── Security/            # CORS / WAF / RateLimit / GeoBlock / Maintenance / AuditLogger / LogSanitizer
-├── Snowflake/           # 雪花 ID 服务 + Eloquent Trait
-├── Metrics/             # Prometheus 指标采集器 + 渲染器 + HTTP 请求计数中间件
-├── Version/             # VersionMiddleware（X-Api-Version 头）
-└── Webhook/             # Webhook 事件分发器
+├── captcha/             # 点击验证码服务
+├── clientplatform/      # ClientPlatformMiddleware（X-Client-Platform 头）
+├── confirmation/        # 二次密码确认中间件
+├── encryption/          # AES-256-GCM 传输加密中间件
+├── feature/             # Feature Flags 功能开关
+├── hashid/              # Hashids 请求解码中间件 + 编解码服务
+├── helper/              # Response 格式化 + CacheService
+├── http/                # HTTP 客户端工具
+├── i18n/middleware/     # 多语言 LocaleMiddleware
+├── security/            # CORS / WAF / RateLimit / GeoBlock / Maintenance / AuditLogger / LogSanitizer
+├── snowflake/           # 雪花 ID 服务 + Eloquent Trait
+├── metrics/             # Prometheus 指标采集器 + 渲染器 + HTTP 请求计数中间件
+├── version/             # VersionMiddleware（X-Api-Version 头）
+└── webhook/             # Webhook 事件分发器
 ```
 
 ---

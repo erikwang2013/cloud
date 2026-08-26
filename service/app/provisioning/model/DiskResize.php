@@ -1,0 +1,19 @@
+<?php
+namespace App\provisioning\model;
+
+use Illuminate\Database\Eloquent\Model;
+use Common\snowflake\HasSnowflakeId;
+
+class DiskResize extends Model
+{
+    use HasSnowflakeId;
+    protected $table = 'disk_resizes';
+    protected $fillable = [
+        'disk_id', 'old_size_gb', 'new_size_gb', 'status', 'finished_at',
+    ];
+
+    public function disk()
+    {
+        return $this->belongsTo(Disk::class);
+    }
+}

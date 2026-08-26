@@ -140,7 +140,7 @@ cloud-php/
 │   │   ├── TreeTest.php        # 树形结构（19 tests）
 │   │   ├── AccessControlMiddlewareTest.php # RBAC 访问控制
 │   │   ├── AdminControllersTest.php        # 控制器回归
-│   │   └── Support/            # 测试辅助类
+│   │   └── support/            # 测试辅助类
 │   ├── public/                 # 文档根目录（静态资源）
 │   ├── vendor/                 # Composer 依赖
 │   ├── .env.example            # 环境变量模板
@@ -150,47 +150,47 @@ cloud-php/
 │   └── start.php               # 启动入口
 ├── service/                    # 后端服务（独立 webman 实例）
 │   ├── app/                    # 业务模块 (PSR-4: App\)，每个模块含 Controller / Model / Service 等分层
-│   │   ├── Admin/Controller/   # 管理后台 API（15 个控制器：Dashboard / User / Product / Order / Payment / Supplier / Coupon / Invoice / Domain / Webhook 等）
-│   │   ├── Affiliate/          # 联盟佣金 / 推广分佣（Controller / Listener / Model / Service）
-│   │   ├── Billing/            # 用量计费 / 账单（Cron / Service）
-│   │   ├── Captcha/Controller/ # 点击验证码
-│   │   ├── Cdn/                # CDN 资源托管（Controller / Model / Provider / Service）
-│   │   ├── Command/            # 控制台命令（Migrate / Rollback / Status / DbBackup）
-│   │   ├── Controller/         # 公共控制器（Health / Status / Help / Upload）
-│   │   ├── Cron/               # 定时任务（CronRunner 调度器 + ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck）
-│   │   ├── Domain/             # 域名注册 / DNS 管理（Controller / Model / Service）
-│   │   ├── Graphql/            # GraphQL API（Mutation / Query / Schema）
-│   │   ├── Grpc/               # kvm-server gRPC 客户端 + etcd 注册（KvmClient / EtcdRegistry）
-│   │   ├── Model/              # 公共模型（HelpArticle / Role / Permission）
-│   │   ├── Monitor/            # 资源监控 / 告警（Controller / Cron / Model / Service）
-│   │   ├── Notification/       # 消息通知（Controller / Model / Queue / Service）
-│   │   ├── Order/              # 购物车 / 订单 / 优惠券 / 发票（Controller / Model / Service）
-│   │   ├── Payment/            # 支付路由 / Stripe 通道（Controller / Event / Model / Service）
-│   │   ├── Product/            # 产品 / SKU / 区域定价 / 评价（Controller / Model / Service）
-│   │   ├── Provisioning/       # 资源交付引擎（Controller / Event / Listener / Model / Provider / Queue / Service）
-│   │   ├── Report/             # 营收 / 供应商 / 区域报表（Controller / Service）
-│   │   ├── Ssl/                # SSL 证书签发 / 管理（Controller / Model / Service）
-│   │   ├── Storage/            # 对象存储资源（Controller / Model / Provider / Service）
-│   │   ├── Supplier/           # 供应商入驻 / 结算 / 提现 + 外部 API（Controller / Model / Service）
-│   │   ├── Ticket/             # 工单系统（Controller / Event / Listener / Model / Service）
-│   │   ├── User/               # 用户 / 认证 / KYC / 余额 / 地址（Controller / Model / Service）
-│   │   ├── Webhook/            # Webhook 消息队列（Queue）
-│   │   └── WebSocket/          # WebSocket 服务器 + 事件监听器
+│   │   ├── admin/controller/   # 管理后台 API（15 个控制器：Dashboard / User / Product / Order / Payment / Supplier / Coupon / Invoice / Domain / Webhook 等）
+│   │   ├── affiliate/          # 联盟佣金 / 推广分佣（Controller / Listener / Model / Service）
+│   │   ├── billing/            # 用量计费 / 账单（Cron / Service）
+│   │   ├── captcha/controller/ # 点击验证码
+│   │   ├── cdn/                # CDN 资源托管（Controller / Model / Provider / Service）
+│   │   ├── command/            # 控制台命令（Migrate / Rollback / Status / DbBackup）
+│   │   ├── controller/         # 公共控制器（Health / Status / Help / Upload）
+│   │   ├── cron/               # 定时任务（CronRunner 调度器 + ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck）
+│   │   ├── domain/             # 域名注册 / DNS 管理（Controller / Model / Service）
+│   │   ├── graphql/            # GraphQL API（Mutation / Query / Schema）
+│   │   ├── grpc/               # kvm-server gRPC 客户端 + etcd 注册（KvmClient / EtcdRegistry）
+│   │   ├── model/              # 公共模型（HelpArticle / Role / Permission）
+│   │   ├── monitor/            # 资源监控 / 告警（Controller / Cron / Model / Service）
+│   │   ├── notification/       # 消息通知（Controller / Model / Queue / Service）
+│   │   ├── order/              # 购物车 / 订单 / 优惠券 / 发票（Controller / Model / Service）
+│   │   ├── payment/            # 支付路由 / Stripe 通道（Controller / Event / Model / Service）
+│   │   ├── product/            # 产品 / SKU / 区域定价 / 评价（Controller / Model / Service）
+│   │   ├── provisioning/       # 资源交付引擎（Controller / Event / Listener / Model / Provider / Queue / Service）
+│   │   ├── report/             # 营收 / 供应商 / 区域报表（Controller / Service）
+│   │   ├── ssl/                # SSL 证书签发 / 管理（Controller / Model / Service）
+│   │   ├── storage/            # 对象存储资源（Controller / Model / Provider / Service）
+│   │   ├── supplier/           # 供应商入驻 / 结算 / 提现 + 外部 API（Controller / Model / Service）
+│   │   ├── ticket/             # 工单系统（Controller / Event / Listener / Model / Service）
+│   │   ├── user/               # 用户 / 认证 / KYC / 余额 / 地址（Controller / Model / Service）
+│   │   ├── webhook/            # Webhook 消息队列（Queue）
+│   │   └── websocket/          # WebSocket 服务器 + 事件监听器
 │   ├── common/                 # 公共库 (PSR-4: Common\)
-│   │   ├── Auth/Middleware/     # AuthMiddleware / AdminRoleMiddleware / RbacMiddleware / RoleMiddleware / SupplierApiKeyMiddleware
-│   │   ├── Captcha/            # 点击验证码服务
-│   │   ├── Confirmation/       # 二次确认中间件（密码复核）
-│   │   ├── Encryption/Middleware/ # AES-256-GCM 传输加密中间件
-│   │   ├── Hashid/Middleware/   # Hashids 请求自动解码中间件 + 编解码服务
-│   │   ├── Helper/             # Response 格式化（自动 hashid 编码）
-│   │   ├── Http/               # HTTP 客户端工具（ApiRequest）
-│   │   ├── I18n/Middleware/     # 多语言中间件（Locale）
-│   │   ├── Security/           # CORS / WAF / 频率限制 / 地域封锁 / 维护模式 / 审计日志
-│   │   ├── Snowflake/          # 雪花 ID 生成服务 / Eloquent HasSnowflakeId Trait
-│   │   ├── Version/Middleware/  # API 版本中间件（X-Api-Version 头校验）
-│   │   ├── ClientPlatform/Middleware/  # 客户端平台中间件（X-Client-Platform 头识别）
-│   │   ├── Feature/            # Feature Flags 功能开关服务
-│   │   └── Webhook/            # Webhook 事件分发器
+│   │   ├── auth/middleware/     # AuthMiddleware / AdminRoleMiddleware / RbacMiddleware / RoleMiddleware / SupplierApiKeyMiddleware
+│   │   ├── captcha/            # 点击验证码服务
+│   │   ├── confirmation/       # 二次确认中间件（密码复核）
+│   │   ├── encryption/middleware/ # AES-256-GCM 传输加密中间件
+│   │   ├── hashid/middleware/   # Hashids 请求自动解码中间件 + 编解码服务
+│   │   ├── helper/             # Response 格式化（自动 hashid 编码）
+│   │   ├── http/               # HTTP 客户端工具（ApiRequest）
+│   │   ├── i18n/middleware/     # 多语言中间件（Locale）
+│   │   ├── security/           # CORS / WAF / 频率限制 / 地域封锁 / 维护模式 / 审计日志
+│   │   ├── snowflake/          # 雪花 ID 生成服务 / Eloquent HasSnowflakeId Trait
+│   │   ├── version/middleware/  # API 版本中间件（X-Api-Version 头校验）
+│   │   ├── clientplatform/middleware/  # 客户端平台中间件（X-Client-Platform 头识别）
+│   │   ├── feature/            # Feature Flags 功能开关服务
+│   │   └── webhook/            # Webhook 事件分发器
 │   ├── config/                 # 17 个配置文件（route / middleware / database / redis / cron / auth / security / i18n / ...）
 │   │   └── plugin/             # 插件配置
 │   │       ├── erikwang2013/   # encryptable / hashids / jwt / poster / season / webman-scout
@@ -199,36 +199,36 @@ cloud-php/
 │   ├── i18n/                   # 多语言资源（en-US / zh-CN）
 │   ├── support/                # Bootstrap 引导（Eloquent / Redis / Event / 加密 / 雪花ID / Hashids / Scout / MigrationRunner）
 │   ├── tests/                  # 单元测试（PHPUnit 10, 661 tests）
-│   │   ├── Admin/              # ImportExport / SupplierWithdrawApprove
-│   │   ├── Affiliate/          # AffiliateService
-│   │   ├── Auth/               # JwtAuth / RbacSeed / Rbac
-│   │   ├── Billing/            # MeterCollector / UsageAggregator / SuspendCheck
-│   │   ├── Captcha/            # CaptchaService
-│   │   ├── Cdn/                # ResourceCdn
-│   │   ├── ClientPlatform/     # ClientPlatformMiddleware
-│   │   ├── Common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
-│   │   ├── Confirmation/       # ConfirmationMiddleware
-│   │   ├── Cron/               # SupplierSettlement
-│   │   ├── Domain/             # DomainService / DomainTransfer
-│   │   ├── Graphql/            # Schema
-│   │   ├── Grpc/               # KvmClient / EtcdRegistry
-│   │   ├── Monitor/            # AlertEngine
-│   │   ├── Notification/       # NotificationDispatcher
-│   │   ├── Order/              # Coupon / Invoice
-│   │   ├── Payment/            # StripeChannel / PaymentRouter
-│   │   ├── Product/            # ProductService / Search / ReviewStatus
-│   │   ├── Provisioning/       # ProviderFactory / RetryLogic
-│   │   ├── Report/             # ReportService
-│   │   ├── Security/           # RateLimit / Maintenance / UploadSecurity
-│   │   ├── Ssl/                # SslCertificate
-│   │   ├── Storage/            # StorageBucket
-│   │   ├── Supplier/           # SupplierService / Settlement / Rating / Webhook
-│   │   ├── Ticket/             # TicketUpdatedWiring
-│   │   ├── User/               # AddressController
-│   │   ├── Version/            # VersionMiddleware
-│   │   ├── Webhook/            # WebhookDispatcher / WebhookE2E
-│   │   ├── WebSocket/          # WebSocketAuth / EventsWiring
-│   │   ├── Support/            # RequestMock
+│   │   ├── admin/              # ImportExport / SupplierWithdrawApprove
+│   │   ├── affiliate/          # AffiliateService
+│   │   ├── auth/               # JwtAuth / RbacSeed / Rbac
+│   │   ├── billing/            # MeterCollector / UsageAggregator / SuspendCheck
+│   │   ├── captcha/            # CaptchaService
+│   │   ├── cdn/                # ResourceCdn
+│   │   ├── clientplatform/     # ClientPlatformMiddleware
+│   │   ├── common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
+│   │   ├── confirmation/       # ConfirmationMiddleware
+│   │   ├── cron/               # SupplierSettlement
+│   │   ├── domain/             # DomainService / DomainTransfer
+│   │   ├── graphql/            # Schema
+│   │   ├── grpc/               # KvmClient / EtcdRegistry
+│   │   ├── monitor/            # AlertEngine
+│   │   ├── notification/       # NotificationDispatcher
+│   │   ├── order/              # Coupon / Invoice
+│   │   ├── payment/            # StripeChannel / PaymentRouter
+│   │   ├── product/            # ProductService / Search / ReviewStatus
+│   │   ├── provisioning/       # ProviderFactory / RetryLogic
+│   │   ├── report/             # ReportService
+│   │   ├── security/           # RateLimit / Maintenance / UploadSecurity
+│   │   ├── ssl/                # SslCertificate
+│   │   ├── storage/            # StorageBucket
+│   │   ├── supplier/           # SupplierService / Settlement / Rating / Webhook
+│   │   ├── ticket/             # TicketUpdatedWiring
+│   │   ├── user/               # AddressController
+│   │   ├── version/            # VersionMiddleware
+│   │   ├── webhook/            # WebhookDispatcher / WebhookE2E
+│   │   ├── websocket/          # WebSocketAuth / EventsWiring
+│   │   ├── support/            # RequestMock
 │   │   ├── bootstrap.php       # 测试引导
 │   │   └── TestCase.php        # 测试基类
 │   ├── runtime/                # 运行时文件（日志 / 缓存）
