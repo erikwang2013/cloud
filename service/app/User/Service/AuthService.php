@@ -6,7 +6,6 @@ use App\User\Model\UserProfile;
 use App\User\Model\UserBalance;
 use App\User\Model\RefreshToken;
 use Common\Auth\JwtAuth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redis;
 
 class AuthService
@@ -37,7 +36,7 @@ class AuthService
         $user = User::create([
             'email'              => $data['email'] ?? null,
             'phone'              => $data['phone'] ?? null,
-            'password_hash'      => Hash::make($data['password'], ['cost' => config('auth.password.cost', 12)]),
+            'password_hash'      => password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => config('auth.password.cost', 12)]),
             'language'           => $data['language'] ?? config('i18n.default_locale', 'en-US'),
             'currency'           => $data['currency'] ?? 'USD',
             'status'             => 'active',
@@ -67,7 +66,7 @@ class AuthService
     {
         $user = User::where('email', $login)->orWhere('phone', $login)->first();
 
-        if (!$user || !Hash::check($password, $user->password_hash)) {
+        if (!$user || !password_verify($password, $user->password_hash)) {
             throw new \InvalidArgumentException('Invalid credentials');
         }
 

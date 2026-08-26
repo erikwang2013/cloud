@@ -151,4 +151,36 @@ mod tests {
     fn lock_error_displays() {
         assert_eq!(LockError::Other("boom".into()).to_string(), "lock error: boom");
     }
+
+    #[tokio::test]
+    async fn acquire_empty_key_is_well_defined() {
+        let lock = MemoryLock::new();
+        let token = lock
+            .acquire("", Duration::from_secs(30))
+            .await
+            .unwrap()
+            .expect("empty key must be acquirable");
+        // 空 key 与普通 key 互不干扰
+        lock.acquire("job-b", Duration::from_secs(30)).await.unwrap().unwrap();
+        lock.release("", &token).await.unwrap();
+        assert!(lock.release("", &token).await.is_err(), "double release must fail");
+    }
+
+    #[tokio::test]
+    async fn zero_ttl_lock_is_immediately_reacquirable() {
+        let lock = MemoryLock::new();
+        let t1 = lock.acquire("job-a", Duration::ZERO).await.unwrap().unwrap();
+        lock.release("job-a", &t1).await.unwrap();
+        // 0 TTL 的锁已过期（或即将过期），新持有者可获取
+        lock.acquire("job-a", Duration::from_secs(30))
+            .await
+            .unwrap()
+            .expect("zero-ttl lock must not block reacquisition");
+    }
+
+    #[tokio::test]
+    async fn release_never_held_lock_fails() {
+        let lock = MemoryLock::new();
+        assert!(lock.release("ghost", "tok-ghost").await.is_err());
+    }
 }

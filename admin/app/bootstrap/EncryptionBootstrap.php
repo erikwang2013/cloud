@@ -19,7 +19,7 @@ class EncryptionBootstrap implements Bootstrap
 {
     public static function start(?Worker $worker): void
     {
-        $masterKey = env('ENCRYPTION_MASTER_KEY');
+        $masterKey = base64_decode(env('ENCRYPTION_MASTER_KEY') ?: '', true);
         if (empty($masterKey)) {
             return;
         }

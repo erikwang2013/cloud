@@ -316,4 +316,62 @@ mod tests {
             .unwrap();
         assert_eq!(client.timeout, Duration::from_secs(3));
     }
+
+    #[test]
+    fn static_resolver_add_service_and_overwrite() {
+        // add_service 内部用 blocking_write，不能在 tokio runtime 内调用
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let resolver = StaticResolver::new()
+            .add_service("a", vec!["http://a:1".into(), "http://a:2".into()])
+            .add_service("b", vec!["http://b:1".into()]);
+        assert_eq!(rt.block_on(resolver.resolve("a")).unwrap().len(), 2);
+        assert_eq!(rt.block_on(resolver.resolve("b")).unwrap(), vec!["http://b:1"]);
+
+        // 同名覆盖
+        let resolver = resolver.add_service("a", vec!["http://a-new:9".into()]);
+        assert_eq!(rt.block_on(resolver.resolve("a")).unwrap(), vec!["http://a-new:9"]);
+    }
+
+    #[tokio::test]
+    async fn static_resolver_error_mentions_service_name() {
+        let resolver = StaticResolver::new();
+        let err = resolver.resolve("ghost").await.unwrap_err();
+        assert!(err.contains("ghost"), "{err}");
+    }
+
+    #[test]
+    fn random_balancer_returns_member_of_set() {
+        let eps: Vec<String> = (0..4).map(|i| format!("http://host-{i}")).collect();
+        for _ in 0..20 {
+            let pick = RandomBalancer.pick(&eps).unwrap();
+            assert!(eps.contains(&pick), "pick {pick} outside set");
+        }
+    }
+
+    #[test]
+    fn round_robin_single_endpoint_always_returns_it() {
+        let balancer = RoundRobin::new();
+        let eps = vec!["only".into()];
+        for _ in 0..5 {
+            assert_eq!(balancer.pick(&eps), Some("only".into()));
+        }
+    }
+
+    #[tokio::test]
+    async fn grpc_builder_requires_resolver() {
+        match GrpcClient::builder().build() {
+            Err(err) => assert!(err.contains("resolver is required"), "{err}"),
+            Ok(_) => panic!("build without resolver must fail"),
+        }
+    }
+
+    #[tokio::test]
+    async fn grpc_builder_defaults_to_round_robin() {
+        let resolver = StaticResolver::single("svc", "http://localhost:50051");
+        let client = GrpcClient::builder().resolver(resolver).build().unwrap();
+        // 默认负载均衡器为 RoundRobin：连续 pick 应循环
+        let eps = vec!["a".into(), "b".into()];
+        let picks: Vec<_> = (0..4).map(|_| client.balancer.pick(&eps).unwrap()).collect();
+        assert_eq!(picks, ["a", "b", "a", "b"]);
+    }
 }

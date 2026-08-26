@@ -396,7 +396,11 @@ fn ip_to_u32(s: &str) -> Option<u32> {
     }
     let mut v: u32 = 0;
     for p in parts {
-        v = (v << 8) | p.parse::<u32>().ok()?;
+        let octet = p.parse::<u32>().ok()?;
+        if octet > 255 {
+            return None;
+        }
+        v = (v << 8) | octet;
     }
     Some(v)
 }
@@ -430,6 +434,22 @@ mod tests {
     fn pick_ip_returns_none_when_pool_exhausted() {
         let alloc = (10..=20).map(|i| format!("10.0.0.{i}")).collect::<Vec<_>>();
         assert_eq!(pick_ip("10.0.0.10", "10.0.0.20", &alloc), None);
+    }
+
+    #[test]
+    fn ip_to_u32_rejects_out_of_range_octets() {
+        assert_eq!(ip_to_u32("10.0.0.256"), None);
+        assert_eq!(ip_to_u32("10.0.300.1"), None);
+        assert_eq!(ip_to_u32("10.0.0.-1"), None);
+        assert_eq!(ip_to_u32("10.0.0.abc"), None);
+        assert_eq!(ip_to_u32("10.0.0"), None);
+    }
+
+    #[test]
+    fn ip_to_u32_accepts_boundary_octets() {
+        assert_eq!(ip_to_u32("0.0.0.0"), Some(0));
+        assert_eq!(ip_to_u32("255.255.255.255"), Some(0xffff_ffff));
+        assert_eq!(ip_to_u32("10.0.0.255"), Some(0x0a00_00ff));
     }
 
     #[test]

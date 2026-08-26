@@ -40,7 +40,11 @@ class WafMiddleware
         if ($input === false) {
             $input = serialize($request->all());
         }
-        $url = mb_substr($request->path() . '?' . $request->queryString(), 0, 2048);
+        // 只扫 query string，不扫 URL path：业务路径含 select/insert/update/delete/alert
+        // 等普通词（如 /alert/index），整路径扫描会误杀正常业务端点。
+        // 路径仅用 file_inclusion（路径穿越）类模式做结构校验。
+        $query = mb_substr($request->queryString(), 0, 2048);
+        $path  = $request->path();
         $ua  = $request->header('User-Agent', '');
         // 仅对可能携带 body 的方法读取原始 body，GET 等请求跳过，避免全量读入
         // multipart 原始体含文件二进制：解析字段已入 $input 扫描，跳过 raw 全量读取，
@@ -72,8 +76,18 @@ class WafMiddleware
             $patterns = array_unique($patterns);
         }
 
+        // ponytail: 路径穿越等结构模式只查 path；SQLi/XSS 等值注入模式查 query+body+UA。
+        // 若未来出现纯路径型注入（如 /api/user/../admin），再把对应模式从 file_inclusion 拆出单独查 path。
+        $pathPatterns = config('security.waf.file_inclusion_patterns', []);
+        foreach ($pathPatterns as $pattern) {
+            if ($this->match($pattern, $path)) {
+                AuditLogger::threat('waf_blocked', $request);
+                return json(Response::error(403, 'Request blocked by WAF'));
+            }
+        }
+
         foreach ($patterns as $pattern) {
-            if ($this->match($pattern, $input) || $this->match($pattern, $url) || $this->match($pattern, $ua) || $this->match($pattern, $raw)) {
+            if ($this->match($pattern, $input) || $this->match($pattern, $query) || $this->match($pattern, $ua) || $this->match($pattern, $raw)) {
                 AuditLogger::threat('waf_blocked', $request);
                 return json(Response::error(403, 'Request blocked by WAF'));
             }

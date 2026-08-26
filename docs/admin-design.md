@@ -458,6 +458,8 @@ All admin REST endpoints are prefixed with `/admin/api` and require `AdminRoleMi
 Route::any('/app/admin/dashboard/data', [DashboardController::class, 'index']);
 ```
 
+除显式注册的路由外，`admin/config/route.php` 会为 `app/controller/` 下每个控制器的公开方法自动注册 `/app/admin/{snake_case_controller}/{action}` 路由（如 `/app/admin/order_item/index`），URL 与菜单使用的 snake_case 控制器名一致；`/app/admin` 与 `/app/admin/index` 为后台主页/登录页入口（未登录时渲染登录视图）；未匹配请求统一返回 404。
+
 ## PDF Export
 
 Client-side PDF generation on the dashboard page:

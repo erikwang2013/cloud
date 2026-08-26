@@ -513,7 +513,7 @@ ProviderInterface
 - **CORS** — 跨域请求头处理（白名单模式，支持 *.example.com 通配符）
 - **SecurityHeaders** — 安全响应头（HSTS / X-Frame-Options / X-Content-Type-Options / Referrer-Policy / Permissions-Policy）
 - **GeoBlock** — 地理封禁（根据 GEO_BLOCKED_COUNTRIES 阻止指定国家访问，基于 GeoIP2）
-- **WAF** — 8 类 45+ 规则（SQL注入/XSS/命令注入/文件包含/头注入/SSRF/NoSQL注入/开放重定向）+ 请求大小限制 + Content-Type 校验
+- **WAF** — 8 类 45+ 规则（SQL注入/XSS/命令注入/文件包含/头注入/SSRF/NoSQL注入/开放重定向）+ 请求大小限制 + Content-Type 校验（值注入扫 query/body/UA，path 仅查路径穿越）
 - **Security Plugin** — 31 种攻击检测（XSS/SQL注入/命令注入/SSRF/反序列化/JWT攻击/Host头攻击/请求走私/GraphQL注入/敏感数据泄露等），IP 白名单 + IP 黑名单自动封禁
 - **Locale** — 解析 Accept-Language，设置多语言
 - **HashidRequest** — 自动解码请求中的 hashid 字符串为真实整数 ID

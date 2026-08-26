@@ -53,7 +53,7 @@
 | 400 | 请求参数错误 / 不支持的 API 版本 / 不支持的客户端平台 |
 | 401 | 未认证 |
 | 403 | 无权限 / WAF 拦截 |
-| 404 | 资源不存在 |
+| 404 | 资源不存在（firstOrFail/findOrFail 未命中统一映射 404） |
 | 413 | 请求体过大 (>10MB) |
 | 414 | URL 过长 (>2KB) |
 | 415 | 不支持的 Content-Type |
@@ -969,7 +969,7 @@ POST /api/payments/webhook/stripe
 | 400 | 参数错误 / 不支持的 API 版本 / 不支持的客户端平台 |
 | 401 | 未认证 / Token 过期 / 无效 API Key |
 | 403 | 无权限 / 非供应商角色 / WAF 拦截 / 密码确认失败 |
-| 404 | 资源不存在 |
+| 404 | 资源不存在（firstOrFail/findOrFail 未命中统一映射 404） |
 | 413 | 请求体超过 10MB |
 | 414 | URL 超过 2KB |
 | 415 | Content-Type 不在白名单 (仅允许 application/json, multipart/form-data, x-www-form-urlencoded) |

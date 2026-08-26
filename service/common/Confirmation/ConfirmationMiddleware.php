@@ -4,7 +4,7 @@ namespace Common\Confirmation;
 use App\User\Model\User;
 use Common\Helper\Response;
 use Common\Security\AuditLogger;
-use Illuminate\Support\Facades\Hash;
+
 use Illuminate\Support\Facades\Redis;
 
 class ConfirmationMiddleware
@@ -115,13 +115,13 @@ class ConfirmationMiddleware
 
     protected function verifyApproverPassword(User $approver, string $password): bool
     {
-        return Hash::check($password, $approver->password_hash);
+        return password_verify($password, $approver->password_hash);
     }
 
     protected function verifyPassword(int $userId, string $password): bool
     {
         $user = User::find($userId);
-        return $user && Hash::check($password, $user->password_hash);
+        return $user && password_verify($password, $user->password_hash);
     }
 
     private function recordFailure(int $userId, string $lockKey): bool

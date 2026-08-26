@@ -164,7 +164,7 @@ class AuthController
 
         \Illuminate\Support\Facades\Redis::del($attemptKey);
         $user = \App\User\Model\User::where('email', $email)->firstOrFail();
-        $user->update(['password_hash' => \Illuminate\Support\Facades\Hash::make($password, ['cost' => 12])]);
+        $user->update(['password_hash' => password_hash($password, PASSWORD_BCRYPT, ["cost" => 12])]);
         \Illuminate\Support\Facades\Redis::del("password_reset:{$email}");
 
         // Revoke all existing refresh tokens
@@ -232,7 +232,7 @@ class AuthController
         $user     = User::findOrFail($request->userId);
         $password = $request->input('password');
 
-        if (empty($password) || !\Illuminate\Support\Facades\Hash::check($password, $user->password_hash)) {
+        if (empty($password) || !password_verify($password, $user->password_hash)) {
             return json(Response::error(403, 'Password verification required to disable 2FA'));
         }
 
@@ -373,7 +373,7 @@ class AuthController
         }
 
         $password = $request->input('password');
-        if (empty($password) || !\Illuminate\Support\Facades\Hash::check($password, $user->password_hash)) {
+        if (empty($password) || !password_verify($password, $user->password_hash)) {
             return json(Response::error(403, 'Password verification required'));
         }
 
@@ -401,7 +401,7 @@ class AuthController
         }
 
         $user = User::where('email', $login)->orWhere('phone', $login)->first();
-        if (!$user || !\Illuminate\Support\Facades\Hash::check($password, $user->password_hash)) {
+        if (!$user || !password_verify($password, $user->password_hash)) {
             return json(Response::error(401, 'Invalid credentials'));
         }
 
@@ -490,7 +490,7 @@ class AuthController
         $user     = User::findOrFail($request->userId);
         $password = $request->input('password');
 
-        if (empty($password) || !\Illuminate\Support\Facades\Hash::check($password, $user->password_hash)) {
+        if (empty($password) || !password_verify($password, $user->password_hash)) {
             return json(Response::error(403, 'Password verification required'));
         }
 

@@ -49,7 +49,7 @@ class AlertEngine
             'severity'    => $rule['severity'],
             'resource_id' => $resource->id ?? null,
             'user_id'     => $resource->user_id ?? 0,
-            'context'     => json_encode($context),
+            'context'     => $context, // Alert 模型 cast 为 array，会自行 json_encode，避免双编码
             'status'      => 'triggered',
         ]);
 

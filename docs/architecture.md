@@ -357,6 +357,8 @@ Accept-Language: zh-CN,zh;q=0.9
 | NoSQL 注入 | 3 | MongoDB 操作符、Redis 危险命令 |
 | 开放重定向 | 2 | redirect_uri 外部 URL、双重编码绕过 |
 
+**扫描范围:** 值注入类规则（SQLi/XSS/命令注入/头注入/SSRF/NoSQL/开放重定向）扫描 query string、请求体、User-Agent；URL path 仅用文件包含（路径穿越）模式做结构校验。业务路径含 select/insert/alert 等普通词（如 `/order_item/select`），若整路径扫描会误杀全部 CRUD 端点，故 path 不参与值注入匹配。
+
 **请求层面防护:** Content-Type 白名单、请求体 10MB 限制、URL 2KB 限制
 
 ### 5.2 认证体系

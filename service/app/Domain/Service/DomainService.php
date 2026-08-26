@@ -39,7 +39,7 @@ class DomainService
             'action'        => 'register',
             'status'        => 'pending',
             'params'        => json_encode([
-                'domain'        => $domainName . '.' . $tld,
+                'domain'        => $domainName . '.' . ltrim($tld, '.'), // tld 可能带前导点（.com）
                 'years'         => $options['years'] ?? 1,
                 'whois_privacy' => $options['whois_privacy'] ?? true,
                 'nameservers'   => $options['nameservers'] ?? [],

@@ -183,8 +183,8 @@ REDIS_PASSWORD=
 # JWT 密钥 (生成: openssl rand -base64 32；未设置时服务拒绝启动)
 JWT_SECRET_KEY=<base64 随机字符串>
 
-# 加密主密钥 (生成: php -r "echo bin2hex(random_bytes(32));")
-ENCRYPTION_MASTER_KEY=<64位十六进制随机字符串>
+# 加密主密钥 (生成: openssl rand -base64 32；32 字节 base64 编码，admin 与 service 同格式)
+ENCRYPTION_MASTER_KEY=<base64编码的32字节密钥>
 
 # Hashids
 HASHIDS_SALT=<自定义随机字符串>

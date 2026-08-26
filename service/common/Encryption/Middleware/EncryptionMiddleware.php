@@ -17,8 +17,10 @@ class EncryptionMiddleware
                     $plaintext = EncryptionService::decrypt(base64_decode($body['payload']));
                     $data = json_decode($plaintext, true);
                     if (is_array($data)) {
+                        // 解密字段合并进 GET/POST，controller 用 $request->all()/input()/post() 即可读到
                         foreach ($data as $key => $value) {
-                            $request->{$key} = $value;
+                            $request->setGet($key, $value);
+                            $request->setPost($key, $value);
                         }
                     }
                     $request->encrypted = true;

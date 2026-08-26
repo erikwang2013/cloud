@@ -24,9 +24,9 @@ return [
     'default' => env('ENCRYPTION_DEFAULT', 'aes-256-gcm'),
 
     /**
-     * Master key — must be exactly 32 bytes (64 hex characters).
-     * Set via ENCRYPTION_MASTER_KEY environment variable.
+     * Master key — 32 bytes, base64-encoded in ENCRYPTION_MASTER_KEY
+     * (same format as service instance; decoded here for the factory).
      */
-    'master_key' => env('ENCRYPTION_MASTER_KEY'),
+    'master_key' => base64_decode(env('ENCRYPTION_MASTER_KEY') ?: '', true),
 
 ];
