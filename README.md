@@ -112,7 +112,7 @@ cloud-php/
 │   │   ├── controller/         # 54 个控制器文件（Base / Crud 基类 + 各业务 CRUD）
 │   │   ├── exception/          # 异常处理
 │   │   ├── middleware/          # 访问控制中间件（WafMiddleware + AccessControl）
-│   │   ├── model/              # 45 个 Eloquent 模型（Base 基类含 Snowflake PK + Encryptable）
+│   │   ├── model/              # 46 个 Eloquent 模型（Base 基类含 Snowflake PK + Encryptable）
 │   │   ├── view/               # 视图模板（Layui 后台面板）
 │   │   └── functions.php       # 全局辅助函数（hashids / encrypt / decrypt）
 │   ├── api/                    # 对外接口 (PSR-4: plugin\admin\api)
@@ -133,11 +133,13 @@ cloud-php/
 │   │   ├── database.php        # 数据库连接
 │   │   └── ...                 # 18 个配置文件
 │   ├── database/migrations/    # 数据库迁移文件
-│   ├── tests/                  # 单元测试（PHPUnit 11, 67 tests）
+│   ├── tests/                  # 单元测试（PHPUnit 11, 255 tests）
 │   │   ├── HashidsTest.php     # hashids 编解码（21 tests）
 │   │   ├── BaseJsonTest.php    # Base::json() ID 编码（13 tests）
 │   │   ├── CrudHashidsTest.php # Crud 输入解码（14 tests）
 │   │   ├── TreeTest.php        # 树形结构（19 tests）
+│   │   ├── AccessControlMiddlewareTest.php # RBAC 访问控制
+│   │   ├── AdminControllersTest.php        # 控制器回归
 │   │   └── Support/            # 测试辅助类
 │   ├── public/                 # 文档根目录（静态资源）
 │   ├── vendor/                 # Composer 依赖
@@ -149,11 +151,16 @@ cloud-php/
 ├── service/                    # 后端服务（独立 webman 实例）
 │   ├── app/                    # 业务模块 (PSR-4: App\)，每个模块含 Controller / Model / Service 等分层
 │   │   ├── Admin/Controller/   # 管理后台 API（15 个控制器：Dashboard / User / Product / Order / Payment / Supplier / Coupon / Invoice / Domain / Webhook 等）
+│   │   ├── Affiliate/          # 联盟佣金 / 推广分佣（Controller / Listener / Model / Service）
+│   │   ├── Billing/            # 用量计费 / 账单（Cron / Service）
 │   │   ├── Captcha/Controller/ # 点击验证码
+│   │   ├── Cdn/                # CDN 资源托管（Controller / Model / Provider / Service）
 │   │   ├── Command/            # 控制台命令（Migrate / Rollback / Status / DbBackup）
 │   │   ├── Controller/         # 公共控制器（Health / Status / Help / Upload）
 │   │   ├── Cron/               # 定时任务（CronRunner 调度器 + ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck）
 │   │   ├── Domain/             # 域名注册 / DNS 管理（Controller / Model / Service）
+│   │   ├── Graphql/            # GraphQL API（Mutation / Query / Schema）
+│   │   ├── Grpc/               # kvm-server gRPC 客户端 + etcd 注册（KvmClient / EtcdRegistry）
 │   │   ├── Model/              # 公共模型（HelpArticle / Role / Permission）
 │   │   ├── Monitor/            # 资源监控 / 告警（Controller / Cron / Model / Service）
 │   │   ├── Notification/       # 消息通知（Controller / Model / Queue / Service）
@@ -162,9 +169,12 @@ cloud-php/
 │   │   ├── Product/            # 产品 / SKU / 区域定价 / 评价（Controller / Model / Service）
 │   │   ├── Provisioning/       # 资源交付引擎（Controller / Event / Listener / Model / Provider / Queue / Service）
 │   │   ├── Report/             # 营收 / 供应商 / 区域报表（Controller / Service）
+│   │   ├── Ssl/                # SSL 证书签发 / 管理（Controller / Model / Service）
+│   │   ├── Storage/            # 对象存储资源（Controller / Model / Provider / Service）
 │   │   ├── Supplier/           # 供应商入驻 / 结算 / 提现 + 外部 API（Controller / Model / Service）
 │   │   ├── Ticket/             # 工单系统（Controller / Event / Listener / Model / Service）
 │   │   ├── User/               # 用户 / 认证 / KYC / 余额 / 地址（Controller / Model / Service）
+│   │   ├── Webhook/            # Webhook 消息队列（Queue）
 │   │   └── WebSocket/          # WebSocket 服务器 + 事件监听器
 │   ├── common/                 # 公共库 (PSR-4: Common\)
 │   │   ├── Auth/Middleware/     # AuthMiddleware / AdminRoleMiddleware / RbacMiddleware / RoleMiddleware / SupplierApiKeyMiddleware
@@ -185,22 +195,39 @@ cloud-php/
 │   │   └── plugin/             # 插件配置
 │   │       ├── erikwang2013/   # encryptable / hashids / jwt / poster / season / webman-scout
 │   │       └── webman/         # event / redis-queue
-│   ├── database/migrations/    # 数据库迁移文件（30 个迁移）
+│   ├── database/migrations/    # 数据库迁移文件（37 个迁移）
 │   ├── i18n/                   # 多语言资源（en-US / zh-CN）
 │   ├── support/                # Bootstrap 引导（Eloquent / Redis / Event / 加密 / 雪花ID / Hashids / Scout / MigrationRunner）
-│   ├── tests/                  # 单元测试（PHPUnit 10, 316 tests）
-│   │   ├── Admin/              # ImportExport
+│   ├── tests/                  # 单元测试（PHPUnit 10, 661 tests）
+│   │   ├── Admin/              # ImportExport / SupplierWithdrawApprove
+│   │   ├── Affiliate/          # AffiliateService
+│   │   ├── Auth/               # JwtAuth / RbacSeed / Rbac
+│   │   ├── Billing/            # MeterCollector / UsageAggregator / SuspendCheck
 │   │   ├── Captcha/            # CaptchaService
+│   │   ├── Cdn/                # ResourceCdn
+│   │   ├── ClientPlatform/     # ClientPlatformMiddleware
 │   │   ├── Common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
 │   │   ├── Confirmation/       # ConfirmationMiddleware
+│   │   ├── Cron/               # SupplierSettlement
+│   │   ├── Domain/             # DomainService / DomainTransfer
+│   │   ├── Graphql/            # Schema
+│   │   ├── Grpc/               # KvmClient / EtcdRegistry
+│   │   ├── Monitor/            # AlertEngine
 │   │   ├── Notification/       # NotificationDispatcher
 │   │   ├── Order/              # Coupon / Invoice
 │   │   ├── Payment/            # StripeChannel / PaymentRouter
+│   │   ├── Product/            # ProductService / Search / ReviewStatus
 │   │   ├── Provisioning/       # ProviderFactory / RetryLogic
+│   │   ├── Report/             # ReportService
 │   │   ├── Security/           # RateLimit / Maintenance / UploadSecurity
+│   │   ├── Ssl/                # SslCertificate
+│   │   ├── Storage/            # StorageBucket
+│   │   ├── Supplier/           # SupplierService / Settlement / Rating / Webhook
+│   │   ├── Ticket/             # TicketUpdatedWiring
 │   │   ├── User/               # AddressController
 │   │   ├── Version/            # VersionMiddleware
-│   │   ├── Webhook/            # WebhookDispatcher
+│   │   ├── Webhook/            # WebhookDispatcher / WebhookE2E
+│   │   ├── WebSocket/          # WebSocketAuth / EventsWiring
 │   │   ├── Support/            # RequestMock
 │   │   ├── bootstrap.php       # 测试引导
 │   │   └── TestCase.php        # 测试基类
@@ -243,9 +270,11 @@ cloud-php/
 │   ├── database.sql            # 数据库 DDL
 │   ├── alipay.png / weixinpay.png  # 打赏二维码
 │   ├── diagrams/               # 18 个 SVG 架构图（系统架构 / 安全管道 / ER 图 / 业务流程 / 多币种结算等）
+│   ├── test-reports/           # 测试报告（PHPUnit / Rust / API / UI + 页面截图）
 │   └── superpowers/            # 设计规格与实施计划
 │       ├── specs/              # 系统设计规格文档
 │       └── plans/              # Phase 0~3 分阶段实施计划
+├── scripts/                     # 运维脚本（push-release.sh 推送发布规则：版本增量 + tag）
 ├── tests/k6/                    # k6 负载测试脚本（冒烟/产品/并发）
 ├── install.php                 # 一键安装向导入口
 ├── install/                    # 安装向导页面
@@ -600,7 +629,7 @@ ProviderInterface
 - [x] FCM 推送真实集成（kreait/firebase-php，含无效 token 清理）
 - [x] 点击验证码（erikwang2013/poster-php，登录/注册敏感操作验证）
 - [x] 二次确认（ConfirmationMiddleware，敏感操作密码复核，5次失败锁定15分钟）
-- [x] 服务端单元测试（316 tests, 502 assertions）
+- [x] 服务端单元测试（661 tests）
 - [x] 客户端平台识别（ClientPlatformMiddleware，X-Client-Platform 头支持 8 种平台）
 - [x] WAF 安全增强（8 类 45+ 规则: SQL注入/XSS/命令注入/文件包含/头注入/SSRF/NoSQL注入/开放重定向 + 请求大小限制 + Content-Type 校验）
 - [x] Security Plugin（erikwang2013/security-php，31 种攻击检测 + IP 黑名单自动封禁 + 日志轮转）

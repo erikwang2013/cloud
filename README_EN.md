@@ -104,7 +104,7 @@ cloud-php/
 │   │   ├── controller/         # 54 controller files (Base / Crud base + per-entity CRUD)
 │   │   ├── exception/          # Exception handling
 │   │   ├── middleware/          # Access control middleware (WafMiddleware + AccessControl)
-│   │   ├── model/              # 45 Eloquent models (Base with Snowflake PK + Encryptable)
+│   │   ├── model/              # 46 Eloquent models (Base with Snowflake PK + Encryptable)
 │   │   ├── view/               # View templates (Layui panel)
 │   │   └── functions.php       # Global helpers (hashids / encrypt / decrypt)
 │   ├── api/                    # Public interfaces (PSR-4: plugin\admin\api)
@@ -125,11 +125,13 @@ cloud-php/
 │   │   ├── database.php        # Database connections
 │   │   └── ...                 # 18 config files total
 │   ├── database/migrations/    # Database migration files
-│   ├── tests/                  # Unit tests (PHPUnit 11, 67 tests)
+│   ├── tests/                  # Unit tests (PHPUnit 11, 255 tests)
 │   │   ├── HashidsTest.php     # hashids encode/decode (21 tests)
 │   │   ├── BaseJsonTest.php    # Base::json() ID encoding (13 tests)
 │   │   ├── CrudHashidsTest.php # Crud input decoding (14 tests)
 │   │   ├── TreeTest.php        # Tree structure (19 tests)
+│   │   ├── AccessControlMiddlewareTest.php # RBAC access control
+│   │   ├── AdminControllersTest.php        # Controller regression
 │   │   └── Support/            # Test helpers
 │   ├── public/                 # Document root (static assets)
 │   ├── vendor/                 # Composer dependencies
@@ -142,11 +144,16 @@ cloud-php/
 ├── service/                    # Backend service (standalone webman instance)
 │   ├── app/                    # Business modules (PSR-4: App\), each with Controller/Model/Service layers
 │   │   ├── Admin/Controller/   # Admin API (15 controllers: Dashboard / User / Product / Order / Payment / Supplier / Coupon / Invoice / Domain / Webhook etc.)
+│   │   ├── Affiliate/          # Affiliate commissions / referral payouts (Controller / Listener / Model / Service)
+│   │   ├── Billing/            # Usage metering / billing (Cron / Service)
 │   │   ├── Captcha/Controller/ # Click CAPTCHA
+│   │   ├── Cdn/                # CDN resource hosting (Controller / Model / Provider / Service)
 │   │   ├── Command/            # Console commands (Migrate / Rollback / Status / DbBackup)
 │   │   ├── Controller/         # Public controllers (Health / Status / Help / Upload)
 │   │   ├── Cron/               # Scheduled tasks (CronRunner scheduler + ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck)
 │   │   ├── Domain/             # Domain registration / DNS (Controller / Model / Service)
+│   │   ├── Graphql/            # GraphQL API (Mutation / Query / Schema)
+│   │   ├── Grpc/               # kvm-server gRPC client + etcd registry (KvmClient / EtcdRegistry)
 │   │   ├── Model/              # Shared models (HelpArticle / Role / Permission)
 │   │   ├── Monitor/            # Resource monitoring / alerts (Controller / Cron / Model / Service)
 │   │   ├── Notification/       # Notifications (Controller / Model / Queue / Service)
@@ -155,9 +162,12 @@ cloud-php/
 │   │   ├── Product/            # Products / SKUs / pricing / reviews (Controller / Model / Service)
 │   │   ├── Provisioning/       # Resource delivery engine (Controller / Event / Listener / Model / Provider / Queue / Service)
 │   │   ├── Report/             # Revenue / supplier / regional reports (Controller / Service)
+│   │   ├── Ssl/                # SSL certificate issuance / management (Controller / Model / Service)
+│   │   ├── Storage/            # Object storage resources (Controller / Model / Provider / Service)
 │   │   ├── Supplier/           # Supplier onboarding / settlement / withdrawal + external API (Controller / Model / Service)
 │   │   ├── Ticket/             # Support tickets (Controller / Event / Listener / Model / Service)
 │   │   ├── User/               # Users / auth / KYC / balances / addresses (Controller / Model / Service)
+│   │   ├── Webhook/            # Webhook message queue (Queue)
 │   │   └── WebSocket/          # WebSocket server + event listeners
 │   ├── common/                 # Shared libraries (PSR-4: Common\)
 │   │   ├── Auth/Middleware/     # AuthMiddleware / AdminRoleMiddleware / RbacMiddleware / RoleMiddleware / SupplierApiKeyMiddleware
@@ -178,22 +188,39 @@ cloud-php/
 │   │   └── plugin/             # Plugin configs
 │   │       ├── erikwang2013/   # encryptable / hashids / jwt / poster / season / webman-scout
 │   │       └── webman/         # event / redis-queue
-│   ├── database/migrations/    # Database migration files (30 migrations)
+│   ├── database/migrations/    # Database migration files (37 migrations)
 │   ├── i18n/                   # Internationalization resources (en-US / zh-CN)
 │   ├── support/                # Bootstrap (Eloquent / Redis / Event / encryption / snowflake / hashids / scout / MigrationRunner)
-│   ├── tests/                  # Unit tests (PHPUnit 10, 316 tests)
-│   │   ├── Admin/              # ImportExport
+│   ├── tests/                  # Unit tests (PHPUnit 10, 661 tests)
+│   │   ├── Admin/              # ImportExport / SupplierWithdrawApprove
+│   │   ├── Affiliate/          # AffiliateService
+│   │   ├── Auth/               # JwtAuth / RbacSeed / Rbac
+│   │   ├── Billing/            # MeterCollector / UsageAggregator / SuspendCheck
 │   │   ├── Captcha/            # CaptchaService
+│   │   ├── Cdn/                # ResourceCdn
+│   │   ├── ClientPlatform/     # ClientPlatformMiddleware
 │   │   ├── Common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
 │   │   ├── Confirmation/       # ConfirmationMiddleware
+│   │   ├── Cron/               # SupplierSettlement
+│   │   ├── Domain/             # DomainService / DomainTransfer
+│   │   ├── Graphql/            # Schema
+│   │   ├── Grpc/               # KvmClient / EtcdRegistry
+│   │   ├── Monitor/            # AlertEngine
 │   │   ├── Notification/       # NotificationDispatcher
 │   │   ├── Order/              # Coupon / Invoice
 │   │   ├── Payment/            # StripeChannel / PaymentRouter
+│   │   ├── Product/            # ProductService / Search / ReviewStatus
 │   │   ├── Provisioning/       # ProviderFactory / RetryLogic
+│   │   ├── Report/             # ReportService
 │   │   ├── Security/           # RateLimit / Maintenance / UploadSecurity
+│   │   ├── Ssl/                # SslCertificate
+│   │   ├── Storage/            # StorageBucket
+│   │   ├── Supplier/           # SupplierService / Settlement / Rating / Webhook
+│   │   ├── Ticket/             # TicketUpdatedWiring
 │   │   ├── User/               # AddressController
 │   │   ├── Version/            # VersionMiddleware
-│   │   ├── Webhook/            # WebhookDispatcher
+│   │   ├── Webhook/            # WebhookDispatcher / WebhookE2E
+│   │   ├── WebSocket/          # WebSocketAuth / EventsWiring
 │   │   ├── Support/            # RequestMock
 │   │   ├── bootstrap.php       # Test bootstrap
 │   │   └── TestCase.php        # Base test case
@@ -235,10 +262,12 @@ cloud-php/
 │   ├── api-test.sh             # API smoke test script
 │   ├── database.sql            # Database DDL
 │   ├── alipay.png / weixinpay.png  # Sponsor QR codes
-│   ├── diagrams/               # 10 SVG architecture diagrams (system / security / ER / business flows)
+│   ├── diagrams/               # 18 SVG architecture diagrams (system / security / ER / business flows)
+│   ├── test-reports/           # Test reports (PHPUnit / Rust / API / UI + page screenshots)
 │   └── superpowers/            # Design specs & implementation plans
 │       ├── specs/              # System design specification
 │       └── plans/              # Phase 0~3 implementation plans
+├── scripts/                     # Ops scripts (push-release.sh release rule: version bump + tag)
 ├── tests/k6/                    # k6 load test scripts (smoke / products / concurrent)
 ├── install.php                 # One-click install wizard entry
 ├── install/                    # Install wizard pages
@@ -583,7 +612,7 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] FCM push notification production integration (kreait/firebase-php, with invalid token cleanup)
 - [x] Click CAPTCHA (erikwang2013/poster-php, login/register verification)
 - [x] Password confirmation (ConfirmationMiddleware, sensitive ops password re-entry, 5 fails → 15 min lock)
-- [x] Service-layer unit tests (316 tests, 502 assertions)
+- [x] Service-layer unit tests (661 tests)
 - [x] Client platform identification (ClientPlatformMiddleware, X-Client-Platform header, 8 platforms)
 - [x] WAF security enhancement (8 categories 45+ rules: SQLi/XSS/CMDi/file inclusion/header injection/SSRF/NoSQL injection/open redirect + size limits + Content-Type validation)
 - [x] Security Plugin (erikwang2013/security-php, 31 attack detectors + IP blacklist auto-ban + log rotation)
