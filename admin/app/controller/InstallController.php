@@ -49,6 +49,7 @@ class InstallController extends Base
         $host = $request->post('host');
         $port = (int)$request->post('port') ?: 3306;
         $overwrite = $request->post('overwrite');
+        $prefix = getenv('DB_PREFIX') ?: 'cloud_';
 
         // Validate database name to prevent SQL injection (DDL don't support prepared statements)
         if (!preg_match('/^[a-zA-Z0-9_]+$/', $database)) {
@@ -78,13 +79,13 @@ class InstallController extends Base
         }
 
         $tables_to_install = [
-            'wa_admins',
-            'wa_admin_roles',
-            'wa_roles',
-            'wa_rules',
-            'wa_options',
-            'wa_users',
-            'wa_uploads',
+            "{$prefix}wa_admins",
+            "{$prefix}wa_admin_roles",
+            "{$prefix}wa_roles",
+            "{$prefix}wa_rules",
+            "{$prefix}wa_options",
+            "{$prefix}wa_users",
+            "{$prefix}wa_uploads",
         ];
 
         $tables_exist = [];
@@ -136,6 +137,7 @@ return  [
             'prefix'      => '',
             'strict'      => true,
             'engine'      => null,
+            'prefix'      => '$prefix',
         ],
     ],
 ];
@@ -169,7 +171,7 @@ return [
             // 数据库编码默认采用utf8
             'charset' => 'utf8mb4',
             // 数据库表前缀
-            'prefix' => '',
+            'prefix' => '$prefix',
             // 断线重连
             'break_reconnect' => true,
             // 关闭SQL监听日志
@@ -212,13 +214,14 @@ EOF;
         }
         $config = include $config_file;
         $connection = $config['connections']['mysql'];
+        $prefix = $connection['prefix'] ?? getenv('DB_PREFIX') ?: 'cloud_';
         $pdo = $this->getPdo($connection['host'], $connection['username'], $connection['password'], $connection['port'], $connection['database']);
 
-        if ($pdo->query('select * from `wa_admins`')->fetchAll()) {
+        if ($pdo->query("select * from `{$prefix}wa_admins`")->fetchAll()) {
             return $this->json(1, '后台已经安装完毕，无法通过此页面创建管理员');
         }
 
-        $smt = $pdo->prepare("insert into `wa_admins` (`username`, `password`, `nickname`, `created_at`, `updated_at`) values (:username, :password, :nickname, :created_at, :updated_at)");
+        $smt = $pdo->prepare("insert into `{$prefix}wa_admins` (`username`, `password`, `nickname`, `created_at`, `updated_at`) values (:username, :password, :nickname, :created_at, :updated_at)");
         $time = date('Y-m-d H:i:s');
         $data = [
             'username' => $username,
@@ -233,7 +236,7 @@ EOF;
         $smt->execute();
         $admin_id = $pdo->lastInsertId();
 
-        $smt = $pdo->prepare("insert into `wa_admin_roles` (`role_id`, `admin_id`) values (:role_id, :admin_id)");
+        $smt = $pdo->prepare("insert into `{$prefix}wa_admin_roles` (`role_id`, `admin_id`) values (:role_id, :admin_id)");
         $smt->bindValue('role_id', 1);
         $smt->bindValue('admin_id', $admin_id);
         $smt->execute();
@@ -259,6 +262,7 @@ EOF;
         }
         $time = date('Y-m-d H:i:s');
         $data['created_at'] = $data['updated_at'] = $time;
+        $prefix = getenv('DB_PREFIX') ?: 'cloud_';
         $values = [];
         foreach ($data as $k => $v) {
             $values[] = ":$k";
@@ -267,7 +271,7 @@ EOF;
         foreach ($columns as $k => $column) {
             $columns[$k] = "`$column`";
         }
-        $sql = "insert into wa_rules (" .implode(',', $columns). ") values (" . implode(',', $values) . ")";
+        $sql = "insert into `{$prefix}wa_rules` (" .implode(',', $columns). ") values (" . implode(',', $values) . ")";
         $smt = $pdo->prepare($sql);
         foreach ($data as $key => $value) {
             $smt->bindValue($key, $value);
@@ -292,7 +296,8 @@ EOF;
         }
         $children = $menu_tree['children'] ?? [];
         unset($menu_tree['children']);
-        $smt = $pdo->prepare("select * from wa_rules where `key`=:key limit 1");
+        $prefix = getenv('DB_PREFIX') ?: 'cloud_';
+        $smt = $pdo->prepare("select * from `{$prefix}wa_rules` where `key`=:key limit 1");
         $smt->execute(['key' => $menu_tree['key']]);
         $old_menu = $smt->fetch();
         if ($old_menu) {
@@ -302,7 +307,7 @@ EOF;
                 'icon' => $menu_tree['icon'] ?? '',
                 'key' => $menu_tree['key'],
             ];
-            $sql = "update wa_rules set title=:title, icon=:icon where `key`=:key";
+            $sql = "update `{$prefix}wa_rules` set title=:title, icon=:icon where `key`=:key";
             $smt = $pdo->prepare($sql);
             $smt->execute($params);
         } else {

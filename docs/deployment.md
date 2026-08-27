@@ -96,23 +96,23 @@ php install.php --host=0.0.0.0 --port=8888
 -- 以 root 登录
 sudo mysql
 
-CREATE DATABASE cloud_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE cloud_platform_audit CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE cloud CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE cloud_audit CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- 应用用户 (读写)
 CREATE USER 'app_user'@'localhost' IDENTIFIED BY '<强密码>';
-GRANT SELECT, INSERT, UPDATE, DELETE ON cloud_platform.* TO 'app_user'@'localhost';
-GRANT SELECT, INSERT ON cloud_platform_audit.* TO 'app_user'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON cloud.* TO 'app_user'@'localhost';
+GRANT SELECT, INSERT ON cloud_audit.* TO 'app_user'@'localhost';
 
 -- 迁移用户 (DDL)
 CREATE USER 'migrate_user'@'localhost' IDENTIFIED BY '<强密码>';
-GRANT ALL ON cloud_platform.* TO 'migrate_user'@'localhost';
-GRANT ALL ON cloud_platform_audit.* TO 'migrate_user'@'localhost';
+GRANT ALL ON cloud.* TO 'migrate_user'@'localhost';
+GRANT ALL ON cloud_audit.* TO 'migrate_user'@'localhost';
 
 -- 只读用户 (报表)
 CREATE USER 'read_user'@'localhost' IDENTIFIED BY '<强密码>';
-GRANT SELECT ON cloud_platform.* TO 'read_user'@'localhost';
-GRANT SELECT ON cloud_platform_audit.* TO 'read_user'@'localhost';
+GRANT SELECT ON cloud.* TO 'read_user'@'localhost';
+GRANT SELECT ON cloud_audit.* TO 'read_user'@'localhost';
 
 FLUSH PRIVILEGES;
 EXIT;
@@ -121,7 +121,7 @@ EXIT;
 ### 3.2 验证连接
 
 ```bash
-mysql -u app_user -p -h localhost cloud_platform -e "SELECT 1;"
+mysql -u app_user -p -h localhost cloud -e "SELECT 1;"
 ```
 
 ---
@@ -170,10 +170,10 @@ APP_TIMEZONE=Asia/Shanghai
 # 数据库
 DB_HOST=localhost
 DB_PORT=3306
-DB_DATABASE=cloud_platform
+DB_DATABASE=cloud
 DB_USERNAME=app_user
 DB_PASSWORD=<数据库密码>
-DB_AUDIT_DATABASE=cloud_platform_audit
+DB_AUDIT_DATABASE=cloud_audit
 
 # Redis
 REDIS_HOST=127.0.0.1
@@ -300,7 +300,7 @@ chmod -R 755 /home/wwwroot/cloud-php/service/runtime
 
 ```sql
 -- 以迁移用户登录
-mysql -u migrate_user -p cloud_platform
+mysql -u migrate_user -p cloud
 
 CREATE TABLE IF NOT EXISTS migrations (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -688,9 +688,9 @@ php start.php start
 
 ```bash
 # 检查数据库连接
-php -r "new PDO('mysql:host=localhost;dbname=cloud_platform','app_user','<密码>');"
+php -r "new PDO('mysql:host=localhost;dbname=cloud','app_user','<密码>');"
 # 检查表是否已存在
-mysql -u app_user -p cloud_platform -e "SHOW TABLES"
+mysql -u app_user -p cloud -e "SHOW TABLES"
 ```
 
 ### 502 Bad Gateway

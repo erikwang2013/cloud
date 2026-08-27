@@ -5,7 +5,7 @@
 --
 
 -- CloudPlatform — Unified Database DDL
--- Tables: wa_* (admin panel) + business tables (no prefix)
+-- Tables: cloud_wa_* (admin panel) + cloud_* business tables (cloud_ prefix)
 -- Primary Key: BIGINT (non auto-increment, application-generated)
 -- ============================================================
 
@@ -14,7 +14,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 -- ======================== Admin Panel ========================
 
-CREATE TABLE IF NOT EXISTS `wa_admin_roles` (
+CREATE TABLE IF NOT EXISTS `cloud_wa_admin_roles` (
   `id` bigint unsigned NOT NULL COMMENT '主键',
   `role_id` bigint unsigned NOT NULL COMMENT '角色id',
   `admin_id` bigint unsigned NOT NULL COMMENT '管理员id',
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `wa_admin_roles` (
   UNIQUE KEY `role_admin_id` (`role_id`,`admin_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='管理员角色表';
 
-CREATE TABLE IF NOT EXISTS `wa_admins` (
+CREATE TABLE IF NOT EXISTS `cloud_wa_admins` (
   `id` bigint unsigned NOT NULL COMMENT 'ID',
   `username` varchar(32) NOT NULL COMMENT '用户名',
   `nickname` varchar(40) NOT NULL COMMENT '昵称',
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS `wa_admins` (
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='管理员表';
 
-CREATE TABLE IF NOT EXISTS `wa_options` (
+CREATE TABLE IF NOT EXISTS `cloud_wa_options` (
   `id` bigint unsigned NOT NULL,
   `name` varchar(128) NOT NULL COMMENT '键',
   `value` longtext NOT NULL COMMENT '值',
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `wa_options` (
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='选项表';
 
-CREATE TABLE IF NOT EXISTS `wa_roles` (
+CREATE TABLE IF NOT EXISTS `cloud_wa_roles` (
   `id` bigint unsigned NOT NULL COMMENT '主键',
   `name` varchar(80) NOT NULL COMMENT '角色组',
   `rules` text COMMENT '权限',
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `wa_roles` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='管理员角色';
 
-CREATE TABLE IF NOT EXISTS `wa_rules` (
+CREATE TABLE IF NOT EXISTS `cloud_wa_rules` (
   `id` bigint unsigned NOT NULL COMMENT '主键',
   `title` varchar(255) NOT NULL COMMENT '标题',
   `icon` varchar(255) DEFAULT NULL COMMENT '图标',
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS `wa_rules` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='权限规则';
 
-CREATE TABLE IF NOT EXISTS `wa_uploads` (
+CREATE TABLE IF NOT EXISTS `cloud_wa_uploads` (
   `id` bigint unsigned NOT NULL COMMENT '主键',
   `name` varchar(128) NOT NULL COMMENT '名称',
   `url` varchar(255) NOT NULL COMMENT '文件',
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS `wa_uploads` (
   KEY `ext` (`ext`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='附件';
 
-CREATE TABLE IF NOT EXISTS `wa_users` (
+CREATE TABLE IF NOT EXISTS `cloud_wa_users` (
   `id` bigint unsigned NOT NULL COMMENT '主键',
   `username` varchar(32) NOT NULL COMMENT '用户名',
   `nickname` varchar(40) NOT NULL COMMENT '昵称',
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS `wa_users` (
 
 -- ======================== User ========================
 
-CREATE TABLE IF NOT EXISTS `users` (
+CREATE TABLE IF NOT EXISTS `cloud_users` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     email           VARCHAR(255)    DEFAULT NULL,
     phone           VARCHAR(32)     DEFAULT NULL,
@@ -148,7 +148,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     INDEX idx_fcm_token (fcm_token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `user_profiles` (
+CREATE TABLE IF NOT EXISTS `cloud_user_profiles` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     avatar          VARCHAR(512)    DEFAULT NULL,
@@ -159,7 +159,7 @@ CREATE TABLE IF NOT EXISTS `user_profiles` (
     INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `user_kyc` (
+CREATE TABLE IF NOT EXISTS `cloud_user_kyc` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     user_id             BIGINT          NOT NULL,
     id_type             VARCHAR(32)     NOT NULL,
@@ -177,7 +177,7 @@ CREATE TABLE IF NOT EXISTS `user_kyc` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `user_balance` (
+CREATE TABLE IF NOT EXISTS `cloud_user_balance` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     currency        VARCHAR(3)      NOT NULL DEFAULT 'USD',
@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS `user_balance` (
     INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `user_addresses` (
+CREATE TABLE IF NOT EXISTS `cloud_user_addresses` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     type            VARCHAR(32)     NOT NULL DEFAULT 'billing',
@@ -206,7 +206,7 @@ CREATE TABLE IF NOT EXISTS `user_addresses` (
     INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `refresh_tokens` (
+CREATE TABLE IF NOT EXISTS `cloud_refresh_tokens` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     user_id             BIGINT          NOT NULL,
     token_hash          VARCHAR(128)    NOT NULL,
@@ -222,7 +222,7 @@ CREATE TABLE IF NOT EXISTS `refresh_tokens` (
 
 -- ======================== Product ========================
 
-CREATE TABLE IF NOT EXISTS `product_categories` (
+CREATE TABLE IF NOT EXISTS `cloud_product_categories` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     parent_id       BIGINT          DEFAULT NULL,
     name            JSON            NOT NULL,
@@ -239,7 +239,7 @@ CREATE TABLE IF NOT EXISTS `product_categories` (
     INDEX idx_sort (sort)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `products` (
+CREATE TABLE IF NOT EXISTS `cloud_products` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     category_id     BIGINT          NOT NULL,
     supplier_id     BIGINT          DEFAULT NULL,
@@ -255,7 +255,7 @@ CREATE TABLE IF NOT EXISTS `products` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `product_skus` (
+CREATE TABLE IF NOT EXISTS `cloud_product_skus` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     product_id      BIGINT          NOT NULL,
     sku_code        VARCHAR(128)    NOT NULL,
@@ -268,7 +268,7 @@ CREATE TABLE IF NOT EXISTS `product_skus` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `product_regions` (
+CREATE TABLE IF NOT EXISTS `cloud_product_regions` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     sku_id          BIGINT          NOT NULL,
     region_id       BIGINT          NOT NULL,
@@ -282,7 +282,7 @@ CREATE TABLE IF NOT EXISTS `product_regions` (
     INDEX idx_region (region_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `product_images` (
+CREATE TABLE IF NOT EXISTS `cloud_product_images` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     product_id      BIGINT          NOT NULL,
     url             VARCHAR(512)    NOT NULL,
@@ -292,7 +292,7 @@ CREATE TABLE IF NOT EXISTS `product_images` (
     INDEX idx_product (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `product_reviews` (
+CREATE TABLE IF NOT EXISTS `cloud_product_reviews` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     product_id      BIGINT          NOT NULL,
@@ -307,7 +307,7 @@ CREATE TABLE IF NOT EXISTS `product_reviews` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `regions` (
+CREATE TABLE IF NOT EXISTS `cloud_regions` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     name            VARCHAR(128)    NOT NULL,
     continent       VARCHAR(32)     NOT NULL,
@@ -321,7 +321,7 @@ CREATE TABLE IF NOT EXISTS `regions` (
 
 -- ======================== Order ========================
 
-CREATE TABLE IF NOT EXISTS `carts` (
+CREATE TABLE IF NOT EXISTS `cloud_carts` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     sku_id          BIGINT          NOT NULL,
@@ -333,7 +333,7 @@ CREATE TABLE IF NOT EXISTS `carts` (
     INDEX idx_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `orders` (
+CREATE TABLE IF NOT EXISTS `cloud_orders` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_no        VARCHAR(32)     NOT NULL,
     user_id         BIGINT          NOT NULL,
@@ -354,7 +354,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
     INDEX idx_paid_at (paid_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `order_items` (
+CREATE TABLE IF NOT EXISTS `cloud_order_items` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     order_id            BIGINT          NOT NULL,
     sku_id              BIGINT          NOT NULL,
@@ -373,7 +373,7 @@ CREATE TABLE IF NOT EXISTS `order_items` (
     INDEX idx_product (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `order_timeline` (
+CREATE TABLE IF NOT EXISTS `cloud_order_timeline` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_id        BIGINT          NOT NULL,
     status          VARCHAR(32)     NOT NULL,
@@ -384,7 +384,7 @@ CREATE TABLE IF NOT EXISTS `order_timeline` (
     INDEX idx_order (order_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `refunds` (
+CREATE TABLE IF NOT EXISTS `cloud_refunds` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_id        BIGINT          NOT NULL,
     user_id         BIGINT          NOT NULL,
@@ -404,7 +404,7 @@ CREATE TABLE IF NOT EXISTS `refunds` (
 
 -- ======================== Payment ========================
 
-CREATE TABLE IF NOT EXISTS `payment_channels` (
+CREATE TABLE IF NOT EXISTS `cloud_payment_channels` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     name                VARCHAR(128)    NOT NULL,
     code                VARCHAR(64)     NOT NULL,
@@ -423,7 +423,7 @@ CREATE TABLE IF NOT EXISTS `payment_channels` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `payment_transactions` (
+CREATE TABLE IF NOT EXISTS `cloud_payment_transactions` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_id        BIGINT          NOT NULL,
     user_id         BIGINT          NOT NULL,
@@ -446,7 +446,7 @@ CREATE TABLE IF NOT EXISTS `payment_transactions` (
 
 -- ======================== Domain ========================
 
-CREATE TABLE IF NOT EXISTS `domain_tlds` (
+CREATE TABLE IF NOT EXISTS `cloud_domain_tlds` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     tld             VARCHAR(32)     NOT NULL,
     registrar       VARCHAR(128)    NOT NULL,
@@ -458,7 +458,7 @@ CREATE TABLE IF NOT EXISTS `domain_tlds` (
     UNIQUE INDEX uk_tld (tld)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `dns_zones` (
+CREATE TABLE IF NOT EXISTS `cloud_dns_zones` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     domain_name     VARCHAR(255)    NOT NULL,
@@ -468,7 +468,7 @@ CREATE TABLE IF NOT EXISTS `dns_zones` (
     INDEX idx_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `dns_records` (
+CREATE TABLE IF NOT EXISTS `cloud_dns_records` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     zone_id         BIGINT          NOT NULL,
     type            VARCHAR(16)     NOT NULL,
@@ -484,7 +484,7 @@ CREATE TABLE IF NOT EXISTS `dns_records` (
 
 -- ======================== Provisioning ========================
 
-CREATE TABLE IF NOT EXISTS `host_machines` (
+CREATE TABLE IF NOT EXISTS `cloud_host_machines` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     region_id           BIGINT          NOT NULL,
     name                VARCHAR(255)    NOT NULL,
@@ -503,7 +503,7 @@ CREATE TABLE IF NOT EXISTS `host_machines` (
     INDEX idx_hypervisor (hypervisor)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `ip_pools` (
+CREATE TABLE IF NOT EXISTS `cloud_ip_pools` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     host_machine_id BIGINT          NOT NULL,
     ip_start        VARCHAR(64)     NOT NULL,
@@ -516,7 +516,7 @@ CREATE TABLE IF NOT EXISTS `ip_pools` (
     INDEX idx_host (host_machine_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `ip_allocations` (
+CREATE TABLE IF NOT EXISTS `cloud_ip_allocations` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     ip_pool_id      BIGINT          NOT NULL,
     resource_id     BIGINT          NOT NULL,
@@ -531,7 +531,7 @@ CREATE TABLE IF NOT EXISTS `ip_allocations` (
     INDEX idx_resource (resource_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `provision_tasks` (
+CREATE TABLE IF NOT EXISTS `cloud_provision_tasks` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_id        BIGINT          NOT NULL,
     order_item_id   BIGINT          NOT NULL,
@@ -553,7 +553,7 @@ CREATE TABLE IF NOT EXISTS `provision_tasks` (
     INDEX idx_status_next (status, next_retry_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `resources` (
+CREATE TABLE IF NOT EXISTS `cloud_resources` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_item_id   BIGINT          NOT NULL,
     user_id         BIGINT          NOT NULL,
@@ -574,7 +574,7 @@ CREATE TABLE IF NOT EXISTS `resources` (
     INDEX idx_expired (expired_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `disks` (
+CREATE TABLE IF NOT EXISTS `cloud_disks` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     resource_id     BIGINT          NOT NULL,
     host_machine_id BIGINT          NOT NULL,
@@ -590,7 +590,7 @@ CREATE TABLE IF NOT EXISTS `disks` (
     INDEX idx_host (host_machine_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `disk_resizes` (
+CREATE TABLE IF NOT EXISTS `cloud_disk_resizes` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     disk_id         BIGINT          NOT NULL,
     old_size_gb     INT             NOT NULL,
@@ -603,7 +603,7 @@ CREATE TABLE IF NOT EXISTS `disk_resizes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- KVM 服务隔离模型：每 VM 一条网络/防火墙/交换器服务记录即隔离单元
-CREATE TABLE IF NOT EXISTS `network_services` (
+CREATE TABLE IF NOT EXISTS `cloud_network_services` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     host_machine_id BIGINT          NOT NULL,
     resource_id     BIGINT          NOT NULL,
@@ -618,7 +618,7 @@ CREATE TABLE IF NOT EXISTS `network_services` (
     INDEX idx_host_resource (host_machine_id, resource_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `firewall_services` (
+CREATE TABLE IF NOT EXISTS `cloud_firewall_services` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     host_machine_id BIGINT          NOT NULL,
     resource_id     BIGINT          NOT NULL,
@@ -633,7 +633,7 @@ CREATE TABLE IF NOT EXISTS `firewall_services` (
     INDEX idx_host_resource (host_machine_id, resource_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `switch_services` (
+CREATE TABLE IF NOT EXISTS `cloud_switch_services` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     host_machine_id     BIGINT          NOT NULL,
     resource_id         BIGINT          NOT NULL,
@@ -652,7 +652,7 @@ CREATE TABLE IF NOT EXISTS `switch_services` (
 
 -- ======================== Ticket ========================
 
-CREATE TABLE IF NOT EXISTS `tickets` (
+CREATE TABLE IF NOT EXISTS `cloud_tickets` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     ticket_no       VARCHAR(32)     NOT NULL,
     user_id         BIGINT          NOT NULL,
@@ -675,7 +675,7 @@ CREATE TABLE IF NOT EXISTS `tickets` (
     INDEX idx_category (category)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `ticket_messages` (
+CREATE TABLE IF NOT EXISTS `cloud_ticket_messages` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     ticket_id       BIGINT          NOT NULL,
     sender_id       BIGINT          NOT NULL,
@@ -689,7 +689,7 @@ CREATE TABLE IF NOT EXISTS `ticket_messages` (
 
 -- ======================== Supplier ========================
 
-CREATE TABLE IF NOT EXISTS `suppliers` (
+CREATE TABLE IF NOT EXISTS `cloud_suppliers` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     user_id             BIGINT          NOT NULL,
     company_name        VARCHAR(255)    NOT NULL,
@@ -708,7 +708,7 @@ CREATE TABLE IF NOT EXISTS `suppliers` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `supplier_settlements` (
+CREATE TABLE IF NOT EXISTS `cloud_supplier_settlements` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     supplier_id     BIGINT          NOT NULL,
     period_start    DATE            NOT NULL,
@@ -724,7 +724,7 @@ CREATE TABLE IF NOT EXISTS `supplier_settlements` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `supplier_withdraws` (
+CREATE TABLE IF NOT EXISTS `cloud_supplier_withdraws` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     supplier_id     BIGINT          NOT NULL,
     amount          DECIMAL(16,4)   NOT NULL,
@@ -741,7 +741,7 @@ CREATE TABLE IF NOT EXISTS `supplier_withdraws` (
 
 -- ======================== Notification ========================
 
-CREATE TABLE IF NOT EXISTS `notifications` (
+CREATE TABLE IF NOT EXISTS `cloud_notifications` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     channel         VARCHAR(32)     NOT NULL DEFAULT 'in_app',
@@ -755,7 +755,7 @@ CREATE TABLE IF NOT EXISTS `notifications` (
     INDEX idx_status (send_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `notification_templates` (
+CREATE TABLE IF NOT EXISTS `cloud_notification_templates` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     code            VARCHAR(128)    NOT NULL,
     name            VARCHAR(255)    NOT NULL,
@@ -769,7 +769,7 @@ CREATE TABLE IF NOT EXISTS `notification_templates` (
 
 -- ======================== Monitor ========================
 
-CREATE TABLE IF NOT EXISTS `alerts` (
+CREATE TABLE IF NOT EXISTS `cloud_alerts` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     rule_code       VARCHAR(128)    NOT NULL,
     severity        VARCHAR(32)     NOT NULL DEFAULT 'warning',
@@ -788,7 +788,7 @@ CREATE TABLE IF NOT EXISTS `alerts` (
 
 -- ======================== Audit ========================
 
-CREATE TABLE IF NOT EXISTS `audit_logs` (
+CREATE TABLE IF NOT EXISTS `cloud_audit_logs` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          DEFAULT NULL,
     action          VARCHAR(128)    NOT NULL,
@@ -807,7 +807,7 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
 
 -- ======================== Coupon ========================
 
-CREATE TABLE IF NOT EXISTS `coupons` (
+CREATE TABLE IF NOT EXISTS `cloud_coupons` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     code            VARCHAR(50)     NOT NULL,
     type            VARCHAR(20)     NOT NULL DEFAULT 'percentage',
@@ -825,7 +825,7 @@ CREATE TABLE IF NOT EXISTS `coupons` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `user_coupons` (
+CREATE TABLE IF NOT EXISTS `cloud_user_coupons` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     coupon_id       BIGINT          NOT NULL,
@@ -841,7 +841,7 @@ CREATE TABLE IF NOT EXISTS `user_coupons` (
 
 -- ======================== User ========================
 
-CREATE TABLE IF NOT EXISTS `user_balance_log` (
+CREATE TABLE IF NOT EXISTS `cloud_user_balance_log` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     type            VARCHAR(30)     NOT NULL,
@@ -858,7 +858,7 @@ CREATE TABLE IF NOT EXISTS `user_balance_log` (
 
 -- ======================== Order ========================
 
-CREATE TABLE IF NOT EXISTS `order_invoices` (
+CREATE TABLE IF NOT EXISTS `cloud_order_invoices` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_id        BIGINT          NOT NULL,
     user_id         BIGINT          NOT NULL,
@@ -875,7 +875,7 @@ CREATE TABLE IF NOT EXISTS `order_invoices` (
 
 -- ======================== Payment ========================
 
-CREATE TABLE IF NOT EXISTS `payment_reconcile` (
+CREATE TABLE IF NOT EXISTS `cloud_payment_reconcile` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     date            DATE            NOT NULL,
     channel_id      BIGINT          NOT NULL,
@@ -890,7 +890,7 @@ CREATE TABLE IF NOT EXISTS `payment_reconcile` (
 
 -- ======================== Provisioning ========================
 
-CREATE TABLE IF NOT EXISTS `resource_servers` (
+CREATE TABLE IF NOT EXISTS `cloud_resource_servers` (
     id                       BIGINT          NOT NULL PRIMARY KEY,
     resource_id              BIGINT          NOT NULL,
     hostname                 VARCHAR(255)    DEFAULT NULL,
@@ -908,7 +908,7 @@ CREATE TABLE IF NOT EXISTS `resource_servers` (
     INDEX idx_resource (resource_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `resource_ips` (
+CREATE TABLE IF NOT EXISTS `cloud_resource_ips` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     resource_id     BIGINT          NOT NULL,
     ip_address      VARCHAR(45)     NOT NULL,
@@ -920,7 +920,7 @@ CREATE TABLE IF NOT EXISTS `resource_ips` (
     INDEX idx_resource (resource_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `resource_disks` (
+CREATE TABLE IF NOT EXISTS `cloud_resource_disks` (
     id                      BIGINT          NOT NULL PRIMARY KEY,
     resource_id             BIGINT          NOT NULL,
     disk_size               INT             NOT NULL,
@@ -931,7 +931,7 @@ CREATE TABLE IF NOT EXISTS `resource_disks` (
     INDEX idx_resource (resource_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `resource_domains` (
+CREATE TABLE IF NOT EXISTS `cloud_resource_domains` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     resource_id     BIGINT          NOT NULL,
     domain_name     VARCHAR(255)    NOT NULL,
@@ -944,7 +944,7 @@ CREATE TABLE IF NOT EXISTS `resource_domains` (
     INDEX idx_resource (resource_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `provider_apis` (
+CREATE TABLE IF NOT EXISTS `cloud_provider_apis` (
     id                      BIGINT          NOT NULL PRIMARY KEY,
     name                    VARCHAR(100)    NOT NULL,
     code                    VARCHAR(50)     NOT NULL,
@@ -959,7 +959,7 @@ CREATE TABLE IF NOT EXISTS `provider_apis` (
 
 -- ======================== Supplier ========================
 
-CREATE TABLE IF NOT EXISTS `supplier_products` (
+CREATE TABLE IF NOT EXISTS `cloud_supplier_products` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     supplier_id     BIGINT          NOT NULL,
     product_id      BIGINT          NOT NULL,
@@ -972,7 +972,7 @@ CREATE TABLE IF NOT EXISTS `supplier_products` (
     INDEX idx_product (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `supplier_ratings` (
+CREATE TABLE IF NOT EXISTS `cloud_supplier_ratings` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     supplier_id     BIGINT          NOT NULL,
     user_id         BIGINT          NOT NULL,
@@ -991,7 +991,7 @@ CREATE TABLE IF NOT EXISTS `supplier_ratings` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `supplier_api_keys` (
+CREATE TABLE IF NOT EXISTS `cloud_supplier_api_keys` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     supplier_id     BIGINT          NOT NULL,
     name            VARCHAR(64)     DEFAULT NULL,
@@ -1007,7 +1007,7 @@ CREATE TABLE IF NOT EXISTS `supplier_api_keys` (
 
 -- ======================== Domain ========================
 
-CREATE TABLE IF NOT EXISTS `domain_transfers` (
+CREATE TABLE IF NOT EXISTS `cloud_domain_transfers` (
     id                      BIGINT          NOT NULL PRIMARY KEY,
     domain_name             VARCHAR(255)    NOT NULL,
     user_id                 BIGINT          NOT NULL,
@@ -1022,7 +1022,7 @@ CREATE TABLE IF NOT EXISTS `domain_transfers` (
 
 -- ======================== Help ========================
 
-CREATE TABLE IF NOT EXISTS `help_articles` (
+CREATE TABLE IF NOT EXISTS `cloud_help_articles` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     category        VARCHAR(50)     NOT NULL,
     title           VARCHAR(200)    NOT NULL,
@@ -1039,7 +1039,7 @@ CREATE TABLE IF NOT EXISTS `help_articles` (
 
 -- ======================== RBAC ========================
 
-CREATE TABLE IF NOT EXISTS `roles` (
+CREATE TABLE IF NOT EXISTS `cloud_roles` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     name            VARCHAR(50)     NOT NULL,
     display_name    VARCHAR(100)    NOT NULL,
@@ -1049,7 +1049,7 @@ CREATE TABLE IF NOT EXISTS `roles` (
     UNIQUE INDEX uk_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `permissions` (
+CREATE TABLE IF NOT EXISTS `cloud_permissions` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     name            VARCHAR(100)    NOT NULL,
     display_name    VARCHAR(100)    NOT NULL,
@@ -1059,7 +1059,7 @@ CREATE TABLE IF NOT EXISTS `permissions` (
     UNIQUE INDEX uk_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `role_permission` (
+CREATE TABLE IF NOT EXISTS `cloud_role_permission` (
     role_id         BIGINT          NOT NULL,
     permission_id   BIGINT          NOT NULL,
     PRIMARY KEY (role_id, permission_id),
@@ -1072,7 +1072,7 @@ CREATE TABLE IF NOT EXISTS `role_permission` (
 
 -- ======================== SSL ========================
 
-CREATE TABLE IF NOT EXISTS `ssl_plans` (
+CREATE TABLE IF NOT EXISTS `cloud_ssl_plans` (
     id                  BIGINT          NOT NULL PRIMARY KEY,
     name                VARCHAR(128)    NOT NULL,
     cert_type           VARCHAR(10)     NOT NULL DEFAULT 'DV',
@@ -1091,7 +1091,7 @@ CREATE TABLE IF NOT EXISTS `ssl_plans` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `resource_ssl_certs` (
+CREATE TABLE IF NOT EXISTS `cloud_resource_ssl_certs` (
     id                      BIGINT          NOT NULL PRIMARY KEY,
     resource_id             BIGINT          NOT NULL,
     domain_name             VARCHAR(255)    NOT NULL,
@@ -1119,7 +1119,7 @@ CREATE TABLE IF NOT EXISTS `resource_ssl_certs` (
 
 -- ======================== Storage ========================
 
-CREATE TABLE IF NOT EXISTS `resource_storage_buckets` (
+CREATE TABLE IF NOT EXISTS `cloud_resource_storage_buckets` (
     id                      BIGINT          NOT NULL PRIMARY KEY,
     resource_id             BIGINT          NOT NULL,
     bucket_name             VARCHAR(255)    NOT NULL,
@@ -1140,7 +1140,7 @@ CREATE TABLE IF NOT EXISTS `resource_storage_buckets` (
 
 -- ======================== Usage Billing ========================
 
-CREATE TABLE IF NOT EXISTS `resource_metrics` (
+CREATE TABLE IF NOT EXISTS `cloud_resource_metrics` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     resource_id     BIGINT          NOT NULL,
     metric          VARCHAR(32)     NOT NULL,
@@ -1149,7 +1149,7 @@ CREATE TABLE IF NOT EXISTS `resource_metrics` (
     INDEX idx_resource_metric_time (resource_id, metric, sample_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `usage_events` (
+CREATE TABLE IF NOT EXISTS `cloud_usage_events` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     resource_id     BIGINT          NOT NULL,
     order_item_id   BIGINT          DEFAULT NULL,
@@ -1163,7 +1163,7 @@ CREATE TABLE IF NOT EXISTS `usage_events` (
     INDEX idx_status_period (status, period_end)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `usage_rates` (
+CREATE TABLE IF NOT EXISTS `cloud_usage_rates` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     sku_id          BIGINT          NOT NULL,
     region_id       BIGINT          DEFAULT NULL,
@@ -1176,7 +1176,7 @@ CREATE TABLE IF NOT EXISTS `usage_rates` (
     UNIQUE INDEX uk_rate (sku_id, region_id, meter)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `usage_invoice_items` (
+CREATE TABLE IF NOT EXISTS `cloud_usage_invoice_items` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     order_id        BIGINT          DEFAULT NULL,
     resource_id     BIGINT          NOT NULL,
@@ -1192,7 +1192,7 @@ CREATE TABLE IF NOT EXISTS `usage_invoice_items` (
 
 -- ======================== CDN ========================
 
-CREATE TABLE IF NOT EXISTS `resource_cdn` (
+CREATE TABLE IF NOT EXISTS `cloud_resource_cdn` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     resource_id     BIGINT          NOT NULL,
     cdn_domain      VARCHAR(255)    NOT NULL,
@@ -1211,7 +1211,7 @@ CREATE TABLE IF NOT EXISTS `resource_cdn` (
 
 -- ======================== Affiliate ========================
 
-CREATE TABLE IF NOT EXISTS `affiliate_plans` (
+CREATE TABLE IF NOT EXISTS `cloud_affiliate_plans` (
     id                      BIGINT          NOT NULL PRIMARY KEY,
     name                    VARCHAR(128)    NOT NULL,
     commission_rate         DECIMAL(5,2)    NOT NULL,
@@ -1222,7 +1222,7 @@ CREATE TABLE IF NOT EXISTS `affiliate_plans` (
     updated_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `affiliate_links` (
+CREATE TABLE IF NOT EXISTS `cloud_affiliate_links` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     code            VARCHAR(32)     NOT NULL,
@@ -1232,7 +1232,7 @@ CREATE TABLE IF NOT EXISTS `affiliate_links` (
     UNIQUE INDEX uk_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `affiliate_earnings` (
+CREATE TABLE IF NOT EXISTS `cloud_affiliate_earnings` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     affiliate_id    BIGINT          NOT NULL,
     order_id        BIGINT          NOT NULL,
@@ -1246,7 +1246,7 @@ CREATE TABLE IF NOT EXISTS `affiliate_earnings` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `affiliate_payouts` (
+CREATE TABLE IF NOT EXISTS `cloud_affiliate_payouts` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     affiliate_id    BIGINT          NOT NULL,
     amount          DECIMAL(12,4)   NOT NULL,

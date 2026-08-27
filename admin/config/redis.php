@@ -28,6 +28,11 @@
  * Supports: host, port, password, database index, optional prefix.
  */
 return [
+    // 全局 key 前缀（illuminate/redis 对全部连接生效）
+    'options' => [
+        'prefix' => getenv('REDIS_PREFIX') ?: 'cloud:',
+    ],
+
     'default' => [
         /** Redis server host. */
         'host' => '127.0.0.1',

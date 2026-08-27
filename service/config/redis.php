@@ -7,6 +7,11 @@
  */
 
 return [
+    // 全局 key 前缀（illuminate/redis 对全部连接生效）
+    'options' => [
+        'prefix' => getenv('REDIS_PREFIX') ?: 'cloud:',
+    ],
+
     // 默认 Redis 连接：JWT 黑名单、会话、队列等通用用途
     'default' => [
         'host'     => getenv('REDIS_HOST') ?: '127.0.0.1',

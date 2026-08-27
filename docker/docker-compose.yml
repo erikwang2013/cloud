@@ -11,7 +11,7 @@ services:
     environment:
       - APP_DEBUG=false
       - DB_HOST=mysql
-      - DB_DATABASE=cloud_platform
+      - DB_DATABASE=cloud
       - DB_USERNAME=app_user
       - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_HOST=redis
@@ -44,7 +44,7 @@ services:
     environment:
       - APP_DEBUG=false
       - DB_HOST=mysql
-      - DB_DATABASE=cloud_platform
+      - DB_DATABASE=cloud
       - DB_USERNAME=app_user
       - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_HOST=redis
@@ -67,7 +67,7 @@ services:
     image: mysql:8.0
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=cloud_platform
+      - MYSQL_DATABASE=cloud
       - MYSQL_USER=app_user
       - MYSQL_PASSWORD=${DB_PASSWORD}
     volumes:

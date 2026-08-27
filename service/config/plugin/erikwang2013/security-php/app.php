@@ -297,7 +297,7 @@ return [
         // 连接参数（host/port/timeout/password）不由配置文件管理，
         // 请在外部创建 \Redis 实例后通过 redis_instance 传入。
         'redis' => [
-            'prefix' => 'security:',
+            'prefix' => 'cloud:security:',
         ],
 
         // Cache 存储配置（type=cache 时生效）

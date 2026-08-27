@@ -6,8 +6,8 @@
  */
 
 /**
- * Admin panel database config — same database as the main API (cloud_platform),
- * with the wa_ table prefix used by install.sql for admin tables.
+ * Admin panel database config — same database as the main API (cloud),
+ * with the cloud_ prefix used by install.sql for all tables.
  */
 return [
     'default' => 'mysql',
@@ -17,13 +17,13 @@ return [
             'driver'    => 'mysql',
             'host'      => getenv('DB_HOST') ?: '127.0.0.1',
             'port'      => getenv('DB_PORT') ?: '3306',
-            'database'  => getenv('DB_DATABASE') ?: 'cloud_platform',
+            'database'  => getenv('DB_DATABASE') ?: 'cloud',
             'username'  => getenv('DB_USERNAME') ?: 'root',
             'password'  => getenv('DB_PASSWORD') ?: '',
             'charset'   => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
-            // 模型 $table 已内嵌 wa_ 前缀（如 wa_admins），连接前缀必须为空，否则双重前缀
-            'prefix'    => '',
+            // 模型 $table 内嵌 wa_ 前缀（如 wa_admins）+ 连接前缀 cloud_ = cloud_wa_admins（与 install.sql 一致）
+            'prefix'    => getenv('DB_PREFIX') ?: 'cloud_',
             'strict'    => true,
             'engine'    => null,
             'options'   => [

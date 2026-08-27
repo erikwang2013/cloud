@@ -22,7 +22,7 @@ return [
             'auth' => env('REDIS_PASSWORD', ''),
             'timeout' => 2,
             'database' => 0,
-            'prefix' => 'admin_session_',
+            'prefix' => 'cloud:admin_session_',
         ],
     ],
     'session_name' => 'PHPSID',

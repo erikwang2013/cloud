@@ -28,7 +28,7 @@ return [
             ],
 
             'port'      => getenv('DB_PORT') ?: '3306',
-            'database'  => getenv('DB_DATABASE') ?: 'cloud_platform',
+            'database'  => getenv('DB_DATABASE') ?: 'cloud',
             'username'  => getenv('DB_USERNAME') ?: 'app_user',
             'password'  => getenv('DB_PASSWORD') ?: '',
 
@@ -40,7 +40,7 @@ return [
             'collation' => 'utf8mb4_unicode_ci',
 
             // 表前缀
-            'prefix'    => '',
+            'prefix'    => getenv('DB_PREFIX') ?: 'cloud_',
 
             // strict=true 时 MySQL 严格模式，防止数据截断和隐式类型转换
             'strict'    => true,
@@ -58,7 +58,7 @@ return [
             'driver'    => 'mysql',
             'host'      => getenv('AUDIT_DB_HOST') ?: '127.0.0.1',
             'port'      => getenv('AUDIT_DB_PORT') ?: '3306',
-            'database'  => getenv('AUDIT_DB_DATABASE') ?: 'cloud_platform_audit',
+            'database'  => getenv('AUDIT_DB_DATABASE') ?: 'cloud_audit',
             'username'  => getenv('AUDIT_DB_USERNAME') ?: 'app_user',
             'password'  => getenv('AUDIT_DB_PASSWORD') ?: '',
             'charset'   => 'utf8mb4',

@@ -47,7 +47,7 @@ class TableController extends Base
     public function view(Request $request): Response
     {
         $table = $request->get('table');
-        $table = Util::filterAlphaNum($table);
+        $table = Util::table(Util::filterAlphaNum($table));
         $form = Layui::buildForm($table, 'search');
         $table_info = Util::getSchema($table, 'table');
         $primary_key = $table_info['primary_key'][0] ?? null;
@@ -86,7 +86,7 @@ class TableController extends Base
             $table_names = array_column($tables, 'TABLE_NAME');
             $table_rows_count = [];
             foreach ($table_names as $table_name) {
-                $table_rows_count[$table_name] = Util::db()->table($table_name)->count();
+                $table_rows_count[$table_name] = Util::db()->table(Util::table($table_name))->count();
             }
             foreach ($tables as $key => $table) {
                 $tables[$key]->TABLE_ROWS = $table_rows_count[$table->TABLE_NAME] ?? $table->TABLE_ROWS;
@@ -108,7 +108,7 @@ class TableController extends Base
             return raw_view('table/create', []);
         }
         $data = $request->post();
-        $table_name = Util::filterAlphaNum($data['table']);
+        $table_name = Util::table(Util::filterAlphaNum($data['table']));
         $table_comment = Util::pdoQuote($data['table_comment']);
         $columns = $data['columns'];
         $forms = $data['forms'];
@@ -171,7 +171,7 @@ class TableController extends Base
             $table->engine = 'InnoDB';
         });
 
-        Util::db()->statement("ALTER TABLE `$table_name` COMMENT $table_comment");
+        Util::db()->statement("ALTER TABLE `" . Util::tableRaw($table_name) . "` COMMENT $table_comment");
 
         // 索引
         Util::schema()->table($table_name, function (Blueprint $table) use ($keys) {
@@ -191,7 +191,7 @@ class TableController extends Base
             $form_schema_map[$item['field']] = $item;
         }
         $form_schema_map = json_encode($form_schema_map, JSON_UNESCAPED_UNICODE);
-        $this->updateSchemaOption($table_name, $form_schema_map);
+        $this->updateSchemaOption(Util::tableRaw($table_name), $form_schema_map);
         return $this->json(0, 'ok');
     }
 
@@ -207,8 +207,8 @@ class TableController extends Base
             return raw_view('table/modify', ['table' => $request->get('table')]);
         }
         $data = $request->post();
-        $old_table_name = Util::filterAlphaNum($data['old_table']);
-        $table_name = Util::filterAlphaNum($data['table']);
+        $old_table_name = Util::table(Util::filterAlphaNum($data['old_table']));
+        $table_name = Util::table(Util::filterAlphaNum($data['table']));
         $table_comment = $data['table_comment'];
         $columns = $data['columns'];
         $forms = $data['forms'];
@@ -300,7 +300,7 @@ class TableController extends Base
         $table = Util::getSchema($table_name, 'table');
         if ($table_comment !== $table['comment']) {
             $table_comment = Util::pdoQuote($table_comment);
-            Util::db()->statement("ALTER TABLE `$table_name` COMMENT $table_comment");
+            Util::db()->statement("ALTER TABLE `" . Util::tableRaw($table_name) . "` COMMENT $table_comment");
         }
 
         $old_columns = Util::getSchema($table_name, 'columns');
@@ -327,7 +327,7 @@ class TableController extends Base
         $drop_column_names = array_diff($old_columns_names, $exists_column_names);
         $drop_column_names = Util::filterAlphaNum($drop_column_names);
         foreach ($drop_column_names as $drop_column_name) {
-            Util::db()->statement("ALTER TABLE `$table_name` DROP COLUMN `$drop_column_name`");
+            Util::db()->statement("ALTER TABLE `" . Util::tableRaw($table_name) . "` DROP COLUMN `$drop_column_name`");
         }
 
         $old_keys = Util::getSchema($table_name, 'keys');
@@ -369,11 +369,11 @@ class TableController extends Base
         // 变更主键
         if ($old_primary_key != $primary_key) {
             if ($old_primary_key) {
-                Util::db()->statement("ALTER TABLE `$table_name` DROP PRIMARY KEY");
+                Util::db()->statement("ALTER TABLE `" . Util::tableRaw($table_name) . "` DROP PRIMARY KEY");
             }
             if ($primary_key) {
                 $primary_key = Util::filterAlphaNum($primary_key);
-                Util::db()->statement("ALTER TABLE `$table_name` ADD PRIMARY KEY(`$primary_key`)");
+                Util::db()->statement("ALTER TABLE `" . Util::tableRaw($table_name) . "` ADD PRIMARY KEY(`$primary_key`)");
             }
         }
 
@@ -401,7 +401,7 @@ class TableController extends Base
      */
     public function crud(Request $request): Response
     {
-        $table_name = $request->input('table');
+        $table_name = Util::table(Util::filterAlphaNum($request->input('table', '')));
         Util::checkTableName($table_name);
         $prefix = 'wa_';
         $table_basename = strpos($table_name, $prefix) === 0 ? substr($table_name, strlen($prefix)) : $table_name;
@@ -575,7 +575,7 @@ class TableController extends Base
         try {
             $database = config('database.connections')['mysql']['database'];
             //plugin.admin.mysql
-            foreach (Util::db()->select("select COLUMN_NAME,DATA_TYPE,COLUMN_KEY,COLUMN_COMMENT from INFORMATION_SCHEMA.COLUMNS where table_name = '$table' and table_schema = '$database' order by ORDINAL_POSITION") as $item) {
+            foreach (Util::db()->select("select COLUMN_NAME,DATA_TYPE,COLUMN_KEY,COLUMN_COMMENT from INFORMATION_SCHEMA.COLUMNS where table_name = '" . Util::tableRaw($table) . "' and table_schema = '$database' order by ORDINAL_POSITION") as $item) {
                 if ($item->COLUMN_KEY === 'PRI') {
                     $pk = $item->COLUMN_NAME;
                     $item->COLUMN_COMMENT .= '(主键)';
@@ -1260,11 +1260,11 @@ EOF;
         $page = $request->get('page', 1);
         $field = $request->get('field');
         $order = $request->get('order', 'asc');
-        $table = Util::filterAlphaNum($request->get('table', ''));
+        $table = Util::table(Util::filterAlphaNum($request->get('table', '')));
         $format = $request->get('format', 'normal');
         $limit = $request->get('limit', $format === 'tree' ? 5000 : 10);
 
-        $allow_column = Util::db()->select("desc `$table`");
+        $allow_column = Util::db()->select("desc `" . Util::tableRaw($table) . "`");
         if (!$allow_column) {
             return $this->json(2, '表不存在');
         }
@@ -1335,9 +1335,9 @@ EOF;
                 'table' => $table
             ]);
         }
-        $table = Util::filterAlphaNum($request->input('table', ''));
+        $table = Util::table(Util::filterAlphaNum($request->input('table', '')));
         $data = $request->post();
-        $allow_column = Util::db()->select("desc `$table`");
+        $allow_column = Util::db()->select("desc `" . Util::tableRaw($table) . "`");
         if (!$allow_column) {
             throw new BusinessException('表不存在', 2);
         }
@@ -1403,7 +1403,7 @@ EOF;
         $primary_key = $primary_keys[0];
         $value = $request->post($primary_key);
         $data = $request->post();
-        $allow_column = Util::db()->select("desc `$table`");
+        $allow_column = Util::db()->select("desc `" . Util::tableRaw($table) . "`");
         if (!$allow_column) {
             throw new BusinessException('表不存在', 2);
         }
@@ -1468,7 +1468,9 @@ EOF;
      */
     public function drop(Request $request): Response
     {
-        $tables = $request->post('tables');
+        $tables = array_map(function ($table) {
+            return Util::table(Util::filterAlphaNum($table));
+        }, (array)$request->post('tables'));
         if (!$tables) {
             return $this->json(0, 'not found');
         }
@@ -1480,7 +1482,7 @@ EOF;
         foreach ($tables as $table) {
             Util::schema()->drop($table);
             // 删除schema
-            Util::db()->table('wa_options')->where('name', "table_form_schema_$table")->delete();
+            Util::db()->table('wa_options')->where('name', "table_form_schema_" . Util::tableRaw($table))->delete();
         }
         return $this->json(0, 'ok');
     }
@@ -1582,9 +1584,9 @@ EOF;
         }
 
         if ($old_field && $old_field !== $field) {
-            $sql = "ALTER TABLE `$table` CHANGE COLUMN `$old_field` `$field` ";
+            $sql = "ALTER TABLE `" . Util::tableRaw($table) . "` CHANGE COLUMN `$old_field` `$field` ";
         } else {
-            $sql = "ALTER TABLE `$table` MODIFY `$field` ";
+            $sql = "ALTER TABLE `" . Util::tableRaw($table) . "` MODIFY `$field` ";
         }
 
         if (stripos($method, 'integer') !== false) {
@@ -1658,11 +1660,11 @@ EOF;
      */
     public function export(Request $request): Response
     {
-        $table = Util::filterAlphaNum($request->get('table', ''));
+        $table = Util::table(Util::filterAlphaNum($request->get('table', '')));
         $field = $request->get('field');
         $order = $request->get('order', 'asc');
 
-        $allow_column = Util::db()->select("desc `$table`");
+        $allow_column = Util::db()->select("desc `" . Util::tableRaw($table) . "`");
         if (!$allow_column) {
             return $this->json(2, '表不存在');
         }

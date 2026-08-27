@@ -132,6 +132,30 @@ class Util
     }
 
     /**
+     * 将请求提供的表名归一化为不带连接前缀的短名（已带则剥离，供查询/结构构建器使用，构建器会自动补前缀）
+     */
+    public static function table(?string $name): string
+    {
+        if (empty($name)) {
+            return (string)$name;
+        }
+        $prefix = config('database.connections')['mysql']['prefix'] ?? '';
+        return $prefix && strpos($name, $prefix) === 0 ? substr($name, strlen($prefix)) : $name;
+    }
+
+    /**
+     * 将表名归一化为带连接前缀的物理表名（未带则补全，供裸 SQL / option key 使用）
+     */
+    public static function tableRaw(?string $name): string
+    {
+        if (empty($name)) {
+            return (string)$name;
+        }
+        $prefix = config('database.connections')['mysql']['prefix'] ?? '';
+        return $prefix && strpos($name, $prefix) !== 0 ? $prefix . $name : $name;
+    }
+
+    /**
      * 变量或数组中的元素只能是字母数字下划线组合
      * @param $var
      * @return mixed
@@ -387,6 +411,7 @@ class Util
     public static function getSchema($table, $section = null)
     {
         Util::checkTableName($table);
+        $table = Util::tableRaw($table);
         $database = config('database.connections')['mysql']['database'];
         $schema_raw = $section !== 'table' ? Util::db()->select("select * from information_schema.COLUMNS where TABLE_SCHEMA = '$database' and table_name = '$table' order by ORDINAL_POSITION") : [];
         $forms = [];
