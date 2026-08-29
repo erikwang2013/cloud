@@ -34,6 +34,9 @@
 | GET/POST | `/api/resources` | 내 리소스 |
 | GET | `/api/resources/{id}/status` | 리소스 상태 |
 | GET | `/api/resources/{id}/console` | VNC 콘솔 링크 |
+| GET/POST | `/api/cdn/domains` | CDN 도메인 목록 / 생성（cloudflare \| cloudfront \| aliyun \| tencent） |
+| GET/DELETE | `/api/cdn/domains/{id}` | CDN 도메인 상세 / 삭제 |
+| POST | `/api/cdn/domains/{id}/purge` | 캐시 삭제（멱등, 최대 100개 URL） |
 | GET/POST | `/api/tickets` | 티켓 |
 | POST | `/api/tickets/{id}/reply` | 티켓 답변 |
 | GET/POST | `/api/dns/{domain}` | DNS 관리 |
@@ -59,6 +62,8 @@
 | GET | `/admin/api/suppliers/export` | 공급업체 내보내기 (.xlsx) |
 | GET/PUT | `/admin/api/payments/*` | 결제 채널 / 거래 / 대사 |
 | GET/POST | `/admin/api/provisioning/*` | 인도 작업 / 호스트 관리 |
+| GET/PUT | `/admin/api/cdn/domains` | CDN 도메인 관리（패키지 변경） |
+| GET/POST/PUT/DELETE | `/admin/api/providers` | 서비스 제공업체 계정 자격 증명 관리（CDN/인도 공용, Encryptable 암호화） |
 | GET/POST | `/admin/api/suppliers/*` | 공급업체 승인 / 정산 / 출금 |
 | GET/POST | `/admin/api/tickets` | 티켓 배정 / 종결 |
 | GET | `/admin/api/reports/*` | 매출 / 지역 / 공급업체 리포트 |

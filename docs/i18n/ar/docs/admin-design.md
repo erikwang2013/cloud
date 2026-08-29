@@ -424,6 +424,7 @@ public function export(Request $request): Response
 | المدفوعات | `GET /payments/channels`، `PUT /payments/channels/{id}`، `GET /payments/transactions`، `/reconcile` | `Admin\PaymentController` |
 | التوفير (Provisioning) | `GET /provisioning/tasks`، `POST /tasks/{id}/retry`، `POST /resources/{id}/upgrade`، `/destroy`، `GET /hosts` | `Provisioning\TaskController` |
 | واجهات المزود | `GET /providers`، `POST /providers`، `PUT /providers/{id}`، `DELETE /providers/{id}` | `Admin\ProviderApiController` |
+| CDN | `GET /cdn/domains`، `PUT /cdn/domains/{id}` | `Admin\CdnController` |
 | الموردون | `GET /suppliers`، `/suppliers/export`، `POST /suppliers/{id}/approve`، `/settle`، `/withdraws/{id}/approve` | `Admin\SupplierController` |
 | مفاتيح API للموردين | `GET /suppliers/{id}/api-keys`، `POST /suppliers/{id}/api-keys`، `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
 | التذاكر | `GET /tickets`، `POST /tickets/{id}/assign`، `/close` | `Ticket\TicketController` |
@@ -436,6 +437,24 @@ public function export(Request $request): Response
 | المراقبة | `GET /monitor/dashboard`، `/resources/{id}` | `Monitor\MonitorController` |
 | التدقيق | `GET /audit-logs` | `Admin\SystemController` |
 | إعدادات النظام | `PUT /system/config` | `Admin\SystemController` |
+
+### إدارة موارد CDN
+
+يدعم منتج CDN أربعة مزودين (Cloudflare / CloudFront / Alibaba Cloud / Tencent Cloud)، وينقسم طرف الإدارة إلى قسمين:
+
+**إعداد حسابات المزودين** (يعيد استخدام نموذج ProviderApi، `Admin\ProviderApiController`):
+
+- `GET/POST /admin/api/providers`، `PUT/DELETE /admin/api/providers/{id}`، مسبوقة بـ `RbacMiddleware('provider.config')`
+- `code` بميثاق `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`؛ حقول الاعتمادات مشفّرة عند التخزين عبر Encryptable، وعمود `config` JSON يحفظ البيانات الوصفية غير الحساسة
+- أولوية تحليل الاعتمادات في طرف المستخدم: الحساب المربوط ← حساب نشط مطابق للـ code ← env كبديل أخير؛ الحذف/purge عبر لقطة صارمة (الحساب المربوط فقط، 4003 عند الغياب/التعطيل)
+
+**إدارة نطاقات CDN** (`Admin\CdnController`):
+
+```
+GET /admin/api/cdn/domains        → جميع النطاقات (بما فيها user_id المالك)، مسبوقة بـ RbacMiddleware('cdn.manage')
+PUT /admin/api/cdn/domains/{id}   → تحديث الباقة، قائمة بيضاء للـ plan: standard | pro | enterprise،
+                                    القيم غير الصالحة تُعيد 400؛ تُكتب التغييرات في سجل التدقيق admin_cdn_update_plan
+```
 
 ### بيانات لوحة المعلومات (طبقة الخدمة)
 

@@ -424,6 +424,7 @@ All admin REST endpoints are prefixed with `/admin/api` and require `AdminRoleMi
 | Payments | `GET /payments/channels`, `PUT /payments/channels/{id}`, `GET /payments/transactions`, `/reconcile` | `Admin\PaymentController` |
 | Provisioning | `GET /provisioning/tasks`, `POST /tasks/{id}/retry`, `POST /resources/{id}/upgrade`, `/destroy`, `GET /hosts` | `Provisioning\TaskController` |
 | Provider APIs | `GET /providers`, `POST /providers`, `PUT /providers/{id}`, `DELETE /providers/{id}` | `Admin\ProviderApiController` |
+| CDN | `GET /cdn/domains`, `PUT /cdn/domains/{id}` | `Admin\CdnController` |
 | Suppliers | `GET /suppliers`, `/suppliers/export`, `POST /suppliers/{id}/approve`, `/settle`, `/withdraws/{id}/approve` | `Admin\SupplierController` |
 | Supplier API Keys | `GET /suppliers/{id}/api-keys`, `POST /suppliers/{id}/api-keys`, `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
 | Tickets | `GET /tickets`, `POST /tickets/{id}/assign`, `/close` | `Ticket\TicketController` |
@@ -436,6 +437,24 @@ All admin REST endpoints are prefixed with `/admin/api` and require `AdminRoleMi
 | Monitoring | `GET /monitor/dashboard`, `/resources/{id}` | `Monitor\MonitorController` |
 | Audit | `GET /audit-logs` | `Admin\SystemController` |
 | System Config | `PUT /system/config` | `Admin\SystemController` |
+
+### CDN 资源管理
+
+CDN 产品支持四家服务商（Cloudflare / CloudFront / 阿里云 / 腾讯云），管理端分两块：
+
+**服务商账号配置**（复用 ProviderApi 模型，`Admin\ProviderApiController`）：
+
+- `GET/POST /admin/api/providers`、`PUT/DELETE /admin/api/providers/{id}`，挂 `RbacMiddleware('provider.config')`
+- `code` 约定 `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`；凭据字段 Encryptable 加密入库，`config` JSON 列存非敏感元数据
+- 用户侧凭据解析优先级：绑定账号 → code 匹配活动账号 → env 兜底；删除/purge 走严格快照（仅用绑定账号，缺失/禁用报 4003）
+
+**CDN 域名管理**（`Admin\CdnController`）：
+
+```
+GET /admin/api/cdn/domains        → 全部域名（含所属 user_id），挂 RbacMiddleware('cdn.manage')
+PUT /admin/api/cdn/domains/{id}   → 更新套餐，plan 白名单 standard | pro | enterprise，
+                                    非法值返回 400；变更写审计日志 admin_cdn_update_plan
+```
 
 ### Dashboard Data (Service Layer)
 

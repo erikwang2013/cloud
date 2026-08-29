@@ -595,11 +595,26 @@ Redis feature:{name} (TTL ساعة، تعديل ديناميكي عبر API ال
 
 ## 16. تسريع CDN
 
-يدعم منتج CDN تكامل Cloudflare، ويمكن ربط الخوادم أو الجرافات التخزينية كمصدر في CDN، مع دعم مسح ذاكرة التخزين المؤقت.
+يدعم منتج CDN أربعة مزودين (Cloudflare / AWS CloudFront / Alibaba Cloud CDN / Tencent Cloud CDN)، ويمكن ربط الخوادم أو الجرافات التخزينية كمصدر في CDN، مع دعم مسح ذاكرة التخزين المؤقت والإعداد الاختياري لشهادات HTTPS.
 
-**الواجهة:** ProviderInterface + CachePurgeInterface (واجهة قدرة اختيارية)
+**معمارية المحولات:** محول واحد لكل مزود تحت `service/app/cdn/provider/`، وكلها تنفّذ `CdnAdapterInterface` (createDomain / configureDomain / purgeCache / disableDomain / requiresIcpRegistration)، وتوزَّع عبر `CdnAdapterFactory` حسب `provider_type`:
 
-**نموذج البيانات:** `resource_cdn`
+| provider_type | المحول | بروتوكول الربط | يتطلب تسجيل ICP |
+|---------------|--------|----------------|-----------------|
+| `cloudflare` | CloudflareAdapter | REST v4 API (مع شهادة تلقائية عبر SSL SaaS) | لا |
+| `cloudfront` | CloudFrontAdapter | aws-sdk-php (CloudFront + ACM) | لا |
+| `aliyun` | AliyunCdnAdapter | توقيع RPC | نعم |
+| `tencent` | TencentCdnAdapter | توقيع TC3 | نعم |
+
+**إعداد حسابات المزودين:** من طرف الإدارة عبر CRUD `/admin/providers` لإدارة حسابات `provider_apis` (تُشفَّر الاعتمادات عند التخزين عبر Encryptable، و`code` بميثاق `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`). أولوية تحليل الاعتمادات في طرف المستخدم: الحساب المربوط (provider_account_id) ← حساب نشط مطابق للـ code ← إعداد env كبديل أخير.
+
+**ربط اللقطة الصارم:** يُحدَّد `provider_account_id` عند إنشاء النطاق، ولا يُستخدم لاحقاً في الحذف/مسح التخزين المؤقت سوى هذا الحساب المربوط؛ عند غياب الحساب أو تعطيله يُعاد 4003 دون تبديل الحساب بصمت. تتطلب نطاقات Alibaba Cloud / Tencent Cloud تسجيل ICP، وعند غيابه يُعاد 4002 (مع حقل التنبيه `requires_icp_registration`).
+
+**مسح التخزين المؤقت:** `POST /api/cdn/domains/{id}/purge`، تُنقّى عناوين URL تلقائياً من التكرار والمسافات (بحد أقصى 100)، ولا تُقبل سوى عناوين النطاق نفسه أو النطاقات الفرعية، مع رفض أحرف البدل والعناوين الخارجية، والعملية idempotent.
+
+**الواجهة:** CdnAdapterInterface + CdnProvider (يعيد استخدام قناة ترقية ProvisionProvider، ويدعم ترقية الباقة)
+
+**نموذج البيانات:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config؛ يُستبعد المفتاح الخاص من cert_config قبل التخزين، فلا تُحفظ سوى معلومات الشهادة غير الحساسة)
 
 ## 17. الفوترة حسب الاستخدام
 

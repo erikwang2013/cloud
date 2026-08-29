@@ -34,6 +34,9 @@
 | GET/POST | `/api/resources` | Mes ressources |
 | GET | `/api/resources/{id}/status` | Statut de la ressource |
 | GET | `/api/resources/{id}/console` | Lien de console VNC |
+| GET/POST | `/api/cdn/domains` | Liste / création de domaines CDN (cloudflare \| cloudfront \| aliyun \| tencent) |
+| GET/DELETE | `/api/cdn/domains/{id}` | Détail / suppression de domaine CDN |
+| POST | `/api/cdn/domains/{id}/purge` | Purge du cache (idempotent, 100 URL maximum) |
 | GET/POST | `/api/tickets` | Tickets de support |
 | POST | `/api/tickets/{id}/reply` | Réponse au ticket |
 | GET/POST | `/api/dns/{domain}` | Gestion DNS |
@@ -59,6 +62,8 @@
 | GET | `/admin/api/suppliers/export` | Export des fournisseurs (.xlsx) |
 | GET/PUT | `/admin/api/payments/*` | Canaux de paiement / transactions / rapprochement |
 | GET/POST | `/admin/api/provisioning/*` | Tâches de livraison / gestion des hôtes |
+| GET/PUT | `/admin/api/cdn/domains` | Gestion des domaines CDN (changement de forfait) |
+| GET/POST/PUT/DELETE | `/admin/api/providers` | Gestion des identifiants de comptes fournisseurs (CDN/livraison partagés, chiffrés via Encryptable) |
 | GET/POST | `/admin/api/suppliers/*` | Approbation fournisseur / règlement / retrait |
 | GET/POST | `/admin/api/tickets` | Attribution / clôture des tickets |
 | GET | `/admin/api/reports/*` | Rapports de revenus / régionaux / fournisseurs |

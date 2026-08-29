@@ -34,6 +34,9 @@
 | GET/POST | `/api/resources` | My resources |
 | GET | `/api/resources/{id}/status` | Resource status |
 | GET | `/api/resources/{id}/console` | VNC console URL |
+| GET/POST | `/api/cdn/domains` | CDN domain list / create (cloudflare \| cloudfront \| aliyun \| tencent) |
+| GET/DELETE | `/api/cdn/domains/{id}` | CDN domain detail / delete |
+| POST | `/api/cdn/domains/{id}/purge` | Purge cache (idempotent, up to 100 URLs) |
 | GET/POST | `/api/tickets` | Support tickets |
 | POST | `/api/tickets/{id}/reply` | Reply to ticket |
 | GET/POST | `/api/dns/{domain}` | DNS management |
@@ -59,6 +62,8 @@
 | GET | `/admin/api/suppliers/export` | Export suppliers (.xlsx) |
 | GET/PUT | `/admin/api/payments/*` | Channels / transactions / reconciliation |
 | GET/POST | `/admin/api/provisioning/*` | Provisioning tasks / host management |
+| GET/PUT | `/admin/api/cdn/domains` | CDN domain management (plan changes) |
+| GET/POST/PUT/DELETE | `/admin/api/providers` | Provider account credentials (shared by CDN/provisioning, Encryptable) |
 | GET/POST | `/admin/api/suppliers/*` | Supplier approval / settlement / withdrawal |
 | GET/POST | `/admin/api/tickets` | Ticket assignment / closure |
 | GET | `/admin/api/reports/*` | Revenue / regional / supplier reports |

@@ -595,11 +595,26 @@ S3 API 호환 객체 스토리지, AWS S3 및 MinIO 자체 구축 스토리지 �
 
 ## 16. CDN 가속
 
-CDN 상품은 Cloudflare 연동을 지원하며, 서버나 스토리지 버킷을 원본 서버로 CDN에 연결할 수 있고 캐시 삭제를 지원.
+CDN 상품은 4개 서비스 제공업체（Cloudflare / AWS CloudFront / Aliyun CDN / Tencent Cloud CDN）를 지원하며, 서버나 스토리지 버킷을 원본 서버로 CDN에 연결할 수 있고 캐시 삭제와 선택적 HTTPS 인증서 구성을 지원합니다.
 
-**인터페이스:** ProviderInterface + CachePurgeInterface（선택 기능 인터페이스）
+**어댑터 아키텍처:** `service/app/cdn/provider/` 아래 서비스 제공업체별 어댑터 하나씩, `CdnAdapterInterface`（createDomain / configureDomain / purgeCache / disableDomain / requiresIcpRegistration）를 공통 구현하며 `CdnAdapterFactory`가 `provider_type`별로 라우팅:
 
-**데이터 모델:** `resource_cdn`
+| provider_type | 어댑터 | 연동 프로토콜 | ICP 비안 필요 |
+|---------------|--------|-------------|--------------|
+| `cloudflare` | CloudflareAdapter | REST v4 API（SSL SaaS 자동 인증서 포함） | 아니오 |
+| `cloudfront` | CloudFrontAdapter | aws-sdk-php（CloudFront + ACM） | 아니오 |
+| `aliyun` | AliyunCdnAdapter | RPC 서명 | 예 |
+| `tencent` | TencentCdnAdapter | TC3 서명 | 예 |
+
+**서비스 제공업체 계정 구성:** 관리 단말에서 `/admin/providers` CRUD로 `provider_apis` 계정을 유지 관리（자격 증명은 Encryptable로 암호화 저장, `code` 규약 `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`）. 사용자 측 자격 증명 해석 우선순위: 바인딩 계정（provider_account_id）→ code 일치 활성 계정 → env 구성 폴백.
+
+**엄격한 스냅샷 바인딩:** 도메인 생성 시 `provider_account_id`를 확정하고, 이후 삭제/캐시 삭제는 바인딩된 계정만 사용; 계정이 없거나 비활성이면 4003 반환, 계정을 조용히 전환하지 않음. Aliyun/Tencent Cloud 도메인은 ICP 비안 필요, 미비안 시 4002 반환（`requires_icp_registration` 안내 포함）.
+
+**캐시 삭제:** `POST /api/cdn/domains/{id}/purge`, URL 자동 중복 제거 및 공백 제거（최대 100개）, 해당 도메인/하위 도메인만 허용, 와일드카드와 외부 URL 거부, 멱등.
+
+**인터페이스:** CdnAdapterInterface + CdnProvider（ProvisionProvider 업그레이드 채널 재사용, 패키지 업그레이드 지원）
+
+**데이터 모델:** `resource_cdn`（provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; cert_config는 저장 전 개인 키 제거, 비민감 인증서 정보만 저장）
 
 ## 17. 사용량 과금
 

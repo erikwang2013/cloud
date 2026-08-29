@@ -147,6 +147,26 @@ common/
 └── webhook/             # Distribuidor de eventos Webhook
 ```
 
+### 2.4 Módulo CDN
+
+El módulo CDN a nivel de producto (`service/app/cdn/`) conecta cuatro proveedores mediante el patrón de adaptadores, usando servidores o buckets como origen del CDN:
+
+```
+CdnAdapterInterface
+  ├── CloudflareAdapter   REST v4 (certificado automático SSL SaaS), sin registro ICP
+  ├── CloudFrontAdapter   aws-sdk-php (CloudFront + ACM), sin registro ICP
+  ├── AliyunCdnAdapter    Firma RPC, requiere registro ICP
+  └── TencentCdnAdapter   Firma TC3, requiere registro ICP
+         ▲
+CdnAdapterFactory.resolve(type, accountId, strict)
+  ① cuenta vinculada (provider_account_id) → ② cuenta activa code=cdn-{type} → ③ respaldo env
+  strict=true (eliminación/purga): solo la cuenta vinculada; si falta, devuelve 4003 sin cambio silencioso
+```
+
+**Gestión de cuentas:** reutiliza el modelo `provider_apis` (credenciales cifradas con Encryptable), CRUD en `/admin/providers` desde el panel de administración (RbacMiddleware), `code` convencional `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, credenciales env degradadas a fallback.
+
+**Modelo de datos:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; la clave privada se elimina de cert_config antes de guardarla). Aislamiento de permisos: los recursos CDN pasan la comprobación de propiedad vía `resource.user_id`; los que no son del usuario devuelven 404 uniformemente.
+
 ---
 
 ## 3. Pipeline de ejecución de middlewares
@@ -399,9 +419,9 @@ Accept-Language: zh-CN,zh;q=0.9
                     Internet
                         │
                ┌────────┴────────┐
-               │  Cloudflare CDN │
-               │  DDoS / Bot     │
-               └────────┬────────┘
+               │  Cloudflare CDN │  ← Protección perimetral propia de la plataforma (DDoS/Bot),
+               │  DDoS / Bot     │    sin relación con el módulo CDN de producto (cuatro
+               └────────┬────────┘    proveedores, ver §2.4)
                         │
                ┌────────┴────────┐
                │  Nginx × 2      │

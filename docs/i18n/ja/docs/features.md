@@ -598,11 +598,26 @@ S3 API 互換のオブジェクトストレージで、AWS S3 と MinIO 自建�
 
 ## 16. CDN 高速化
 
-CDN 製品は Cloudflare 統合に対応し、サーバーまたはストレージバケットをオリジンとして CDN に接続でき、キャッシュパージをサポートする。
+CDN 製品は 4 社のプロバイダー（Cloudflare / AWS CloudFront / Aliyun CDN / Tencent CDN）に対応し、サーバーまたはストレージバケットをオリジンとして CDN に接続でき、キャッシュパージとオプションの HTTPS 証明書設定をサポートする。
 
-**インターフェース：** ProviderInterface + CachePurgeInterface（オプション能力インターフェース）
+**アダプターアーキテクチャ：** `service/app/cdn/provider/` 配下にプロバイダーごとのアダプターがあり、共通で `CdnAdapterInterface`（createDomain / configureDomain / purgeCache / disableDomain / requiresIcpRegistration）を実装し、`CdnAdapterFactory` が `provider_type` に応じてディスパッチする：
 
-**データモデル：** `resource_cdn`
+| provider_type | アダプター | 接続プロトコル | ICP 登録が必要 |
+|---------------|-----------|--------------|--------------|
+| `cloudflare` | CloudflareAdapter | REST v4 API（SSL SaaS 自動証明書含む） | いいえ |
+| `cloudfront` | CloudFrontAdapter | aws-sdk-php（CloudFront + ACM） | いいえ |
+| `aliyun` | AliyunCdnAdapter | RPC 署名 | はい |
+| `tencent` | TencentCdnAdapter | TC3 署名 | はい |
+
+**プロバイダーアカウント設定：** 管理側の `/admin/providers` CRUD で `provider_apis` アカウントを管理する（資格情報は Encryptable で暗号化して保存、`code` は `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent` と規定）。ユーザー側の資格情報解決順序：バインドアカウント（provider_account_id）→ code 一致のアクティブアカウント → env 設定のフォールバック。
+
+**厳格なスナップショットバインド：** ドメイン作成時に `provider_account_id` を確定し、以降の削除/キャッシュパージはそのバインドアカウントのみを使用。アカウント欠落・無効時は 4003 を返し、アカウントを静かに切り替えない。Aliyun/Tencent ドメインは ICP 登録が必要で、未登録の場合は 4002 を返す（`requires_icp_registration` ヒントを含む）。
+
+**キャッシュパージ：** `POST /api/cdn/domains/{id}/purge`、URL は自動的に重複・空白を除去（最大 100 個）、自ドメインまたはサブドメインのみ許可し、ワイルドカードと外部 URL は拒否、冪等。
+
+**インターフェース：** CdnAdapterInterface + CdnProvider（ProvisionProvider のアップグレードチャネルを再利用、プランアップグレード対応）
+
+**データモデル：** `resource_cdn`（provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config；cert_config は保存前に秘密鍵を除去し、非機密の証明書情報のみ保存）
 
 ## 17. 従量課金
 

@@ -794,23 +794,50 @@ GET /api/storage/buckets/{id}/credentials
 GET /api/cdn/domains
   → 自分の CDN ドメインリスト（オリジン、ステータス、プラン）
 
+POST /api/cdn/domains
+  ボディ: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
+            origin_type (server|storage), origin_value, cert_config? }
+  → CDN ドメイン作成（プロバイダー側で作成しオリジンをバインド）
+  → provider_type=aliyun|tencent の場合は ICP 登録が必要（未登録は 4002）
+  → レスポンスに requires_icp_registration ヒントフィールドを含む
+  → 資格情報の解決：まずドメインにバインドされたアカウント（provider_account_id）、
+    なければ code=cdn-{provider_type} のアクティブな provider_apis アカウント、
+    いずれもなければ env 設定にフォールバック
+
 GET /api/cdn/domains/{id}
   → CDN ドメイン詳細
 
+DELETE /api/cdn/domains/{id}
+  → CDN ドメイン削除（プロバイダー側ドメインを無効化、冪等）
+
 POST /api/cdn/domains/{id}/purge
-  → キャッシュ削除（全サイトまたは指定 URL リスト）
+  ボディ: { urls: ["https://cdn.example.com/path"] }
+  → キャッシュ削除（重複 URL は自動的に除去、冪等、最大 100 個）
 
 GET /api/cdn/domains/{id}/stats
-  パラメータ: range (day/week/month)
-  → トラフィック/リクエスト数/ヒット率統計
+  → ドメイン概要（cdn_domain / provider_type / plan / status / purged_at）
 ```
 
 ### 管理端
 
 ```
-GET /admin/api/cdn/domains            → 全 CDN ドメイン
-PUT /admin/api/cdn/domains/{id}       → ドメインプラン/設定の更新
+GET /admin/api/cdn/domains            → 全 CDN ドメイン（所属ユーザー含む）
+PUT /admin/api/cdn/domains/{id}       → ドメインプラン更新（plan ホワイトリスト: standard | pro | enterprise）
 ```
+
+管理側の CDN ルートは `RbacMiddleware('cdn.manage')` を適用し、プラン変更は監査ログに記録される（`admin_cdn_update_plan`）。プロバイダーアカウントの資格情報は `/admin/api/providers` CRUD で管理する（RbacMiddleware `provider.config`、`code` は `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent` と規定、資格情報は Encryptable で暗号化して保存）。
+
+### CDN エラーコード
+
+| code | 説明 |
+|------|------|
+| 4001 | CDN パラメータ欠落/不正（urls が空、provider_type が不正、ドメイン形式エラー） |
+| 4002 | ドメインが ICP 登録未完了（Aliyun/Tencent API が拒否した場合にマッピング） |
+| 4003 | CDN プロバイダー資格情報が未設定（アカウント欠落/無効、厳格スナップショットにより静かに切り替えない） |
+| 4005 | CDN キャッシュパージ失敗 |
+| 5001 | CDN プロバイダー API 呼び出し失敗 |
+
+> 非自ユーザーの CDN リソース（他人の/存在しないリソース）は一律 **404** を返す（findOrFail マッピング、リソースの存在性を漏らさない）、独立したビジネスコードはなし。
 
 ---
 

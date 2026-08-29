@@ -794,23 +794,49 @@ GET /api/storage/buckets/{id}/credentials
 GET /api/cdn/domains
   → 내 CDN 도메인 목록（원본 서버, 상태, 패키지）
 
+POST /api/cdn/domains
+  본문: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
+          origin_type (server|storage), origin_value, cert_config? }
+  → CDN 도메인 생성（서비스 제공업체 측에서 생성 후 원본 서버 바인딩）
+  → provider_type=aliyun|tencent인 경우 도메인은 ICP 비안 완료 필요（미비안 시 4002 반환）
+  → 응답에 requires_icp_registration 안내 필드 포함
+  → 자격 증명 해석: 해당 도메인의 바인딩 계정（provider_account_id） 우선, 없으면 code=cdn-{provider_type}의
+    활성 provider_apis 계정, 모두 없으면 env 구성 폴백
+
 GET /api/cdn/domains/{id}
   → CDN 도메인 상세
 
+DELETE /api/cdn/domains/{id}
+  → CDN 도메인 삭제（서비스 제공업체 측 도메인 비활성화, 멱등）
+
 POST /api/cdn/domains/{id}/purge
-  → 캐시 삭제（전체 사이트 또는 지정 URL 목록）
+  본문: { urls: ["https://cdn.example.com/path"] }
+  → 캐시 삭제（중복 URL 자동 제거, 멱등; 최대 100개）
 
 GET /api/cdn/domains/{id}/stats
-   파라미터: range (day/week/month)
-  → 트래픽/요청 수/히트율 통계
+  → 도메인 개요（cdn_domain / provider_type / plan / status / purged_at）
 ```
 
 ### 관리 단말
 
 ```
-GET /admin/api/cdn/domains            → 전체 CDN 도메인
-PUT /admin/api/cdn/domains/{id}       → 도메인 패키지/구성 업데이트
+GET /admin/api/cdn/domains            → 전체 CDN 도메인（소속 사용자 포함）
+PUT /admin/api/cdn/domains/{id}       → 도메인 패키지 업데이트（plan 화이트리스트: standard | pro | enterprise）
 ```
+
+관리 단말 CDN 라우트는 `RbacMiddleware('cdn.manage')`가 적용되고, 패키지 변경은 감사 로그（`admin_cdn_update_plan`）에 기록됩니다. 서비스 제공업체 계정 자격 증명은 `/admin/api/providers` CRUD로 유지 관리（RbacMiddleware `provider.config`, `code` 규약 `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, 자격 증명은 Encryptable로 암호화 저장）.
+
+### CDN 오류 코드
+
+| code | 설명 |
+|------|------|
+| 4001 | CDN 파라미터 누락/무효（urls 비어 있음, provider_type 무효, 도메인 형식 오류） |
+| 4002 | 도메인 ICP 비안 미완료（Aliyun/Tencent Cloud API 거부 시 매핑） |
+| 4003 | CDN 서비스 제공업체 자격 증명 미구성（계정 없음/비활성, 엄격한 스냅샷으로 조용한 전환 없음） |
+| 4005 | CDN 캐시 갱신 실패 |
+| 5001 | CDN 서비스 제공업체 API 호출 실패 |
+
+> 다른 사용자의 CDN 리소스（타인/존재하지 않는 리소스）는 일괄 **404** 반환（findOrFail 매핑, 리소스 존재성 노출 안 함）, 별도 비즈니스 코드 없음.
 
 ---
 

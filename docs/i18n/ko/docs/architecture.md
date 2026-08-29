@@ -140,6 +140,26 @@ common/
 └── webhook/             # Webhook 이벤트 디스패처
 ```
 
+### 2.4 CDN 모듈
+
+제품급 CDN 모듈（`service/app/cdn/`）은 어댑터 패턴으로 4개 서비스 제공업체에 연동하며, 서버나 스토리지 버킷을 원본 서버로 CDN에 연결합니다:
+
+```
+CdnAdapterInterface
+  ├── CloudflareAdapter   REST v4（SSL SaaS 자동 인증서）, ICP 비안 불필요
+  ├── CloudFrontAdapter   aws-sdk-php（CloudFront + ACM）, ICP 비안 불필요
+  ├── AliyunCdnAdapter    RPC 서명, ICP 비안 필요
+  └── TencentCdnAdapter   TC3 서명, ICP 비안 필요
+         ▲
+CdnAdapterFactory.resolve(type, accountId, strict)
+  ① 바인딩 계정 (provider_account_id) → ② code=cdn-{type} 활성 계정 → ③ env 폴백
+  strict=true（삭제/purge）: 바인딩 계정만 사용, 누락 시 4003, 조용한 전환 없음
+```
+
+**계정 관리:** `provider_apis` 모델 재사용（자격 증명 Encryptable로 암호화 저장）, 관리 단말 `/admin/providers` CRUD（RbacMiddleware）, `code` 규약 `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, env 자격 증명은 fallback으로 강등.
+
+**데이터 모델:** `resource_cdn`（provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; cert_config는 저장 전 개인 키 제거）. 권한 격리: CDN 리소스는 `resource.user_id` 귀속 검증을 거치며, 다른 사용자의 리소스는 일괄 404.
+
 ---
 
 ## 3. 미들웨어 실행 파이프라인
@@ -386,9 +406,9 @@ Accept-Language: zh-CN,zh;q=0.9
                     Internet
                         │
                ┌────────┴────────┐
-               │  Cloudflare CDN │
-               │  DDoS / Bot     │
-               └────────┬────────┘
+               │  Cloudflare CDN │  ← 플랫폼 자체 엣지 보호（DDoS/Bot）,
+               │  DDoS / Bot     │    제품급 CDN 모듈（4개 서비스 제공업체,
+               └────────┬────────┘    §2.4 참조）과 무관
                         │
                ┌────────┴────────┐
                │  Nginx × 2      │

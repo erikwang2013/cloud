@@ -141,6 +141,26 @@ common/
 └── webhook/             # موزع أحداث Webhook
 ```
 
+### 2.4 وحدة CDN
+
+وحدة CDN على مستوى المنتج (`service/app/cdn/`) تتعامل مع أربعة مزودين عبر نمط المحولات، لربط الخوادم أو الجرافات التخزينية كمصدر في CDN:
+
+```
+CdnAdapterInterface
+  ├── CloudflareAdapter   REST v4 (شهادة تلقائية عبر SSL SaaS)، بدون تسجيل ICP
+  ├── CloudFrontAdapter   aws-sdk-php (CloudFront + ACM)، بدون تسجيل ICP
+  ├── AliyunCdnAdapter    توقيع RPC، يتطلب تسجيل ICP
+  └── TencentCdnAdapter   توقيع TC3، يتطلب تسجيل ICP
+         ▲
+CdnAdapterFactory.resolve(type, accountId, strict)
+  ① الحساب المربوط (provider_account_id) → ② حساب نشط حسب code=cdn-{type} → ③ env كبديل أخير
+  strict=true (حذف/purge): استخدام الحساب المربوط فقط، 4003 عند غيابه، دون تبديل بصمت
+```
+
+**إدارة الحسابات:** إعادة استخدام نموذج `provider_apis` (الاعتمادات مشفّرة عبر Encryptable عند التخزين)، CRUD من الإدارة عبر `/admin/providers` (RbacMiddleware)، `code` بميثاق `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`، وتُعامل اعتمادات env كبديل fallback.
+
+**نموذج البيانات:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config؛ يُستبعد المفتاح الخاص من cert_config قبل التخزين). عزل الصلاحيات: تُتحقق موارد CDN من الملكية عبر `resource.user_id`، وأي مورد ليس ملك المستخدم يُعيد 404 موحّداً.
+
 ---
 
 ## 3. خط أنابيب تنفيذ الوسائط
@@ -387,9 +407,9 @@ Accept-Language: zh-CN,zh;q=0.9
                     Internet
                         │
                ┌────────┴────────┐
-               │  Cloudflare CDN │
-               │  DDoS / Bot     │
-               └────────┬────────┘
+               │  Cloudflare CDN │  ← حماية طرفية للمنصة نفسها (DDoS/Bot)،
+               │  DDoS / Bot     │     لا علاقة لها بوحدة CDN على مستوى
+               └────────┬────────┘     المنتج (أربعة مزودين، انظر §2.4)
                         │
                ┌────────┴────────┐
                │  Nginx × 2      │

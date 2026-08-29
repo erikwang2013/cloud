@@ -140,6 +140,26 @@ common/
 └── webhook/             # Webhook इवेंट डिस्पैचर
 ```
 
+### 2.4 CDN मॉड्यूल
+
+प्रोडक्ट-स्तरीय CDN मॉड्यूल (`service/app/cdn/`) एडेप्टर पैटर्न के माध्यम से चार सेवाप्रदाताओं से जुड़ता है, सर्वर या स्टोरेज बकेट को CDN के लिए ओरिजिन के रूप में जोड़ा जाता है:
+
+```
+CdnAdapterInterface
+  ├── CloudflareAdapter   REST v4 (SSL SaaS स्वचालित प्रमाणपत्र), ICP पंजीकरण आवश्यक नहीं
+  ├── CloudFrontAdapter   aws-sdk-php (CloudFront + ACM), ICP पंजीकरण आवश्यक नहीं
+  ├── AliyunCdnAdapter    RPC सिग्नेचर, ICP पंजीकरण आवश्यक
+  └── TencentCdnAdapter   TC3 सिग्नेचर, ICP पंजीकरण आवश्यक
+         ▲
+CdnAdapterFactory.resolve(type, accountId, strict)
+  ① बाउंड खाता (provider_account_id) → ② code=cdn-{type} सक्रिय खाता → ③ env फ़ॉलबैक
+  strict=true (डिलीट/purge): केवल बाउंड खाता, अनुपस्थित होने पर 4003, चुपचाप स्विच नहीं
+```
+
+**खाता प्रबंधन:** `provider_apis` मॉडल का पुन: उपयोग (क्रेडेंशियल Encryptable एन्क्रिप्शन के साथ संग्रहीत), एडमिन `/admin/providers` CRUD (RbacMiddleware), `code` कन्वेंशन `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, env क्रेडेंशियल फ़ॉलबैक के रूप में।
+
+**डेटा मॉडल:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; cert_config संग्रहीत करने से पहले निजी कुंजी हटाई जाती है)। अनुमति अलगाव: CDN संसाधन `resource.user_id` स्वामित्व जाँच से गुजरते हैं, गैर-स्वामित्व वाले के लिए समान रूप से 404।
+
 ---
 
 ## 3. मिडलवेयर निष्पादन पाइपलाइन
@@ -386,9 +406,9 @@ Accept-Language: zh-CN,zh;q=0.9
                     Internet
                         │
                ┌────────┴────────┐
-               │  Cloudflare CDN │
-               │  DDoS / Bot     │
-               └────────┬────────┘
+               │  Cloudflare CDN │  ← प्लेटफ़ॉर्म का अपना एज सुरक्षा (DDoS/Bot),
+               │  DDoS / Bot     │    प्रोडक्ट-स्तरीय CDN मॉड्यूल (चार सेवाप्रदाता,
+               └────────┬────────┘    §2.4 देखें) से असंबंधित
                         │
                ┌────────┴────────┐
                │  Nginx × 2      │

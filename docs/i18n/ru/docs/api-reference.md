@@ -805,25 +805,52 @@ GET /api/storage/buckets/{id}/credentials
 
 ```
 GET /api/cdn/domains
-  → 我的 CDN 域名列表（源站、状态、套餐）
+  → список моих CDN-доменов (origin, статус, тариф)
+
+POST /api/cdn/domains
+  тело: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
+          origin_type (server|storage), origin_value, cert_config? }
+  → создание CDN-домена (создание и привязка origin на стороне провайдера)
+  → для provider_type=aliyun|tencent домен должен пройти ICP-регистрацию (иначе 4002)
+  → в ответе есть поле-подсказка requires_icp_registration
+  → разрешение учётных данных: сначала привязанная запись (provider_account_id),
+    иначе активная запись provider_apis по code=cdn-{provider_type},
+    иначе конфигурация env
 
 GET /api/cdn/domains/{id}
-  → CDN 域名详情
+  → детали CDN-домена
+
+DELETE /api/cdn/domains/{id}
+  → удаление CDN-домена (отключение домена на стороне провайдера, идемпотентно)
 
 POST /api/cdn/domains/{id}/purge
-  → 清除缓存（全站或指定 URL 列表）
+  тело: { urls: ["https://cdn.example.com/path"] }
+  → очистка кэша (повторяющиеся URL автоматически дедуплицируются, идемпотентно; не более 100)
 
 GET /api/cdn/domains/{id}/stats
-  参数: range (day/week/month)
-  → 流量/请求数/命中率统计
+  → обзор домена (cdn_domain / provider_type / plan / status / purged_at)
 ```
 
 ### Админ-панель
 
 ```
-GET /admin/api/cdn/domains            → 全部 CDN 域名
-PUT /admin/api/cdn/domains/{id}       → 更新域名套餐/配置
+GET /admin/api/cdn/domains            → все CDN-домены (с владельцем-пользователем)
+PUT /admin/api/cdn/domains/{id}       → обновление тарифа домена (белый список plan: standard | pro | enterprise)
 ```
+
+Админ-маршруты CDN защищены `RbacMiddleware('cdn.manage')`, изменение тарифа пишется в журнал аудита (`admin_cdn_update_plan`). Учётные данные провайдеров ведутся через CRUD `/admin/api/providers` (RbacMiddleware `provider.config`, `code` по соглашению `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, учётные данные шифруются через Encryptable).
+
+### Коды ошибок CDN
+
+| code | Описание |
+|------|----------|
+| 4001 | Отсутствуют/некорректны параметры CDN (пустой urls, недопустимый provider_type, ошибка формата домена) |
+| 4002 | Домен не прошёл ICP-регистрацию (маппится при отказе API Aliyun/Tencent) |
+| 4003 | Учётные данные провайдера CDN не настроены (запись отсутствует/отключена, строгая привязка без тихого переключения) |
+| 4005 | Сбой очистки кэша CDN |
+| 5001 | Сбой вызова API провайдера CDN |
+
+> Чужие/несуществующие CDN-ресурсы (не принадлежащие текущему пользователю) единообразно возвращают **404** (маппинг findOrFail, без раскрытия факта существования ресурса), отдельного бизнес-кода нет.
 
 ---
 

@@ -140,6 +140,26 @@ common/
 └── webhook/             # Distribuidor de eventos Webhook
 ```
 
+### 2.4 Módulo CDN
+
+O módulo CDN de nível produto (`service/app/cdn/`) integra quatro provedores via padrão de adaptadores, usando servidores ou buckets como origem no CDN:
+
+```
+CdnAdapterInterface
+  ├── CloudflareAdapter   REST v4 (certificado automático SSL SaaS), sem registro ICP
+  ├── CloudFrontAdapter   aws-sdk-php (CloudFront + ACM), sem registro ICP
+  ├── AliyunCdnAdapter    Assinatura RPC, requer registro ICP
+  └── TencentCdnAdapter   Assinatura TC3, requer registro ICP
+         ▲
+CdnAdapterFactory.resolve(type, accountId, strict)
+  ① Conta vinculada (provider_account_id) → ② conta ativa code=cdn-{type} → ③ fallback env
+  strict=true (exclusão/purga): apenas a conta vinculada, ausente retorna 4003, sem troca silenciosa
+```
+
+**Gestão de contas:** reutiliza o modelo `provider_apis` (credenciais criptografadas com Encryptable), CRUD no admin `/admin/providers` (RbacMiddleware), `code` convencionado como `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, credenciais de env degradadas para fallback.
+
+**Modelo de dados:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; a chave privada é removida do cert_config antes de gravar). Isolamento de permissões: recursos CDN validados por propriedade via `resource.user_id`; recursos de outros usuários retornam 404 uniformemente.
+
 ---
 
 ## 3. Pipeline de Execução dos Middlewares
@@ -386,9 +406,9 @@ Accept-Language: zh-CN,zh;q=0.9
                     Internet
                         │
                ┌────────┴────────┐
-               │  Cloudflare CDN │
-               │  DDoS / Bot     │
-               └────────┬────────┘
+               │  Cloudflare CDN │  ← Proteção de borda da própria plataforma (DDoS/Bot),
+               │  DDoS / Bot     │    sem relação com o módulo CDN de nível produto
+               └────────┬────────┘    (quatro provedores, ver §2.4)
                         │
                ┌────────┴────────┐
                │  Nginx × 2      │

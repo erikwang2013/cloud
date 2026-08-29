@@ -424,6 +424,7 @@ Todos os endpoints REST do admin têm o prefixo `/admin/api` e exigem o `AdminRo
 | Pagamentos | `GET /payments/channels`, `PUT /payments/channels/{id}`, `GET /payments/transactions`, `/reconcile` | `Admin\PaymentController` |
 | Provisionamento | `GET /provisioning/tasks`, `POST /tasks/{id}/retry`, `POST /resources/{id}/upgrade`, `/destroy`, `GET /hosts` | `Provisioning\TaskController` |
 | APIs de Providers | `GET /providers`, `POST /providers`, `PUT /providers/{id}`, `DELETE /providers/{id}` | `Admin\ProviderApiController` |
+| CDN | `GET /cdn/domains`, `PUT /cdn/domains/{id}` | `Admin\CdnController` |
 | Fornecedores | `GET /suppliers`, `/suppliers/export`, `POST /suppliers/{id}/approve`, `/settle`, `/withdraws/{id}/approve` | `Admin\SupplierController` |
 | API Keys de Fornecedores | `GET /suppliers/{id}/api-keys`, `POST /suppliers/{id}/api-keys`, `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
 | Tickets | `GET /tickets`, `POST /tickets/{id}/assign`, `/close` | `Ticket\TicketController` |
@@ -436,6 +437,24 @@ Todos os endpoints REST do admin têm o prefixo `/admin/api` e exigem o `AdminRo
 | Monitoramento | `GET /monitor/dashboard`, `/resources/{id}` | `Monitor\MonitorController` |
 | Auditoria | `GET /audit-logs` | `Admin\SystemController` |
 | Configuração do Sistema | `PUT /system/config` | `Admin\SystemController` |
+
+### Gestão de Recursos CDN
+
+O produto CDN suporta quatro provedores (Cloudflare / CloudFront / Aliyun / Tencent Cloud), com o painel admin dividido em duas partes:
+
+**Configuração de contas de provedores** (reutiliza o modelo ProviderApi, `Admin\ProviderApiController`):
+
+- `GET/POST /admin/api/providers`, `PUT/DELETE /admin/api/providers/{id}`, com `RbacMiddleware('provider.config')`
+- `code` convencionado como `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; campos de credenciais criptografados no banco com Encryptable, coluna JSON `config` guarda metadados não sensíveis
+- Prioridade de resolução de credenciais no lado do usuário: conta vinculada → conta ativa com code correspondente → fallback env; exclusão/purga usam snapshot estrito (apenas a conta vinculada, ausente/desabilitada retorna 4003)
+
+**Gestão de domínios CDN** (`Admin\CdnController`):
+
+```
+GET /admin/api/cdn/domains        → Todos os domínios (incluindo user_id), com RbacMiddleware('cdn.manage')
+PUT /admin/api/cdn/domains/{id}   → Atualiza o plano, whitelist de planos standard | pro | enterprise,
+                                    valor inválido retorna 400; alteração grava log de auditoria admin_cdn_update_plan
+```
 
 ### Dados do Dashboard (camada Service)
 

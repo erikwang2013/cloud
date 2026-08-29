@@ -595,11 +595,26 @@ S3 API-compatible object storage, supporting AWS S3 and self-hosted MinIO. Users
 
 ## 16. CDN Acceleration
 
-The CDN product supports Cloudflare integration, allowing servers or storage buckets to be connected as origins, with cache purge support.
+The CDN product supports four providers (Cloudflare / AWS CloudFront / Aliyun CDN / Tencent CDN), allowing servers or storage buckets to be connected as origins, with cache purge and optional HTTPS certificate configuration.
 
-**Interfaces:** ProviderInterface + CachePurgeInterface (optional capability interface)
+**Adapter architecture:** one adapter per provider under `service/app/cdn/provider/`, all implementing `CdnAdapterInterface` (createDomain / configureDomain / purgeCache / disableDomain / requiresIcpRegistration), dispatched by `CdnAdapterFactory` based on `provider_type`:
 
-**Data model:** `resource_cdn`
+| provider_type | Adapter | Integration protocol | ICP registration required |
+|---------------|---------|----------------------|---------------------------|
+| `cloudflare` | CloudflareAdapter | REST v4 API (incl. SSL SaaS auto certificate) | No |
+| `cloudfront` | CloudFrontAdapter | aws-sdk-php (CloudFront + ACM) | No |
+| `aliyun` | AliyunCdnAdapter | RPC signing | Yes |
+| `tencent` | TencentCdnAdapter | TC3 signing | Yes |
+
+**Provider account configuration:** admins maintain `provider_apis` accounts via `/admin/providers` CRUD (credentials stored Encrypted with Encryptable, `code` convention `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`). User-side credential resolution priority: bound account (provider_account_id) → active account matching `code` → env config fallback.
+
+**Strict snapshot binding:** `provider_account_id` is fixed at domain creation; subsequent deletion/cache purge only uses the bound account. Missing or disabled account returns 4003, never silently switching accounts. Aliyun/Tencent domains require ICP registration, returning 4002 when unregistered (with `requires_icp_registration` hint).
+
+**Cache purge:** `POST /api/cdn/domains/{id}/purge`, URLs are automatically deduplicated and trimmed (max 100), only the domain itself or its subdomains are allowed, wildcards and external URLs are rejected, idempotent.
+
+**Interfaces:** CdnAdapterInterface + CdnProvider (reuses the ProvisionProvider upgrade channel, supports plan upgrades)
+
+**Data model:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; private keys are stripped from cert_config before persisting, only non-sensitive certificate info is stored)
 
 ## 17. Usage-Based Billing
 

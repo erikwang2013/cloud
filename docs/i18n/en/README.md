@@ -23,7 +23,7 @@
   <img src="docs/diagrams/c.svg" alt="CloudPlatform project mascot" width="220">
 </p>
 
-A cloud resource trading platform for global users, supporting online purchase and automatic delivery of servers (VM), IP addresses, cloud disks, domains, SSL certificates, object storage (S3), CDN acceleration and other products. Self-operated physical machines are delivered through Proxmox VE virtualization, while third-party suppliers can also onboard and sell. It provides usage-based billing, referral distribution, a GraphQL API, and Prometheus/Grafana observability. It provides usage-based billing, referral distribution, a GraphQL API, and Prometheus/Grafana observability.
+A cloud resource trading platform for global users, supporting online purchase and automatic delivery of servers (VM), IP addresses, cloud disks, domains, SSL certificates, object storage (S3), CDN acceleration and other products. Self-operated physical machines are delivered through Proxmox VE virtualization, while third-party suppliers can also onboard and sell. It provides usage-based billing, referral distribution, a GraphQL API, and Prometheus/Grafana observability.
 
 ## Tech Stack
 
@@ -650,6 +650,16 @@ Global country flag emoji support via `erikwang2013/season`:
   - Bank Name: THE BANK OF NEW YORK MELLON
   - SWIFT Code: IRVTUS3NXXX
   - Bank Address: THE BANK OF NEW YORK MELLON, 240 GREENWICH STREET, NEW YORK, United States
+
+### Crypto Donation
+
+If this project helps you, scan the QR code to donate, thank you!
+
+| <img src="../../coin/1.jpg" width="200" alt="BNB Smart Chain (BEP20)"><br>**BNB Smart Chain (BEP20)**<br>`0x355d429f97511897ccb4e271ec888205f9ab6629` | <img src="../../coin/2.jpg" width="200" alt="Tron (TRC20)"><br>**Tron (TRC20)**<br>`TEdDHWLajt1XvqtPDWmQctdrJaC3pzZZzz` |
+| <img src="../../coin/3.jpg" width="200" alt="Ethereum (ERC20)"><br>**Ethereum (ERC20)**<br>`0x355d429f97511897ccb4e271ec888205f9ab6629` | <img src="../../coin/4.jpg" width="200" alt="Aptos"><br>**Aptos**<br>`0x836e3780edfc3f7b2372b39e2a1a3a5d7adfaccd96c726f21cfde1b50dd68030` |
+| <img src="../../coin/5.jpg" width="200" alt="Plasma"><br>**Plasma**<br>`0x355d429f97511897ccb4e271ec888205f9ab6629` | <img src="../../coin/6.jpg" width="200" alt="Polygon POS"><br>**Polygon POS**<br>`0x355d429f97511897ccb4e271ec888205f9ab6629` |
+| <img src="../../coin/7.jpg" width="200" alt="Solana"><br>**Solana**<br>`2hfhboHdmdrYsY25XfQSsEWxq5ip4EQsR7f4AzSRMUyr` | <img src="../../coin/8.jpg" width="200" alt="The Open Network (TON)"><br>**The Open Network (TON)**<br>`UQB9kFQohzmXUir9QSSZq01iwl9aQZIDdBpNmDklljRtCoGK` |
+| <img src="../../coin/9.jpg" width="200" alt="Arbitrum One"><br>**Arbitrum One**<br>`0x355d429f97511897ccb4e271ec888205f9ab6629` | <img src="../../coin/10.jpg" width="200" alt="AVAX C-Chain"><br>**AVAX C-Chain**<br>`0x355d429f97511897ccb4e271ec888205f9ab6629` |
 
 ---
 

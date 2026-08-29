@@ -424,6 +424,7 @@ service バックエンド（`service/`）にも独自の `Common\ExcelExport` �
 | Payments | `GET /payments/channels`, `PUT /payments/channels/{id}`, `GET /payments/transactions`, `/reconcile` | `Admin\PaymentController` |
 | Provisioning | `GET /provisioning/tasks`, `POST /tasks/{id}/retry`, `POST /resources/{id}/upgrade`, `/destroy`, `GET /hosts` | `Provisioning\TaskController` |
 | Provider APIs | `GET /providers`, `POST /providers`, `PUT /providers/{id}`, `DELETE /providers/{id}` | `Admin\ProviderApiController` |
+| CDN | `GET /cdn/domains`, `PUT /cdn/domains/{id}` | `Admin\CdnController` |
 | Suppliers | `GET /suppliers`, `/suppliers/export`, `POST /suppliers/{id}/approve`, `/settle`, `/withdraws/{id}/approve` | `Admin\SupplierController` |
 | Supplier API Keys | `GET /suppliers/{id}/api-keys`, `POST /suppliers/{id}/api-keys`, `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
 | Tickets | `GET /tickets`, `POST /tickets/{id}/assign`, `/close` | `Ticket\TicketController` |
@@ -436,6 +437,24 @@ service バックエンド（`service/`）にも独自の `Common\ExcelExport` �
 | Monitoring | `GET /monitor/dashboard`, `/resources/{id}` | `Monitor\MonitorController` |
 | Audit | `GET /audit-logs` | `Admin\SystemController` |
 | System Config | `PUT /system/config` | `Admin\SystemController` |
+
+### CDN 資源管理
+
+CDN 製品は 4 社のプロバイダー（Cloudflare / CloudFront / Aliyun / Tencent）に対応し、管理側は 2 つの部分に分かれる：
+
+**プロバイダーアカウント設定**（ProviderApi モデルを再利用、`Admin\ProviderApiController`）：
+
+- `GET/POST /admin/api/providers`、`PUT/DELETE /admin/api/providers/{id}`、`RbacMiddleware('provider.config')` を適用
+- `code` は `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent` と規定；資格情報フィールドは Encryptable で暗号化して保存、`config` JSON 列は非機密メタデータを保存
+- ユーザー側の資格情報解決順序：バインドアカウント → code 一致のアクティブアカウント → env フォールバック；削除/purge は厳格スナップショット（バインドアカウントのみ使用、欠落/無効は 4003）
+
+**CDN ドメイン管理**（`Admin\CdnController`）：
+
+```
+GET /admin/api/cdn/domains        → 全ドメイン（所属 user_id 含む）、RbacMiddleware('cdn.manage') を適用
+PUT /admin/api/cdn/domains/{id}   → プラン更新、plan ホワイトリスト standard | pro | enterprise、
+                                    不正値は 400 を返す；変更は監査ログ admin_cdn_update_plan に記録
+```
 
 ### ダッシュボードデータ（Service レイヤー）
 

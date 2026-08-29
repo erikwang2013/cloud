@@ -34,6 +34,9 @@
 | GET/POST | `/api/resources` | Sumber daya saya |
 | GET | `/api/resources/{id}/status` | Status sumber daya |
 | GET | `/api/resources/{id}/console` | Tautan konsol VNC |
+| GET/POST | `/api/cdn/domains` | Daftar domain CDN / buat (cloudflare \| cloudfront \| aliyun \| tencent) |
+| GET/DELETE | `/api/cdn/domains/{id}` | Detail domain CDN / hapus |
+| POST | `/api/cdn/domains/{id}/purge` | Bersihkan cache (idempoten, maksimal 100 URL) |
 | GET/POST | `/api/tickets` | Tiket |
 | POST | `/api/tickets/{id}/reply` | Balas tiket |
 | GET/POST | `/api/dns/{domain}` | Manajemen DNS |
@@ -59,6 +62,8 @@
 | GET | `/admin/api/suppliers/export` | Ekspor pemasok (.xlsx) |
 | GET/PUT | `/admin/api/payments/*` | Kanal pembayaran / transaksi / rekonsiliasi |
 | GET/POST | `/admin/api/provisioning/*` | Tugas pengiriman / manajemen host |
+| GET/PUT | `/admin/api/cdn/domains` | Manajemen domain CDN (perubahan paket) |
+| GET/POST/PUT/DELETE | `/admin/api/providers` | Manajemen kredensial akun penyedia (dipakai CDN/delivery, dienkripsi Encryptable) |
 | GET/POST | `/admin/api/suppliers/*` | Persetujuan pemasok / penyelesaian / penarikan |
 | GET/POST | `/admin/api/tickets` | Penugasan / penutupan tiket |
 | GET | `/admin/api/reports/*` | Laporan pendapatan / regional / pemasok |

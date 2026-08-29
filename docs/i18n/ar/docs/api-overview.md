@@ -34,6 +34,9 @@
 | GET/POST | `/api/resources` | مواردي |
 | GET | `/api/resources/{id}/status` | حالة المورد |
 | GET | `/api/resources/{id}/console` | رابط وحدة تحكم VNC |
+| GET/POST | `/api/cdn/domains` | قائمة/إنشاء نطاقات CDN (cloudflare \| cloudfront \| aliyun \| tencent) |
+| GET/DELETE | `/api/cdn/domains/{id}` | تفاصيل/حذف نطاق CDN |
+| POST | `/api/cdn/domains/{id}/purge` | مسح التخزين المؤقت (idempotent، بحد أقصى 100 عنوان URL) |
 | GET/POST | `/api/tickets` | التذاكر |
 | POST | `/api/tickets/{id}/reply` | الرد على التذكرة |
 | GET/POST | `/api/dns/{domain}` | إدارة DNS |
@@ -59,6 +62,8 @@
 | GET | `/admin/api/suppliers/export` | تصدير الموردين (.xlsx) |
 | GET/PUT | `/admin/api/payments/*` | قنوات الدفع / المعاملات / المطابقة |
 | GET/POST | `/admin/api/provisioning/*` | مهام التسليم / إدارة الأجهزة |
+| GET/PUT | `/admin/api/cdn/domains` | إدارة نطاقات CDN (تغيير الباقة) |
+| GET/POST/PUT/DELETE | `/admin/api/providers` | إدارة اعتمادات حسابات المزودين (مشتركة بين CDN/التسليم، مشفّرة عبر Encryptable) |
 | GET/POST | `/admin/api/suppliers/*` | الموافقة على الموردين / التسوية / السحب |
 | GET/POST | `/admin/api/tickets` | توزيع / إغلاق التذاكر |
 | GET | `/admin/api/reports/*` | تقارير الإيرادات / المناطق / الموردين |

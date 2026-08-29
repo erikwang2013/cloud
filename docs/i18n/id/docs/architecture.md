@@ -140,6 +140,26 @@ common/
 └── webhook/             # Webhook 事件分发器
 ```
 
+### 2.4 Modul CDN
+
+Modul CDN tingkat produk (`service/app/cdn/`) menggunakan pola adaptor untuk terhubung ke empat penyedia, menjadikan server atau bucket penyimpanan sebagai asal untuk CDN:
+
+```
+CdnAdapterInterface
+  ├── CloudflareAdapter   REST v4 (sertifikat otomatis SSL SaaS), tidak perlu ICP
+  ├── CloudFrontAdapter   aws-sdk-php (CloudFront + ACM), tidak perlu ICP
+  ├── AliyunCdnAdapter    Tanda tangan RPC, perlu ICP
+  └── TencentCdnAdapter   Tanda tangan TC3, perlu ICP
+         ▲
+CdnAdapterFactory.resolve(type, accountId, strict)
+  ① akun terikat (provider_account_id) → ② akun aktif code=cdn-{type} → ③ fallback env
+  strict=true (hapus/purge): hanya akun terikat, tidak ada → 4003, tanpa peralihan diam-diam
+```
+
+**Manajemen akun:** memakai kembali model `provider_apis` (kredensial dienkripsi Encryptable saat disimpan), CRUD `/admin/providers` di sisi admin (RbacMiddleware), konvensi `code`: `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, kredensial env diturunkan menjadi fallback.
+
+**Model data:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; kunci privat dihapus dari cert_config sebelum disimpan). Isolasi izin: sumber daya CDN diverifikasi kepemilikan melalui `resource.user_id`, bukan milik pengguna seragam 404.
+
 ---
 
 ## 3. Pipeline Eksekusi Middleware
@@ -386,9 +406,9 @@ Accept-Language: zh-CN,zh;q=0.9
                     Internet
                         │
                ┌────────┴────────┐
-               │  Cloudflare CDN │
-               │  DDoS / Bot     │
-               └────────┬────────┘
+               │  Cloudflare CDN │  ← perlindungan tepi platform sendiri (DDoS/Bot),
+               │  DDoS / Bot     │     tidak terkait modul CDN tingkat produk
+               └────────┬────────┘     (empat penyedia, lihat §2.4)
                         │
                ┌────────┴────────┐
                │  Nginx × 2      │

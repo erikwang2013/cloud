@@ -424,6 +424,7 @@ All admin REST endpoints are prefixed with `/admin/api` and require `AdminRoleMi
 | Payments | `GET /payments/channels`, `PUT /payments/channels/{id}`, `GET /payments/transactions`, `/reconcile` | `Admin\PaymentController` |
 | Provisioning | `GET /provisioning/tasks`, `POST /tasks/{id}/retry`, `POST /resources/{id}/upgrade`, `/destroy`, `GET /hosts` | `Provisioning\TaskController` |
 | Provider APIs | `GET /providers`, `POST /providers`, `PUT /providers/{id}`, `DELETE /providers/{id}` | `Admin\ProviderApiController` |
+| CDN | `GET /cdn/domains`, `PUT /cdn/domains/{id}` | `Admin\CdnController` |
 | Suppliers | `GET /suppliers`, `/suppliers/export`, `POST /suppliers/{id}/approve`, `/settle`, `/withdraws/{id}/approve` | `Admin\SupplierController` |
 | Supplier API Keys | `GET /suppliers/{id}/api-keys`, `POST /suppliers/{id}/api-keys`, `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
 | Tickets | `GET /tickets`, `POST /tickets/{id}/assign`, `/close` | `Ticket\TicketController` |
@@ -436,6 +437,24 @@ All admin REST endpoints are prefixed with `/admin/api` and require `AdminRoleMi
 | Monitoring | `GET /monitor/dashboard`, `/resources/{id}` | `Monitor\MonitorController` |
 | Audit | `GET /audit-logs` | `Admin\SystemController` |
 | System Config | `PUT /system/config` | `Admin\SystemController` |
+
+### CDN Resource Management
+
+The CDN product supports four providers (Cloudflare / CloudFront / Aliyun / Tencent), managed from the admin panel in two parts:
+
+**Provider account configuration** (reuses the ProviderApi model, `Admin\ProviderApiController`):
+
+- `GET/POST /admin/api/providers`, `PUT/DELETE /admin/api/providers/{id}`, guarded by `RbacMiddleware('provider.config')`
+- `code` convention `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; credential fields stored encrypted with Encryptable, non-sensitive metadata in the `config` JSON column
+- User-side credential resolution priority: bound account → active account matching `code` → env fallback; delete/purge use strict snapshot (bound account only, missing/disabled returns 4003)
+
+**CDN domain management** (`Admin\CdnController`):
+
+```
+GET /admin/api/cdn/domains        → all domains (incl. owning user_id), guarded by RbacMiddleware('cdn.manage')
+PUT /admin/api/cdn/domains/{id}   → update plan, whitelist standard | pro | enterprise,
+                                    invalid value returns 400; changes written to audit log admin_cdn_update_plan
+```
 
 ### Dashboard Data (Service Layer)
 

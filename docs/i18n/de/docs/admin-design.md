@@ -424,6 +424,7 @@ Alle Admin-REST-Endpunkte haben das Präfix `/admin/api` und erfordern die `Admi
 | Zahlungen | `GET /payments/channels`, `PUT /payments/channels/{id}`, `GET /payments/transactions`, `/reconcile` | `Admin\PaymentController` |
 | Bereitstellung | `GET /provisioning/tasks`, `POST /tasks/{id}/retry`, `POST /resources/{id}/upgrade`, `/destroy`, `GET /hosts` | `Provisioning\TaskController` |
 | Anbieter-APIs | `GET /providers`, `POST /providers`, `PUT /providers/{id}`, `DELETE /providers/{id}` | `Admin\ProviderApiController` |
+| CDN | `GET /cdn/domains`, `PUT /cdn/domains/{id}` | `Admin\CdnController` |
 | Anbieter | `GET /suppliers`, `/suppliers/export`, `POST /suppliers/{id}/approve`, `/settle`, `/withdraws/{id}/approve` | `Admin\SupplierController` |
 | Anbieter-API-Keys | `GET /suppliers/{id}/api-keys`, `POST /suppliers/{id}/api-keys`, `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
 | Tickets | `GET /tickets`, `POST /tickets/{id}/assign`, `/close` | `Ticket\TicketController` |
@@ -436,6 +437,24 @@ Alle Admin-REST-Endpunkte haben das Präfix `/admin/api` und erfordern die `Admi
 | Monitoring | `GET /monitor/dashboard`, `/resources/{id}` | `Monitor\MonitorController` |
 | Audit | `GET /audit-logs` | `Admin\SystemController` |
 | Systemkonfiguration | `PUT /system/config` | `Admin\SystemController` |
+
+### CDN-Ressourcenverwaltung
+
+Das CDN-Produkt unterstützt vier Anbieter (Cloudflare / CloudFront / Aliyun / Tencent), die Admin-Oberfläche ist in zwei Bereiche unterteilt:
+
+**Anbieter-Kontokonfiguration** (nutzt das ProviderApi-Modell, `Admin\ProviderApiController`):
+
+- `GET/POST /admin/api/providers`, `PUT/DELETE /admin/api/providers/{id}`, hängt an `RbacMiddleware('provider.config')`
+- `code`-Konvention `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; Anmeldedaten-Felder mit Encryptable verschlüsselt gespeichert, `config`-JSON-Spalte für nicht-sensitive Metadaten
+- Auflösungspriorität auf Nutzerseite: gebundenes Konto → aktives Konto mit passendem code → env-Fallback; Löschung/Purge nutzt strikte Snapshot (nur gebundenes Konto, fehlt/deaktiviert → 4003)
+
+**CDN-Domainverwaltung** (`Admin\CdnController`):
+
+```
+GET /admin/api/cdn/domains        → Alle Domains (inkl. zugehöriger user_id), hängt an RbacMiddleware('cdn.manage')
+PUT /admin/api/cdn/domains/{id}   → Paket aktualisieren, plan-Whitelist standard | pro | enterprise,
+                                     ungültige Werte → 400; Änderungen schreiben Audit-Log admin_cdn_update_plan
+```
 
 ### Dashboard-Daten (Service-Ebene)
 

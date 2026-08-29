@@ -807,23 +807,49 @@ GET /api/storage/buckets/{id}/credentials
 GET /api/cdn/domains
   → मेरे CDN डोमेन की सूची (मूल सर्वर, स्थिति, पैकेज)
 
+POST /api/cdn/domains
+  बॉडी: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
+          origin_type (server|storage), origin_value, cert_config? }
+  → CDN डोमेन बनाएं (सेवाप्रदाता पक्ष पर बनाकर ओरिजिन बाइंड करता है)
+  → provider_type=aliyun|tencent होने पर डोमेन को ICP पंजीकरण पूर्ण करना आवश्यक (पंजीकरण न होने पर 4002)
+  → प्रतिक्रिया में requires_icp_registration संकेत फ़ील्ड होता है
+  → क्रेडेंशियल रिज़ॉल्यूशन: पहले डोमेन का बाउंड खाता (provider_account_id), अन्यथा code=cdn-{provider_type}
+    वाला सक्रिय provider_apis खाता, दोनों अनुपस्थित होने पर env कॉन्फ़िगरेशन फ़ॉलबैक
+
 GET /api/cdn/domains/{id}
   → CDN डोमेन विवरण
 
+DELETE /api/cdn/domains/{id}
+  → CDN डोमेन हटाएं (सेवाप्रदाता पक्ष का डोमेन निष्क्रिय करता है, आइडेम्पोटेंट)
+
 POST /api/cdn/domains/{id}/purge
-  → कैश साफ़ करें (पूरी साइट या निर्दिष्ट URL सूची)
+  बॉडी: { urls: ["https://cdn.example.com/path"] }
+  → कैश साफ़ करें (डुप्लिकेट URL स्वचालित रूप से हटाए जाते हैं, आइडेम्पोटेंट; अधिकतम 100)
 
 GET /api/cdn/domains/{id}/stats
-  पैरामीटर: range (day/week/month)
-  → ट्रैफ़िक/अनुरोध संख्या/हिट दर आँकड़े
+  → डोमेन अवलोकन (cdn_domain / provider_type / plan / status / purged_at)
 ```
 
 ### प्रशासन अंत
 
 ```
-GET /admin/api/cdn/domains            → सभी CDN डोमेन
-PUT /admin/api/cdn/domains/{id}       → डोमेन पैकेज/कॉन्फ़िगरेशन अपडेट करें
+GET /admin/api/cdn/domains            → सभी CDN डोमेन (संबंधित उपयोगकर्ता सहित)
+PUT /admin/api/cdn/domains/{id}       → डोमेन पैकेज अपडेट करें (plan व्हाइटलिस्ट: standard | pro | enterprise)
 ```
+
+एडमिन CDN रूट `RbacMiddleware('cdn.manage')` से जुड़े हैं, पैकेज परिवर्तन ऑडिट लॉग में लिखे जाते हैं (`admin_cdn_update_plan`)। सेवाप्रदाता खाता क्रेडेंशियल `/admin/api/providers` CRUD के माध्यम से बनाए रखे जाते हैं (RbacMiddleware `provider.config`, `code` कन्वेंशन `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, क्रेडेंशियल Encryptable एन्क्रिप्शन के साथ संग्रहीत)।
+
+### CDN त्रुटि कोड
+
+| code | विवरण |
+|------|-------|
+| 4001 | CDN पैरामीटर अनुपस्थित/अमान्य (urls खाली, provider_type अमान्य, डोमेन प्रारूप त्रुटि) |
+| 4002 | डोमेन ने ICP पंजीकरण पूर्ण नहीं किया (Aliyun/Tencent API अस्वीकार करने पर मैप) |
+| 4003 | CDN सेवाप्रदाता क्रेडेंशियल कॉन्फ़िगर नहीं (खाता अनुपस्थित/अक्षम, सख्त स्नैपशॉट चुपचाप स्विच नहीं करता) |
+| 4005 | CDN कैश पर्ज विफल |
+| 5001 | CDN सेवाप्रदाता API कॉल विफल |
+
+> गैर-स्वामित्व वाला CDN संसाधन (दूसरों का/अस्तित्वहीन संसाधन) समान रूप से **404** लौटाता है (findOrFail मैपिंग, संसाधन अस्तित्व का खुलासा नहीं), कोई अलग व्यावसायिक कोड नहीं।
 
 ---
 

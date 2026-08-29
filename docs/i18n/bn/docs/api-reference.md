@@ -807,23 +807,49 @@ GET /api/storage/buckets/{id}/credentials
 GET /api/cdn/domains
   → আমার CDN ডোমেইন লিস্ট (অরিজিন, স্ট্যাটাস, প্ল্যান)
 
+POST /api/cdn/domains
+  বডি: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
+         origin_type (server|storage), origin_value, cert_config? }
+  → CDN ডোমেইন তৈরি (প্রোভাইডার সাইডে তৈরি করে অরিজিন বাইন্ড)
+  → provider_type=aliyun|tencent হলে ডোমেইনে ICP রেজিস্ট্রেশন প্রয়োজন (না থাকলে 4002)
+  → রেসপন্সে requires_icp_registration প্রম্পট ফিল্ড থাকে
+  → ক্রেডেনশিয়াল রেজল্যুশন: আগে ডোমেইনের বাইন্ডেড অ্যাকাউন্ট (provider_account_id),
+    না হলে code=cdn-{provider_type} এর অ্যাক্টিভ provider_apis অ্যাকাউন্ট, সব না থাকলে env কনফিগ ফলব্যাক
+
 GET /api/cdn/domains/{id}
   → CDN ডোমেইন ডিটেইল
 
+DELETE /api/cdn/domains/{id}
+  → CDN ডোমেইন ডিলিট (প্রোভাইডার সাইড ডোমেইন ডিসেবল করে, ইডেম্পোটেন্ট)
+
 POST /api/cdn/domains/{id}/purge
-  → ক্যাশ ক্লিয়ার (পুরো সাইট বা নির্দিষ্ট URL লিস্ট)
+  বডি: { urls: ["https://cdn.example.com/path"] }
+  → ক্যাশ ক্লিয়ার (ডুপ্লিকেট URL অটো ডিডুপ, ইডেম্পোটেন্ট; সর্বোচ্চ ১০০টি)
 
 GET /api/cdn/domains/{id}/stats
-   প্যারামিটার: range (day/week/month)
-  → ট্রাফিক/রিকোয়েস্ট সংখ্যা/হিট রেট পরিসংখ্যান
+  → ডোমেইন ওভারভিউ (cdn_domain / provider_type / plan / status / purged_at)
 ```
 
 ### অ্যাডমিন সাইড
 
 ```
-GET /admin/api/cdn/domains            → সব CDN ডোমেইন
-PUT /admin/api/cdn/domains/{id}       → ডোমেইন প্ল্যান/কনফিগ আপডেট
+GET /admin/api/cdn/domains            → সব CDN ডোমেইন (মালিকানাধীন ইউজার সহ)
+PUT /admin/api/cdn/domains/{id}       → ডোমেইন প্ল্যান আপডেট (plan হোয়াইটলিস্ট: standard | pro | enterprise)
 ```
+
+অ্যাডমিন CDN রুট `RbacMiddleware('cdn.manage')` এ মাউন্ট করা, প্ল্যান পরিবর্তন অডিট লগে লেখা হয় (`admin_cdn_update_plan`)। প্রোভাইডার অ্যাকাউন্ট ক্রেডেনশিয়াল `/admin/api/providers` CRUD দিয়ে ম্যানটেইন হয় (RbacMiddleware `provider.config`, `code` কনভেনশন `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, ক্রেডেনশিয়াল Encryptable এনক্রিপশনে স্টোর)।
+
+### CDN এরর কোড
+
+| code | ব্যাখ্যা |
+|------|---------|
+| 4001 | CDN প্যারামিটার অনুপস্থিত/অবৈধ (urls খালি, provider_type অবৈধ, ডোমেইন ফরম্যাট ভুল) |
+| 4002 | ডোমেইনের ICP রেজিস্ট্রেশন নেই (Aliyun/Tencent API রিজেক্ট করলে ম্যাপ করা হয়) |
+| 4003 | CDN প্রোভাইডার ক্রেডেনশিয়াল কনফিগার করা নেই (অ্যাকাউন্ট অনুপস্থিত/ডিসেবল, স্ট্রিক্ট স্ন্যাপশট সাইলেন্ট সুইচ করে না) |
+| 4005 | CDN ক্যাশ রিফ্রেশ ব্যর্থ |
+| 5001 | CDN প্রোভাইডার API কল ব্যর্থ |
+
+> অন্যের CDN রিসোর্স (অন্যদের/অস্তিত্বহীন রিসোর্স) ইউনিফর্মলি **404** রিটার্ন করে (findOrFail ম্যাপিং, রিসোর্স অস্তিত্ব লিক করে না), আলাদা বিজনেস কোড নেই।
 
 ---
 

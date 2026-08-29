@@ -424,6 +424,7 @@ public function export(Request $request): Response
 | পেমেন্ট | `GET /payments/channels`, `PUT /payments/channels/{id}`, `GET /payments/transactions`, `/reconcile` | `Admin\PaymentController` |
 | প্রভিশনিং | `GET /provisioning/tasks`, `POST /tasks/{id}/retry`, `POST /resources/{id}/upgrade`, `/destroy`, `GET /hosts` | `Provisioning\TaskController` |
 | Provider API | `GET /providers`, `POST /providers`, `PUT /providers/{id}`, `DELETE /providers/{id}` | `Admin\ProviderApiController` |
+| CDN | `GET /cdn/domains`, `PUT /cdn/domains/{id}` | `Admin\CdnController` |
 | সরবরাহকারী | `GET /suppliers`, `/suppliers/export`, `POST /suppliers/{id}/approve`, `/settle`, `/withdraws/{id}/approve` | `Admin\SupplierController` |
 | সরবরাহকারী API Key | `GET /suppliers/{id}/api-keys`, `POST /suppliers/{id}/api-keys`, `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
 | টিকিট | `GET /tickets`, `POST /tickets/{id}/assign`, `/close` | `Ticket\TicketController` |
@@ -436,6 +437,24 @@ public function export(Request $request): Response
 | মনিটরিং | `GET /monitor/dashboard`, `/resources/{id}` | `Monitor\MonitorController` |
 | অডিট | `GET /audit-logs` | `Admin\SystemController` |
 | সিস্টেম কনফিগ | `PUT /system/config` | `Admin\SystemController` |
+
+### CDN রিসোর্স ম্যানেজমেন্ট
+
+CDN প্রোডাক্ট চারটি প্রোভাইডার সাপোর্ট করে (Cloudflare / CloudFront / Aliyun / Tencent), অ্যাডমিন সাইড দুটি অংশে বিভক্ত:
+
+**প্রোভাইডার অ্যাকাউন্ট কনফিগ** (ProviderApi মডেল রিইউজ করে, `Admin\ProviderApiController`):
+
+- `GET/POST /admin/api/providers` ও `PUT/DELETE /admin/api/providers/{id}`, `RbacMiddleware('provider.config')` এ মাউন্ট করা
+- `code` কনভেনশন `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; ক্রেডেনশিয়াল ফিল্ড Encryptable এনক্রিপশনে স্টোর, `config` JSON কলামে নন-সেনসিটিভ মেটাডেটা থাকে
+- ইউজার সাইড ক্রেডেনশিয়াল রেজল্যুশন প্রায়োরিটি: বাইন্ডেড অ্যাকাউন্ট → code ম্যাচের অ্যাক্টিভ অ্যাকাউন্ট → env ফলব্যাক; ডিলিট/পর্জ স্ট্রিক্ট স্ন্যাপশট ব্যবহার করে (শুধু বাইন্ডেড অ্যাকাউন্ট, অনুপস্থিত/ডিসেবল হলে 4003)
+
+**CDN ডোমেইন ম্যানেজমেন্ট** (`Admin\CdnController`):
+
+```
+GET /admin/api/cdn/domains        → সব ডোমেইন (মালিকানাধীন user_id সহ), RbacMiddleware('cdn.manage') এ মাউন্ট করা
+PUT /admin/api/cdn/domains/{id}   → প্ল্যান আপডেট, plan হোয়াইটলিস্ট standard | pro | enterprise,
+                                    অবৈধ মানে 400 রিটার্ন; পরিবর্তন অডিট লগে লেখা হয় admin_cdn_update_plan
+```
 
 ### ড্যাশবোর্ড ডেটা (সার্ভিস লেয়ার)
 

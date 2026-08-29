@@ -142,6 +142,26 @@ common/
 └── webhook/             # диспетчер событий Webhook
 ```
 
+### 2.4 Модуль CDN
+
+Продуктовый модуль CDN (`service/app/cdn/`) через адаптерный шаблон подключает четырёх провайдеров, используя сервер или хранилище (bucket) как origin:
+
+```
+CdnAdapterInterface
+  ├── CloudflareAdapter   REST v4 (SSL SaaS с автоконфигурацией сертификатов), ICP не нужна
+  ├── CloudFrontAdapter   aws-sdk-php (CloudFront + ACM), ICP не нужна
+  ├── AliyunCdnAdapter    RPC-подпись, нужна ICP-регистрация
+  └── TencentCdnAdapter   TC3-подпись, нужна ICP-регистрация
+         ▲
+CdnAdapterFactory.resolve(type, accountId, strict)
+  ① привязанная запись (provider_account_id) → ② активная запись code=cdn-{type} → ③ env как fallback
+  strict=true (удаление/purge): только привязанная запись, при отсутствии — 4003, без тихого переключения
+```
+
+**Управление учётными записями:** переиспользуется модель `provider_apis` (учётные данные шифруются через Encryptable), админ-панель `/admin/providers` (CRUD, RbacMiddleware), `code` по соглашению `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, учётные данные env понижены до fallback.
+
+**Модель данных:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; перед записью из cert_config удаляется приватный ключ). Изоляция прав: CDN-ресурсы проходят проверку принадлежности через `resource.user_id`, чужие ресурсы единообразно возвращают 404.
+
 ---
 
 ## 3. Конвейер выполнения промежуточных слоёв

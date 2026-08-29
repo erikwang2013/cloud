@@ -794,23 +794,49 @@ GET /api/storage/buckets/{id}/credentials
 GET /api/cdn/domains
   → قائمة نطاقات CDN الخاصة بي (الخادم الأصلي، الحالة، الباقة)
 
+POST /api/cdn/domains
+  الجسم: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
+           origin_type (server|storage), origin_value, cert_config? }
+  → إنشاء نطاق CDN (إنشاء عند المزود وربط الخادم الأصلي)
+  → عندما provider_type=aliyun|tencent يجب إتمام تسجيل ICP للنطاق (يُعاد 4002 عند عدم التسجيل)
+  → تحتوي الاستجابة على حقل التنبيه requires_icp_registration
+  → تحليل الاعتمادات: الحساب المربوط للنطاق أولاً (provider_account_id)، وإلا حساب provider_apis
+    نشط حسب code=cdn-{provider_type}، وفي غيابهما الرجوع إلى إعداد env
+
 GET /api/cdn/domains/{id}
   → تفاصيل نطاق CDN
 
+DELETE /api/cdn/domains/{id}
+  → حذف نطاق CDN (تعطيل النطاق عند المزود، العملية idempotent)
+
 POST /api/cdn/domains/{id}/purge
-  → مسح الذاكرة المؤقتة (الموقع بالكامل أو قائمة URLs محددة)
+  الجسم: { urls: ["https://cdn.example.com/path"] }
+  → مسح التخزين المؤقت (إزالة تكرار عناوين URL تلقائياً، idempotent؛ بحد أقصى 100)
 
 GET /api/cdn/domains/{id}/stats
-  المعاملات: range (day/week/month)
-  → إحصائيات الحركة/عدد الطلبات/نسبة الإصابة
+  → نظرة عامة على النطاق (cdn_domain / provider_type / plan / status / purged_at)
 ```
 
 ### طرف الإدارة
 
 ```
-GET /admin/api/cdn/domains            → جميع نطاقات CDN
-PUT /admin/api/cdn/domains/{id}       → تحديث باقة/إعداد النطاق
+GET /admin/api/cdn/domains            → جميع نطاقات CDN (بما فيها المستخدم المالك)
+PUT /admin/api/cdn/domains/{id}       → تحديث باقة النطاق (قائمة بيضاء للـ plan: standard | pro | enterprise)
 ```
+
+مسارات CDN في الإدارة مسبوقة بـ `RbacMiddleware('cdn.manage')`، وتُكتب تغييرات الباقة في سجل التدقيق (`admin_cdn_update_plan`). تُدار اعتمادات حسابات المزودين عبر CRUD `/admin/api/providers` (RbacMiddleware `provider.config`، `code` بميثاق `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`، الاعتمادات مشفّرة عبر Encryptable عند التخزين).
+
+### أكواد أخطاء CDN
+
+| code | الشرح |
+|------|--------|
+| 4001 | معامل CDN مفقود/غير صالح (urls فارغ، provider_type غير صالح، صيغة نطاق خاطئة) |
+| 4002 | النطاق لم يُكمل تسجيل ICP (تُرسم عند رفض واجهة Alibaba Cloud/Tencent Cloud) |
+| 4003 | اعتمادات مزود CDN غير مُهيأة (حساب مفقود/معطّل، لقطة صارمة دون تبديل بصمت) |
+| 4005 | فشل مسح التخزين المؤقت لـ CDN |
+| 5001 | فشل استدعاء واجهة مزود CDN |
+
+> تُعيد موارد CDN غير المملوكة للمستخدم (موارد الآخرين/غير الموجودة) **404** موحّداً (رسم عبر findOrFail دون كشف وجود المورد)، ولا يوجد كود أعمال مستقل لها.
 
 ---
 

@@ -424,6 +424,7 @@ service बैकएंड (`service/`) में भी अपने `Common\Ex
 | पेमेंट | `GET /payments/channels`, `PUT /payments/channels/{id}`, `GET /payments/transactions`, `/reconcile` | `Admin\PaymentController` |
 | प्रोविज़निंग | `GET /provisioning/tasks`, `POST /tasks/{id}/retry`, `POST /resources/{id}/upgrade`, `/destroy`, `GET /hosts` | `Provisioning\TaskController` |
 | Provider APIs | `GET /providers`, `POST /providers`, `PUT /providers/{id}`, `DELETE /providers/{id}` | `Admin\ProviderApiController` |
+| CDN | `GET /cdn/domains`, `PUT /cdn/domains/{id}` | `Admin\CdnController` |
 | सप्लायर | `GET /suppliers`, `/suppliers/export`, `POST /suppliers/{id}/approve`, `/settle`, `/withdraws/{id}/approve` | `Admin\SupplierController` |
 | सप्लायर API Keys | `GET /suppliers/{id}/api-keys`, `POST /suppliers/{id}/api-keys`, `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
 | टिकट | `GET /tickets`, `POST /tickets/{id}/assign`, `/close` | `Ticket\TicketController` |
@@ -436,6 +437,24 @@ service बैकएंड (`service/`) में भी अपने `Common\Ex
 | मॉनिटरिंग | `GET /monitor/dashboard`, `/resources/{id}` | `Monitor\MonitorController` |
 | ऑडिट | `GET /audit-logs` | `Admin\SystemController` |
 | सिस्टम कॉन्फ़िग | `PUT /system/config` | `Admin\SystemController` |
+
+### CDN संसाधन प्रबंधन
+
+CDN उत्पाद चार सेवाप्रदाताओं (Cloudflare / CloudFront / Aliyun / Tencent) का समर्थन करता है, एडमिन दो भागों में विभाजित:
+
+**सेवाप्रदाता खाता कॉन्फ़िगरेशन** (ProviderApi मॉडल का पुन: उपयोग, `Admin\ProviderApiController`):
+
+- `GET/POST /admin/api/providers`、`PUT/DELETE /admin/api/providers/{id}`, `RbacMiddleware('provider.config')` से जुड़े
+- `code` कन्वेंशन `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; क्रेडेंशियल फ़ील्ड Encryptable एन्क्रिप्शन के साथ संग्रहीत, `config` JSON कॉलम गैर-संवेदनशील मेटाडेटा रखता है
+- उपयोगकर्ता-पक्ष क्रेडेंशियल रिज़ॉल्यूशन प्राथमिकता: बाउंड खाता → code मेल खाने वाला सक्रिय खाता → env फ़ॉलबैक; डिलीट/purge सख्त स्नैपशॉट से गुजरता है (केवल बाउंड खाता, अनुपस्थित/अक्षम होने पर 4003)
+
+**CDN डोमेन प्रबंधन** (`Admin\CdnController`):
+
+```
+GET /admin/api/cdn/domains        → सभी डोमेन (user_id सहित), RbacMiddleware('cdn.manage') से जुड़े
+PUT /admin/api/cdn/domains/{id}   → पैकेज अपडेट, plan व्हाइटलिस्ट standard | pro | enterprise,
+                                    अमान्य मान पर 400; परिवर्तन ऑडिट लॉग admin_cdn_update_plan में लिखा जाता है
+```
 
 ### डैशबोर्ड डेटा (Service परत)
 

@@ -807,23 +807,50 @@ GET /api/storage/buckets/{id}/credentials
 GET /api/cdn/domains
   → Mi lista de dominios CDN (origen, estado, plan)
 
+POST /api/cdn/domains
+  Cuerpo: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
+            origin_type (server|storage), origin_value, cert_config? }
+  → Crear dominio CDN (se crea en el proveedor y se vincula el origen)
+  → con provider_type=aliyun|tencent el dominio debe completar el registro ICP (sin él, devuelve 4002)
+  → la respuesta incluye el campo de aviso requires_icp_registration
+  → Resolución de credenciales: primero la cuenta vinculada del dominio (provider_account_id); si no,
+    la cuenta provider_apis activa que coincide con code=cdn-{provider_type}; si no hay ninguna,
+    respaldo de configuración env
+
 GET /api/cdn/domains/{id}
   → Detalle del dominio CDN
 
+DELETE /api/cdn/domains/{id}
+  → Eliminar dominio CDN (desactiva el dominio en el proveedor, idempotente)
+
 POST /api/cdn/domains/{id}/purge
-  → Purgar caché (todo el sitio o lista de URLs concreta)
+  Cuerpo: { urls: ["https://cdn.example.com/path"] }
+  → Purgar caché (las URLs repetidas se deduplican automáticamente, idempotente; máximo 100)
 
 GET /api/cdn/domains/{id}/stats
-   Parámetros: range (day/week/month)
-  → Estadísticas de tráfico / peticiones / tasa de aciertos
+  → Resumen del dominio (cdn_domain / provider_type / plan / status / purged_at)
 ```
 
 ### Lado de administración
 
 ```
-GET /admin/api/cdn/domains            → Todos los dominios CDN
-PUT /admin/api/cdn/domains/{id}       → Actualizar plan/configuración del dominio
+GET /admin/api/cdn/domains            → Todos los dominios CDN (con el usuario al que pertenecen)
+PUT /admin/api/cdn/domains/{id}       → Actualizar el plan del dominio (plan en lista blanca: standard | pro | enterprise)
 ```
+
+Las rutas CDN de administración usan `RbacMiddleware('cdn.manage')` y los cambios de plan se registran en el log de auditoría (`admin_cdn_update_plan`). Las credenciales de cuentas de proveedor se mantienen mediante CRUD en `/admin/api/providers` (RbacMiddleware `provider.config`, `code` convencional `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, credenciales cifradas con Encryptable).
+
+### Códigos de error CDN
+
+| code | Descripción |
+|------|------|
+| 4001 | Parámetros CDN faltantes o inválidos (urls vacío, provider_type inválido, formato de dominio incorrecto) |
+| 4002 | El dominio no completó el registro ICP (se mapea cuando la API de Aliyun/Tencent Cloud lo rechaza) |
+| 4003 | Credenciales del proveedor CDN no configuradas (cuenta ausente/deshabilitada; la instantánea estricta no cambia silenciosamente) |
+| 4005 | Fallo al purgar la caché CDN |
+| 5001 | Fallo al llamar a la API del proveedor CDN |
+
+> Los recursos CDN que no pertenecen al usuario (ajenos o inexistentes) devuelven uniformemente **404** (mapeo findOrFail, sin revelar la existencia del recurso), sin código de negocio independiente.
 
 ---
 

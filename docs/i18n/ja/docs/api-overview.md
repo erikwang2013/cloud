@@ -34,6 +34,9 @@
 | GET/POST | `/api/resources` | マイリソース |
 | GET | `/api/resources/{id}/status` | リソースステータス |
 | GET | `/api/resources/{id}/console` | VNC コンソールリンク |
+| GET/POST | `/api/cdn/domains` | CDN ドメインリスト / 作成（cloudflare \| cloudfront \| aliyun \| tencent） |
+| GET/DELETE | `/api/cdn/domains/{id}` | CDN ドメイン詳細 / 削除 |
+| POST | `/api/cdn/domains/{id}/purge` | キャッシュ削除（冪等、最大 100 URL） |
 | GET/POST | `/api/tickets` | サポートチケット |
 | POST | `/api/tickets/{id}/reply` | チケット返信 |
 | GET/POST | `/api/dns/{domain}` | DNS 管理 |
@@ -59,6 +62,8 @@
 | GET | `/admin/api/suppliers/export` | サプライヤーエクスポート (.xlsx) |
 | GET/PUT | `/admin/api/payments/*` | 支払いチャネル / 取引 / 照合 |
 | GET/POST | `/admin/api/provisioning/*` | デリバリータスク / ホスト管理 |
+| GET/PUT | `/admin/api/cdn/domains` | CDN ドメイン管理（プラン変更） |
+| GET/POST/PUT/DELETE | `/admin/api/providers` | プロバイダーアカウント資格情報管理（CDN/デリバリー共用、Encryptable 暗号化） |
 | GET/POST | `/admin/api/suppliers/*` | サプライヤー承認 / 決済 / 出金 |
 | GET/POST | `/admin/api/tickets` | チケット割り当て / クローズ |
 | GET | `/admin/api/reports/*` | 売上 / 地域 / サプライヤーレポート |

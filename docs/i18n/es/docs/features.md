@@ -595,11 +595,26 @@ Almacenamiento de objetos compatible con la API S3, con soporte de AWS S3 y MinI
 
 ## 16. Aceleración CDN
 
-El producto CDN soporta integración con Cloudflare: se pueden conectar servidores o buckets como origen al CDN, con soporte de purga de caché.
+El producto CDN soporta integración con cuatro proveedores (Cloudflare / AWS CloudFront / Aliyun CDN / Tencent Cloud CDN): se pueden conectar servidores o buckets como origen al CDN, con soporte de purga de caché y configuración opcional de certificados HTTPS.
 
-**Interfaces:** ProviderInterface + CachePurgeInterface (interfaz de capacidad opcional)
+**Arquitectura de adaptadores:** en `service/app/cdn/provider/` hay un adaptador por proveedor, todos implementan `CdnAdapterInterface` (createDomain / configureDomain / purgeCache / disableDomain / requiresIcpRegistration), distribuidos por `CdnAdapterFactory` según `provider_type`:
 
-**Modelo de datos:** `resource_cdn`
+| provider_type | Adaptador | Protocolo de conexión | Requiere registro ICP |
+|---------------|-----------|----------------------|----------------------|
+| `cloudflare` | CloudflareAdapter | API REST v4 (con certificado automático SSL SaaS) | No |
+| `cloudfront` | CloudFrontAdapter | aws-sdk-php (CloudFront + ACM) | No |
+| `aliyun` | AliyunCdnAdapter | Firma RPC | Sí |
+| `tencent` | TencentCdnAdapter | Firma TC3 | Sí |
+
+**Configuración de cuentas de proveedor:** el panel de administración mantiene las cuentas `provider_apis` mediante CRUD en `/admin/providers` (credenciales cifradas en la base de datos con Encryptable, `code` convencional `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`). Prioridad de resolución de credenciales del lado del usuario: cuenta vinculada (provider_account_id) → cuenta activa que coincide con el code → respaldo de configuración env.
+
+**Vinculación de instantánea estricta:** `provider_account_id` se determina al crear el dominio; las eliminaciones/purga de caché posteriores usan solo esa cuenta vinculada; si la cuenta falta o está deshabilitada, devuelve 4003 sin cambiar de cuenta silenciosamente. Los dominios de Aliyun/Tencent Cloud requieren registro ICP; sin él se devuelve 4002 (con el aviso `requires_icp_registration`).
+
+**Purga de caché:** `POST /api/cdn/domains/{id}/purge`; las URLs se deduplican y se les quitan espacios automáticamente (máximo 100), solo se permiten el propio dominio o subdominios, se rechazan comodines y URLs externas; es idempotente.
+
+**Interfaces:** CdnAdapterInterface + CdnProvider (reutiliza el canal de actualización de ProvisionProvider, con soporte de upgrade de plan)
+
+**Modelo de datos:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; la clave privada se elimina de cert_config antes de guardarla en la base de datos, solo se almacena información de certificado no sensible)
 
 ## 17. Facturación por uso
 

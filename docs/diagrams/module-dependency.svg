@@ -311,6 +311,13 @@
 <text text-anchor="middle" x="586" y="-396" font-family="sans-serif" font-size="10.00">Report</text>
 <text text-anchor="middle" x="586" y="-385" font-family="sans-serif" font-size="10.00">Revenue Supplier Region</text>
 </g>
+<!-- cdn -->
+<g id="node27" class="node">
+<title>cdn</title>
+<path fill="#c8e6c9" stroke="black" d="M1015,-311C1015,-311 890,-311 890,-311 884,-311 878,-305 878,-299 878,-299 878,-287 878,-287 878,-281 884,-275 890,-275 890,-275 1015,-275 1015,-275 1021,-275 1027,-281 1027,-287 1027,-287 1027,-299 1027,-299 1027,-305 1021,-311 1015,-311"/>
+<text text-anchor="middle" x="952" y="-296" font-family="sans-serif" font-size="10.00">CDN</text>
+<text text-anchor="middle" x="952" y="-285" font-family="sans-serif" font-size="10.00">Accel Purge ICP</text>
+</g>
 <!-- hashid -->
 <g id="node20" class="node">
 <title>hashid</title>
@@ -358,6 +365,18 @@
 <title>provworker&#45;&gt;prov</title>
 <path fill="none" stroke="black" d="M511.59,-121.42C556.37,-137.42 620.7,-160.39 664.3,-175.97"/>
 <polygon fill="black" stroke="black" points="512.65,-118.09 502.06,-118.02 510.3,-124.68 512.65,-118.09"/>
+</g>
+<!-- cdn&#45;&gt;prov -->
+<g id="edge27" class="edge">
+<title>cdn&#45;&gt;prov</title>
+<path fill="none" stroke="black" d="M890,-300C850,-340 770,-340 730,-310C715,-295 712,-270 712,-222"/>
+<polygon fill="black" stroke="black" points="708.5,-222.05 712,-212.05 715.5,-222.05 708.5,-222.05"/>
+</g>
+<!-- cdn&#45;&gt;encryptable -->
+<g id="edge28" class="edge">
+<title>cdn&#45;&gt;encryptable</title>
+<path fill="none" stroke="black" d="M1002,-275C1032,-230 1068,-175 1082,-130"/>
+<polygon fill="black" stroke="black" points="1085.3,-131.2 1086.1,-120.1 1078.7,-127.6 1085.3,-131.2"/>
 </g>
 </g>
 <g opacity="0.5">

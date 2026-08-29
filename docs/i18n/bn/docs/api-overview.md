@@ -34,6 +34,9 @@
 | GET/POST | `/api/resources` | আমার রিসোর্স |
 | GET | `/api/resources/{id}/status` | রিসোর্স স্ট্যাটাস |
 | GET | `/api/resources/{id}/console` | VNC কনসোল লিংক |
+| GET/POST | `/api/cdn/domains` | CDN ডোমেইন লিস্ট / তৈরি (cloudflare \| cloudfront \| aliyun \| tencent) |
+| GET/DELETE | `/api/cdn/domains/{id}` | CDN ডোমেইন ডিটেইল / ডিলিট |
+| POST | `/api/cdn/domains/{id}/purge` | ক্যাশ ক্লিয়ার (ইডেম্পোটেন্ট, সর্বোচ্চ ১০০টি URL) |
 | GET/POST | `/api/tickets` | টিকেট |
 | POST | `/api/tickets/{id}/reply` | টিকেট রিপ্লাই |
 | GET/POST | `/api/dns/{domain}` | DNS ম্যানেজমেন্ট |
@@ -59,6 +62,8 @@
 | GET | `/admin/api/suppliers/export` | সাপ্লায়ার এক্সপোর্ট (.xlsx) |
 | GET/PUT | `/admin/api/payments/*` | পেমেন্ট চ্যানেল / ট্রানজেকশন / রিকনসিলিয়েশন |
 | GET/POST | `/admin/api/provisioning/*` | ডেলিভারি টাস্ক / হোস্ট ম্যানেজমেন্ট |
+| GET/PUT | `/admin/api/cdn/domains` | CDN ডোমেইন ম্যানেজমেন্ট (প্ল্যান পরিবর্তন) |
+| GET/POST/PUT/DELETE | `/admin/api/providers` | প্রোভাইডার অ্যাকাউন্ট ক্রেডেনশিয়াল ম্যানেজমেন্ট (CDN/ডেলিভারি শেয়ার্ড, Encryptable এনক্রিপশন) |
 | GET/POST | `/admin/api/suppliers/*` | সাপ্লায়ার অ্যাপ্রুভাল / সেটেলমেন্ট / উইথড্রয়াল |
 | GET/POST | `/admin/api/tickets` | টিকেট অ্যাসাইনমেন্ট / ক্লোজার |
 | GET | `/admin/api/reports/*` | রেভিনিউ / রিজিয়ন / সাপ্লায়ার রিপোর্ট |

@@ -807,23 +807,49 @@ GET /api/storage/buckets/{id}/credentials
 GET /api/cdn/domains
   → Meine CDN-Domains (Origin, Status, Paket)
 
+POST /api/cdn/domains
+  Body: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
+          origin_type (server|storage), origin_value, cert_config? }
+  → CDN-Domain erstellen (wird anbieterseitig angelegt und an den Origin gebunden)
+  → Bei provider_type=aliyun|tencent muss die Domain eine ICP-Registrierung abgeschlossen haben (sonst 4002)
+  → Antwort enthält das Hinweisfeld requires_icp_registration
+  → Anmeldedaten-Auflösung: zuerst gebundenes Konto der Domain (provider_account_id), sonst aktives
+    provider_apis-Konto mit code=cdn-{provider_type}, sonst Fallback auf env-Konfiguration
+
 GET /api/cdn/domains/{id}
   → CDN-Domain-Details
 
+DELETE /api/cdn/domains/{id}
+  → CDN-Domain löschen (anbieterseitige Domain deaktivieren, idempotent)
+
 POST /api/cdn/domains/{id}/purge
-  → Cache leeren (gesamte Site oder angegebene URL-Liste)
+  Body: { urls: ["https://cdn.example.com/path"] }
+  → Cache leeren (doppelte URLs werden automatisch dedupliziert, idempotent; max. 100)
 
 GET /api/cdn/domains/{id}/stats
-  Parameter: range (day/week/month)
-  → Traffic/Anfragen/Trefferquote
+  → Domain-Überblick (cdn_domain / provider_type / plan / status / purged_at)
 ```
 
 ### Adminseite
 
 ```
-GET /admin/api/cdn/domains            → Alle CDN-Domains
-PUT /admin/api/cdn/domains/{id}       → Domain-Paket/Konfiguration aktualisieren
+GET /admin/api/cdn/domains            → Alle CDN-Domains (inkl. zugehörigem Benutzer)
+PUT /admin/api/cdn/domains/{id}       → Domain-Paket aktualisieren (plan-Whitelist: standard | pro | enterprise)
 ```
+
+Die Admin-CDN-Routen hängen an `RbacMiddleware('cdn.manage')`; Paketänderungen werden im Audit-Log festgehalten (`admin_cdn_update_plan`). Anbieter-Anmeldedaten werden per CRUD über `/admin/api/providers` gepflegt (RbacMiddleware `provider.config`, `code`-Konvention `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, Anmeldedaten mit Encryptable verschlüsselt gespeichert).
+
+### CDN-Fehlercodes
+
+| code | Beschreibung |
+|------|--------------|
+| 4001 | CDN-Parameter fehlen/ungültig (urls leer, provider_type ungültig, fehlerhaftes Domain-Format) |
+| 4002 | Domain hat die ICP-Registrierung nicht abgeschlossen (wird bei Ablehnung durch Aliyun/Tencent-API gemappt) |
+| 4003 | CDN-Anbieter-Anmeldedaten nicht konfiguriert (Konto fehlt/deaktiviert, strikte Snapshot ohne stilles Umschalten) |
+| 4005 | CDN-Cache-Purge fehlgeschlagen |
+| 5001 | CDN-Anbieter-API-Aufruf fehlgeschlagen |
+
+> CDN-Ressourcen, die nicht dem Benutzer gehören (fremde oder nicht vorhandene Ressourcen), geben einheitlich **404** zurück (findOrFail-Mapping, ohne die Existenz der Ressource preiszugeben); kein separater Geschäftscode.
 
 ---
 

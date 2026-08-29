@@ -595,11 +595,26 @@ Penyimpanan objek yang kompatibel dengan API S3, mendukung AWS S3 dan MinIO mand
 
 ## 16. Akselerasi CDN
 
-Produk CDN mendukung integrasi Cloudflare, server atau bucket penyimpanan dapat dijadikan asal untuk CDN, mendukung pembersihan cache.
+Produk CDN mendukung empat penyedia (Cloudflare / AWS CloudFront / Aliyun CDN / Tencent CDN), server atau bucket penyimpanan dapat dijadikan asal untuk CDN, mendukung pembersihan cache dan konfigurasi sertifikat HTTPS opsional.
 
-**Antarmuka:** ProviderInterface + CachePurgeInterface (antarmuka kemampuan opsional)
+**Arsitektur adaptor:** setiap penyedia memiliki satu adaptor di `service/app/cdn/provider/`, semuanya mengimplementasikan `CdnAdapterInterface` (createDomain / configureDomain / purgeCache / disableDomain / requiresIcpRegistration), didistribusikan oleh `CdnAdapterFactory` berdasarkan `provider_type`:
 
-**Model data:** `resource_cdn`
+| provider_type | Adaptor | Protokol integrasi | Perlu ICP |
+|---------------|---------|--------------------|-----------|
+| `cloudflare` | CloudflareAdapter | REST v4 API (termasuk sertifikat otomatis SSL SaaS) | Tidak |
+| `cloudfront` | CloudFrontAdapter | aws-sdk-php (CloudFront + ACM) | Tidak |
+| `aliyun` | AliyunCdnAdapter | Tanda tangan RPC | Ya |
+| `tencent` | TencentCdnAdapter | Tanda tangan TC3 | Ya |
+
+**Konfigurasi akun penyedia:** akun `provider_apis` dikelola di sisi admin melalui CRUD `/admin/providers` (kredensial dienkripsi Encryptable saat disimpan, konvensi `code`: `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`). Prioritas resolusi kredensial di sisi pengguna: akun terikat (provider_account_id) → akun aktif yang cocok dengan `code` → fallback konfigurasi env.
+
+**Ikatan snapshot ketat:** `provider_account_id` ditentukan saat pembuatan domain, penghapusan/pembersihan cache berikutnya hanya menggunakan akun terikat tersebut; akun hilang atau dinonaktifkan mengembalikan 4003, tanpa peralihan akun diam-diam. Domain Aliyun/Tencent harus menyelesaikan ICP pendaftaran, yang belum terdaftar mengembalikan 4002 (termasuk petunjuk `requires_icp_registration`).
+
+**Pembersihan cache:** `POST /api/cdn/domains/{id}/purge`, URL otomatis dideduplikasi dan dihilangkan spasi (maksimal 100), hanya mengizinkan domain ini atau subdomain, menolak wildcard dan URL eksternal, idempoten.
+
+**Antarmuka:** CdnAdapterInterface + CdnProvider (menggunakan saluran upgrade ProvisionProvider, mendukung upgrade plan)
+
+**Model data:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; kunci privat dihapus dari cert_config sebelum disimpan, hanya menyimpan informasi sertifikat non-sensitif)
 
 ## 17. Penagihan Pemakaian
 

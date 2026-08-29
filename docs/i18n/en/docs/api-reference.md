@@ -807,23 +807,50 @@ GET /api/storage/buckets/{id}/credentials
 GET /api/cdn/domains
   → My CDN domain list (origin, status, plan)
 
+POST /api/cdn/domains
+  Body: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
+          origin_type (server|storage), origin_value, cert_config? }
+  → Create CDN domain (provisioned at the provider and bound to the origin)
+  → Domains with provider_type=aliyun|tencent must complete ICP registration (4002 otherwise)
+  → Response includes requires_icp_registration hint field
+  → Credential resolution: the domain's bound account (provider_account_id) first,
+    otherwise the active provider_apis account with code=cdn-{provider_type},
+    otherwise env config fallback
+
 GET /api/cdn/domains/{id}
   → CDN domain details
 
+DELETE /api/cdn/domains/{id}
+  → Delete CDN domain (disables the provider-side domain, idempotent)
+
 POST /api/cdn/domains/{id}/purge
-  → Purge cache (entire site or specified URL list)
+  Body: { urls: ["https://cdn.example.com/path"] }
+  → Purge cache (duplicate URLs auto-deduplicated, idempotent; max 100)
 
 GET /api/cdn/domains/{id}/stats
-  Params: range (day/week/month)
-  → Traffic/requests/hit ratio statistics
+  → Domain overview (cdn_domain / provider_type / plan / status / purged_at)
 ```
 
 ### Admin side
 
 ```
-GET /admin/api/cdn/domains            → All CDN domains
-PUT /admin/api/cdn/domains/{id}       → Update domain plan/config
+GET /admin/api/cdn/domains            → All CDN domains (incl. owning user)
+PUT /admin/api/cdn/domains/{id}       → Update domain plan (plan whitelist: standard | pro | enterprise)
 ```
+
+Admin CDN routes are guarded by `RbacMiddleware('cdn.manage')`, and plan changes are written to the audit log (`admin_cdn_update_plan`). Provider account credentials are maintained via `/admin/api/providers` CRUD (RbacMiddleware `provider.config`, `code` convention `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, credentials stored encrypted with Encryptable).
+
+### CDN Error Codes
+
+| code | Description |
+|------|-------------|
+| 4001 | CDN parameter missing/invalid (empty urls, invalid provider_type, malformed domain) |
+| 4002 | Domain not ICP-registered (mapped when Aliyun/Tencent API rejects) |
+| 4003 | CDN provider credentials not configured (account missing/disabled, strict snapshot does not silently switch) |
+| 4005 | CDN cache purge failed |
+| 5001 | CDN provider API call failed |
+
+> CDN resources not owned by the user (someone else's or non-existent) uniformly return **404** (findOrFail mapping, never leaking resource existence), no dedicated business code.
 
 ---
 

@@ -595,11 +595,26 @@ SSL 证书产品支持 DV/OV/EV 三种类型，通过 ACME 协议（Let's Encryp
 
 ## 16. CDN 加速
 
-CDN 产品支持 Cloudflare 集成，可将服务器或存储桶作为源站接入 CDN，支持缓存清除。
+CDN 产品支持四家服务商（Cloudflare / AWS CloudFront / 阿里云 CDN / 腾讯云 CDN），可将服务器或存储桶作为源站接入 CDN，支持缓存清除与可选 HTTPS 证书配置。
 
-**接口：** ProviderInterface + CachePurgeInterface（可选能力接口）
+**适配器架构：** `service/app/cdn/provider/` 下每服务商一个适配器，统一实现 `CdnAdapterInterface`（createDomain / configureDomain / purgeCache / disableDomain / requiresIcpRegistration），由 `CdnAdapterFactory` 按 `provider_type` 分发：
 
-**数据模型：** `resource_cdn`
+| provider_type | 适配器 | 接入协议 | 需 ICP 备案 |
+|---------------|--------|---------|------------|
+| `cloudflare` | CloudflareAdapter | REST v4 API（含 SSL SaaS 自动证书） | 否 |
+| `cloudfront` | CloudFrontAdapter | aws-sdk-php（CloudFront + ACM） | 否 |
+| `aliyun` | AliyunCdnAdapter | RPC 签名 | 是 |
+| `tencent` | TencentCdnAdapter | TC3 签名 | 是 |
+
+**服务商账号配置：** 管理端通过 `/admin/providers` CRUD 维护 `provider_apis` 账号（凭据 Encryptable 加密入库，`code` 约定 `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`）。用户侧凭据解析优先级：绑定账号（provider_account_id）→ code 匹配的活动账号 → env 配置兜底。
+
+**严格快照绑定：** 域名创建时确定 `provider_account_id`，后续删除/缓存刷新只使用该绑定账号；账号缺失或禁用返回 4003，不静默切换账号。阿里云/腾讯云域名需 ICP 备案，未备案返回 4002（含 `requires_icp_registration` 提示）。
+
+**缓存刷新：** `POST /api/cdn/domains/{id}/purge`，URL 自动去重去空格（最多 100 个），仅允许本域名或子域、拒绝通配符与外部 URL，幂等。
+
+**接口：** CdnAdapterInterface + CdnProvider（复用 ProvisionProvider 升级通道，支持 plan 升级）
+
+**数据模型：** `resource_cdn`（provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config；cert_config 落库前剔除私钥，仅存非敏感证书信息）
 
 ## 17. 按量计费
 

@@ -595,11 +595,26 @@ S3 API-কমপ্যাটিবল অবজেক্ট স্টোরে�
 
 ## 16. CDN অ্যাক্সিলারেশন
 
-CDN প্রোডাক্ট Cloudflare ইন্টিগ্রেশন সাপোর্ট করে, সার্ভার বা স্টোরেজ বাকেট অরিজিন হিসেবে CDN-এ যুক্ত করা যায়, ক্যাশ পর্জ সাপোর্ট করে।
+CDN প্রোডাক্ট চারটি প্রোভাইডার সাপোর্ট করে (Cloudflare / AWS CloudFront / Aliyun CDN / Tencent Cloud CDN), সার্ভার বা স্টোরেজ বাকেট অরিজিন হিসেবে CDN-এ যুক্ত করা যায়, ক্যাশ পর্জ ও ঐচ্ছিক HTTPS সার্টিফিকেট কনফিগ সাপোর্ট করে।
 
-**ইন্টারফেস:** ProviderInterface + CachePurgeInterface (ঐচ্ছিক ক্ষমতা ইন্টারফেস)
+**অ্যাডাপ্টার আর্কিটেকচার:** `service/app/cdn/provider/` এর অধীনে প্রতি প্রোভাইডারের জন্য একটি অ্যাডাপ্টার, সবাই `CdnAdapterInterface` (createDomain / configureDomain / purgeCache / disableDomain / requiresIcpRegistration) বাস্তবায়ন করে, `CdnAdapterFactory` `provider_type` অনুযায়ী ডিসপ্যাচ করে:
 
-**ডেটা মডেল:** `resource_cdn`
+| provider_type | অ্যাডাপ্টার | ইন্টিগ্রেশন প্রোটোকল | ICP রেজিস্ট্রেশন প্রয়োজন |
+|---------------|------------|---------------------|--------------------------|
+| `cloudflare` | CloudflareAdapter | REST v4 API (SSL SaaS অটো সার্টিফিকেট সহ) | না |
+| `cloudfront` | CloudFrontAdapter | aws-sdk-php (CloudFront + ACM) | না |
+| `aliyun` | AliyunCdnAdapter | RPC সিগনেচার | হ্যাঁ |
+| `tencent` | TencentCdnAdapter | TC3 সিগনেচার | হ্যাঁ |
+
+**প্রোভাইডার অ্যাকাউন্ট কনফিগ:** অ্যাডমিন সাইড `/admin/providers` CRUD দিয়ে `provider_apis` অ্যাকাউন্ট ম্যানটেইন করে (ক্রেডেনশিয়াল Encryptable এনক্রিপশনে স্টোর, `code` কনভেনশন `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`)। ইউজার সাইড ক্রেডেনশিয়াল রেজল্যুশন প্রায়োরিটি: বাইন্ডেড অ্যাকাউন্ট (provider_account_id) → code ম্যাচের অ্যাক্টিভ অ্যাকাউন্ট → env কনফিগ ফলব্যাক।
+
+**স্ট্রিক্ট স্ন্যাপশট বাইন্ডিং:** ডোমেইন তৈরি হলে `provider_account_id` নির্ধারিত হয়, পরবর্তী ডিলিট/ক্যাশ পর্জ শুধু সেই বাইন্ডেড অ্যাকাউন্ট ব্যবহার করে; অ্যাকাউন্ট অনুপস্থিত বা ডিসেবল হলে 4003 রিটার্ন হয়, অ্যাকাউন্ট সাইলেন্টলি সুইচ হয় না। Aliyun/Tencent ডোমেইনে ICP রেজিস্ট্রেশন প্রয়োজন, রেজিস্ট্রেশন না থাকলে 4002 রিটার্ন (`requires_icp_registration` প্রম্পট সহ)।
+
+**ক্যাশ পর্জ:** `POST /api/cdn/domains/{id}/purge`, URL অটো ডিডুপ ও স্পেস রিমুভ (সর্বোচ্চ ১০০টি), শুধু নিজস্ব ডোমেইন বা সাবডোমেইন অনুমোদিত, ওয়াইল্ডকার্ড ও বাহ্যিক URL রিজেক্ট, ইডেম্পোটেন্ট।
+
+**ইন্টারফেস:** CdnAdapterInterface + CdnProvider (ProvisionProvider আপগ্রেড চ্যানেল রিইউজ করে, plan আপগ্রেড সাপোর্ট)
+
+**ডেটা মডেল:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; cert_config স্টোরের আগে প্রাইভেট কী বাদ দেওয়া হয়, শুধু নন-সেনসিটিভ সার্টিফিকেট তথ্য থাকে)
 
 ## 17. পে-অ্যাস-ইউ-গো বিলিং
 

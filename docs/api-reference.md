@@ -807,23 +807,49 @@ GET /api/storage/buckets/{id}/credentials
 GET /api/cdn/domains
   → 我的 CDN 域名列表（源站、状态、套餐）
 
+POST /api/cdn/domains
+  体: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
+        origin_type (server|storage), origin_value, cert_config? }
+  → 创建 CDN 域名（服务商侧创建并绑定源站）
+  → provider_type=aliyun|tencent 时域名需完成 ICP 备案（未备案返回 4002）
+  → 响应含 requires_icp_registration 提示字段
+  → 凭据解析：先取该域名绑定账号（provider_account_id），否则按 code=cdn-{provider_type}
+    的活动 provider_apis 账号，均无则回退 env 配置
+
 GET /api/cdn/domains/{id}
   → CDN 域名详情
 
+DELETE /api/cdn/domains/{id}
+  → 删除 CDN 域名（停用服务商侧域名，幂等）
+
 POST /api/cdn/domains/{id}/purge
-  → 清除缓存（全站或指定 URL 列表）
+  体: { urls: ["https://cdn.example.com/path"] }
+  → 清除缓存（重复 URL 自动去重，幂等；最多 100 个）
 
 GET /api/cdn/domains/{id}/stats
-  参数: range (day/week/month)
-  → 流量/请求数/命中率统计
+  → 域名概览（cdn_domain / provider_type / plan / status / purged_at）
 ```
 
 ### 管理端
 
 ```
-GET /admin/api/cdn/domains            → 全部 CDN 域名
-PUT /admin/api/cdn/domains/{id}       → 更新域名套餐/配置
+GET /admin/api/cdn/domains            → 全部 CDN 域名（含所属用户）
+PUT /admin/api/cdn/domains/{id}       → 更新域名套餐（plan 白名单: standard | pro | enterprise）
 ```
+
+管理端 CDN 路由挂 `RbacMiddleware('cdn.manage')`，套餐变更写入审计日志（`admin_cdn_update_plan`）。服务商账号凭据通过 `/admin/api/providers` CRUD 维护（RbacMiddleware `provider.config`，`code` 约定 `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`，凭据 Encryptable 加密入库）。
+
+### CDN 错误码
+
+| code | 说明 |
+|------|------|
+| 4001 | CDN 参数缺失/非法（urls 为空、provider_type 非法、域名格式错误） |
+| 4002 | 域名未完成 ICP 备案（阿里云/腾讯云 API 拒绝时映射） |
+| 4003 | CDN 服务商凭据未配置（账号缺失/禁用，严格快照不静默切换） |
+| 4005 | CDN 缓存刷新失败 |
+| 5001 | CDN 服务商 API 调用失败 |
+
+> 非本用户 CDN 资源（他人/不存在的资源）统一返回 **404**（findOrFail 映射，不泄露资源存在性），无独立业务码。
 
 ---
 

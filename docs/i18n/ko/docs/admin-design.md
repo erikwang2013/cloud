@@ -424,6 +424,7 @@ service 백엔드 (`service/`)도 자체 `Common\ExcelExport` 래퍼로 Excel �
 | Payments | `GET /payments/channels`, `PUT /payments/channels/{id}`, `GET /payments/transactions`, `/reconcile` | `Admin\PaymentController` |
 | Provisioning | `GET /provisioning/tasks`, `POST /tasks/{id}/retry`, `POST /resources/{id}/upgrade`, `/destroy`, `GET /hosts` | `Provisioning\TaskController` |
 | Provider APIs | `GET /providers`, `POST /providers`, `PUT /providers/{id}`, `DELETE /providers/{id}` | `Admin\ProviderApiController` |
+| CDN | `GET /cdn/domains`, `PUT /cdn/domains/{id}` | `Admin\CdnController` |
 | Suppliers | `GET /suppliers`, `/suppliers/export`, `POST /suppliers/{id}/approve`, `/settle`, `/withdraws/{id}/approve` | `Admin\SupplierController` |
 | 공급업체 API Key | `GET /suppliers/{id}/api-keys`, `POST /suppliers/{id}/api-keys`, `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
 | Tickets | `GET /tickets`, `POST /tickets/{id}/assign`, `/close` | `Ticket\TicketController` |
@@ -436,6 +437,24 @@ service 백엔드 (`service/`)도 자체 `Common\ExcelExport` 래퍼로 Excel �
 | Monitoring | `GET /monitor/dashboard`, `/resources/{id}` | `Monitor\MonitorController` |
 | Audit | `GET /audit-logs` | `Admin\SystemController` |
 | System Config | `PUT /system/config` | `Admin\SystemController` |
+
+### CDN 리소스 관리
+
+CDN 상품은 4개 서비스 제공업체（Cloudflare / CloudFront / Aliyun / Tencent Cloud）를 지원하며, 관리 단말은 두 부분으로 나뉩니다:
+
+**서비스 제공업체 계정 구성**（ProviderApi 모델 재사용, `Admin\ProviderApiController`）:
+
+- `GET/POST /admin/api/providers`, `PUT/DELETE /admin/api/providers/{id}`, `RbacMiddleware('provider.config')` 적용
+- `code` 규약 `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; 자격 증명 필드는 Encryptable로 암호화 저장, `config` JSON 컬럼에는 비민감 메타데이터 저장
+- 사용자 측 자격 증명 해석 우선순위: 바인딩 계정 → code 일치 활성 계정 → env 폴백; 삭제/purge는 엄격한 스냅샷（바인딩 계정만 사용, 누락/비활성 시 4003 반환）
+
+**CDN 도메인 관리**（`Admin\CdnController`）:
+
+```
+GET /admin/api/cdn/domains        → 전체 도메인（소속 user_id 포함）, RbacMiddleware('cdn.manage') 적용
+PUT /admin/api/cdn/domains/{id}   → 패키지 업데이트, plan 화이트리스트 standard | pro | enterprise,
+                                    무효 값은 400 반환; 변경은 감사 로그 admin_cdn_update_plan 기록
+```
 
 ### 대시보드 데이터 (Service 레이어)
 

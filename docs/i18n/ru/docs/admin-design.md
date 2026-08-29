@@ -424,6 +424,7 @@ public function export(Request $request): Response
 | Payments | `GET /payments/channels`, `PUT /payments/channels/{id}`, `GET /payments/transactions`, `/reconcile` | `Admin\PaymentController` |
 | Provisioning | `GET /provisioning/tasks`, `POST /tasks/{id}/retry`, `POST /resources/{id}/upgrade`, `/destroy`, `GET /hosts` | `Provisioning\TaskController` |
 | API провайдеров | `GET /providers`, `POST /providers`, `PUT /providers/{id}`, `DELETE /providers/{id}` | `Admin\ProviderApiController` |
+| CDN | `GET /cdn/domains`, `PUT /cdn/domains/{id}` | `Admin\CdnController` |
 | Suppliers | `GET /suppliers`, `/suppliers/export`, `POST /suppliers/{id}/approve`, `/settle`, `/withdraws/{id}/approve` | `Admin\SupplierController` |
 | API-ключи поставщиков | `GET /suppliers/{id}/api-keys`, `POST /suppliers/{id}/api-keys`, `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
 | Tickets | `GET /tickets`, `POST /tickets/{id}/assign`, `/close` | `Ticket\TicketController` |
@@ -436,6 +437,24 @@ public function export(Request $request): Response
 | Monitoring | `GET /monitor/dashboard`, `/resources/{id}` | `Monitor\MonitorController` |
 | Audit | `GET /audit-logs` | `Admin\SystemController` |
 | Системная конфигурация | `PUT /system/config` | `Admin\SystemController` |
+
+### Управление ресурсами CDN
+
+Продукт CDN поддерживает четырёх провайдеров (Cloudflare / CloudFront / Aliyun / Tencent), в админ-панели два блока:
+
+**Настройка учётных записей провайдеров** (переиспользует модель ProviderApi, `Admin\ProviderApiController`):
+
+- `GET/POST /admin/api/providers`, `PUT/DELETE /admin/api/providers/{id}`, защищено `RbacMiddleware('provider.config')`
+- `code` по соглашению `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; учётные данные шифруются через Encryptable, колонка `config` (JSON) хранит нечувствительные метаданные
+- Приоритет разрешения учётных данных на стороне пользователя: привязанная запись → активная запись по code → env fallback; удаление/purge идут по строгой привязке (только привязанная запись, при отсутствии/отключении — 4003)
+
+**Управление CDN-доменами** (`Admin\CdnController`):
+
+```
+GET /admin/api/cdn/domains        → все домены (с user_id владельца), защищено RbacMiddleware('cdn.manage')
+PUT /admin/api/cdn/domains/{id}   → обновление тарифа, белый список plan: standard | pro | enterprise,
+                                    недопустимое значение — 400; изменение пишется в журнал аудита admin_cdn_update_plan
+```
 
 ### Данные дашборда (слой service)
 

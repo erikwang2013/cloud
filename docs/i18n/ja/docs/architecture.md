@@ -140,6 +140,26 @@ common/
 └── webhook/             # Webhook 事件分发器
 ```
 
+### 2.4 CDN モジュール
+
+製品レベルの CDN モジュール（`service/app/cdn/`）はアダプターパターンで 4 社のプロバイダーと連携し、サーバーまたはストレージバケットをオリジンとして CDN に接続する：
+
+```
+CdnAdapterInterface
+  ├── CloudflareAdapter   REST v4（SSL SaaS 自動証明書）、ICP 登録不要
+  ├── CloudFrontAdapter   aws-sdk-php（CloudFront + ACM）、ICP 登録不要
+  ├── AliyunCdnAdapter    RPC 署名、ICP 登録必要
+  └── TencentCdnAdapter   TC3 署名、ICP 登録必要
+         ▲
+CdnAdapterFactory.resolve(type, accountId, strict)
+  ① バインドアカウント (provider_account_id) → ② code=cdn-{type} のアクティブアカウント → ③ env フォールバック
+  strict=true（削除/purge）：バインドアカウントのみ使用、欠落時は 4003、静かに切り替えない
+```
+
+**アカウント管理：** `provider_apis` モデルを再利用（資格情報は Encryptable で暗号化して保存）、管理側 `/admin/providers` CRUD（RbacMiddleware）、`code` は `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent` と規定、env 資格情報は fallback に降格。
+
+**データモデル：** `resource_cdn`（provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config；cert_config は保存前に秘密鍵を除去）。権限分離：CDN リソースは `resource.user_id` の帰属検証を経て、非自ユーザーは一律 404。
+
 ---
 
 ## 3. ミドルウェア実行パイプライン
@@ -386,9 +406,9 @@ Accept-Language: zh-CN,zh;q=0.9
                     Internet
                         │
                ┌────────┴────────┐
-               │  Cloudflare CDN │
-               │  DDoS / Bot     │
-               └────────┬────────┘
+               │  Cloudflare CDN │  ← プラットフォーム自身のエッジ防御（DDoS/Bot）、
+               │  DDoS / Bot     │    製品レベルの CDN モジュール（4 社のプロバイダー、
+               └────────┬────────┘    2.4 節参照）とは無関係
                         │
                ┌────────┴────────┐
                │  Nginx × 2      │

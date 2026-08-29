@@ -140,6 +140,26 @@ common/
 └── webhook/             # Webhook ইভেন্ট ডিসপ্যাচার
 ```
 
+### 2.4 CDN মডিউল
+
+প্রোডাক্ট-লেভেল CDN মডিউল (`service/app/cdn/`) অ্যাডাপ্টার প্যাটার্ন দিয়ে চারটি প্রোভাইডার ইন্টিগ্রেট করে, সার্ভার বা স্টোরেজ বাকেট অরিজিন হিসেবে CDN-এ যুক্ত করে:
+
+```
+CdnAdapterInterface
+  ├── CloudflareAdapter   REST v4 (SSL SaaS অটো সার্টিফিকেট), ICP রেজিস্ট্রেশন লাগে না
+  ├── CloudFrontAdapter   aws-sdk-php (CloudFront + ACM), ICP রেজিস্ট্রেশন লাগে না
+  ├── AliyunCdnAdapter    RPC সিগনেচার, ICP রেজিস্ট্রেশন লাগে
+  └── TencentCdnAdapter   TC3 সিগনেচার, ICP রেজিস্ট্রেশন লাগে
+         ▲
+CdnAdapterFactory.resolve(type, accountId, strict)
+  ① বাইন্ডেড অ্যাকাউন্ট (provider_account_id) → ② code=cdn-{type} অ্যাক্টিভ অ্যাকাউন্ট → ③ env ফলব্যাক
+  strict=true (ডিলিট/পর্জ): শুধু বাইন্ডেড অ্যাকাউন্ট, অনুপস্থিত হলে 4003, সাইলেন্ট সুইচ না
+```
+
+**অ্যাকাউন্ট ম্যানেজমেন্ট:** `provider_apis` মডেল রিইউজ করে (ক্রেডেনশিয়াল Encryptable এনক্রিপশনে স্টোর), অ্যাডমিন সাইড `/admin/providers` CRUD (RbacMiddleware), `code` কনভেনশন `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, env ক্রেডেনশিয়াল fallback হিসেবে ডিগ্রেড হয়।
+
+**ডেটা মডেল:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; cert_config স্টোরের আগে প্রাইভেট কী বাদ দেওয়া হয়)। পারমিশন আইসোলেশন: CDN রিসোর্স `resource.user_id` দিয়ে মালিকানা ভেরিফাই হয়, অন্যের রিসোর্স ইউনিফর্মলি 404।
+
 ---
 
 ## 3. মিডলওয়্যার এক্সিকিউশন পাইপলাইন
@@ -386,9 +406,9 @@ Accept-Language: zh-CN,zh;q=0.9
                     Internet
                         │
                ┌────────┴────────┐
-               │  Cloudflare CDN │
-               │  DDoS / Bot     │
-               └────────┬────────┘
+               │  Cloudflare CDN │  ← প্ল্যাটফর্মের নিজস্ব এজ প্রোটেকশন (DDoS/Bot),
+               │  DDoS / Bot     │     প্রোডাক্ট-লেভেল CDN মডিউলের (চার প্রোভাইডার,
+               └────────┬────────┘     §2.4 দেখুন) সাথে সম্পর্কহীন
                         │
                ┌────────┴────────┐
                │  Nginx × 2      │

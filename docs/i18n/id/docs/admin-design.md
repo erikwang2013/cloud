@@ -424,6 +424,7 @@ Semua endpoint REST admin diawali dengan `/admin/api` dan memerlukan `AdminRoleM
 | Payments | `GET /payments/channels`, `PUT /payments/channels/{id}`, `GET /payments/transactions`, `/reconcile` | `Admin\PaymentController` |
 | Provisioning | `GET /provisioning/tasks`, `POST /tasks/{id}/retry`, `POST /resources/{id}/upgrade`, `/destroy`, `GET /hosts` | `Provisioning\TaskController` |
 | Provider APIs | `GET /providers`, `POST /providers`, `PUT /providers/{id}`, `DELETE /providers/{id}` | `Admin\ProviderApiController` |
+| CDN | `GET /cdn/domains`, `PUT /cdn/domains/{id}` | `Admin\CdnController` |
 | Suppliers | `GET /suppliers`, `/suppliers/export`, `POST /suppliers/{id}/approve`, `/settle`, `/withdraws/{id}/approve` | `Admin\SupplierController` |
 | Supplier API Keys | `GET /suppliers/{id}/api-keys`, `POST /suppliers/{id}/api-keys`, `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
 | Tickets | `GET /tickets`, `POST /tickets/{id}/assign`, `/close` | `Ticket\TicketController` |
@@ -436,6 +437,25 @@ Semua endpoint REST admin diawali dengan `/admin/api` dan memerlukan `AdminRoleM
 | Monitoring | `GET /monitor/dashboard`, `/resources/{id}` | `Monitor\MonitorController` |
 | Audit | `GET /audit-logs` | `Admin\SystemController` |
 | System Config | `PUT /system/config` | `Admin\SystemController` |
+
+### Manajemen Sumber Daya CDN
+
+Produk CDN mendukung empat penyedia (Cloudflare / CloudFront / Aliyun / Tencent), sisi admin terbagi dua bagian:
+
+**Konfigurasi akun penyedia** (memakai kembali model ProviderApi, `Admin\ProviderApiController`):
+
+- `GET/POST /admin/api/providers`、`PUT/DELETE /admin/api/providers/{id}`, dipasang `RbacMiddleware('provider.config')`
+- Konvensi `code`: `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; kolom kredensial dienkripsi Encryptable saat disimpan, kolom JSON `config` menyimpan metadata non-sensitif
+- Prioritas resolusi kredensial sisi pengguna: akun terikat → akun aktif yang cocok dengan `code` → fallback env; hapus/purge menggunakan snapshot ketat (hanya akun terikat, hilang/nonaktif mengembalikan 4003)
+
+**Manajemen domain CDN** (`Admin\CdnController`):
+
+```
+GET /admin/api/cdn/domains        → semua domain (termasuk user_id pemilik), dipasang RbacMiddleware('cdn.manage')
+PUT /admin/api/cdn/domains/{id}   → perbarui paket, whitelist plan: standard | pro | enterprise,
+                                    nilai tidak valid mengembalikan 400; perubahan ditulis ke
+                                    log audit admin_cdn_update_plan
+```
 
 ### Data Dashboard (Lapisan Service)
 

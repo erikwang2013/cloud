@@ -34,6 +34,9 @@
 | GET/POST | `/api/resources` | Мои ресурсы |
 | GET | `/api/resources/{id}/status` | Статус ресурса |
 | GET | `/api/resources/{id}/console` | Ссылка на консоль VNC |
+| GET/POST | `/api/cdn/domains` | Список CDN-доменов / создание (cloudflare \| cloudfront \| aliyun \| tencent) |
+| GET/DELETE | `/api/cdn/domains/{id}` | Детали CDN-домена / удаление |
+| POST | `/api/cdn/domains/{id}/purge` | Очистка кэша (идемпотентно, не более 100 URL) |
 | GET/POST | `/api/tickets` | Тикеты |
 | POST | `/api/tickets/{id}/reply` | Ответ на тикет |
 | GET/POST | `/api/dns/{domain}` | Управление DNS |
@@ -59,6 +62,8 @@
 | GET | `/admin/api/suppliers/export` | Экспорт поставщиков (.xlsx) |
 | GET/PUT | `/admin/api/payments/*` | Платёжные каналы / транзакции / сверка |
 | GET/POST | `/admin/api/provisioning/*` | Задачи поставки / управление хостами |
+| GET/PUT | `/admin/api/cdn/domains` | Управление CDN-доменами (смена тарифа) |
+| GET/POST/PUT/DELETE | `/admin/api/providers` | Управление учётными данными провайдеров (общие для CDN/доставки, шифрование Encryptable) |
 | GET/POST | `/admin/api/suppliers/*` | Согласование поставщиков / расчёты / вывод средств |
 | GET/POST | `/admin/api/tickets` | Назначение / закрытие тикетов |
 | GET | `/admin/api/reports/*` | Отчёты о выручке / по регионам / по поставщикам |

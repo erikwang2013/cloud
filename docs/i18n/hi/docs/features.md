@@ -595,11 +595,26 @@ S3 API संगत ऑब्जेक्ट स्टोरेज, AWS S3 औ�
 
 ## 16. CDN एक्सेलेरेशन
 
-CDN उत्पाद Cloudflare एकीकरण का समर्थन करता है, सर्वर या स्टोरेज बकेट को CDN के लिए ओरिजिन के रूप में जोड़ा जा सकता है, कैश पर्ज का समर्थन।
+CDN उत्पाद चार सेवाप्रदाताओं (Cloudflare / AWS CloudFront / Aliyun CDN / Tencent Cloud CDN) का समर्थन करता है, सर्वर या स्टोरेज बकेट को CDN के लिए ओरिजिन के रूप में जोड़ा जा सकता है, कैश पर्ज और वैकल्पिक HTTPS प्रमाणपत्र कॉन्फ़िगरेशन का समर्थन।
 
-**इंटरफ़ेस:** ProviderInterface + CachePurgeInterface (वैकल्पिक क्षमता इंटरफ़ेस)
+**एडेप्टर आर्किटेक्चर:** `service/app/cdn/provider/` के अंतर्गत प्रत्येक सेवाप्रदाता के लिए एक एडेप्टर, सभी `CdnAdapterInterface` (createDomain / configureDomain / purgeCache / disableDomain / requiresIcpRegistration) लागू करते हैं, `CdnAdapterFactory` `provider_type` के अनुसार डिस्पैच करता है:
 
-**डेटा मॉडल:** `resource_cdn`
+| provider_type | एडेप्टर | एकीकरण प्रोटोकॉल | ICP पंजीकरण आवश्यक |
+|---------------|---------|------------------|--------------------|
+| `cloudflare` | CloudflareAdapter | REST v4 API (SSL SaaS स्वचालित प्रमाणपत्र सहित) | नहीं |
+| `cloudfront` | CloudFrontAdapter | aws-sdk-php (CloudFront + ACM) | नहीं |
+| `aliyun` | AliyunCdnAdapter | RPC सिग्नेचर | हाँ |
+| `tencent` | TencentCdnAdapter | TC3 सिग्नेचर | हाँ |
+
+**सेवाप्रदाता खाता कॉन्फ़िगरेशन:** एडमिन `/admin/providers` CRUD के माध्यम से `provider_apis` खाते बनाए रखता है (क्रेडेंशियल Encryptable एन्क्रिप्शन के साथ संग्रहीत, `code` कन्वेंशन `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`)। उपयोगकर्ता-पक्ष क्रेडेंशियल रिज़ॉल्यूशन प्राथमिकता: बाउंड खाता (provider_account_id) → code से मेल खाने वाला सक्रिय खाता → env कॉन्फ़िगरेशन फ़ॉलबैक।
+
+**सख्त स्नैपशॉट बाइंडिंग:** डोमेन निर्माण के समय `provider_account_id` तय होता है, बाद में डिलीट/कैश पर्ज केवल उस बाउंड खाते का उपयोग करता है; खाता अनुपस्थित या अक्षम होने पर 4003 लौटाया जाता है, खाता चुपचाप स्विच नहीं किया जाता। Aliyun/Tencent डोमेन के लिए ICP पंजीकरण आवश्यक है, पंजीकरण न होने पर 4002 लौटाया जाता है (`requires_icp_registration` संकेत सहित)।
+
+**कैश पर्ज:** `POST /api/cdn/domains/{id}/purge`, URL स्वचालित रूप से डीडुप्लिकेट और ट्रिम होते हैं (अधिकतम 100), केवल इस डोमेन या सबडोमेन की अनुमति, वाइल्डकार्ड और बाहरी URL अस्वीकार, आइडेम्पोटेंट।
+
+**इंटरफ़ेस:** CdnAdapterInterface + CdnProvider (ProvisionProvider अपग्रेड चैनल का पुन: उपयोग, plan अपग्रेड समर्थित)
+
+**डेटा मॉडल:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; cert_config संग्रहीत करने से पहले निजी कुंजी हटाई जाती है, केवल गैर-संवेदनशील प्रमाणपत्र जानकारी रखी जाती है)
 
 ## 17. उपयोग-आधारित बिलिंग
 

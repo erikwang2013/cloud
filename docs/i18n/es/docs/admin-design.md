@@ -424,6 +424,7 @@ Todos los endpoints REST de administración llevan el prefijo `/admin/api` y req
 | Pagos | `GET /payments/channels`, `PUT /payments/channels/{id}`, `GET /payments/transactions`, `/reconcile` | `Admin\PaymentController` |
 | Aprovisionamiento | `GET /provisioning/tasks`, `POST /tasks/{id}/retry`, `POST /resources/{id}/upgrade`, `/destroy`, `GET /hosts` | `Provisioning\TaskController` |
 | APIs de proveedores | `GET /providers`, `POST /providers`, `PUT /providers/{id}`, `DELETE /providers/{id}` | `Admin\ProviderApiController` |
+| CDN | `GET /cdn/domains`, `PUT /cdn/domains/{id}` | `Admin\CdnController` |
 | Proveedores | `GET /suppliers`, `/suppliers/export`, `POST /suppliers/{id}/approve`, `/settle`, `/withdraws/{id}/approve` | `Admin\SupplierController` |
 | API Keys de proveedores | `GET /suppliers/{id}/api-keys`, `POST /suppliers/{id}/api-keys`, `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
 | Tickets | `GET /tickets`, `POST /tickets/{id}/assign`, `/close` | `Ticket\TicketController` |
@@ -436,6 +437,24 @@ Todos los endpoints REST de administración llevan el prefijo `/admin/api` y req
 | Monitorización | `GET /monitor/dashboard`, `/resources/{id}` | `Monitor\MonitorController` |
 | Auditoría | `GET /audit-logs` | `Admin\SystemController` |
 | Configuración del sistema | `PUT /system/config` | `Admin\SystemController` |
+
+### Gestión de recursos CDN
+
+El producto CDN soporta cuatro proveedores (Cloudflare / CloudFront / Aliyun / Tencent Cloud); el panel de administración se divide en dos bloques:
+
+**Configuración de cuentas de proveedor** (reutiliza el modelo ProviderApi, `Admin\ProviderApiController`):
+
+- `GET/POST /admin/api/providers`, `PUT/DELETE /admin/api/providers/{id}`, con `RbacMiddleware('provider.config')`
+- `code` convencional `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; los campos de credenciales se cifran con Encryptable en la base de datos, la columna JSON `config` guarda metadatos no sensibles
+- Prioridad de resolución de credenciales del lado del usuario: cuenta vinculada → cuenta activa que coincide con el code → respaldo env; la eliminación/purga usa la instantánea estricta (solo la cuenta vinculada; si falta o está deshabilitada, devuelve 4003)
+
+**Gestión de dominios CDN** (`Admin\CdnController`):
+
+```
+GET /admin/api/cdn/domains        → Todos los dominios (con el user_id al que pertenecen), con RbacMiddleware('cdn.manage')
+PUT /admin/api/cdn/domains/{id}   → Actualizar plan; lista blanca de planes standard | pro | enterprise;
+                                    los valores inválidos devuelven 400; el cambio se registra en el log de auditoría admin_cdn_update_plan
+```
 
 ### Datos del panel (capa Service)
 

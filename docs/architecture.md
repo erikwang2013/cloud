@@ -140,6 +140,26 @@ common/
 └── webhook/             # Webhook 事件分发器
 ```
 
+### 2.4 CDN 模块
+
+产品级 CDN 模块（`service/app/cdn/`）通过适配器模式对接四家服务商，将服务器或存储桶作为源站接入 CDN：
+
+```
+CdnAdapterInterface
+  ├── CloudflareAdapter   REST v4（SSL SaaS 自动证书），无需 ICP 备案
+  ├── CloudFrontAdapter   aws-sdk-php（CloudFront + ACM），无需 ICP 备案
+  ├── AliyunCdnAdapter    RPC 签名，需 ICP 备案
+  └── TencentCdnAdapter   TC3 签名，需 ICP 备案
+         ▲
+CdnAdapterFactory.resolve(type, accountId, strict)
+  ① 绑定账号 (provider_account_id) → ② code=cdn-{type} 活动账号 → ③ env 兜底
+  strict=true（删除/purge）：仅用绑定账号，缺失即 4003，不静默切换
+```
+
+**账号管理：** 复用 `provider_apis` 模型（凭据 Encryptable 加密入库），管理端 `/admin/providers` CRUD（RbacMiddleware），`code` 约定 `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`，env 凭据降级为 fallback。
+
+**数据模型：** `resource_cdn`（provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config；cert_config 落库前剔除私钥）。权限隔离：CDN 资源经 `resource.user_id` 归属校验，非本用户统一 404。
+
 ---
 
 ## 3. 中间件执行管线
@@ -386,9 +406,9 @@ Accept-Language: zh-CN,zh;q=0.9
                     Internet
                         │
                ┌────────┴────────┐
-               │  Cloudflare CDN │
-               │  DDoS / Bot     │
-               └────────┬────────┘
+               │  Cloudflare CDN │  ← 平台自身边缘防护（DDoS/Bot），
+               │  DDoS / Bot     │    与产品级 CDN 模块（四服务商，
+               └────────┬────────┘    见 §2.4）无关
                         │
                ┌────────┴────────┐
                │  Nginx × 2      │

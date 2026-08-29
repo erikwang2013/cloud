@@ -34,6 +34,9 @@
 | GET/POST | `/api/resources` | मेरे संसाधन |
 | GET | `/api/resources/{id}/status` | संसाधन स्थिति |
 | GET | `/api/resources/{id}/console` | VNC कंसोल लिंक |
+| GET/POST | `/api/cdn/domains` | CDN डोमेन सूची / निर्माण (cloudflare \| cloudfront \| aliyun \| tencent) |
+| GET/DELETE | `/api/cdn/domains/{id}` | CDN डोमेन विवरण / डिलीट |
+| POST | `/api/cdn/domains/{id}/purge` | कैश साफ़ करें (आइडेम्पोटेंट, अधिकतम 100 URL) |
 | GET/POST | `/api/tickets` | टिकट |
 | POST | `/api/tickets/{id}/reply` | टिकट उत्तर |
 | GET/POST | `/api/dns/{domain}` | DNS प्रबंधन |
@@ -59,6 +62,8 @@
 | GET | `/admin/api/suppliers/export` | सप्लायर निर्यात (.xlsx) |
 | GET/PUT | `/admin/api/payments/*` | पेमेंट चैनल / ट्रांज़ैक्शन / रिकॉन्सिलिएशन |
 | GET/POST | `/admin/api/provisioning/*` | डिलीवरी कार्य / होस्ट प्रबंधन |
+| GET/PUT | `/admin/api/cdn/domains` | CDN डोमेन प्रबंधन (पैकेज परिवर्तन) |
+| GET/POST/PUT/DELETE | `/admin/api/providers` | सेवाप्रदाता खाता क्रेडेंशियल प्रबंधन (CDN/डिलीवरी साझा, Encryptable एन्क्रिप्शन) |
 | GET/POST | `/admin/api/suppliers/*` | सप्लायर अनुमोदन / सेटलमेंट / विदड्रॉल |
 | GET/POST | `/admin/api/tickets` | टिकट असाइनमेंट / बंद करना |
 | GET | `/admin/api/reports/*` | रेवेन्यू / क्षेत्रीय / सप्लायर रिपोर्ट |

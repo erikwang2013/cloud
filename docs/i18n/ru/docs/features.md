@@ -595,11 +595,26 @@ Redis feature:{name} (TTL 1h, динамическая настройка чер
 
 ## 16. Ускорение CDN
 
-Продукт CDN поддерживает интеграцию с Cloudflare: сервер или хранилище можно подключить как origin к CDN, поддерживается очистка кэша.
+Продукт CDN поддерживает четырёх провайдеров (Cloudflare / AWS CloudFront / Aliyun CDN / Tencent Cloud CDN): сервер или хранилище (bucket) можно подключить как origin к CDN, поддерживаются очистка кэша и опциональная настройка HTTPS-сертификатов.
 
-**Интерфейсы:** ProviderInterface + CachePurgeInterface (интерфейс опциональной возможности)
+**Адаптерная архитектура:** в `service/app/cdn/provider/` по одному адаптеру на провайдера, все реализуют общий `CdnAdapterInterface` (createDomain / configureDomain / purgeCache / disableDomain / requiresIcpRegistration), распределение выполняет `CdnAdapterFactory` по `provider_type`:
 
-**Модель данных:** `resource_cdn`
+| provider_type | Адаптер | Протокол подключения | Нужна ICP-регистрация |
+|---------------|---------|----------------------|-----------------------|
+| `cloudflare` | CloudflareAdapter | REST v4 API (включая SSL SaaS с автоконфигурацией сертификатов) | Нет |
+| `cloudfront` | CloudFrontAdapter | aws-sdk-php (CloudFront + ACM) | Нет |
+| `aliyun` | AliyunCdnAdapter | RPC-подпись | Да |
+| `tencent` | TencentCdnAdapter | TC3-подпись | Да |
+
+**Настройка учётных записей провайдеров:** в админ-панели через `/admin/providers` (CRUD) ведутся записи `provider_apis` (учётные данные шифруются через Encryptable, `code` по соглашению `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`). Приоритет разрешения учётных данных на стороне пользователя: привязанная запись (provider_account_id) → активная запись по code → конфигурация env как запасной вариант.
+
+**Строгая привязка (strict snapshot):** `provider_account_id` фиксируется при создании домена; последующие удаление/очистка кэша используют только эту привязанную запись; при её отсутствии или отключении возвращается 4003 без тихого переключения. Для Aliyun/Tencent требуется ICP-регистрация домена; при её отсутствии возвращается 4002 (с подсказкой `requires_icp_registration`).
+
+**Очистка кэша:** `POST /api/cdn/domains/{id}/purge` — URL автоматически дедуплицируются и очищаются от пробелов (не более 100), допускаются только сам домен и поддомены, подстановочные знаки и внешние URL отклоняются, операция идемпотентна.
+
+**Интерфейсы:** CdnAdapterInterface + CdnProvider (переиспользует канал апгрейда ProvisionProvider, поддерживается повышение plan)
+
+**Модель данных:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; из cert_config перед записью удаляется приватный ключ, хранятся только нечувствительные данные сертификата)
 
 ## 17. Поминутная тарификация
 

@@ -607,11 +607,26 @@ Stockage d'objets compatible API S3, prenant en charge AWS S3 et MinIO auto-héb
 
 ## 16. Accélération CDN
 
-Les produits CDN prennent en charge l'intégration Cloudflare ; un serveur ou un bucket de stockage peut être connecté comme origine au CDN, avec prise en charge de la purge du cache.
+Les produits CDN prennent en charge quatre fournisseurs (Cloudflare / AWS CloudFront / Alibaba Cloud CDN / Tencent Cloud CDN) ; un serveur ou un bucket de stockage peut être connecté comme origine au CDN, avec prise en charge de la purge du cache et de la configuration facultative de certificats HTTPS.
 
-**Interfaces :** ProviderInterface + CachePurgeInterface (interface de capacité optionnelle)
+**Architecture d'adaptateurs :** sous `service/app/cdn/provider/`, un adaptateur par fournisseur, tous implémentant `CdnAdapterInterface` (createDomain / configureDomain / purgeCache / disableDomain / requiresIcpRegistration), distribués par `CdnAdapterFactory` selon le `provider_type` :
 
-**Modèles de données :** `resource_cdn`
+| provider_type | Adaptateur | Protocole d'accès | Enregistrement ICP requis |
+|---------------|-----------|-------------------|---------------------------|
+| `cloudflare` | CloudflareAdapter | API REST v4 (avec certificats automatiques SSL SaaS) | Non |
+| `cloudfront` | CloudFrontAdapter | aws-sdk-php (CloudFront + ACM) | Non |
+| `aliyun` | AliyunCdnAdapter | Signature RPC | Oui |
+| `tencent` | TencentCdnAdapter | Signature TC3 | Oui |
+
+**Configuration des comptes fournisseurs :** le panneau d'administration gère les comptes `provider_apis` via le CRUD `/admin/providers` (identifiants chiffrés en base via Encryptable, convention `code` `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`). Ordre de résolution des identifiants côté utilisateur : compte lié (provider_account_id) → compte actif correspondant au code → repli sur la configuration env.
+
+**Liaison stricte par instantané :** le `provider_account_id` est fixé à la création du domaine ; les suppressions et purges de cache ultérieures n'utilisent que ce compte lié ; compte manquant ou désactivé → 4003, sans bascule silencieuse. Les domaines Alibaba/Tencent nécessitent l'enregistrement ICP, sinon 4002 (avec l'indication `requires_icp_registration`).
+
+**Purge du cache :** `POST /api/cdn/domains/{id}/purge`, les URL sont automatiquement dédupliquées et nettoyées des espaces (100 maximum), seuls le domaine lui-même ou ses sous-domaines sont autorisés, les wildcards et URL externes sont refusées, opération idempotente.
+
+**Interfaces :** CdnAdapterInterface + CdnProvider (réutilise le canal de mise à niveau ProvisionProvider, prend en charge la mise à niveau de forfait)
+
+**Modèles de données :** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config ; la clé privée est retirée de cert_config avant l'enregistrement en base, seules les informations de certificat non sensibles sont conservées)
 
 ## 17. Facturation à l'usage
 

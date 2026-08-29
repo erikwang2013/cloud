@@ -794,23 +794,49 @@ GET /api/storage/buckets/{id}/credentials
 GET /api/cdn/domains
   → 我的 CDN 域名列表（源站、状态、套餐）
 
+POST /api/cdn/domains
+  体: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
+        origin_type (server|storage), origin_value, cert_config? }
+  → 创建 CDN 域名（服务商侧创建并绑定源站）
+  → provider_type=aliyun|tencent 时域名需完成 ICP 备案（未备案返回 4002）
+  → 响应含 requires_icp_registration 提示字段
+  → 凭据解析：先取该域名绑定账号（provider_account_id），否则按 code=cdn-{provider_type}
+    的活动 provider_apis 账号，均无则回退 env 配置
+
 GET /api/cdn/domains/{id}
   → CDN 域名详情
 
+DELETE /api/cdn/domains/{id}
+  → 删除 CDN 域名（停用服务商侧域名，幂等）
+
 POST /api/cdn/domains/{id}/purge
-  → 清除缓存（全站或指定 URL 列表）
+  体: { urls: ["https://cdn.example.com/path"] }
+  → 清除缓存（重复 URL 自动去重，幂等；最多 100 个）
 
 GET /api/cdn/domains/{id}/stats
-  参数: range (day/week/month)
-  → 流量/请求数/命中率统计
+  → 域名概览（cdn_domain / provider_type / plan / status / purged_at）
 ```
 
 ### Sisi Admin
 
 ```
-GET /admin/api/cdn/domains            → 全部 CDN 域名
-PUT /admin/api/cdn/domains/{id}       → 更新域名套餐/配置
+GET /admin/api/cdn/domains            → 全部 CDN 域名（含所属用户）
+PUT /admin/api/cdn/domains/{id}       → 更新域名套餐（plan 白名单: standard | pro | enterprise）
 ```
+
+Rute CDN sisi admin dipasang `RbacMiddleware('cdn.manage')`, perubahan paket ditulis ke log audit (`admin_cdn_update_plan`). Kredensial akun penyedia dikelola melalui CRUD `/admin/api/providers` (RbacMiddleware `provider.config`, konvensi `code`: `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, kredensial dienkripsi Encryptable saat disimpan).
+
+### Kode Kesalahan CDN
+
+| code | Keterangan |
+|------|------------|
+| 4001 | Parameter CDN hilang/tidak valid (urls kosong, provider_type tidak valid, format domain salah) |
+| 4002 | Domain belum menyelesaikan ICP pendaftaran (dipetakan saat API Aliyun/Tencent menolak) |
+| 4003 | Kredensial penyedia CDN belum dikonfigurasi (akun hilang/nonaktif, snapshot ketat tidak berpindah diam-diam) |
+| 4005 | Gagal membersihkan cache CDN |
+| 5001 | Gagal memanggil API penyedia CDN |
+
+> Sumber daya CDN yang bukan milik pengguna ini (milik orang lain/tidak ada) seragam mengembalikan **404** (pemetaan findOrFail, tidak membocorkan keberadaan sumber daya), tanpa kode bisnis terpisah.
 
 ---
 
