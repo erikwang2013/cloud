@@ -14,7 +14,7 @@ class ProviderApiController
 
     public function store($request)
     {
-        $data = $request->only(['name', 'code', 'api_key_encrypted', 'api_secret_encrypted', 'webhook_secret']);
+        $data = $request->only(['name', 'code', 'api_key_encrypted', 'api_secret_encrypted', 'webhook_secret', 'config']);
         $data['status'] = 'active';
         $provider = ProviderApi::create($data);
         return json(Response::success($provider));
@@ -23,7 +23,7 @@ class ProviderApiController
     public function update($request, int $id)
     {
         $provider = ProviderApi::findOrFail($id);
-        $provider->update($request->only(['name', 'api_key_encrypted', 'api_secret_encrypted', 'webhook_secret', 'status']));
+        $provider->update($request->only(['name', 'api_key_encrypted', 'api_secret_encrypted', 'webhook_secret', 'config', 'status']));
         return json(Response::success($provider));
     }
 

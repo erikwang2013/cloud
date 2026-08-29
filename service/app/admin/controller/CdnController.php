@@ -3,9 +3,12 @@ namespace App\admin\controller;
 
 use App\cdn\model\ResourceCdn;
 use Common\helper\Response;
+use Common\security\AuditLogger;
 
 class CdnController
 {
+    private const PLANS = ['standard', 'pro', 'enterprise'];
+
     public function index()
     {
         $domains = ResourceCdn::with('resource')
@@ -25,8 +28,18 @@ class CdnController
 
     public function updatePlan($request, int $id)
     {
+        $plan = (string) $request->input('plan', '');
+        if (!in_array($plan, self::PLANS, true)) {
+            return json(Response::error(400, 'Invalid CDN plan'));
+        }
         $cdn = ResourceCdn::findOrFail($id);
-        $cdn->update(['plan' => $request->input('plan')]);
+        $cdn->update(['plan' => $plan]);
+
+        AuditLogger::record('admin_cdn_update_plan', [
+            'user_id' => $request->userId,
+            'input'   => ['cdn_id' => $id, 'plan' => $plan],
+        ], $request);
+
         return json(Response::success($cdn, 'CDN plan updated'));
     }
 }

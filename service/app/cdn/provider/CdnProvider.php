@@ -13,25 +13,36 @@ class CdnProvider implements ProviderInterface, CachePurgeInterface
 {
     public function create(ProvisionTask $task): ProvisionResult
     {
-        $params = json_decode($task->params, true);
-        $domain    = $params['cdn_domain'] ?? '';
-        $originType = $params['origin_type'] ?? 'server';
-        $originValue = $params['origin_value'] ?? '';
+        $params = json_decode($task->params, true) ?: [];
+        $domain       = $params['cdn_domain'] ?? '';
+        $originType   = $params['origin_type'] ?? 'server';
+        $originValue  = $params['origin_value'] ?? '';
+        $providerType = $params['provider_type'] ?? 'cloudflare';
+        $accountId    = isset($params['provider_account_id']) ? (int) $params['provider_account_id'] : null;
 
         try {
-            $cdn = ResourceCdn::where('resource_id', $task->resource_id)->first();
-            if ($cdn) {
-                $cdn->update([
-                    'cdn_domain'  => $domain,
-                    'origin_type' => $originType,
-                    'origin_value' => $originValue,
-                    'status'      => 'active',
-                ]);
-            }
+            $cdn = ResourceCdn::firstOrNew(['resource_id' => $task->resource_id]);
+            $cdn->fill([
+                'cdn_domain'          => $domain,
+                'origin_type'         => $originType,
+                'origin_value'        => $originValue,
+                'provider_type'       => $providerType,
+                'provider_account_id' => $accountId,
+            ]);
+
+            [$adapter, $accountId] = CdnAdapterFactory::resolve($providerType, $accountId ?: $cdn->provider_account_id);
+            $cdn->provider_account_id = $accountId;
+            $result = $adapter->createDomain($cdn);
+
+            $cdn->provider_domain_id = $result['provider_domain_id'] ?? $cdn->provider_domain_id;
+            $cdn->zone_id            = $result['zone_id'] ?? $cdn->zone_id;
+            $cdn->status             = 'active';
+            $cdn->save();
 
             return ProvisionResult::success([
-                'cdn_domain'  => $domain,
-                'origin_type' => $originType,
+                'cdn_domain'         => $domain,
+                'origin_type'        => $originType,
+                'provider_domain_id' => $cdn->provider_domain_id,
             ]);
         } catch (\Throwable $e) {
             return ProvisionResult::retryable('CDN setup failed: ' . $e->getMessage());
@@ -41,8 +52,17 @@ class CdnProvider implements ProviderInterface, CachePurgeInterface
     public function destroy(Resource $resource): ProvisionResult
     {
         $cdn = ResourceCdn::where('resource_id', $resource->id)->first();
-        if ($cdn) {
-            $cdn->update(['status' => 'deleted']);
+        if (!$cdn) {
+            return ProvisionResult::success([]);
+        }
+        try {
+            if ($cdn->status !== 'deleted') {
+                [$adapter] = CdnAdapterFactory::resolve($cdn->provider_type, $cdn->provider_account_id, true);
+                $adapter->disableDomain($cdn);
+                $cdn->update(['status' => 'deleted']);
+            }
+        } catch (\Throwable $e) {
+            return ProvisionResult::retryable('CDN disable failed: ' . $e->getMessage());
         }
         return ProvisionResult::success([]);
     }
@@ -96,8 +116,13 @@ class CdnProvider implements ProviderInterface, CachePurgeInterface
         if (!$cdn) {
             return ['purged' => 0, 'error' => 'CDN resource not found'];
         }
-
-        $cdn->update(['purged_at' => date('Y-m-d H:i:s')]);
-        return ['purged' => count($urls), 'urls' => $urls];
+        try {
+            [$adapter] = CdnAdapterFactory::resolve($cdn->provider_type, $cdn->provider_account_id, true);
+            $result = $adapter->purgeCache($cdn, $urls);
+            $cdn->update(['purged_at' => date('Y-m-d H:i:s')]);
+            return ['purged' => count($urls), 'urls' => $urls] + $result;
+        } catch (\Throwable $e) {
+            return ['purged' => 0, 'error' => $e->getMessage()];
+        }
     }
 }

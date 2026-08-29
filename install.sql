@@ -951,6 +951,7 @@ CREATE TABLE IF NOT EXISTS `cloud_provider_apis` (
     api_key_encrypted       VARCHAR(500)    DEFAULT NULL,
     api_secret_encrypted    VARCHAR(500)    DEFAULT NULL,
     webhook_secret          VARCHAR(255)    DEFAULT NULL,
+    config                  JSON            DEFAULT NULL COMMENT 'non-sensitive provider metadata (zone_id/region...)',
     status                  VARCHAR(20)     NOT NULL DEFAULT 'active',
     created_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -1201,12 +1202,20 @@ CREATE TABLE IF NOT EXISTS `cloud_resource_cdn` (
     plan            VARCHAR(32)     NOT NULL DEFAULT 'standard',
     `ssl`           TINYINT(1)      NOT NULL DEFAULT 1,
     cache_rules     JSON            DEFAULT NULL,
+    provider_type   VARCHAR(16)     NOT NULL DEFAULT 'cloudflare',
+    provider_account_id BIGINT      DEFAULT NULL COMMENT 'refs cloud_provider_apis.id',
+    provider_domain_id VARCHAR(128) DEFAULT NULL,
+    zone_id         VARCHAR(64)     DEFAULT NULL,
+    cert_config     JSON            DEFAULT NULL,
+    config          JSON            DEFAULT NULL,
     status          VARCHAR(32)     NOT NULL DEFAULT 'pending',
     purged_at       DATETIME        DEFAULT NULL,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_resource (resource_id),
-    INDEX idx_status (status)
+    INDEX idx_status (status),
+    INDEX idx_provider (provider_type, status),
+    INDEX idx_account (provider_account_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ======================== Affiliate ========================

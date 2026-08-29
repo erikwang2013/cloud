@@ -11,10 +11,14 @@ class ResourceCdn extends Model
     protected $fillable = [
         'resource_id', 'cdn_domain', 'origin_type', 'origin_value',
         'plan', 'ssl', 'cache_rules', 'status', 'purged_at',
+        'provider_type', 'provider_account_id', 'provider_domain_id', 'zone_id', 'cert_config', 'config',
     ];
+    protected $hidden = ['cert_config'];
     protected $casts = [
         'ssl'         => 'boolean',
         'cache_rules' => 'array',
+        'cert_config' => 'array',
+        'config'      => 'array',
         'purged_at'   => 'datetime',
     ];
 

@@ -180,7 +180,9 @@ Route::group('/api', function () {
 
     // CDN
     Route::get('/cdn/domains', [App\cdn\controller\CdnController::class, 'index']);
+    Route::post('/cdn/domains', [App\cdn\controller\CdnController::class, 'create']);
     Route::get('/cdn/domains/{id}', [App\cdn\controller\CdnController::class, 'show']);
+    Route::delete('/cdn/domains/{id}', [App\cdn\controller\CdnController::class, 'destroy']);
     Route::post('/cdn/domains/{id}/purge', [App\cdn\controller\CdnController::class, 'purgeCache']);
     Route::get('/cdn/domains/{id}/stats', [App\cdn\controller\CdnController::class, 'stats']);
 
