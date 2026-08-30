@@ -131,6 +131,9 @@ final class ReportServiceTest extends TestCase
         $this->assertSame(3, (int) $report['totalOrders']);
         // daily grouped by (date, currency): 08-01/USD, 08-02/USD, 08-02/CNY
         $this->assertCount(3, $report['daily']);
+        // 多币种分币种汇总（USD 100+250=350，CNY 600），不跨币种相加
+        $this->assertSame('350.0000', (string) $report['revenueByCurrency']['USD']);
+        $this->assertSame('600.0000', (string) $report['revenueByCurrency']['CNY']);
     }
 
     public function testRevenueReportGroupsByDateAndCurrency(): void
