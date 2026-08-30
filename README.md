@@ -94,7 +94,7 @@
 
 ## 功能模块总览
 
-系统按四层架构组织：客户端层（6 平台接入）、API 网关层（12 项中间件）、业务服务层（20+ 功能模块）、基础设施层（8 个核心组件）。
+系统按四层架构组织：客户端层（6 平台接入）、API 网关层（12 项中间件）、业务服务层（23 个功能模块）、基础设施层（8 个核心组件）。
 
 ![功能模块总览](docs/diagrams/module-overview-zh.svg)
 
@@ -109,7 +109,7 @@
 | 文档 | 说明 |
 |------|------|
 | [架构设计文档](docs/architecture.md) | 系统架构、组件关系、中间件管线、安全分层、数据架构、部署拓扑 |
-| [功能设计文档](docs/features.md) | 21 模块详细功能设计，含流程图、数据模型、交互说明 |
+| [功能设计文档](docs/features.md) | 23 模块详细功能设计，含流程图、数据模型、交互说明 |
 | [API 接口文档](docs/api-reference.md) | 200+ 端点完整参考，按模块分组，含请求/响应示例、错误码 |
 | [API 在线文档 (service)](http://localhost:8787/apidoc) | hg/apidoc 自动生成，按功能分组，支持在线调试 |
 | [API 在线文档 (admin)](http://localhost:8788/apidoc) | hg/apidoc 自动生成，54 个控制器 13 组功能分组 |
@@ -398,6 +398,25 @@ php start.php status            # 查看状态
 php start.php restart           # 重启
 php start.php stop              # 停止
 ```
+
+## 使用说明
+
+### 登录
+
+- **用户端**：访问 API 服务地址（默认 `http://localhost:8787`），注册账号后登录；支持 Google / Apple OAuth 与 TOTP 两步验证
+- **管理后台**：浏览器访问 `http://localhost:8787/app/admin`（管理面板为独立实例，端口 8788），使用安装向导中设置的管理员账号登录
+
+### 后台常用功能
+
+- **仪表盘**：今日订单 / 营收 / 新增用户 / 活跃资源统计，30 天营收趋势图，支持 PDF 导出
+- **报表中心**：订单日报、商品销量排行、支付渠道统计、用户增长，支持 Excel 导出
+- **日常管理**：用户 / 商品 / 订单 / 供应商 / 工单 / 域名 / CDN 等模块的管理，KYC 审核、退款处理、结算提现审批
+- **系统配置**：支付通道、CDN 账号、Webhook、通知模板、帮助文章、审计日志
+
+### 客户端构建
+
+- **Flutter 客户端**（`apps/flutter/`）：覆盖 iOS / Android / Web / Linux / macOS / Windows 六平台。`flutter pub get` 安装依赖，`flutter run` 调试，`flutter build apk` / `flutter build ios` / `flutter build web` 打包
+- **HarmonyOS 客户端**（`apps/harmonyos/`）：ArkTS 原生应用，使用 DevEco Studio 打开 `entry` 工程构建运行
 
 ## API 概览
 

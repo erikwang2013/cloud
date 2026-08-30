@@ -71,7 +71,7 @@
   <!-- Layer 3: Service Modules -->
   <g filter="url(#sh)">
     <rect x="30" y="312" width="1040" height="458" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-    <text x="50" y="336" fill="#1e40af" font-size="13" font-weight="bold">业务服务层 — 20+ 功能模块</text>
+    <text x="50" y="336" fill="#1e40af" font-size="13" font-weight="bold">业务服务层 — 23 个功能模块</text>
 
     <rect x="50" y="350" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
     <text x="140" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">User 用户</text>
@@ -181,8 +181,8 @@
 
     <rect x="248" y="600" width="180" height="62" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
     <text x="338" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Report 报表</text>
-    <text x="338" y="646" text-anchor="middle" fill="#b45309" font-size="10">营收·区域·供应商</text>
-    <text x="338" y="662" text-anchor="middle" fill="#b45309" font-size="10">Excel导出</text>
+    <text x="338" y="646" text-anchor="middle" fill="#b45309" font-size="10">营收·订单·商品·渠道</text>
+    <text x="338" y="662" text-anchor="middle" fill="#b45309" font-size="10">排行·Excel导出</text>
 
     <rect x="446" y="600" width="180" height="62" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
     <text x="536" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">WebSocket</text>

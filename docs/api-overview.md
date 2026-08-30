@@ -67,6 +67,7 @@
 | GET/POST | `/admin/api/suppliers/*` | 供应商审批 / 结算 / 提现 |
 | GET/POST | `/admin/api/tickets` | 工单分配 / 关闭 |
 | GET | `/admin/api/reports/*` | 营收 / 区域 / 供应商报表 |
+| GET | `/app/admin/report/*` | 管理端报表（订单日报 / 商品排行 / 渠道统计 / 用户增长，Excel 导出） |
 | GET | `/admin/api/monitor/*` | 监控面板 / 资源指标 |
 | GET | `/admin/api/audit-logs` | 审计日志 |
 | PUT | `/admin/api/system/config` | 系统配置 |

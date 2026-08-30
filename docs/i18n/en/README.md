@@ -399,6 +399,25 @@ php start.php restart           # Restart
 php start.php stop              # Stop
 ```
 
+## Usage Guide
+
+### Sign In
+
+- **User portal**: visit the API service (default `http://localhost:8787`), register an account and sign in; Google / Apple OAuth and TOTP two-factor authentication are supported
+- **Admin panel**: open `http://localhost:8787/app/admin` in a browser (the panel runs as a separate instance on port 8788), sign in with the administrator account created by the installer
+
+### Common Admin Features
+
+- **Dashboard**: today's orders / revenue / new users / active resources, 30-day revenue trend chart, PDF export
+- **Report Center**: order daily reports, product rankings, payment channel statistics, user growth, Excel export
+- **Day-to-day management**: users / products / orders / suppliers / tickets / domains / CDN, KYC review, refunds, settlement & withdrawal approval
+- **System configuration**: payment channels, CDN accounts, webhooks, notification templates, help articles, audit logs
+
+### Building Clients
+
+- **Flutter client** (`apps/flutter/`): iOS / Android / Web / Linux / macOS / Windows. Run `flutter pub get` to install dependencies, `flutter run` to debug, `flutter build apk` / `flutter build ios` / `flutter build web` to package
+- **HarmonyOS client** (`apps/harmonyos/`): native ArkTS app — open the `entry` project with DevEco Studio to build and run
+
 ## API Overview
 
 Interfaces are grouped by module, with request/response examples and error codes: [API Overview](docs/api-overview.md) (selected) · [API Reference](docs/api-reference.md) (complete reference of 200+ endpoints) · [Online Debugging](http://localhost:8787/apidoc)

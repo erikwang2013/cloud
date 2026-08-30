@@ -652,3 +652,29 @@ CDN 产品支持四家服务商（Cloudflare / AWS CloudFront / 阿里云 CDN / 
 Prometheus 指标端点独立进程 127.0.0.1:9100，不受 WAF/限流影响。MetricsMiddleware 记录 HTTP 请求计数和延迟。Docker Compose 预置 Prometheus + Grafana + 告警规则 + 仪表盘。
 
 **健康检查：** /health（公开）、/health/live、/health/ready（5 项依赖检查）、/health/deps（延迟详情）
+
+## 22. 管理端报表
+
+管理端报表中心（`admin/app/controller/ReportController.php` + `admin/app/view/report/index.html`）在原有服务端营收 / 供应商 / 区域报表基础上，v3.1.0 新增四类管理报表，路由自动注册为 `/app/admin/report/{action}`，全部支持时间范围筛选与 Excel 导出。侧边栏入口：业务管理 → 报表统计 → 经营报表（`admin/config/business_menu.php`）。
+
+**报表类型：**
+
+- **订单日报**（`order`）— 按天聚合订单数与营收（按 `paid_at` 计，排除 refunded），返回 `{range, totals: {orders, revenue}, daily: [{date, currency, orders, revenue}]}`
+- **商品销量排行**（`product_top`）— 按销量倒序取前 N（`limit` 1-50，默认 10），返回 `{range, items: [{product_id, qty, amount, name}]}`
+- **支付渠道统计**（`payment`）— 成功交易按渠道 + 币种聚合笔数与金额，返回 `{range, items: [{channel, currency, transactions, amount}]}`
+- **用户增长**（`user_growth`）— 业务用户按天注册数（软删不计），返回 `{range, items: [{date, count}]}`。注意口径：业务用户走 `users` 表（`BusinessUser` 模型），与管理员 `wa_users`（admin `User` 模型）是两张表，勿混用
+
+**Excel 导出：** `export` 接口按 `type` 白名单（order / product / payment / user）导出 xlsx，复用后台 `ExcelExport` 工具（PhpSpreadsheet ^2.0），文件名 `{title}_{YYYYmmddHHMMSS}.xlsx`。
+
+**金额精度：** 聚合统一走 bcmath（`SUM(DECIMAL)` 由 PDO 返回字符串），避免浮点误差；日期参数 `start_date` / `end_date` 格式 `YYYY-MM-DD`（默认近 30 天），非法值抛 BusinessException。
+
+## 23. 起始页统计
+
+管理后台起始页（Dashboard）统计补齐（`admin/app/controller/DashboardController.php`），在原有用户统计基础上新增运营指标：
+
+- **今日订单数**（`today_orders`）— 今日 `paid_at` 且非 refunded 的订单数
+- **今日营收**（`today_revenue`）— 今日订单营收合计（`COALESCE(SUM(total), 0)`，非 refunded）
+- **待支付订单**（`pending_orders`）— status = pending 的订单数
+- **活跃资源**（`active_resources`）— status = active 的资源数
+
+连同原有 `today_users` / `week_users` / `month_users` / `total_users`，随 7 日 / 30 日用户趋势与系统信息一并返回，前端以动画统计卡片 + ECharts 图表呈现。

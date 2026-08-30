@@ -399,6 +399,25 @@ php start.php restart           # Reiniciar
 php start.php stop              # Detener
 ```
 
+## Guía de uso
+
+### Iniciar sesión
+
+- **Portal de usuario**: acceda al servicio API (por defecto `http://localhost:8787`), regístrese e inicie sesión. Se admiten OAuth de Google / Apple y autenticación en dos pasos TOTP
+- **Panel de administración**: abra `http://localhost:8787/app/admin` en el navegador (el panel es una instancia independiente, puerto 8788) e inicie sesión con la cuenta de administrador creada por el asistente de instalación
+
+### Funciones habituales del panel
+
+- **Panel**: estadísticas de pedidos / ingresos / nuevos usuarios / recursos activos del día, tendencia de ingresos a 30 días, exportación a PDF
+- **Centro de informes**: informes de pedidos, ranking de productos, estadísticas por canal, crecimiento de usuarios, exportación a Excel
+- **Gestión diaria**: usuarios / productos / pedidos / proveedores / tickets / dominios / CDN, revisión KYC, reembolsos, aprobación de liquidaciones y retiros
+- **Configuración del sistema**: canales de pago, cuentas CDN, webhooks, plantillas de notificación, artículos de ayuda, registros de auditoría
+
+### Compilación de clientes
+
+- **Cliente Flutter** (`apps/flutter/`): iOS / Android / Web / Linux / macOS / Windows. `flutter pub get` para dependencias, `flutter run` para depurar, `flutter build apk` / `flutter build ios` / `flutter build web` para empaquetar
+- **Cliente HarmonyOS** (`apps/harmonyos/`): aplicación nativa ArkTS — abra el proyecto `entry` con DevEco Studio para compilar y ejecutar
+
 ## Resumen de la API
 
 Las interfaces se agrupan por módulo, con ejemplos de solicitud/respuesta y códigos de error: [Resumen de la API](docs/api-overview.md) (selección) · [Documentación de la API](docs/api-reference.md) (referencia completa de 200+ endpoints) · [Depuración en línea](http://localhost:8787/apidoc)

@@ -652,3 +652,29 @@ Provides two endpoints: POST /graphql (public queries) and POST /api/graphql (au
 The Prometheus metrics endpoint is a separate process at 127.0.0.1:9100, unaffected by WAF/rate limiting. MetricsMiddleware records HTTP request counts and latency. Docker Compose pre-provisions Prometheus + Grafana + alert rules + dashboards.
 
 **Health checks:** /health (public), /health/live, /health/ready (5 dependency checks), /health/deps (latency details)
+
+## 22. Admin Reports
+
+The admin report center (`admin/app/controller/ReportController.php` + `admin/app/view/report/index.html`) builds on the existing server-side revenue / supplier / region reports; v3.1.0 adds four panel reports, with routes auto-registered as `/app/admin/report/{action}` — all support time-range filtering and Excel export. Sidebar entry: Business → Reports → Business Report (`admin/config/business_menu.php`).
+
+**Report types:**
+
+- **Order daily** (`order`) — orders and revenue aggregated by day (by `paid_at`, excluding refunded); returns `{range, totals: {orders, revenue}, daily: [{date, currency, orders, revenue}]}`
+- **Product ranking** (`product_top`) — top N by sales volume (`limit` 1-50, default 10); returns `{range, items: [{product_id, qty, amount, name}]}`
+- **Payment channel stats** (`payment`) — successful transactions aggregated by channel + currency; returns `{range, items: [{channel, currency, transactions, amount}]}`
+- **User growth** (`user_growth`) — daily business-user registrations (soft-deleted excluded); returns `{range, items: [{date, count}]}`. Note: business users use the `users` table (`BusinessUser` model), a separate table from admin `wa_users` (admin `User` model) — do not mix the two
+
+**Excel export:** the `export` endpoint exports xlsx by `type` whitelist (order / product / payment / user), reusing the panel `ExcelExport` utility (PhpSpreadsheet ^2.0); file name `{title}_{YYYYmmddHHMMSS}.xlsx`.
+
+**Amount precision:** aggregation uses bcmath (`SUM(DECIMAL)` returned as strings by PDO) to avoid floating-point errors; `start_date` / `end_date` must be `YYYY-MM-DD` (default last 30 days), invalid values throw a BusinessException.
+
+## 23. Dashboard Statistics
+
+Dashboard statistics on the admin home page (`admin/app/controller/DashboardController.php`) now include operational metrics alongside the existing user stats:
+
+- **Today's orders** (`today_orders`) — orders with `paid_at` today, excluding refunded
+- **Today's revenue** (`today_revenue`) — `COALESCE(SUM(total), 0)` of today's non-refunded orders
+- **Pending orders** (`pending_orders`) — orders with status `pending`
+- **Active resources** (`active_resources`) — resources with status `active`
+
+Returned together with the existing `today_users` / `week_users` / `month_users` / `total_users`, the 7-day / 30-day user trends, and system info — rendered with animated stat cards and ECharts charts.

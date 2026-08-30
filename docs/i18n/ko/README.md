@@ -399,6 +399,25 @@ php start.php restart           # 재시작
 php start.php stop              # 중지
 ```
 
+## 사용 안내
+
+### 로그인
+
+- **사용자**: API 서비스 주소（기본 `http://localhost:8787`）로 접속해 회원가입 후 로그인합니다. Google / Apple OAuth 및 TOTP 2단계 인증을 지원합니다
+- **관리자 백오피스**: 브라우저에서 `http://localhost:8787/app/admin`을 엽니다（관리 패널은 별도 인스턴스, 포트 8788）. 설치 마법사에서 생성한 관리자 계정으로 로그인합니다
+
+### 관리자 주요 기능
+
+- **대시보드**: 오늘의 주문 / 매출 / 신규 사용자 / 활성 리소스 통계, 30일 매출 추이 차트, PDF 내보내기
+- **보고서 센터**: 주문 보고서, 상품 랭킹, 채널 통계, 사용자 증가, Excel 내보내기
+- **일상 관리**: 사용자 / 상품 / 주문 / 공급업체 / 티켓 / 도메인 / CDN 관리, KYC 심사, 환불, 정산·출금 승인
+- **시스템 설정**: 결제 채널, CDN 계정, Webhook, 알림 템플릿, 도움말 문서, 감사 로그
+
+### 클라이언트 빌드
+
+- **Flutter 클라이언트**（`apps/flutter/`）: iOS / Android / Web / Linux / macOS / Windows 지원. `flutter pub get`으로 의존성 설치, `flutter run`으로 디버그, `flutter build apk` / `flutter build ios` / `flutter build web`으로 패키징
+- **HarmonyOS 클라이언트**（`apps/harmonyos/`）: ArkTS 네이티브 앱. DevEco Studio로 `entry` 프로젝트를 열어 빌드·실행
+
 ## API 개요
 
 인터페이스는 모듈별로 그룹화되며 요청/응답 예시와 오류 코드를 포함합니다: [API 개요](docs/api-overview.md)（선별） · [API 인터페이스 문서](docs/api-reference.md)（200+ 엔드포인트 전체 레퍼런스） · [온라인 디버깅](http://localhost:8787/apidoc)

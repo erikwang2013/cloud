@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <title>经营报表</title>
+    <link rel="stylesheet" href="/app/admin/component/pear/css/pear.css" />
+    <link rel="stylesheet" href="/app/admin/admin/css/reset.css" />
+    <style>
+        .report-toolbar { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .report-toolbar .layui-input { width: 260px; display: inline-block; }
+        .report-toolbar .pear-btn { margin-right: 0; }
+        .report-summary { margin-bottom: 10px; }
+        .report-summary .layui-col-md3 .layui-card-body { font-size: 24px; font-weight: bold; color: #28333E; }
+        .chart-box { min-height: 380px; padding: 10px; }
+    </style>
+</head>
+<body class="pear-container">
+    <div>
+        <!-- 顶部工具条 -->
+        <div class="layui-card">
+            <div class="layui-card-body">
+                <div class="report-toolbar">
+                    <input type="text" class="layui-input" id="date-range" placeholder="选择日期范围" readonly>
+                    <button class="pear-btn pear-btn-primary pear-btn-md" id="btn-query">
+                        <i class="layui-icon layui-icon-search"></i> 查询
+                    </button>
+                    <button class="pear-btn pear-btn-md" id="btn-export">
+                        <i class="layui-icon layui-icon-export"></i> 导出Excel
+                    </button>
+                </div>
+                <!-- 汇总卡片 -->
+                <div class="layui-row layui-col-space10 report-summary">
+                    <div class="layui-col-md3">
+                        <div class="layui-card top-panel">
+                            <div class="layui-card-header">订单总数</div>
+                            <div class="layui-card-body" id="sum-orders">-</div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md3">
+                        <div class="layui-card top-panel">
+                            <div class="layui-card-header">总营收</div>
+                            <div class="layui-card-body" id="sum-revenue">-</div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md3">
+                        <div class="layui-card top-panel">
+                            <div class="layui-card-header">区间开始</div>
+                            <div class="layui-card-body" id="sum-start">-</div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md3">
+                        <div class="layui-card top-panel">
+                            <div class="layui-card-header">区间结束</div>
+                            <div class="layui-card-body" id="sum-end">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页签 -->
+        <div class="layui-tab layui-tab-brief" lay-filter="report-tab">
+            <ul class="layui-tab-title">
+                <li class="layui-this">订单报表</li>
+                <li>商品排行</li>
+                <li>支付渠道</li>
+                <li>用户增长</li>
+            </ul>
+            <div class="layui-tab-content">
+                <div class="layui-tab-item layui-show">
+                    <div class="layui-card">
+                        <div class="layui-card-body">
+                            <div id="chart-order" class="chart-box"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-tab-item">
+                    <div class="layui-card">
+                        <div class="layui-card-body">
+                            <div id="chart-product" class="chart-box"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-tab-item">
+                    <div class="layui-card">
+                        <div class="layui-card-body">
+                            <div id="chart-payment" class="chart-box"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-tab-item">
+                    <div class="layui-card">
+                        <div class="layui-card-body">
+                            <div id="chart-user" class="chart-box"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/app/admin/component/layui/layui.js?v=2.8.12"></script>
+    <script src="/app/admin/component/pear/pear.js"></script>
+    <script>
+        layui.use(['layer', 'echarts', 'element', 'laydate', 'jquery'], function() {
+            var $ = layui.jquery,
+                layer = layui.layer,
+                laydate = layui.laydate,
+                echarts = layui.echarts;
+
+            // 默认近30天
+            var today = new Date();
+            var start = new Date(today.getTime() - 29 * 86400000);
+            function fmt(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+
+            var chartOrder = echarts.init(document.getElementById('chart-order'), 'walden');
+            var chartProduct = echarts.init(document.getElementById('chart-product'), 'walden');
+            var chartPayment = echarts.init(document.getElementById('chart-payment'), 'walden');
+            var chartUser = echarts.init(document.getElementById('chart-user'), 'walden');
+
+            laydate.render({
+                elem: '#date-range',
+                range: true,
+                value: fmt(start) + ' - ' + fmt(today)
+            });
+
+            function range() {
+                var v = $('#date-range').val() || (fmt(start) + ' - ' + fmt(today));
+                var parts = v.split(' - ');
+                return { start_date: parts[0], end_date: parts[1] };
+            }
+
+            function loadOrder() {
+                $.ajax({
+                    url: '/app/admin/report/order',
+                    data: range(),
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.code) return layer.msg(res.msg || '加载失败');
+                        var d = res.data;
+                        $('#sum-orders').text(d.totals.orders);
+                        // 多币种营收按币种列出，如 "USD 120.0000 / CNY 30.0000"
+                        var revenueText = $.map(d.totals.revenue_by_currency, function(v, k) { return k + ' ' + v; }).join(' / ');
+                        $('#sum-revenue').text(revenueText || '-');
+                        $('#sum-start').text(d.range.start);
+                        $('#sum-end').text(d.range.end);
+                        var dates = [], orders = [], revenue = [];
+                        $.each(d.daily, function(i, row) {
+                            dates.push(row.date);
+                            orders.push(row.orders);
+                            revenue.push(parseFloat(row.revenue));
+                        });
+                        chartOrder.setOption({
+                            tooltip: { trigger: 'axis' },
+                            legend: { data: ['订单数', '营收'] },
+                            grid: { top: '12%', bottom: '8%', left: '8%', right: '8%', containLabel: true },
+                            xAxis: { type: 'category', data: dates },
+                            yAxis: [
+                                { type: 'value', name: '订单数', minInterval: 1 },
+                                { type: 'value', name: '营收' }
+                            ],
+                            series: [
+                                { name: '订单数', type: 'line', smooth: true, data: orders },
+                                { name: '营收', type: 'line', smooth: true, yAxisIndex: 1, data: revenue }
+                            ]
+                        });
+                    }
+                });
+            }
+
+            function loadProduct() {
+                $.ajax({
+                    url: '/app/admin/report/product_top',
+                    data: $.extend({ limit: 10 }, range()),
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.code) return layer.msg(res.msg || '加载失败');
+                        var items = res.data.items;
+                        chartProduct.setOption({
+                            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                            grid: { top: '6%', bottom: '8%', left: '8%', right: '6%', containLabel: true },
+                            xAxis: { type: 'value', name: '销量' },
+                            yAxis: { type: 'category', data: items.map(function(v) { return v.name; }).reverse() },
+                            series: [{
+                                name: '销量',
+                                type: 'bar',
+                                barWidth: 16,
+                                data: items.map(function(v) { return v.qty; }).reverse()
+                            }]
+                        });
+                    }
+                });
+            }
+
+            function loadPayment() {
+                $.ajax({
+                    url: '/app/admin/report/payment',
+                    data: range(),
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.code) return layer.msg(res.msg || '加载失败');
+                        var items = res.data.items;
+                        chartPayment.setOption({
+                            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                            legend: { data: ['笔数'] },
+                            grid: { top: '10%', bottom: '8%', left: '8%', right: '8%', containLabel: true },
+                            xAxis: { type: 'category', data: items.map(function(v) { return v.channel + ' (' + v.currency + ')'; }) },
+                            yAxis: { type: 'value', name: '笔数', minInterval: 1 },
+                            series: [{ name: '笔数', type: 'bar', barWidth: 30, data: items.map(function(v) { return v.transactions; }) }]
+                        });
+                    }
+                });
+            }
+
+            function loadUser() {
+                $.ajax({
+                    url: '/app/admin/report/user_growth',
+                    data: range(),
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.code) return layer.msg(res.msg || '加载失败');
+                        var items = res.data.items;
+                        chartUser.setOption({
+                            tooltip: { trigger: 'axis' },
+                            grid: { top: '10%', bottom: '8%', left: '8%', right: '6%', containLabel: true },
+                            xAxis: { type: 'category', data: items.map(function(v) { return v.date; }) },
+                            yAxis: { type: 'value', name: '新增用户', minInterval: 1 },
+                            series: [{
+                                name: '新增用户',
+                                type: 'line',
+                                smooth: true,
+                                areaStyle: {},
+                                data: items.map(function(v) { return v.count; })
+                            }]
+                        });
+                    }
+                });
+            }
+
+            function loadAll() {
+                loadOrder();
+                loadProduct();
+                loadPayment();
+                loadUser();
+            }
+
+            $('#btn-query').on('click', loadAll);
+            $('#btn-export').on('click', function() {
+                var params = $.param(range());
+                window.location.href = '/app/admin/report/export?type=order&' + params;
+            });
+
+            loadAll();
+        });
+    </script>
+</body>
+</html>

@@ -438,6 +438,23 @@ All admin REST endpoints are prefixed with `/admin/api` and require `AdminRoleMi
 | Audit | `GET /audit-logs` | `Admin\SystemController` |
 | System Config | `PUT /system/config` | `Admin\SystemController` |
 
+### Report Center (v3.1.0)
+
+Panel-side report center (`admin/app/controller/ReportController.php` + `admin/app/view/report/index.html`), routes auto-registered as `/app/admin/report/{action}`; all endpoints validate `start_date` / `end_date` (YYYY-MM-DD, default last 30 days), amounts aggregated with bcmath 4dp:
+
+| Action | Description | Extra params | Returned `data` |
+|--------|-------------|--------------|-----------------|
+| `GET /app/admin/report/index` | Report page (Layui view) | — | — |
+| `GET /app/admin/report/order` | Order daily report (grouped by `paid_at`, excludes refunded) | — | `{range, totals: {orders, revenue}, daily: [{date, currency, orders, revenue}]}` |
+| `GET /app/admin/report/product_top` | Product ranking by sales volume (top N) | `limit` (1-50, default 10) | `{range, items: [{product_id, qty, amount, name}]}` |
+| `GET /app/admin/report/payment` | Payment channel statistics (successful transactions by channel + currency) | — | `{range, items: [{channel, currency, transactions, amount}]}` |
+| `GET /app/admin/report/user_growth` | User growth (daily registrations, soft-deleted excluded) | — | `{range, items: [{date, count}]}` |
+| `GET /app/admin/report/export` | Excel export via `ExcelExport` (type whitelist) | `type` ∈ order / product / payment / user, `limit` | Downloads `{title}_{YYYYmmddHHMMSS}.xlsx` |
+
+Amounts are aggregated with bcmath (`SUM(DECIMAL)` + PDO string returns) to avoid floating-point errors.
+
+Dashboard statistics are served by `Admin\DashboardController::index()` (today's orders / revenue / new users / active resources, 30-day revenue trend, region distribution, pending orders / KYC / tickets) for the home page stat cards and ECharts charts.
+
 ### CDN Resource Management
 
 The CDN product supports four providers (Cloudflare / CloudFront / Aliyun / Tencent), managed from the admin panel in two parts:

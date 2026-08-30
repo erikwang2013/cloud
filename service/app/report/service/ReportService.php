@@ -17,8 +17,13 @@ class ReportService
             ->get();
 
         // D4：汇总统一 bcmath（Eloquent sum() 走浮点），金额以字符串 4 位小数输出
+        // 多币种不可跨币种相加：revenue_by_currency 按币种分组（totalRevenue 为兼容旧客户端保留）
         $totalRevenue = array_reduce($daily->all(), fn ($c, $row) => bcadd($c, (string) $row->revenue, 4), '0.0000');
         $totalOrders  = $daily->sum('orders');
+        $revenueByCurrency = [];
+        foreach ($daily->all() as $row) {
+            $revenueByCurrency[$row->currency] = bcadd($revenueByCurrency[$row->currency] ?? '0.0000', (string) $row->revenue, 4);
+        }
 
         $byCategory = DB::table('order_items')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
@@ -31,7 +36,7 @@ class ReportService
             ->groupBy('product_categories.id', 'product_categories.name')
             ->get();
 
-        return compact('daily', 'totalRevenue', 'totalOrders', 'byCategory');
+        return compact('daily', 'totalRevenue', 'totalOrders', 'revenueByCurrency', 'byCategory');
     }
 
     public function supplierReport(int $supplierId, string $startDate, string $endDate): array

@@ -160,6 +160,25 @@ CdnAdapterFactory.resolve(type, accountId, strict)
 
 **Data model:** `resource_cdn` (provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config; private keys are stripped from cert_config before persisting). Permission isolation: CDN resources are ownership-checked via `resource.user_id`, non-owned resources uniformly return 404.
 
+### 2.5 Report Module
+
+Server-side reports (`service/app/report/`, `Report\ReportController` + `ReportService`) provide revenue / supplier / region reports; v3.1.0 adds a report center on the admin panel side (`admin/app/controller/ReportController.php` + `admin/app/view/report/index.html`), with routes auto-registered as `/app/admin/report/{action}`:
+
+```
+ReportController (admin panel instance, /app/admin/report/*)
+  ├── index()        report page (Layui view)
+  ├── order()        order daily (aggregated by paid_at, excludes refunded)   [v3.1.0]
+  ├── product_top()  product ranking by sales volume (top N, limit 1-50)      [v3.1.0]
+  ├── payment()      payment channel stats (successful, by channel + currency)[v3.1.0]
+  ├── user_growth()  user growth (daily registrations, soft-deleted excluded)  [v3.1.0]
+  └── export()       Excel export (type whitelist order/product/payment/user)
+        └── ExcelExport (PhpSpreadsheet) + bcmath amount aggregation
+```
+
+The panel instance queries the business database directly (Order / OrderItem / PaymentTransaction / Product / BusinessUser models); amounts are aggregated with bcmath (`SUM(DECIMAL)` returned as strings by PDO), and `start_date` / `end_date` must be `YYYY-MM-DD` (default last 30 days).
+
+**Dashboard statistics:** `DashboardController::index()` (admin panel) adds the operational metrics `today_orders` / `today_revenue` / `pending_orders` / `active_resources` alongside user stats, returned with the 7-day / 30-day user trends and system info — rendered with stat cards and ECharts charts.
+
 ---
 
 ## 3. Middleware Execution Pipeline

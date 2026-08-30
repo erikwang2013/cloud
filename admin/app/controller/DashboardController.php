@@ -8,6 +8,8 @@
 namespace app\controller;
 
 use app\common\Util;
+use app\model\Order;
+use app\model\Resource;
 use app\model\User;
 use support\Request;
 use support\Response;
@@ -52,16 +54,31 @@ class DashboardController extends Base
             $userTrend30d[] = ['date' => substr($date, 5), 'count' => $count];
         }
 
+        // Service stats
+        $todayStart = $today . ' 00:00:00';
+        $todayOrders = Order::where('paid_at', '>=', $todayStart)
+            ->where('status', '!=', 'refunded')->count();
+        // 多币种不可直接相加：orders.exchange_rate 为币种→USD 汇率（USD=1.0），折算为 USD 基准币种
+        $todayRevenue = Order::where('paid_at', '>=', $todayStart)
+            ->where('status', '!=', 'refunded')
+            ->selectRaw('COALESCE(SUM(total * exchange_rate), 0) as revenue')->value('revenue');
+        $pendingOrders = Order::where('status', 'pending')->count();
+        $activeResources = Resource::where('status', 'active')->count();
+
         // System info
         $version = Util::db()->select('select VERSION() as version');
         $mysqlVersion = $version[0]->version ?? 'unknown';
 
         return $this->json(0, 'ok', [
             'stats' => [
-                'today_users'   => $todayUsers,
-                'week_users'    => $weekUsers,
-                'month_users'   => $monthUsers,
-                'total_users'   => $totalUsers,
+                'today_users'       => $todayUsers,
+                'week_users'        => $weekUsers,
+                'month_users'       => $monthUsers,
+                'total_users'       => $totalUsers,
+                'today_orders'      => $todayOrders,
+                'today_revenue'     => $todayRevenue,
+                'pending_orders'    => $pendingOrders,
+                'active_resources'  => $activeResources,
             ],
             'user_trend_7d'  => $userTrend,
             'user_trend_30d' => $userTrend30d,

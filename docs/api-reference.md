@@ -689,6 +689,24 @@ GET /admin/api/reports/region            参数: from, to
   → [{region, orders, revenue}]                  # revenue: string 4dp
 ```
 
+### 管理端报表（面板 ReportController，v3.1.0）
+
+管理面板内置报表中心（`admin/app/controller/ReportController.php`），路由自动注册为 `/app/admin/report/{action}`，页面入口 `/app/admin/report/index`。统一参数：`start_date` / `end_date`（YYYY-MM-DD，默认近 30 天），金额聚合 bcmath 4dp。
+
+```
+GET /app/admin/report/order           参数: start_date, end_date
+  → { range: {start, end}, totals: {orders, revenue_by_currency}, daily: [{date, currency, orders, revenue}] }
+  # 按 paid_at 聚合，排除 refunded；totals.revenue_by_currency: {CNY: string 4dp, ...} 分币种汇总，daily[].revenue: string 4dp
+GET /app/admin/report/product_top     参数: start_date, end_date, limit(1-50, 默认 10)
+  → { range, items: [{product_id, qty, amount, name}] }     # amount: string 4dp
+GET /app/admin/report/payment         参数: start_date, end_date
+  → { range, items: [{channel, currency, transactions, amount}] }   # amount: string 4dp
+GET /app/admin/report/user_growth     参数: start_date, end_date
+  → { range, items: [{date, count}] }                        # 软删不计
+GET /app/admin/report/export          参数: start_date, end_date, type, limit
+  → 下载 {title}_{YYYYmmddHHMMSS}.xlsx   # type 白名单: order / product / payment / user
+```
+
 ### 监控
 
 ```

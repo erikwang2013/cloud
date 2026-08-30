@@ -67,6 +67,7 @@
 | GET/POST | `/admin/api/suppliers/*` | Supplier approval / settlement / withdrawal |
 | GET/POST | `/admin/api/tickets` | Ticket assignment / closure |
 | GET | `/admin/api/reports/*` | Revenue / regional / supplier reports |
+| GET | `/app/admin/report/*` | Admin reports (order daily / product ranking / channel stats / user growth, Excel export) |
 | GET | `/admin/api/monitor/*` | Monitoring dashboard / resource metrics |
 | GET | `/admin/api/audit-logs` | Audit logs |
 | PUT | `/admin/api/system/config` | System configuration |

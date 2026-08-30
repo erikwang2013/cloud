@@ -689,6 +689,24 @@ GET /admin/api/reports/region             Params: from, to
   → [{region, orders, revenue}]                  # revenue: string 4dp
 ```
 
+### Admin Reports (Panel ReportController, v3.1.0)
+
+The admin panel has a built-in report center (`admin/app/controller/ReportController.php`), routes auto-registered as `/app/admin/report/{action}`, page entry `/app/admin/report/index`. Shared params: `start_date` / `end_date` (YYYY-MM-DD, default last 30 days); amounts aggregated with bcmath 4dp.
+
+```
+GET /app/admin/report/order            Params: start_date, end_date
+  → { range: {start, end}, totals: {orders, revenue_by_currency}, daily: [{date, currency, orders, revenue}] }
+  # aggregated by paid_at, excludes refunded; totals.revenue_by_currency: {CNY: string 4dp, ...} per-currency, daily[].revenue: string 4dp
+GET /app/admin/report/product_top      Params: start_date, end_date, limit(1-50, default 10)
+  → { range, items: [{product_id, qty, amount, name}] }     # amount: string 4dp
+GET /app/admin/report/payment          Params: start_date, end_date
+  → { range, items: [{channel, currency, transactions, amount}] }   # amount: string 4dp
+GET /app/admin/report/user_growth      Params: start_date, end_date
+  → { range, items: [{date, count}] }                        # soft-deleted excluded
+GET /app/admin/report/export           Params: start_date, end_date, type, limit
+  → downloads {title}_{YYYYmmddHHMMSS}.xlsx   # type whitelist: order / product / payment / user
+```
+
 ### Monitoring
 
 ```

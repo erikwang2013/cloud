@@ -160,6 +160,25 @@ CdnAdapterFactory.resolve(type, accountId, strict)
 
 **数据模型：** `resource_cdn`（provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config；cert_config 落库前剔除私钥）。权限隔离：CDN 资源经 `resource.user_id` 归属校验，非本用户统一 404。
 
+### 2.5 报表模块
+
+服务端报表（`service/app/report/`，`Report\ReportController` + `ReportService`）提供营收 / 供应商 / 区域报表；v3.1.0 在管理面板侧新增报表中心（`admin/app/controller/ReportController.php` + `admin/app/view/report/index.html`），路由自动注册为 `/app/admin/report/{action}`：
+
+```
+ReportController (admin 面板实例, /app/admin/report/*)
+  ├── index()        报表页面（Layui 视图）
+  ├── order()        订单日报（按 paid_at 聚合，排除 refunded）   [v3.1.0]
+  ├── product_top()  商品销量排行（前 N，limit 1-50）            [v3.1.0]
+  ├── payment()      支付渠道统计（成功交易，按渠道+币种）        [v3.1.0]
+  ├── user_growth()  用户增长（按天注册数，软删不计）            [v3.1.0]
+  └── export()       Excel 导出（type 白名单 order/product/payment/user）
+        └── ExcelExport（PhpSpreadsheet）+ bcmath 金额聚合
+```
+
+面板实例直连业务库（Order / OrderItem / PaymentTransaction / Product / BusinessUser 模型），金额聚合统一 bcmath（`SUM(DECIMAL)` 由 PDO 返回字符串），日期参数 `start_date` / `end_date` 校验 `YYYY-MM-DD`（默认近 30 天）。
+
+**起始页统计：** `DashboardController::index()`（admin 面板）在用户统计基础上新增 `today_orders` / `today_revenue` / `pending_orders` / `active_resources` 运营指标，随 7 日 / 30 日用户趋势与系统信息返回，前端以统计卡片 + ECharts 图表展示。
+
 ---
 
 ## 3. 中间件执行管线

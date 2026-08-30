@@ -399,6 +399,25 @@ php start.php restart           # Mulai ulang
 php start.php stop              # Hentikan
 ```
 
+## Panduan Penggunaan
+
+### Masuk
+
+- **Portal pengguna**: buka layanan API (default `http://localhost:8787`), daftar akun lalu masuk. OAuth Google / Apple dan autentikasi dua langkah TOTP didukung
+- **Panel admin**: buka `http://localhost:8787/app/admin` di browser (panel adalah instance terpisah, port 8788) dan masuk dengan akun administrator yang dibuat oleh wizard instalasi
+
+### Fitur Umum Admin
+
+- **Dasbor**: statistik pesanan / pendapatan / pengguna baru / sumber daya aktif hari ini, grafik tren pendapatan 30 hari, ekspor PDF
+- **Pusat laporan**: laporan pesanan, peringkat produk, statistik saluran, pertumbuhan pengguna, ekspor Excel
+- **Manajemen harian**: pengguna / produk / pesanan / pemasok / tiket / domain / CDN, tinjauan KYC, refund, persetujuan settlement dan penarikan
+- **Konfigurasi sistem**: saluran pembayaran, akun CDN, webhook, template notifikasi, artikel bantuan, log audit
+
+### Membangun Klien
+
+- **Klien Flutter** (`apps/flutter/`): iOS / Android / Web / Linux / macOS / Windows. `flutter pub get` untuk dependensi, `flutter run` untuk debugging, `flutter build apk` / `flutter build ios` / `flutter build web` untuk pengemasan
+- **Klien HarmonyOS** (`apps/harmonyos/`): aplikasi native ArkTS — buka proyek `entry` dengan DevEco Studio untuk build dan menjalankan
+
 ## Ikhtisar API
 
 Antarmuka dikelompokkan per modul, termasuk contoh permintaan/respons dan kode kesalahan: [Ikhtisar API](docs/api-overview.md) (pilihan) · [Dokumen Referensi API](docs/api-reference.md) (referensi lengkap 200+ endpoint) · [Debugging online](http://localhost:8787/apidoc)

@@ -294,6 +294,22 @@ return [
                 ]
             ],
             [
+                'title' => '报表统计',
+                'key' => 'business_报表统计',
+                'type' => 0,
+                'icon' => 'layui-icon-chart',
+                'weight' => 935,
+                'children' => [
+                    [
+                        'title' => '经营报表',
+                        'key' => 'app\\controller\\ReportController',
+                        'href' => '/app/admin/report/index',
+                        'type' => 1,
+                        'weight' => 1000,
+                    ],
+                ]
+            ],
+            [
                 'title' => '工单管理',
                 'key' => 'business_工单管理',
                 'type' => 0,
