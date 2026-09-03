@@ -1,7 +1,7 @@
 name: cloud_platform
 description: "CloudPlatform - Multi-platform cloud management panel"
 publish_to: 'none'
-version: 3.1.0+1
+version: 3.1.1+1
 
 environment:
   sdk: ^3.11.5
