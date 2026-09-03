@@ -31,7 +31,7 @@
 
 ### 2.2 Doc-Code Divergences (P1 unresolved, 4 items)
 
-- GET /api/orders status filter not implemented
+- GET /api/v1/orders status filter not implemented
 - WebSocket push events missing (websocket_push related docs declare them)
 - ticket.updated trigger scope unclear
 - product_attributes dead schema (no code uses it)

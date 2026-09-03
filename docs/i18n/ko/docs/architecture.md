@@ -136,7 +136,7 @@ common/
 ├── security/            # CORS / WAF / RateLimit / GeoBlock / Maintenance / AuditLogger / LogSanitizer
 ├── snowflake/           # 스노우플레이크 ID 서비스 + Eloquent Trait
 ├── metrics/             # Prometheus 지표 수집기 + 렌더러 + HTTP 요청 카운트 미들웨어
-├── version/             # VersionMiddleware（X-Api-Version 헤더）
+├── version/             # VersionMiddleware（URL 경로에서 버전 검증）
 └── webhook/             # Webhook 이벤트 디스패처
 ```
 
@@ -170,15 +170,15 @@ CdnAdapterFactory.resolve(type, accountId, strict)
 HTTP 요청
   │
   ▼
-1. VersionMiddleware         ← X-Api-Version 헤더 검증, 누락 시 기본 v1, 무효 시 400
-  │                            /api/와 /admin/api/에만 적용
+1. VersionMiddleware         ← URL 경로에서 버전 검증, 무효 버전은 400
+  │                            /api/v1/와 /admin/api/v1/에만 적용
   ▼
 2. CorsMiddleware            ← OPTIONS 프리플라이트에 CORS 헤더 반환, Origin 반사
   ▼
 3. SecurityHeadersMiddleware ← HSTS / X-Frame-Options / CSP / Referrer-Policy 보안 응답 헤더
   ▼
 4. ClientPlatformMiddleware  ← X-Client-Platform 헤더 식별 (8개 플랫폼), properties 주입
-  │                            /api/와 /admin/api/에만 적용
+  │                            /api/v1/와 /admin/api/v1/에만 적용
   ▼
 5. GeoBlockMiddleware        ← GEO_BLOCKED_COUNTRIES 국가 차단 (MaxMind GeoIP2)
   ▼
@@ -204,28 +204,28 @@ HTTP 요청
   ├─ /health (내부 모니터링) ────────────
   │   InternalTokenMiddleware      ← 내부 토큰 검증 /health/live|ready|deps
   │
-  ├─ /api/auth ─────────────────────
+  ├─ /api/v1/auth ─────────────────────
   │   EncryptionMiddleware          ← AES-256-GCM 요청/응답 본문 암호화/복호화
   │
-  ├─ /api (사용자 인증) ───────────────
+  ├─ /api/v1 ((사용자 인증) ───────────────
   │   EncryptionMiddleware
   │   AuthMiddleware                ← JWT Bearer Token 검증 → $request->userId/role
   │
-  ├─ /api (민감 작업) ───────────────
+  ├─ /api/v1 ((민감 작업) ───────────────
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   ConfirmationMiddleware        ← 비밀번호 2차 확인, Redis 카운터, 5회 시 15min 잠금
   │
-  ├─ /api/supplier/external ────────
+  ├─ /api/v1/supplier/external ────────
   │   VersionMiddleware
   │   SupplierApiKeyMiddleware      ← sk_xxx SHA256 검증 → $request->supplierId
   │
-  ├─ /admin/api ────────────────────
+  ├─ /admin/api/v1 ────────────────────
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   AdminRoleMiddleware           ← RBAC 권한 검사
   │
-  └─ /admin/api (민감 작업) ─────────
+  └─ /admin/api/v1 (민감 작업) ─────────
       EncryptionMiddleware
       AuthMiddleware
       AdminRoleMiddleware
@@ -239,7 +239,7 @@ Controller → Service → Model → DB
 
 | 미들웨어 | 위치 | 등록 방식 | 책임 |
 |--------|------|---------|------|
-| `VersionMiddleware` | common/Version | 전역 | `X-Api-Version` 검증, 누락 시 기본 v1 |
+| `VersionMiddleware` | common/Version | 전역 | URL 경로에서 버전 검증 |
 | `CorsMiddleware` | common/Security | 전역 | OPTIONS 프리플라이트, Origin 반사 |
 | `SecurityHeadersMiddleware` | common/Security | 전역 | HSTS / X-Frame-Options / CSP / Referrer-Policy 보안 응답 헤더 |
 | `ClientPlatformMiddleware` | common/ClientPlatform | 전역 | `X-Client-Platform` 8개 플랫폼 식별 |
@@ -280,7 +280,7 @@ Controller → Service → Model → DB
 
 ```
 요청 흐름:
-  Client: GET /api/products/aB3xK7mQ9w
+  Client: GET /api/v1/products/aB3xK7mQ9w
     → HashidRequestMiddleware 디코드 → int(1234567890)
       → Controller/Service가 정수 ID로 작업
         → Response::success() / Response::paginated()

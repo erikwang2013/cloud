@@ -31,7 +31,7 @@
 
 ### 2.2 Divergences documentation-code (4 éléments P1 non résolus)
 
-- Filtrage par statut GET /api/orders non implémenté
+- Filtrage par statut GET /api/v1/orders non implémenté
 - Événements de push WebSocket absents (les docs websocket_push les déclarent)
 - Périmètre de déclenchement de ticket.updated non défini
 - product_attributes est un schéma mort (aucun code ne l'utilise)

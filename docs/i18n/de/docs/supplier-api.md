@@ -6,12 +6,12 @@ Die Supplier-Funktion bietet zwei API-Sätze:
 
 | Typ | Authentifizierung | Präfix | Status |
 |------|---------|------|------|
-| **Interne API** | Benutzer-Bearer-Token | `/api/supplier/` | Verfügbar |
-| **Externe API** | API Key (`sk_xxx`) | `/api/supplier/external/` | Verfügbar |
+| **Interne API** | Benutzer-Bearer-Token | `/api/v1/supplier/` | Verfügbar |
+| **Externe API** | API Key (`sk_xxx`) | `/api/v1/supplier/external/` | Verfügbar |
 
 **Base URL**: `https://api.example.com`
 
-**Versionsverwaltung**: Über den HTTP-Header `X-Api-Version: v1` angegeben. Fehlt er, gilt standardmäßig `v1`; nicht unterstützte Versionen liefern `400`. Wirkt nur auf `/api/*`- und `/admin/api/*`-Pfade, zentral über `VersionMiddleware` verarbeitet.
+**Versionsverwaltung**: Die API-Version ist Teil des URL-Pfads (z. B. `/api/v1/supplier/apply`; Admin-Pfade unter `/admin/api/v1/...`). Nicht unterstützte Versionen liefern `400`; zentral über `VersionMiddleware` verarbeitet.
 
 ---
 
@@ -23,10 +23,9 @@ Die interne API verwendet dieselbe Benutzer-Bearer-Token-Authentifizierung wie d
 
 ```
 Authorization: Bearer <user_access_token>
-X-Api-Version: v1
 ```
 
-Der Benutzer muss sich zuerst über `/api/auth/login` einloggen, um ein Token zu erhalten; die Konto-Rolle muss `supplier` sein (wird nach Admin-Genehmigung des Supplier-Antrags gesetzt).
+Der Benutzer muss sich zuerst über `/api/v1/auth/login` einloggen, um ein Token zu erhalten; die Konto-Rolle muss `supplier` sein (wird nach Admin-Genehmigung des Supplier-Antrags gesetzt).
 
 ---
 
@@ -84,7 +83,7 @@ Der Benutzer muss sich zuerst über `/api/auth/login` einloggen, um ein Token zu
 #### 1. Supplier-Onboarding
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
 ```
 
 Als Supplier bewerben. Jeder Benutzer kann nur einen Antrag einreichen.
@@ -138,9 +137,8 @@ Als Supplier bewerben. Jeder Benutzer kann nur einen Antrag einreichen.
 | 422 | Bereits ein Supplier-Antrag eingereicht |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/apply" \
+curl -X POST "https://api.example.com/api/v1/supplier/apply" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"company_name":"示例科技","contact_name":"张三","contact_phone":"13800138000","contact_email":"zhangsan@example.com"}'
 ```
@@ -152,7 +150,7 @@ curl -X POST "https://api.example.com/api/supplier/apply" \
 ##### Zugewiesene Produkte abrufen
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 **Query-Parameter**:
@@ -185,7 +183,7 @@ GET /api/supplier/products
 ##### Produkt hinzufügen
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 Ein vorhandenes Produkt mit dem aktuellen Supplier verknüpfen.
@@ -215,7 +213,7 @@ Ein vorhandenes Produkt mit dem aktuellen Supplier verknüpfen.
 ##### Produkt entfernen
 
 ```
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 Die Verknüpfung zwischen Produkt und Supplier aufheben.
@@ -237,7 +235,7 @@ Die Verknüpfung zwischen Produkt und Supplier aufheben.
 ##### Abrechnungsliste abrufen
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 **Antwort**: Alle Abrechnungen des aktuellen Suppliers, absteigend nach Erstellzeit
@@ -273,7 +271,7 @@ GET /api/supplier/settlements
 ##### Auszahlung beantragen
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 > Diese Operation erfordert Passwort-Zweitbestätigung (Feld `confirm_password`), geprüft über `ConfirmationMiddleware`.
@@ -321,9 +319,8 @@ POST /api/supplier/withdraw
 | 403 | Passwortbestätigung fehlgeschlagen |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/withdraw" \
+curl -X POST "https://api.example.com/api/v1/supplier/withdraw" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"amount":"5000.00","confirm_password":"mypassword","account_info":{"method":"bank_transfer","bank_name":"ICBC","account_number":"6222021234567890"}}'
 ```
@@ -334,12 +331,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 | Methode | Pfad | Auth | Passwortbestätigung | Bedeutung |
 |------|------|------|---------|------|
-| POST | `/api/supplier/apply` | Token | - | Als Supplier bewerben |
-| GET | `/api/supplier/products` | Token | - | Zugewiesene Produkte ansehen |
-| POST | `/api/supplier/products` | Token | - | Produktverknüpfung hinzufügen |
-| DELETE | `/api/supplier/products/{id}` | Token | - | Produktverknüpfung entfernen |
-| GET | `/api/supplier/settlements` | Token | - | Abrechnungen ansehen |
-| POST | `/api/supplier/withdraw` | Token | Ja | Auszahlung beantragen |
+| POST | `/api/v1/supplier/apply` | Token | - | Als Supplier bewerben |
+| GET | `/api/v1/supplier/products` | Token | - | Zugewiesene Produkte ansehen |
+| POST | `/api/v1/supplier/products` | Token | - | Produktverknüpfung hinzufügen |
+| DELETE | `/api/v1/supplier/products/{id}` | Token | - | Produktverknüpfung entfernen |
+| GET | `/api/v1/supplier/settlements` | Token | - | Abrechnungen ansehen |
+| POST | `/api/v1/supplier/withdraw` | Token | Ja | Auszahlung beantragen |
 
 ---
 
@@ -347,13 +344,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 Die externe API erlaubt Suppliern, Orders, Ressourcen und Abrechnungen programmatisch zu verwalten. Alle Anfragen benötigen API-Key-Authentifizierung.
 
-**Base URL**: `https://api.example.com/api`
+**Base URL**: `https://api.example.com/api/v1`
 
 ### Authentifizierung
 
 ```
 Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-X-Api-Version: v1
 ```
 
 API Keys werden vom Plattform-Administrator im Admin-Panel unter `供应商管理 → API Keys` erzeugt.
@@ -387,7 +383,7 @@ Wie die interne API, zusätzlich mit `request_id` zur Verfolgung:
 ##### Orderliste abrufen
 
 ```
-GET /api/supplier/orders
+GET /api/v1/supplier/orders
 ```
 
 **Query-Parameter**:
@@ -403,7 +399,7 @@ GET /api/supplier/orders
 ##### Order-Details abrufen
 
 ```
-GET /api/supplier/orders/{id}
+GET /api/v1/supplier/orders/{id}
 ```
 
 ---
@@ -413,7 +409,7 @@ GET /api/supplier/orders/{id}
 ##### Ressourcenliste abrufen
 
 ```
-GET /api/supplier/resources
+GET /api/v1/supplier/resources
 ```
 
 **Query-Parameter**: page, status (active/provisioning/stopped/destroyed), type (server/ip/disk/domain)
@@ -421,7 +417,7 @@ GET /api/supplier/resources
 ##### Ressourcenstatus abrufen
 
 ```
-GET /api/supplier/resources/{id}/status
+GET /api/v1/supplier/resources/{id}/status
 ```
 
 ---
@@ -431,13 +427,13 @@ GET /api/supplier/resources/{id}/status
 ##### Abrechnungsliste abrufen
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 ##### Abrechnungsdetails abrufen
 
 ```
-GET /api/supplier/settlements/{id}
+GET /api/v1/supplier/settlements/{id}
 ```
 
 ---
@@ -447,13 +443,13 @@ GET /api/supplier/settlements/{id}
 ##### Auszahlung beantragen
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 ##### Auszahlungshistorie
 
 ```
-GET /api/supplier/withdraws
+GET /api/v1/supplier/withdraws
 ```
 
 ---
@@ -463,13 +459,13 @@ GET /api/supplier/withdraws
 ##### Meine Produkte abrufen
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 ##### Produkt-Einstellungsantrag einreichen
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 ---
@@ -478,16 +474,16 @@ POST /api/supplier/products
 
 | Methode | Pfad | Bedeutung |
 |------|------|------|
-| GET | `/api/supplier/orders` | Orderliste |
-| GET | `/api/supplier/orders/{id}` | Order-Details |
-| GET | `/api/supplier/resources` | Ressourcenliste |
-| GET | `/api/supplier/resources/{id}/status` | Ressourcenstatus |
-| GET | `/api/supplier/settlements` | Abrechnungsliste |
-| GET | `/api/supplier/settlements/{id}` | Abrechnungsdetails |
-| POST | `/api/supplier/withdraw` | Auszahlung beantragen |
-| GET | `/api/supplier/withdraws` | Auszahlungshistorie |
-| GET | `/api/supplier/products` | Produktliste |
-| POST | `/api/supplier/products` | Produkt einreichen |
+| GET | `/api/v1/supplier/orders` | Orderliste |
+| GET | `/api/v1/supplier/orders/{id}` | Order-Details |
+| GET | `/api/v1/supplier/resources` | Ressourcenliste |
+| GET | `/api/v1/supplier/resources/{id}/status` | Ressourcenstatus |
+| GET | `/api/v1/supplier/settlements` | Abrechnungsliste |
+| GET | `/api/v1/supplier/settlements/{id}` | Abrechnungsdetails |
+| POST | `/api/v1/supplier/withdraw` | Auszahlung beantragen |
+| GET | `/api/v1/supplier/withdraws` | Auszahlungshistorie |
+| GET | `/api/v1/supplier/products` | Produktliste |
+| POST | `/api/v1/supplier/products` | Produkt einreichen |
 
 ---
 
@@ -540,7 +536,7 @@ X-Webhook-Event: order.paid
 | Externe API-Auszahlung | 10 req/min (Empfehlungswert, anpassbar in `config/security.php`) |
 
 > Die Rate-Limit-Regel der externen API ist unter `rate_limits.supplier_api` in `config/security.php` definiert
-> und wird von `RateLimitMiddleware` für `/api/supplier/external/*`-Pfade einheitlich ausgeführt (atomare INCR-Zählung,
+> und wird von `RateLimitMiddleware` für `/api/v1/supplier/external/*`-Pfade einheitlich ausgeführt (atomare INCR-Zählung,
 > bei nicht verfügbarem Redis Durchlass).
 
 Limit-Header:
@@ -560,10 +556,9 @@ X-RateLimit-Reset: 1680000000
 ```php
 $token = 'user_access_token_here';
 $client = new GuzzleHttp\Client([
-    'base_uri' => 'https://api.example.com/api/',
+    'base_uri' => 'https://api.example.com/api/v1/',
     'headers' => [
         'Authorization' => "Bearer {$token}",
-        'X-Api-Version' => 'v1',
         'Accept'        => 'application/json',
     ],
 ]);
@@ -604,16 +599,15 @@ import requests
 
 headers = {
     'Authorization': 'Bearer <user_access_token>',
-    'X-Api-Version': 'v1',
 }
 
 # Zugewiesene Produkte abrufen
-resp = requests.get('https://api.example.com/api/supplier/products',
+resp = requests.get('https://api.example.com/api/v1/supplier/products',
                      headers=headers)
 products = resp.json()
 
 # Auszahlung beantragen
-resp = requests.post('https://api.example.com/api/supplier/withdraw',
+resp = requests.post('https://api.example.com/api/v1/supplier/withdraw',
                       headers=headers,
                       json={
                           'amount': '5000.00',
@@ -645,11 +639,11 @@ Die folgenden Endpunkte dienen der Admin-Verwaltung von Suppliern (nur Backend, 
 
 | Methode | Pfad | Bedeutung |
 |------|------|------|
-| GET | `/admin/api/suppliers` | Supplierliste (mit status-Filter) |
-| GET | `/admin/api/suppliers/export` | Supplier als Excel exportieren |
-| POST | `/admin/api/suppliers/{id}/approve` | Supplier genehmigen |
-| POST | `/admin/api/suppliers/{id}/settle` | Abrechnung erzeugen |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | Auszahlung genehmigen |
-| GET | `/admin/api/suppliers/{id}/api-keys` | API-Key-Liste des Suppliers ansehen |
-| POST | `/admin/api/suppliers/{id}/api-keys` | API Key erstellen (roher Key wird nur einmal zurückgegeben) |
-| DELETE | `/admin/api/suppliers/api-keys/{id}` | API Key widerrufen |
+| GET | `/admin/api/v1/suppliers` | Supplierliste (mit status-Filter) |
+| GET | `/admin/api/v1/suppliers/export` | Supplier als Excel exportieren |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | Supplier genehmigen |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | Abrechnung erzeugen |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | Auszahlung genehmigen |
+| GET | `/admin/api/v1/suppliers/{id}/api-keys` | API-Key-Liste des Suppliers ansehen |
+| POST | `/admin/api/v1/suppliers/{id}/api-keys` | API Key erstellen (roher Key wird nur einmal zurückgegeben) |
+| DELETE | `/admin/api/v1/suppliers/api-keys/{id}` | API Key widerrufen |

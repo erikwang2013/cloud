@@ -6,12 +6,12 @@
 
 | টাইপ | অথেনটিকেশন | প্রিফিক্স | স্ট্যাটাস |
 |------|---------|------|------|
-| **ইন্টারনাল API** | ইউজার Bearer Token | `/api/supplier/` | উপলব্ধ |
-| **এক্সটার্নাল API** | API Key (`sk_xxx`) | `/api/supplier/external/` | উপলব্ধ |
+| **ইন্টারনাল API** | ইউজার Bearer Token | `/api/v1/supplier/` | উপলব্ধ |
+| **এক্সটার্নাল API** | API Key (`sk_xxx`) | `/api/v1/supplier/external/` | উপলব্ধ |
 
 **Base URL**: `https://api.example.com`
 
-**ভার্সন কন্ট্রোল**: HTTP হেডার `X-Api-Version: v1` দিয়ে নির্দিষ্ট করা হয়। অনুপস্থিত থাকলে ডিফল্ট `v1`, অসমর্থিত ভার্সনে `400` রিটার্ন হয়। শুধু `/api/*` ও `/admin/api/*` পাথে কার্যকর, `VersionMiddleware`-এ ইউনিফাইড হ্যান্ডলিং হয়।
+**ভার্সন কন্ট্রোল**: API ভার্সন URL পাথে থাকে (যেমন `/api/v1/...`), HTTP হেডারে নয়। অসমর্থিত ভার্সনে `400` রিটার্ন হয়। শুধু `/api/v1/*` ও `/admin/api/v1/*` পাথে কার্যকর, `VersionMiddleware`-এ ইউনিফাইড হ্যান্ডলিং হয়।
 
 ---
 
@@ -23,10 +23,9 @@
 
 ```
 Authorization: Bearer <user_access_token>
-X-Api-Version: v1
 ```
 
-ইউজারকে আগে `/api/auth/login` দিয়ে লগইন করে Token পেতে হবে, এবং অ্যাকাউন্ট রোল `supplier` হতে হবে (অ্যাডমিন সাপ্লায়ার আবেদন অ্যাপ্রুভ করার পর সেট হয়)।
+ইউজারকে আগে `/api/v1/auth/login` দিয়ে লগইন করে Token পেতে হবে, এবং অ্যাকাউন্ট রোল `supplier` হতে হবে (অ্যাডমিন সাপ্লায়ার আবেদন অ্যাপ্রুভ করার পর সেট হয়)।
 
 ---
 
@@ -84,7 +83,7 @@ X-Api-Version: v1
 #### 1. সাপ্লায়ার অনবোর্ডিং
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
 ```
 
 সাপ্লায়ার হওয়ার আবেদন। প্রতিটি ইউজার শুধু একবার আবেদন করতে পারে।
@@ -138,9 +137,8 @@ POST /api/supplier/apply
 | 422 | সাপ্লায়ার আবেদন ইতিমধ্যে জমা হয়েছে |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/apply" \
+curl -X POST "https://api.example.com/api/v1/supplier/apply" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"company_name":"示例科技","contact_name":"张三","contact_phone":"13800138000","contact_email":"zhangsan@example.com"}'
 ```
@@ -152,7 +150,7 @@ curl -X POST "https://api.example.com/api/supplier/apply" \
 ##### অ্যাসাইন করা প্রোডাক্ট পাওয়া
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 **Query প্যারামিটার**:
@@ -185,7 +183,7 @@ GET /api/supplier/products
 ##### প্রোডাক্ট যোগ
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 বিদ্যমান প্রোডাক্ট বর্তমান সাপ্লায়ারের সাথে অ্যাসোসিয়েট করে।
@@ -215,7 +213,7 @@ POST /api/supplier/products
 ##### প্রোডাক্ট সরানো
 
 ```
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 প্রোডাক্ট ও সাপ্লায়ারের অ্যাসোসিয়েশন বাতিল করে।
@@ -237,7 +235,7 @@ DELETE /api/supplier/products/{id}
 ##### সেটেলমেন্ট লিস্ট পাওয়া
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 **রেসপন্স**: বর্তমান সাপ্লায়ারের সব সেটেলমেন্ট, তৈরি সময়ের উল্টো ক্রমে
@@ -273,7 +271,7 @@ GET /api/supplier/settlements
 ##### উইথড্রয়াল আবেদন
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 > এই অপারেশনে পাসওয়ার্ড সেকেন্ডারি কনফার্মেশন প্রয়োজন (`confirm_password` ফিল্ড), `ConfirmationMiddleware` ভেরিফাই করে।
@@ -321,9 +319,8 @@ POST /api/supplier/withdraw
 | 403 | পাসওয়ার্ড কনফার্মেশন ব্যর্থ |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/withdraw" \
+curl -X POST "https://api.example.com/api/v1/supplier/withdraw" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"amount":"5000.00","confirm_password":"mypassword","account_info":{"method":"bank_transfer","bank_name":"ICBC","account_number":"6222021234567890"}}'
 ```
@@ -334,12 +331,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 | মেথড | পাথ | অথেনটিকেশন | পাসওয়ার্ড কনফার্মেশন | বিবরণ |
 |------|------|------|---------|------|
-| POST | `/api/supplier/apply` | Token | - | সাপ্লায়ার হওয়ার আবেদন |
-| GET | `/api/supplier/products` | Token | - | অ্যাসাইন করা প্রোডাক্ট দেখা |
-| POST | `/api/supplier/products` | Token | - | প্রোডাক্ট অ্যাসোসিয়েশন যোগ |
-| DELETE | `/api/supplier/products/{id}` | Token | - | প্রোডাক্ট অ্যাসোসিয়েশন সরানো |
-| GET | `/api/supplier/settlements` | Token | - | সেটেলমেন্ট দেখা |
-| POST | `/api/supplier/withdraw` | Token | প্রয়োজন | উইথড্রয়াল আবেদন |
+| POST | `/api/v1/supplier/apply` | Token | - | সাপ্লায়ার হওয়ার আবেদন |
+| GET | `/api/v1/supplier/products` | Token | - | অ্যাসাইন করা প্রোডাক্ট দেখা |
+| POST | `/api/v1/supplier/products` | Token | - | প্রোডাক্ট অ্যাসোসিয়েশন যোগ |
+| DELETE | `/api/v1/supplier/products/{id}` | Token | - | প্রোডাক্ট অ্যাসোসিয়েশন সরানো |
+| GET | `/api/v1/supplier/settlements` | Token | - | সেটেলমেন্ট দেখা |
+| POST | `/api/v1/supplier/withdraw` | Token | প্রয়োজন | উইথড্রয়াল আবেদন |
 
 ---
 
@@ -347,13 +344,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 এক্সটার্নাল API সাপ্লায়ারদের প্রোগ্রাম্যাটিকভাবে অর্ডার, রিসোর্স ও সেটেলমেন্ট ম্যানেজ করার সুযোগ দেয়। সব রিকোয়েস্টে API Key অথেনটিকেশন প্রয়োজন।
 
-**Base URL**: `https://api.example.com/api`
+**Base URL**: `https://api.example.com/api/v1`
 
 ### অথেনটিকেশন
 
 ```
 Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-X-Api-Version: v1
 ```
 
 API Key প্ল্যাটফর্ম অ্যাডমিন অ্যাডমিন প্যানেলের `সাপ্লায়ার ম্যানেজমেন্ট → API Keys`-এ তৈরি করে।
@@ -387,7 +383,7 @@ API Key প্ল্যাটফর্ম অ্যাডমিন অ্যা�
 ##### অর্ডার লিস্ট পাওয়া
 
 ```
-GET /api/supplier/orders
+GET /api/v1/supplier/orders
 ```
 
 **Query প্যারামিটার**:
@@ -403,7 +399,7 @@ GET /api/supplier/orders
 ##### অর্ডার ডিটেইল পাওয়া
 
 ```
-GET /api/supplier/orders/{id}
+GET /api/v1/supplier/orders/{id}
 ```
 
 ---
@@ -413,7 +409,7 @@ GET /api/supplier/orders/{id}
 ##### রিসোর্স লিস্ট পাওয়া
 
 ```
-GET /api/supplier/resources
+GET /api/v1/supplier/resources
 ```
 
 **Query প্যারামিটার**: page, status (active/provisioning/stopped/destroyed), type (server/ip/disk/domain)
@@ -421,7 +417,7 @@ GET /api/supplier/resources
 ##### রিসোর্স স্ট্যাটাস পাওয়া
 
 ```
-GET /api/supplier/resources/{id}/status
+GET /api/v1/supplier/resources/{id}/status
 ```
 
 ---
@@ -431,13 +427,13 @@ GET /api/supplier/resources/{id}/status
 ##### সেটেলমেন্ট লিস্ট পাওয়া
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 ##### সেটেলমেন্ট ডিটেইল পাওয়া
 
 ```
-GET /api/supplier/settlements/{id}
+GET /api/v1/supplier/settlements/{id}
 ```
 
 ---
@@ -447,13 +443,13 @@ GET /api/supplier/settlements/{id}
 ##### উইথড্রয়াল আবেদন
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 ##### উইথড্রয়াল রেকর্ড
 
 ```
-GET /api/supplier/withdraws
+GET /api/v1/supplier/withdraws
 ```
 
 ---
@@ -463,13 +459,13 @@ GET /api/supplier/withdraws
 ##### আমার প্রোডাক্ট পাওয়া
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 ##### প্রোডাক্ট লিস্টিং আবেদন জমা
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 ---
@@ -478,16 +474,16 @@ POST /api/supplier/products
 
 | মেথড | পাথ | বিবরণ |
 |------|------|------|
-| GET | `/api/supplier/orders` | অর্ডার লিস্ট |
-| GET | `/api/supplier/orders/{id}` | অর্ডার ডিটেইল |
-| GET | `/api/supplier/resources` | রিসোর্স লিস্ট |
-| GET | `/api/supplier/resources/{id}/status` | রিসোর্স স্ট্যাটাস |
-| GET | `/api/supplier/settlements` | সেটেলমেন্ট লিস্ট |
-| GET | `/api/supplier/settlements/{id}` | সেটেলমেন্ট ডিটেইল |
-| POST | `/api/supplier/withdraw` | উইথড্রয়াল আবেদন |
-| GET | `/api/supplier/withdraws` | উইথড্রয়াল রেকর্ড |
-| GET | `/api/supplier/products` | প্রোডাক্ট লিস্ট |
-| POST | `/api/supplier/products` | প্রোডাক্ট জমা |
+| GET | `/api/v1/supplier/orders` | অর্ডার লিস্ট |
+| GET | `/api/v1/supplier/orders/{id}` | অর্ডার ডিটেইল |
+| GET | `/api/v1/supplier/resources` | রিসোর্স লিস্ট |
+| GET | `/api/v1/supplier/resources/{id}/status` | রিসোর্স স্ট্যাটাস |
+| GET | `/api/v1/supplier/settlements` | সেটেলমেন্ট লিস্ট |
+| GET | `/api/v1/supplier/settlements/{id}` | সেটেলমেন্ট ডিটেইল |
+| POST | `/api/v1/supplier/withdraw` | উইথড্রয়াল আবেদন |
+| GET | `/api/v1/supplier/withdraws` | উইথড্রয়াল রেকর্ড |
+| GET | `/api/v1/supplier/products` | প্রোডাক্ট লিস্ট |
+| POST | `/api/v1/supplier/products` | প্রোডাক্ট জমা |
 
 ---
 
@@ -540,7 +536,7 @@ X-Webhook-Event: order.paid
 | এক্সটার্নাল API উইথড্রয়াল | 10 req/min (সুপারিশকৃত মান, `config/security.php`-এ অ্যাডজাস্ট করা যায়) |
 
 > এক্সটার্নাল API রেট লিমিট রুল `config/security.php`-এর `rate_limits.supplier_api`-এ ডিফাইন করা,
-> `RateLimitMiddleware` `/api/supplier/external/*` পাথে ইউনিফাইড প্রয়োগ করে (অ্যাটমিক INCR কাউন্টিং,
+> `RateLimitMiddleware` `/api/v1/supplier/external/*` পাথে ইউনিফাইড প্রয়োগ করে (অ্যাটমিক INCR কাউন্টিং,
 > Redis অনুপলব্ধ থাকলে পাস)।
 
 রেট লিমিট হেডার:
@@ -560,10 +556,9 @@ X-RateLimit-Reset: 1680000000
 ```php
 $token = 'user_access_token_here';
 $client = new GuzzleHttp\Client([
-    'base_uri' => 'https://api.example.com/api/',
+    'base_uri' => 'https://api.example.com/api/v1/',
     'headers' => [
         'Authorization' => "Bearer {$token}",
-        'X-Api-Version' => 'v1',
         'Accept'        => 'application/json',
     ],
 ]);
@@ -604,16 +599,15 @@ import requests
 
 headers = {
     'Authorization': 'Bearer <user_access_token>',
-    'X-Api-Version': 'v1',
 }
 
 # অ্যাসাইন করা প্রোডাক্ট পাওয়া
-resp = requests.get('https://api.example.com/api/supplier/products',
+resp = requests.get('https://api.example.com/api/v1/supplier/products',
                      headers=headers)
 products = resp.json()
 
 # উইথড্রয়াল আবেদন
-resp = requests.post('https://api.example.com/api/supplier/withdraw',
+resp = requests.post('https://api.example.com/api/v1/supplier/withdraw',
                       headers=headers,
                       json={
                           'amount': '5000.00',
@@ -645,11 +639,11 @@ print(resp.json())
 
 | মেথড | পাথ | বিবরণ |
 |------|------|------|
-| GET | `/admin/api/suppliers` | সাপ্লায়ার লিস্ট (status ফিল্টার সাপোর্ট) |
-| GET | `/admin/api/suppliers/export` | সাপ্লায়ার Excel এক্সপোর্ট |
-| POST | `/admin/api/suppliers/{id}/approve` | সাপ্লায়ার অ্যাপ্রুভ |
-| POST | `/admin/api/suppliers/{id}/settle` | সেটেলমেন্ট জেনারেট |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | উইথড্রয়াল অ্যাপ্রুভ |
-| GET | `/admin/api/suppliers/{id}/api-keys` | সাপ্লায়ার API Key লিস্ট দেখা |
-| POST | `/admin/api/suppliers/{id}/api-keys` | API Key তৈরি (শুধু একবার র ক Key রিটার্ন করে) |
-| DELETE | `/admin/api/suppliers/api-keys/{id}` | API Key রিভোক |
+| GET | `/admin/api/v1/suppliers` | সাপ্লায়ার লিস্ট (status ফিল্টার সাপোর্ট) |
+| GET | `/admin/api/v1/suppliers/export` | সাপ্লায়ার Excel এক্সপোর্ট |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | সাপ্লায়ার অ্যাপ্রুভ |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | সেটেলমেন্ট জেনারেট |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | উইথড্রয়াল অ্যাপ্রুভ |
+| GET | `/admin/api/v1/suppliers/{id}/api-keys` | সাপ্লায়ার API Key লিস্ট দেখা |
+| POST | `/admin/api/v1/suppliers/{id}/api-keys` | API Key তৈরি (শুধু একবার র ক Key রিটার্ন করে) |
+| DELETE | `/admin/api/v1/suppliers/api-keys/{id}` | API Key রিভোক |

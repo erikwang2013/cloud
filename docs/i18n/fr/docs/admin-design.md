@@ -195,8 +195,7 @@ Fournit la vérification CAPTCHA à clic pour la connexion et l'inscription :
 ```
 Client                         Server
 ──────                         ──────
-POST /api/captcha/create
-  Header: X-Api-Version: v1
+POST /api/v1/captcha/create
   → CaptchaService::create()
     → captcha_create('click')
       → ClickCaptcha::generate()
@@ -204,8 +203,7 @@ POST /api/captcha/create
         → Stocke les cibles + clé dans le stockage Redis/Fichier
       ← {key, image (base64), target_count, expires_in}
 
-POST /api/auth/login
-  Header: X-Api-Version: v1
+POST /api/v1/auth/login
   (avec captcha_key + captcha_points)
   → AuthController::verifyCaptcha()
     → CaptchaService::verify(key, [[x1,y1], [x2,y2], ...])
@@ -233,8 +231,7 @@ Protège les opérations destructrices et sensibles en exigeant la ressaisie du 
 ```
 Client                              Server
 ──────                              ──────
-POST /api/orders/{id}/pay
-  Header: X-Api-Version: v1
+POST /api/v1/orders/{id}/pay
   (avec le champ confirm_password)
     → ConfirmationMiddleware::process()
       → Vérifie la présence de userId (401 si absent)
@@ -255,24 +252,24 @@ POST /api/orders/{id}/pay
 **Points de terminaison utilisateur sensibles** (Auth + Confirmation) :
 | Méthode | Chemin | Opération |
 |--------|------|-----------|
-| POST | `/api/orders/{id}/pay` | Lancer le paiement |
-| POST | `/api/supplier/withdraw` | Demander un retrait |
-| DELETE | `/api/dns/{domain}/records/{id}` | Supprimer un enregistrement DNS |
+| POST | `/api/v1/orders/{id}/pay` | Lancer le paiement |
+| POST | `/api/v1/supplier/withdraw` | Demander un retrait |
+| DELETE | `/api/v1/dns/{domain}/records/{id}` | Supprimer un enregistrement DNS |
 
 **Points de terminaison admin sensibles** (Auth + AdminRole + Confirmation) :
 | Méthode | Chemin | Opération |
 |--------|------|-----------|
-| DELETE | `/admin/api/products/{id}` | Supprimer un produit |
-| POST | `/admin/api/orders/{id}/refund` | Rembourser une commande |
-| POST | `/admin/api/provisioning/resources/{id}/destroy` | Détruire une ressource |
-| POST | `/admin/api/kyc/{id}/approve` | Approuver un KYC |
-| POST | `/admin/api/kyc/{id}/reject` | Rejeter un KYC |
-| POST | `/admin/api/suppliers/{id}/approve` | Approuver un fournisseur |
-| POST | `/admin/api/suppliers/{id}/settle` | Générer un règlement |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | Approuver un retrait |
-| PUT | `/admin/api/system/config` | Mettre à jour la configuration système |
+| DELETE | `/admin/api/v1/products/{id}` | Supprimer un produit |
+| POST | `/admin/api/v1/orders/{id}/refund` | Rembourser une commande |
+| POST | `/admin/api/v1/provisioning/resources/{id}/destroy` | Détruire une ressource |
+| POST | `/admin/api/v1/kyc/{id}/approve` | Approuver un KYC |
+| POST | `/admin/api/v1/kyc/{id}/reject` | Rejeter un KYC |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | Approuver un fournisseur |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | Générer un règlement |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | Approuver un retrait |
+| PUT | `/admin/api/v1/system/config` | Mettre à jour la configuration système |
 
-La version d'API est transportée dans l'en-tête `X-Api-Version` (défaut : `v1`), pas dans le chemin d'URL.
+La version d'API se trouve dans le chemin d'URL (p. ex. `/api/v1/...`), pas dans un en-tête de requête.
 
 **Fonctionnalités de sécurité** :
 - Vérification du mot de passe bcrypt via `Hash::check()`
@@ -399,11 +396,11 @@ Le backend service (`service/`) possède aussi un export Excel via son propre wr
 
 | Point de terminaison | Contrôleur | Données exportées |
 |----------|-----------|---------------|
-| `GET /admin/api/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
-| `GET /admin/api/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
-| `GET /admin/api/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
+| `GET /admin/api/v1/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
+| `GET /admin/api/v1/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
+| `GET /admin/api/v1/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
 
-Tous les points de terminaison API exigent l'en-tête `X-Api-Version` (défaut : `v1`).
+Tous les points de terminaison API sont accessibles sous le préfixe de version `/api/v1/...`.
 
 Les routes d'export sont placées AVANT les routes de paramètre `/{id}` pour éviter les conflits.
 
@@ -411,7 +408,7 @@ Les routes d'export sont placées AVANT les routes de paramètre `/{id}` pour é
 
 ### Points de terminaison de l'API admin (couche service)
 
-Tous les points de terminaison REST admin sont préfixés par `/admin/api` et exigent `AdminRoleMiddleware`.
+Tous les points de terminaison REST admin sont préfixés par `/admin/api/v1` et exigent `AdminRoleMiddleware`.
 
 | Groupe | Points de terminaison | Contrôleur |
 |-------|-----------|------------|
@@ -444,15 +441,15 @@ Le produit CDN prend en charge quatre fournisseurs (Cloudflare / CloudFront / Al
 
 **Configuration des comptes fournisseurs** (réutilise le modèle ProviderApi, `Admin\ProviderApiController`) :
 
-- `GET/POST /admin/api/providers`, `PUT/DELETE /admin/api/providers/{id}`, soumis à `RbacMiddleware('provider.config')`
+- `GET/POST /admin/api/v1/providers`, `PUT/DELETE /admin/api/v1/providers/{id}`, soumis à `RbacMiddleware('provider.config')`
 - Convention `code` `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent` ; identifiants chiffrés en base via Encryptable, colonne JSON `config` pour les métadonnées non sensibles
 - Ordre de résolution des identifiants côté utilisateur : compte lié → compte actif correspondant au code → repli env ; suppression/purge en instantané strict (seul le compte lié, sinon 4003)
 
 **Gestion des domaines CDN** (`Admin\CdnController`) :
 
 ```
-GET /admin/api/cdn/domains        → Tous les domaines (avec user_id propriétaire), soumis à RbacMiddleware('cdn.manage')
-PUT /admin/api/cdn/domains/{id}   → Mise à jour du forfait, liste blanche plan standard | pro | enterprise,
+GET /admin/api/v1/cdn/domains        → Tous les domaines (avec user_id propriétaire), soumis à RbacMiddleware('cdn.manage')
+PUT /admin/api/v1/cdn/domains/{id}   → Mise à jour du forfait, liste blanche plan standard | pro | enterprise,
                                     valeur invalide → 400 ; le changement écrit le journal d'audit admin_cdn_update_plan
 ```
 
@@ -892,21 +889,21 @@ Les 4 jobs passent : 243 tests au total (67 admin + 176 service), 400 assertions
 
 | Groupe | Points de terminaison | Contrôleur |
 |-------|-----------|------------|
-| Factures | `GET /admin/api/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
-| API de fournisseurs | `GET/POST /admin/api/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
-| Clés API fournisseur | `GET/POST /admin/api/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
-| Coupons | `GET/POST /admin/api/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
-| Webhooks | `GET/POST/DELETE /admin/api/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
-| Import/export de produits | `GET /admin/api/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
-| Gestion des domaines | `GET/POST/PUT/DELETE /admin/api/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
-| Modèles de notifications | `GET /admin/api/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
-| Articles d'aide | `GET/POST /admin/api/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
+| Factures | `GET /admin/api/v1/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
+| API de fournisseurs | `GET/POST /admin/api/v1/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
+| Clés API fournisseur | `GET/POST /admin/api/v1/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
+| Coupons | `GET/POST /admin/api/v1/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
+| Webhooks | `GET/POST/DELETE /admin/api/v1/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
+| Import/export de produits | `GET /admin/api/v1/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
+| Gestion des domaines | `GET/POST/PUT/DELETE /admin/api/v1/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
+| Modèles de notifications | `GET /admin/api/v1/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
+| Articles d'aide | `GET/POST /admin/api/v1/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
 
 ### Nouveaux middlewares
 
 | Middleware | Objectif |
 |------------|---------|
-| `VersionMiddleware` | Lit et valide la version d'API depuis l'en-tête X-Api-Version |
+| `VersionMiddleware` | Lit et valide la version d'API depuis le chemin d'URL (p. ex. `/api/v1/...`) |
 | `RateLimitMiddleware` | Limitation de débit par seau à jetons Redis (défaut 60 req/min, connexion 5 req/min) |
 | `GeoBlockMiddleware` | Blocage géographique MaxMind GeoIP2 |
 | `MaintenanceMiddleware` | Mode maintenance (interrupteur variable d'environnement + liste blanche IP) |

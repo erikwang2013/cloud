@@ -5,7 +5,7 @@
 ### 1.1 가입
 
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
   → WAF 스캔
   → 빈도 제한 3 req/min
   → 비밀번호 검증 len≥8
@@ -24,7 +24,7 @@ POST /api/auth/register
 ```
 Client                    Middleware Chain           AuthService              DB
   │                           │                        │                     │
-  │ POST /api/auth/register   │                        │                     │
+  │ POST /api/v1/auth/register   │                        │                     │
   │──────────────────────────▶│ WAF→RateLimit→Encrypt  │                     │
   │                           │───────────────────────▶│                     │
   │                           │                        │ User::create() ────▶│
@@ -40,7 +40,7 @@ Client                    Middleware Chain           AuthService              DB
 ### 1.2 로그인
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
   → WAF 스캔
   → 빈도 제한 5 req/min
   → Captcha 검증（클릭 캡차, 3회 시도 제한）
@@ -59,7 +59,7 @@ POST /api/auth/login
 ### 1.3 OAuth（Google / Apple）
 
 ```
-GET /api/auth/google → Google OAuth → callback?code=xxx
+GET /api/v1/auth/google → Google OAuth → callback?code=xxx
   1. Google/Apple ID Token 검증
   2. 사용자 조회 또는 생성（email 매칭）
   3. 토큰 발급（client_platform 포함）
@@ -69,30 +69,30 @@ GET /api/auth/google → Google OAuth → callback?code=xxx
 ### 1.4 TOTP 2단계 검증
 
 ```
-1. POST /api/user/totp/setup
+1. POST /api/v1/user/totp/setup
      → secret + QR URL 생성（Redis에 10분 임시 보관, 미영구화）
      ← {secret, qr_url, manual}
-2. POST /api/user/totp/verify
+2. POST /api/v1/user/totp/verify
      → TOTP code 검증（최초는 setup 활성화, 이후는 검증）
      ← {verified: true}
-3. GET /api/user/totp/recovery-codes
+3. GET /api/v1/user/totp/recovery-codes
      → 일회용 복구 코드 8개 생성（비밀번호 확인 필요）
      ← {recovery_codes: [8개]}
 4. 로그인 시: TOTP code 입력 또는 복구 코드 사용
-     → POST /api/auth/login/recovery (login, password, recovery_code)
+     → POST /api/v1/auth/login/recovery (login, password, recovery_code)
 ```
 
 ### 1.5 세션 관리
 
 ```
-GET /api/user/sessions
+GET /api/v1/user/sessions
   → RefreshToken::where(user_id, revoked=false)
   ← [{id, fingerprint, client_platform, created_at, expires_at}]
 
-DELETE /api/user/sessions/{id}
+DELETE /api/v1/user/sessions/{id}
   → RefreshToken::update(revoked=true)
 
-DELETE /api/user/account (GDPR 탈퇴)
+DELETE /api/v1/user/account (GDPR 탈퇴)
   → 비밀번호 2차 확인
   → User 소프트 삭제
   → 모든 RefreshToken revoked
@@ -122,7 +122,7 @@ Product (1) ────── (N) ProductAttribute
 ### 2.2 상품 목록 (캐시 포함)
 
 ```
-GET /api/products?category_id=1&region_id=2&keyword=vps&page=1
+GET /api/v1/products?category_id=1&region_id=2&keyword=vps&page=1
 
 CacheService::remember('products:list:{hash}', TTL 5min)
   → Product::published()
@@ -140,7 +140,7 @@ CacheService::remember('products:list:{hash}', TTL 5min)
 ### 2.3 상품 검색 (Elasticsearch)
 
 ```
-GET /api/products/search?q=vps&page=1
+GET /api/v1/products/search?q=vps&page=1
   → Product::search('vps')
     → Elasticsearch (IK Analyzer 중국어 분사)
     → where('status', 'published')
@@ -150,11 +150,11 @@ GET /api/products/search?q=vps&page=1
 ### 2.4 상품 평가
 
 ```
-GET /api/products/{id}/reviews
+GET /api/v1/products/{id}/reviews
   → 심사 통과 평가 + 평균 평점 + 평점 분포
   ← {reviews, avg_rating, total, distribution: {5: 12, 4: 8, ...}}
 
-POST /api/products/{id}/reviews (로그인 필요)
+POST /api/v1/products/{id}/reviews (로그인 필요)
   → rating (1-5) + content
   → status = pending (관리자 심사 후 표시)
 ```
@@ -162,10 +162,10 @@ POST /api/products/{id}/reviews (로그인 필요)
 ### 2.5 일괄 가져오기/내보내기
 
 ```
-GET /admin/api/products/export
+GET /admin/api/v1/products/export
   → CSV 다운로드 (상품 + SKU + 지역 가격)
 
-POST /admin/api/products/import
+POST /admin/api/v1/products/import
   → CSV 업로드 upsert
   ← {imported: N, errors: [...]}
 ```
@@ -177,28 +177,28 @@ POST /admin/api/products/import
 ### 3.1 장바구니
 
 ```
-POST /api/cart          → addToCart(sku_id, region_id, quantity, cycle)
-GET /api/cart           → 장바구니 목록 (SKU 상세 + 실시간 가격 포함)
-DELETE /api/cart/{id}   → removeFromCart
-PUT /api/cart/{id}      → updateCartQuantity
+POST /api/v1/cart          → addToCart(sku_id, region_id, quantity, cycle)
+GET /api/v1/cart           → 장바구니 목록 (SKU 상세 + 실시간 가격 포함)
+DELETE /api/v1/cart/{id}   → removeFromCart
+PUT /api/v1/cart/{id}      → updateCartQuantity
 ```
 
 ### 3.2 주문 프로세스
 
 ```
-1. POST /api/orders                            주문 생성
+1. POST /api/v1/orders                            주문 생성
      → 재고 검증, 가격 계산, 쿠폰 적용
      ← {order_id, order_no, items, total}
 
-2. POST /api/coupons/validate                  쿠폰 적용
+2. POST /api/v1/coupons/validate                  쿠폰 적용
      → {code: "SAVE10"}
      ← {coupon_id, discount, type: percent/fixed}
 
-3. GET /api/orders/{id}/payment-methods        사용 가능 결제 채널 조회
+3. GET /api/v1/orders/{id}/payment-methods        사용 가능 결제 채널 조회
      → PaymentRouter::getAvailableChannels(order)
      ← [{channel_id, name, code, amount, fee, total_amount}]
 
-4. POST /api/orders/{id}/pay                   결제 시작
+4. POST /api/v1/orders/{id}/pay                   결제 시작
      → 비밀번호 2차 확인 (ConfirmationMiddleware)
      → StripeChannel::createPaymentIntent()
      ← {client_secret, transaction_id}
@@ -379,19 +379,19 @@ ProvisionWorker (Redis Queue 소비)
 ### 6.1 입점 흐름
 
 ```
-POST /api/supplier/apply (사용자 로그인 필요)
+POST /api/v1/supplier/apply (사용자 로그인 필요)
   → {company_name, contact_name, contact_phone, contact_email, settlement_method}
   → status = 'pending'
   → 관리자 심사
 
 관리자 승인:
-  POST /admin/api/suppliers/{id}/approve (비밀번호 확인)
+  POST /admin/api/v1/suppliers/{id}/approve (비밀번호 확인)
     → Supplier::status = 'active'
     → User::role = 'supplier'
     → 사용자에게 공급업체 권한 부여
 
 상품 상장:
-  POST /api/supplier/products
+  POST /api/v1/supplier/products
     → {product_id, commission_rate}
     → 공급업체 상품 연결
 
@@ -402,7 +402,7 @@ POST /api/supplier/apply (사용자 로그인 필요)
     → SupplierSettlement 생성
 
 출금:
-  POST /api/supplier/withdraw (비밀번호 확인)
+  POST /api/v1/supplier/withdraw (비밀번호 확인)
     → 출금 가능 잔액 확인
     → SupplierWithdraw 생성 (status=pending)
     → 관리자 승인 후 지급
@@ -411,13 +411,13 @@ POST /api/supplier/apply (사용자 로그인 필요)
 ### 6.2 외부 API
 
 ```
-POST /admin/api/suppliers/{id}/api-keys
+POST /admin/api/v1/suppliers/{id}/api-keys
   → sk_ . bin2hex(random_bytes(24))
   → hash('sha256', rawKey) 저장
   ← {api_key: "sk_xxx..."} (한 번만 표시)
 
 공급업체 사용:
-  GET /api/supplier/external/orders
+  GET /api/v1/supplier/external/orders
     Authorization: Bearer sk_xxx...
     → SupplierApiKeyMiddleware 검증
     → supplierId 기준 데이터 필터
@@ -428,11 +428,11 @@ POST /admin/api/suppliers/{id}/api-keys
 ## 7. 도메인과 DNS
 
 ```
-GET /api/domain/check/{domain}/{tld}    # 도메인 사용 가능 여부
-GET /api/domain/tlds                     # 등록 가능 TLD 목록 (캐시 1h)
-GET /api/dns/{domain}                    # DNS 레코드 목록
-POST /api/dns/{domain}/records           # DNS 레코드 추가
-DELETE /api/dns/{domain}/records/{id}    # DNS 레코드 삭제 (비밀번호 확인)
+GET /api/v1/domain/check/{domain}/{tld}    # 도메인 사용 가능 여부
+GET /api/v1/domain/tlds                     # 등록 가능 TLD 목록 (캐시 1h)
+GET /api/v1/dns/{domain}                    # DNS 레코드 목록
+POST /api/v1/dns/{domain}/records           # DNS 레코드 추가
+DELETE /api/v1/dns/{domain}/records/{id}    # DNS 레코드 삭제 (비밀번호 확인)
 ```
 
 ---
@@ -440,15 +440,15 @@ DELETE /api/dns/{domain}/records/{id}    # DNS 레코드 삭제 (비밀번호 �
 ## 8. 티켓 시스템
 
 ```
-POST /api/tickets                    # 티켓 생성
-GET /api/tickets                     # 내 티켓
-GET /api/tickets/{id}                # 티켓 상세
-POST /api/tickets/{id}/reply         # 티켓 답변
+POST /api/v1/tickets                    # 티켓 생성
+GET /api/v1/tickets                     # 내 티켓
+GET /api/v1/tickets/{id}                # 티켓 상세
+POST /api/v1/tickets/{id}/reply         # 티켓 답변
 
 관리자:
-  GET /admin/api/tickets              # 티켓 큐
-  POST /admin/api/tickets/{id}/assign # 상담사 배정
-  POST /admin/api/tickets/{id}/close  # 티켓 종료
+  GET /admin/api/v1/tickets              # 티켓 큐
+  POST /admin/api/v1/tickets/{id}/assign # 상담사 배정
+  POST /admin/api/v1/tickets/{id}/close  # 티켓 종료
 
 이벤트 기반:
   TicketCreated 이벤트
@@ -498,9 +498,9 @@ Cron: CollectMetrics (5분마다)
   → 지표를 Redis hash에 저장 (TTL 1h)
 
 관리자:
-  GET /admin/api/monitor/dashboard
+  GET /admin/api/v1/monitor/dashboard
     → 개요 통계 + 최근 경고
-  GET /admin/api/monitor/resources/{id}
+  GET /admin/api/v1/monitor/resources/{id}
     → 실시간 지표 (Redis에서 읽기)
 ```
 
@@ -564,8 +564,8 @@ config/features.php (기본값)
 Redis feature:{name} (TTL 1h, 관리 API로 동적 조정)
 
 관리 API:
-  GET /admin/api/features → 모든 Flag 및 상태/소스 나열
-  PUT /admin/api/features/{name} → enable/disable/toggle/reset
+  GET /admin/api/v1/features → 모든 Flag 및 상태/소스 나열
+  PUT /admin/api/v1/features/{name} → enable/disable/toggle/reset
 
 현재 Flags:
   supplier_external_api, websocket_push, maintenance_redirect,
@@ -610,7 +610,7 @@ CDN 상품은 4개 서비스 제공업체（Cloudflare / AWS CloudFront / Aliyun
 
 **엄격한 스냅샷 바인딩:** 도메인 생성 시 `provider_account_id`를 확정하고, 이후 삭제/캐시 삭제는 바인딩된 계정만 사용; 계정이 없거나 비활성이면 4003 반환, 계정을 조용히 전환하지 않음. Aliyun/Tencent Cloud 도메인은 ICP 비안 필요, 미비안 시 4002 반환（`requires_icp_registration` 안내 포함）.
 
-**캐시 삭제:** `POST /api/cdn/domains/{id}/purge`, URL 자동 중복 제거 및 공백 제거（최대 100개）, 해당 도메인/하위 도메인만 허용, 와일드카드와 외부 URL 거부, 멱등.
+**캐시 삭제:** `POST /api/v1/cdn/domains/{id}/purge`, URL 자동 중복 제거 및 공백 제거（최대 100개）, 해당 도메인/하위 도메인만 허용, 와일드카드와 외부 URL 거부, 멱등.
 
 **인터페이스:** CdnAdapterInterface + CdnProvider（ProvisionProvider 업그레이드 채널 재사용, 패키지 업그레이드 지원）
 
@@ -643,7 +643,7 @@ CDN 상품은 4개 서비스 제공업체（Cloudflare / AWS CloudFront / Aliyun
 
 ## 20. GraphQL API
 
-POST /graphql（공개 조회）와 POST /api/graphql（인증 조회）두 엔드포인트 제공. webonyx/graphql-php 기반, 조회 깊이 5레벨 제한, 복잡도 100 제한.
+POST /graphql（공개 조회）와 POST /api/v1/graphql（인증 조회）두 엔드포인트 제공. webonyx/graphql-php 기반, 조회 깊이 5레벨 제한, 복잡도 100 제한.
 
 **민감 작업은 REST-only 유지:** 결제, 출금, 환불, KYC 심사.
 

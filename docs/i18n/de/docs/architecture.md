@@ -136,7 +136,7 @@ common/
 ├── security/            # CORS / WAF / RateLimit / GeoBlock / Maintenance / AuditLogger / LogSanitizer
 ├── snowflake/           # Snowflake-ID-Dienst + Eloquent Trait
 ├── metrics/             # Prometheus-Metrik-Collector + Renderer + HTTP-Request-Zähl-Middleware
-├── version/             # VersionMiddleware (X-Api-Version-Header)
+├── version/             # VersionMiddleware (API-Version aus URL-Pfad, z. B. /api/v1/...)
 └── webhook/             # Webhook-Event-Dispatcher
 ```
 
@@ -170,15 +170,15 @@ CdnAdapterFactory.resolve(type, accountId, strict)
 HTTP 请求
   │
   ▼
-1. VersionMiddleware         ← X-Api-Version-Header-Validierung, fehlt → Standard v1, ungültig → 400
-  │                             nur für /api/ und /admin/api/ wirksam
+1. VersionMiddleware         ← liest die API-Version aus dem URL-Pfad (`/api/v1/...`); ungültige Version → 400
+  │                             nur für /api/v1/ und /admin/api/v1/ wirksam
   ▼
 2. CorsMiddleware            ← OPTIONS-Preflight liefert CORS-Header, Origin-Reflexion
   ▼
 3. SecurityHeadersMiddleware ← HSTS / X-Frame-Options / CSP / Referrer-Policy Sicherheits-Response-Header
   ▼
 4. ClientPlatformMiddleware  ← X-Client-Platform-Header-Erkennung (8 Plattformen), properties injizieren
-  │                             nur für /api/ und /admin/api/ wirksam
+  │                             nur für /api/v1/ und /admin/api/v1/ wirksam
   ▼
 5. GeoBlockMiddleware        ← GEO_BLOCKED_COUNTRIES-Länderblockade (MaxMind GeoIP2)
   ▼
@@ -204,28 +204,28 @@ HTTP 请求
   ├─ /health (内部监控) ────────────
   │   InternalTokenMiddleware      ← Internes Token-Validierung /health/live|ready|deps
   │
-  ├─ /api/auth ─────────────────────
+  ├─ /api/v1/auth ─────────────────────
   │   EncryptionMiddleware          ← AES-256-GCM Request/Response-Body-Ver-/Entschlüsselung
   │
-  ├─ /api (用户认证) ───────────────
+  ├─ /api/v1 (用户认证) ───────────────
   │   EncryptionMiddleware
   │   AuthMiddleware                ← JWT-Bearer-Token-Validierung → $request->userId/role
   │
-  ├─ /api (敏感操作) ───────────────
+  ├─ /api/v1 (敏感操作) ───────────────
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   ConfirmationMiddleware        ← Passwort-Zweitbestätigung, Redis-Zähler, 5 Fehlversuche → 15min-Sperre
   │
-  ├─ /api/supplier/external ────────
+  ├─ /api/v1/supplier/external ────────
   │   VersionMiddleware
   │   SupplierApiKeyMiddleware      ← sk_xxx-SHA256-Validierung → $request->supplierId
   │
-  ├─ /admin/api ────────────────────
+  ├─ /admin/api/v1 ────────────────────
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   AdminRoleMiddleware           ← RBAC-Berechtigungsprüfung
   │
-  └─ /admin/api (敏感操作) ─────────
+  └─ /admin/api/v1 (敏感操作) ─────────
       EncryptionMiddleware
       AuthMiddleware
       AdminRoleMiddleware
@@ -239,7 +239,7 @@ Controller → Service → Model → DB
 
 | Middleware | Ort | Registrierung | Zuständigkeit |
 |--------|------|---------|------|
-| `VersionMiddleware` | common/Version | Global | `X-Api-Version` validieren, fehlt → Standard v1 |
+| `VersionMiddleware` | common/Version | Global | API-Version aus URL-Pfad validieren (z. B. `/api/v1/...`) |
 | `CorsMiddleware` | common/Security | Global | OPTIONS-Preflight, Origin-Reflexion |
 | `SecurityHeadersMiddleware` | common/Security | Global | HSTS / X-Frame-Options / CSP / Referrer-Policy Sicherheits-Response-Header |
 | `ClientPlatformMiddleware` | common/ClientPlatform | Global | `X-Client-Platform`-Erkennung, 8 Plattformen |
@@ -280,7 +280,7 @@ Alle Eloquent-Modelle generieren im `creating`-Event automatisch über das `HasS
 
 ```
 请求流程:
-  Client: GET /api/products/aB3xK7mQ9w
+  Client: GET /api/v1/products/aB3xK7mQ9w
     → HashidRequestMiddleware 解码 → int(1234567890)
       → Controller/Service 使用整数 ID 操作
         → Response::success() / Response::paginated()

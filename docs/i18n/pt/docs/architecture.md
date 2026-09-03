@@ -136,7 +136,7 @@ common/
 ├── security/            # CORS / WAF / RateLimit / GeoBlock / Maintenance / AuditLogger / LogSanitizer
 ├── snowflake/           # Serviço de IDs Snowflake + Trait Eloquent
 ├── metrics/             # Coletor de métricas Prometheus + renderizador + middleware de contagem de requisições HTTP
-├── version/             # VersionMiddleware (cabeçalho X-Api-Version)
+├── version/             # VersionMiddleware (valida a versão no caminho da URL)
 └── webhook/             # Distribuidor de eventos Webhook
 ```
 
@@ -170,15 +170,15 @@ CdnAdapterFactory.resolve(type, accountId, strict)
 Requisição HTTP
   │
   ▼
-1. VersionMiddleware         ← Validação do cabeçalho X-Api-Version; padrão v1 se ausente; 400 se inválido
-  │                            Aplica-se apenas a /api/ e /admin/api/
+1. VersionMiddleware         ← Valida a versão pelo caminho da URL; 400 se inválida
+  │                            Aplica-se apenas a /api/v1/ e /admin/api/v1/
   ▼
 2. CorsMiddleware            ← Preflight OPTIONS retorna cabeçalhos CORS, reflexo do Origin
   ▼
 3. SecurityHeadersMiddleware ← Cabeçalhos de segurança HSTS / X-Frame-Options / CSP / Referrer-Policy
   ▼
 4. ClientPlatformMiddleware  ← Identificação do cabeçalho X-Client-Platform (8 plataformas), injeta properties
-  │                            Aplica-se apenas a /api/ e /admin/api/
+  │                            Aplica-se apenas a /api/v1/ e /admin/api/v1/
   ▼
 5. GeoBlockMiddleware        ← Bloqueio geográfico GEO_BLOCKED_COUNTRIES (MaxMind GeoIP2)
   ▼
@@ -204,28 +204,28 @@ Requisição HTTP
   ├─ /health (monitoramento interno) ──
   │   InternalTokenMiddleware      ← Validação de token interno em /health/live|ready|deps
   │
-  ├─ /api/auth ─────────────────────
+  ├─ /api/v1/auth ─────────────────────
   │   EncryptionMiddleware          ← Criptografia/descriptografia AES-256-GCM do corpo da requisição/resposta
   │
-  ├─ /api (autenticação de usuário) ─
+  ├─ /api/v1 ((autenticação de usuário) ─
   │   EncryptionMiddleware
   │   AuthMiddleware                ← Validação de JWT Bearer Token → $request->userId/role
   │
-  ├─ /api (operações sensíveis) ────
+  ├─ /api/v1 ((operações sensíveis) ────
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   ConfirmationMiddleware        ← Confirmação de senha secundária, contador Redis, bloqueio de 15min após 5 tentativas
   │
-  ├─ /api/supplier/external ────────
+  ├─ /api/v1/supplier/external ────────
   │   VersionMiddleware
   │   SupplierApiKeyMiddleware      ← Verificação SHA256 de sk_xxx → $request->supplierId
   │
-  ├─ /admin/api ────────────────────
+  ├─ /admin/api/v1 ────────────────────
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   AdminRoleMiddleware           ← Verificação de permissões RBAC
   │
-  └─ /admin/api (operações sensíveis) ─
+  └─ /admin/api/v1 (operações sensíveis) ─
       EncryptionMiddleware
       AuthMiddleware
       AdminRoleMiddleware
@@ -239,7 +239,7 @@ Controller → Service → Model → DB
 
 | Middleware | Local | Registro | Responsabilidade |
 |--------|------|---------|------|
-| `VersionMiddleware` | common/Version | Global | Valida `X-Api-Version`, padrão v1 se ausente |
+| `VersionMiddleware` | common/Version | Global | Valida a versão no caminho da URL |
 | `CorsMiddleware` | common/Security | Global | Preflight OPTIONS, reflexo do Origin |
 | `SecurityHeadersMiddleware` | common/Security | Global | Cabeçalhos de segurança HSTS / X-Frame-Options / CSP / Referrer-Policy |
 | `ClientPlatformMiddleware` | common/ClientPlatform | Global | Identificação de 8 plataformas via `X-Client-Platform` |
@@ -280,7 +280,7 @@ Todos os modelos Eloquent geram automaticamente o ID no evento `creating` atrav�
 
 ```
 Fluxo da requisição:
-  Cliente: GET /api/products/aB3xK7mQ9w
+  Cliente: GET /api/v1/products/aB3xK7mQ9w
     → HashidRequestMiddleware decodifica → int(1234567890)
       → Controller/Service opera com o ID inteiro
         → Response::success() / Response::paginated()

@@ -31,7 +31,7 @@
 
 ### 2.2 文档-代码背离（P1 未决 4 项）
 
-- GET /api/orders status 过滤未实现
+- GET /api/v1/orders status 过滤未实现
 - WebSocket 推送事件缺失（websocket_push 相关文档有声明）
 - ticket.updated 触发范围不明
 - product_attributes 死 schema（无代码使用）

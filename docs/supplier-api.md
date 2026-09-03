@@ -6,12 +6,12 @@
 
 | 类型 | 认证方式 | 前缀 | 状态 |
 |------|---------|------|------|
-| **内部 API** | 用户 Bearer Token | `/api/supplier/` | 可用 |
-| **外部 API** | API Key (`sk_xxx`) | `/api/supplier/external/` | 可用 |
+| **内部 API** | 用户 Bearer Token | `/api/v1/supplier/` | 可用 |
+| **外部 API** | API Key (`sk_xxx`) | `/api/v1/supplier/external/` | 可用 |
 
 **Base URL**: `https://api.example.com`
 
-**版本控制**: 通过 HTTP 头 `X-Api-Version: v1` 指定。缺失时默认 `v1`，不支持的版本返回 `400`。仅对 `/api/*` 和 `/admin/api/*` 路径生效，由 `VersionMiddleware` 统一处理。
+**版本控制**: API 版本位于 URL 路径中（如 `/api/v1/...`）。不支持的版本返回 `400`。仅对 `/api/v1/*` 和 `/admin/api/v1/*` 路径生效，由 `VersionMiddleware` 统一处理。
 
 ---
 
@@ -23,10 +23,9 @@
 
 ```
 Authorization: Bearer <user_access_token>
-X-Api-Version: v1
 ```
 
-用户需先通过 `/api/auth/login` 登录获取 Token，且账号角色须为 `supplier`（由管理员审批供应商申请后设置）。
+用户需先通过 `/api/v1/auth/login` 登录获取 Token，且账号角色须为 `supplier`（由管理员审批供应商申请后设置）。
 
 ---
 
@@ -84,7 +83,7 @@ X-Api-Version: v1
 #### 1. 供应商入驻
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
 ```
 
 申请成为供应商。每个用户只能提交一次申请。
@@ -138,9 +137,8 @@ POST /api/supplier/apply
 | 422 | 已提交过供应商申请 |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/apply" \
+curl -X POST "https://api.example.com/api/v1/supplier/apply" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"company_name":"示例科技","contact_name":"张三","contact_phone":"13800138000","contact_email":"zhangsan@example.com"}'
 ```
@@ -152,7 +150,7 @@ curl -X POST "https://api.example.com/api/supplier/apply" \
 ##### 获取已分配商品
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 **Query 参数**:
@@ -185,7 +183,7 @@ GET /api/supplier/products
 ##### 添加商品
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 将已有商品关联到当前供应商。
@@ -215,7 +213,7 @@ POST /api/supplier/products
 ##### 移除商品
 
 ```
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 取消商品与供应商的关联。
@@ -237,7 +235,7 @@ DELETE /api/supplier/products/{id}
 ##### 获取结算单列表
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 **响应**: 当前供应商的所有结算单，按创建时间倒序
@@ -273,7 +271,7 @@ GET /api/supplier/settlements
 ##### 申请提现
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 > 此操作需要密码二次确认（`confirm_password` 字段），由 `ConfirmationMiddleware` 校验。
@@ -321,9 +319,8 @@ POST /api/supplier/withdraw
 | 403 | 密码确认失败 |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/withdraw" \
+curl -X POST "https://api.example.com/api/v1/supplier/withdraw" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"amount":"5000.00","confirm_password":"mypassword","account_info":{"method":"bank_transfer","bank_name":"ICBC","account_number":"6222021234567890"}}'
 ```
@@ -334,12 +331,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 | 方法 | 路径 | 认证 | 密码确认 | 说明 |
 |------|------|------|---------|------|
-| POST | `/api/supplier/apply` | Token | - | 申请成为供应商 |
-| GET | `/api/supplier/products` | Token | - | 查看已分配商品 |
-| POST | `/api/supplier/products` | Token | - | 添加商品关联 |
-| DELETE | `/api/supplier/products/{id}` | Token | - | 移除商品关联 |
-| GET | `/api/supplier/settlements` | Token | - | 查看结算单 |
-| POST | `/api/supplier/withdraw` | Token | 需要 | 申请提现 |
+| POST | `/api/v1/supplier/apply` | Token | - | 申请成为供应商 |
+| GET | `/api/v1/supplier/products` | Token | - | 查看已分配商品 |
+| POST | `/api/v1/supplier/products` | Token | - | 添加商品关联 |
+| DELETE | `/api/v1/supplier/products/{id}` | Token | - | 移除商品关联 |
+| GET | `/api/v1/supplier/settlements` | Token | - | 查看结算单 |
+| POST | `/api/v1/supplier/withdraw` | Token | 需要 | 申请提现 |
 
 ---
 
@@ -347,13 +344,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 外部 API 允许供应商通过编程方式管理订单、资源和结算。所有请求需要 API Key 认证。
 
-**Base URL**: `https://api.example.com/api`
+**Base URL**: `https://api.example.com/api/v1`
 
 ### 认证
 
 ```
 Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-X-Api-Version: v1
 ```
 
 API Key 由平台管理员在管理后台 `供应商管理 → API Keys` 中生成。
@@ -387,7 +383,7 @@ API Key 由平台管理员在管理后台 `供应商管理 → API Keys` 中生�
 ##### 获取订单列表
 
 ```
-GET /api/supplier/orders
+GET /api/v1/supplier/orders
 ```
 
 **Query 参数**:
@@ -403,7 +399,7 @@ GET /api/supplier/orders
 ##### 获取订单详情
 
 ```
-GET /api/supplier/orders/{id}
+GET /api/v1/supplier/orders/{id}
 ```
 
 ---
@@ -413,7 +409,7 @@ GET /api/supplier/orders/{id}
 ##### 获取资源列表
 
 ```
-GET /api/supplier/resources
+GET /api/v1/supplier/resources
 ```
 
 **Query 参数**: page, status (active/provisioning/stopped/destroyed), type (server/ip/disk/domain)
@@ -421,7 +417,7 @@ GET /api/supplier/resources
 ##### 获取资源状态
 
 ```
-GET /api/supplier/resources/{id}/status
+GET /api/v1/supplier/resources/{id}/status
 ```
 
 ---
@@ -431,13 +427,13 @@ GET /api/supplier/resources/{id}/status
 ##### 获取结算单列表
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 ##### 获取结算单详情
 
 ```
-GET /api/supplier/settlements/{id}
+GET /api/v1/supplier/settlements/{id}
 ```
 
 ---
@@ -447,13 +443,13 @@ GET /api/supplier/settlements/{id}
 ##### 申请提现
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 ##### 提现记录
 
 ```
-GET /api/supplier/withdraws
+GET /api/v1/supplier/withdraws
 ```
 
 ---
@@ -463,13 +459,13 @@ GET /api/supplier/withdraws
 ##### 获取我的商品
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 ##### 提交商品上架申请
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 ---
@@ -478,16 +474,16 @@ POST /api/supplier/products
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/supplier/orders` | 订单列表 |
-| GET | `/api/supplier/orders/{id}` | 订单详情 |
-| GET | `/api/supplier/resources` | 资源列表 |
-| GET | `/api/supplier/resources/{id}/status` | 资源状态 |
-| GET | `/api/supplier/settlements` | 结算单列表 |
-| GET | `/api/supplier/settlements/{id}` | 结算单详情 |
-| POST | `/api/supplier/withdraw` | 申请提现 |
-| GET | `/api/supplier/withdraws` | 提现记录 |
-| GET | `/api/supplier/products` | 商品列表 |
-| POST | `/api/supplier/products` | 提交商品 |
+| GET | `/api/v1/supplier/orders` | 订单列表 |
+| GET | `/api/v1/supplier/orders/{id}` | 订单详情 |
+| GET | `/api/v1/supplier/resources` | 资源列表 |
+| GET | `/api/v1/supplier/resources/{id}/status` | 资源状态 |
+| GET | `/api/v1/supplier/settlements` | 结算单列表 |
+| GET | `/api/v1/supplier/settlements/{id}` | 结算单详情 |
+| POST | `/api/v1/supplier/withdraw` | 申请提现 |
+| GET | `/api/v1/supplier/withdraws` | 提现记录 |
+| GET | `/api/v1/supplier/products` | 商品列表 |
+| POST | `/api/v1/supplier/products` | 提交商品 |
 
 ---
 
@@ -540,7 +536,7 @@ X-Webhook-Event: order.paid
 | 外部 API 提现 | 10 req/min（建议值，可调 `config/security.php`） |
 
 > 外部 API 限流规则定义在 `config/security.php` 的 `rate_limits.supplier_api`，
-> 由 `RateLimitMiddleware` 对 `/api/supplier/external/*` 路径统一执行（原子 INCR 计数，
+> 由 `RateLimitMiddleware` 对 `/api/v1/supplier/external/*` 路径统一执行（原子 INCR 计数，
 > Redis 不可用时放行）。
 
 限流头:
@@ -560,10 +556,9 @@ X-RateLimit-Reset: 1680000000
 ```php
 $token = 'user_access_token_here';
 $client = new GuzzleHttp\Client([
-    'base_uri' => 'https://api.example.com/api/',
+    'base_uri' => 'https://api.example.com/api/v1/',
     'headers' => [
         'Authorization' => "Bearer {$token}",
-        'X-Api-Version' => 'v1',
         'Accept'        => 'application/json',
     ],
 ]);
@@ -604,16 +599,15 @@ import requests
 
 headers = {
     'Authorization': 'Bearer <user_access_token>',
-    'X-Api-Version': 'v1',
 }
 
 # 获取已分配商品
-resp = requests.get('https://api.example.com/api/supplier/products',
+resp = requests.get('https://api.example.com/api/v1/supplier/products',
                      headers=headers)
 products = resp.json()
 
 # 申请提现
-resp = requests.post('https://api.example.com/api/supplier/withdraw',
+resp = requests.post('https://api.example.com/api/v1/supplier/withdraw',
                       headers=headers,
                       json={
                           'amount': '5000.00',
@@ -645,11 +639,11 @@ print(resp.json())
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/admin/api/suppliers` | 供应商列表（支持 status 筛选） |
-| GET | `/admin/api/suppliers/export` | 导出供应商 Excel |
-| POST | `/admin/api/suppliers/{id}/approve` | 审批通过供应商 |
-| POST | `/admin/api/suppliers/{id}/settle` | 生成结算单 |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | 批准提现 |
-| GET | `/admin/api/suppliers/{id}/api-keys` | 查看供应商 API Key 列表 |
-| POST | `/admin/api/suppliers/{id}/api-keys` | 创建 API Key（仅返回一次原始 Key） |
-| DELETE | `/admin/api/suppliers/api-keys/{id}` | 吊销 API Key |
+| GET | `/admin/api/v1/suppliers` | 供应商列表（支持 status 筛选） |
+| GET | `/admin/api/v1/suppliers/export` | 导出供应商 Excel |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | 审批通过供应商 |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | 生成结算单 |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | 批准提现 |
+| GET | `/admin/api/v1/suppliers/{id}/api-keys` | 查看供应商 API Key 列表 |
+| POST | `/admin/api/v1/suppliers/{id}/api-keys` | 创建 API Key（仅返回一次原始 Key） |
+| DELETE | `/admin/api/v1/suppliers/api-keys/{id}` | 吊销 API Key |

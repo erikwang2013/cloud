@@ -4,7 +4,7 @@
 
 **बेस URL:** `https://api.example.com`
 
-**संस्करण नियंत्रण:** HTTP अनुरोध हेडर `X-Api-Version: v1` द्वारा निर्दिष्ट। अनुपस्थित होने पर डिफ़ॉल्ट `v1`, असमर्थित संस्करण `400` लौटाता है। संस्करण URL पथ में नहीं है।
+**संस्करण नियंत्रण:** API संस्करण URL पथ में निर्दिष्ट है (जैसे `/api/v1/...`)। असमर्थित संस्करण `400` लौटाता है।
 
 **प्रमाणीकरण विधियाँ:**
 
@@ -66,12 +66,12 @@
 
 | रूट समूह | मिडलवेयर | प्रीफ़िक्स |
 |--------|--------|------|
-| सार्वजनिक | वैश्विक मिडलवेयर श्रृंखला | `/health`, `/api/*` |
+| सार्वजनिक | वैश्विक मिडलवेयर श्रृंखला | `/health`, `/api/v1/*` |
 | `/health` (आंतरिक) | वैश्विक + InternalToken | `/health/live`, `/health/ready`, `/health/deps` |
-| `/api/auth` | वैश्विक + Encryption | `/api/auth/*` |
-| `/api` (उपयोगकर्ता) | वैश्विक + Encryption + Auth | `/api/user/*`, `/api/cart`, `/api/orders` |
-| `/api` (संवेदनशील) | वैश्विक + Encryption + Auth + Confirmation | `/api/orders/{id}/pay` |
-| `/api/supplier/external` | Version + SupplierApiKey | आपूर्तिकर्ता बाहरी API |
+| `/api/v1/auth` | वैश्विक + Encryption | `/api/v1/auth/*` |
+| `/api` (उपयोगकर्ता) | वैश्विक + Encryption + Auth | `/api/v1/user/*`, `/api/v1/cart`, `/api/v1/orders` |
+| `/api` (संवेदनशील) | वैश्विक + Encryption + Auth + Confirmation | `/api/v1/orders/{id}/pay` |
+| `/api/v1/supplier/external` | Version + SupplierApiKey | आपूर्तिकर्ता बाहरी API |
 | `/admin/api` | वैश्विक + Encryption + Auth + AdminRole | प्रशासन पैनल API |
 | `/admin/api` (संवेदनशील) | वैश्विक + Encryption + Auth + AdminRole + Confirmation | संवेदनशील प्रशासन संचालन |
 
@@ -89,7 +89,7 @@ GET /health
 ### सेवा स्थिति
 
 ```
-GET /api/status
+GET /api/v1/status
 → {
   "overall": "operational",
   "components": {
@@ -105,18 +105,18 @@ GET /api/status
 ### उत्पाद
 
 ```
-GET /api/products
+GET /api/v1/products
   पैरामीटर: category_id, region_id, keyword, supplier_id, page (डिफ़ॉल्ट 1), page_size (डिफ़ॉल्ट 20, अधिकतम 50)
   → पृष्ठांकित उत्पाद सूची (category, skus.regionPrices सहित)
 
-GET /api/products/search
+GET /api/v1/products/search
   पैरामीटर: q (आवश्यक), page
   → Elasticsearch पूर्ण-पाठ खोज
 
-GET /api/products/{id}
+GET /api/v1/products/{id}
   → उत्पाद विवरण (category, skus, images, reviews सहित)
 
-GET /api/products/{productId}/reviews
+GET /api/v1/products/{productId}/reviews
   → समीक्षा सूची + avg_rating + total + distribution
   स्थिति एनम: pending(लंबित)/approved(स्वीकृत)/rejected(अस्वीकृत), केवल approved लौटाया जाता है
 ```
@@ -124,25 +124,25 @@ GET /api/products/{productId}/reviews
 ### डोमेन
 
 ```
-GET /api/domain/check/{domain}/{tld}
+GET /api/v1/domain/check/{domain}/{tld}
   → { domain, tld, available: true, price: { register, renew, transfer } }
 
-GET /api/domain/tlds
+GET /api/v1/domain/tlds
   → उपलब्ध TLD सूची (Redis कैश 1h)
 ```
 
 ### सहायता केंद्र
 
 ```
-GET /api/help
+GET /api/v1/help
   पैरामीटर: category, page
   हेडर: Accept-Language (en-US / zh-CN)
   → पृष्ठांकित सहायता लेख
 
-GET /api/help/categories
+GET /api/v1/help/categories
   → लेख श्रेणी सूची
 
-GET /api/help/{slug}
+GET /api/v1/help/{slug}
   → एकल लेख विवरण
 ```
 
@@ -153,7 +153,7 @@ GET /api/help/{slug}
 ### कैप्चा
 
 ```
-POST /api/captcha/create
+POST /api/v1/captcha/create
   हेडर: X-Encrypted: 1
   → { key, image (base64), target_count, expires_in }
 ```
@@ -161,7 +161,7 @@ POST /api/captcha/create
 ### पंजीकरण
 
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
   हेडर: X-Encrypted: 1
   बॉडी (एन्क्रिप्टेड): { email?, phone?, password, language?, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -175,7 +175,7 @@ POST /api/auth/register
 ### लॉगिन
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
   हेडर: X-Encrypted: 1
   बॉडी (एन्क्रिप्टेड): { login (email/phone), password, captcha_key, captcha_points, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -188,7 +188,7 @@ POST /api/auth/login
 ### Token रिफ़्रेश
 
 ```
-POST /api/auth/refresh
+POST /api/v1/auth/refresh
   हेडर: X-Encrypted: 1
   बॉडी (एन्क्रिप्टेड): { refresh_token, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -202,9 +202,9 @@ POST /api/auth/refresh
 (.env में `{PROVIDER}_OAUTH_CLIENT_ID` आदि कॉन्फ़िगरेशन द्वारा तय होता है कि सक्षम है या नहीं)
 
 ```
-GET /api/auth/{provider}            → { url }        # प्राधिकरण पृष्ठ पर रीडायरेक्ट (PKCE/nonce रीप्ले-रोधक)
-GET /api/auth/{provider}/callback?code=xxx&state=yyy
-POST /api/auth/{provider}/callback  बॉडी: { code, state }
+GET /api/v1/auth/{provider}            → { url }        # प्राधिकरण पृष्ठ पर रीडायरेक्ट (PKCE/nonce रीप्ले-रोधक)
+GET /api/v1/auth/{provider}/callback?code=xxx&state=yyy
+POST /api/v1/auth/{provider}/callback  बॉडी: { code, state }
 ```
 
 - Apple/Microsoft `id_token` लौटाते हैं, सर्वर JWKS द्वारा हस्ताक्षर, iss/aud/exp/nonce सत्यापित करता है
@@ -215,11 +215,11 @@ POST /api/auth/{provider}/callback  बॉडी: { code, state }
 ### पासवर्ड रीसेट
 
 ```
-POST /api/auth/forgot-password
+POST /api/v1/auth/forgot-password
   बॉडी: { email }
   → सत्यापन कोड ईमेल भेजा जाता है
 
-POST /api/auth/reset-password
+POST /api/v1/auth/reset-password
   बॉडी: { email, code, password }
   → रीसेट सफल
   → त्रुटि संचय 5 बार → 429 दर सीमा 10 मिनट
@@ -228,14 +228,14 @@ POST /api/auth/reset-password
 ### ईमेल सत्यापन
 
 ```
-GET /api/auth/verify-email?token=xxx
+GET /api/v1/auth/verify-email?token=xxx
   → सत्यापन सफल
 ```
 
 ### SMS सत्यापन
 
 ```
-POST /api/auth/send-sms
+POST /api/v1/auth/send-sms
   बॉडी: { phone }
   → SMS सत्यापन कोड भेजा जाता है (60s कूलडाउन)
 ```
@@ -243,11 +243,11 @@ POST /api/auth/send-sms
 ### TOTP दो-चरणीय सत्यापन
 
 ```
-POST /api/user/totp/setup        → { secret, qr_url }        # पर्सिस्ट नहीं, 10 मिनट के भीतर verify करने पर प्रभावी
-POST /api/user/totp/verify       बॉडी: { code } → { verified: true }   # पहली बार सक्षम करने पर सफलता संदेश लौटता है
-POST /api/user/totp/disable      बॉडी: { password }             # पासवर्ड पुष्टि आवश्यक, अन्यथा 403
-GET /api/user/totp/recovery-codes → { recovery_codes }        # हर बार 8 एक-बार कोड बनते हैं, पासवर्ड पुष्टि आवश्यक, अन्यथा 403
-POST /api/auth/login/recovery    बॉडी: { login, password, recovery_code }
+POST /api/v1/user/totp/setup        → { secret, qr_url }        # पर्सिस्ट नहीं, 10 मिनट के भीतर verify करने पर प्रभावी
+POST /api/v1/user/totp/verify       बॉडी: { code } → { verified: true }   # पहली बार सक्षम करने पर सफलता संदेश लौटता है
+POST /api/v1/user/totp/disable      बॉडी: { password }             # पासवर्ड पुष्टि आवश्यक, अन्यथा 403
+GET /api/v1/user/totp/recovery-codes → { recovery_codes }        # हर बार 8 एक-बार कोड बनते हैं, पासवर्ड पुष्टि आवश्यक, अन्यथा 403
+POST /api/v1/auth/login/recovery    बॉडी: { login, password, recovery_code }
 ```
 
 - उपयोगकर्ता TOTP सक्षम करने के बाद लॉगिन में `totp_code` ले जाना अनिवार्य है, अन्यथा 401
@@ -260,25 +260,25 @@ POST /api/auth/login/recovery    बॉडी: { login, password, recovery_code 
 ### व्यक्तिगत प्रोफ़ाइल
 
 ```
-GET /api/user/profile
-PUT /api/user/profile
+GET /api/v1/user/profile
+PUT /api/v1/user/profile
   बॉडी: { nickname?, avatar?, country?, language?, timezone? }
 ```
 
 ### KYC सत्यापन
 
 ```
-POST /api/user/kyc
+POST /api/v1/user/kyc
   बॉडी: { id_type, id_number, real_name, front_image, back_image }
 ```
 
 ### शेष राशि
 
 ```
-GET /api/user/balance
+GET /api/v1/user/balance
   → { balances: [{currency, balance, frozen}] }
 
-GET /api/user/balance/transactions
+GET /api/v1/user/balance/transactions
   पैरामीटर: page
   → शेष राशि बदलाव के रिकॉर्ड
 ```
@@ -286,23 +286,23 @@ GET /api/user/balance/transactions
 ### पता प्रबंधन
 
 ```
-GET /api/user/addresses
-POST /api/user/addresses
+GET /api/v1/user/addresses
+POST /api/v1/user/addresses
   बॉडी: { type: billing/shipping, name, phone, country, state, city, address, postcode, is_default }
-PUT /api/user/addresses/{id}
-DELETE /api/user/addresses/{id}
+PUT /api/v1/user/addresses/{id}
+DELETE /api/v1/user/addresses/{id}
 ```
 
 ### सत्र प्रबंधन
 
 ```
-GET /api/user/sessions
+GET /api/v1/user/sessions
   → [{ id, fingerprint, client_platform, created_at, expires_at }]
 
-DELETE /api/user/sessions/{id}
+DELETE /api/v1/user/sessions/{id}
   → निर्दिष्ट सत्र रद्द करें
 
-DELETE /api/user/account
+DELETE /api/v1/user/account
   बॉडी: { confirm_password }
   → GDPR खाता विलोपन
 ```
@@ -310,29 +310,29 @@ DELETE /api/user/account
 ### सूचनाएँ
 
 ```
-GET /api/user/notifications
+GET /api/v1/user/notifications
   पैरामीटर: page
   → पृष्ठांकित सूचना सूची
 
-POST /api/user/notifications/{id}/read
+POST /api/v1/user/notifications/{id}/read
   → पढ़ा हुआ चिह्नित करें
 
-GET /api/user/notification-prefs
-PUT /api/user/notification-prefs
+GET /api/v1/user/notification-prefs
+PUT /api/v1/user/notification-prefs
   बॉडी: { email: {order_paid: true, ...}, push: {...} }
 ```
 
 ### ईमेल
 
 ```
-POST /api/user/resend-verify-email
+POST /api/v1/user/resend-verify-email
   → सत्यापन ईमेल पुनः भेजें
 ```
 
 ### फ़ाइल अपलोड
 
 ```
-POST /api/upload
+POST /api/v1/upload
   बॉडी: multipart/form-data { file, type: avatar/kyc/attach }
   सीमाएँ: avatar 2MB, kyc 5MB, attach 10MB
   अनुमत: jpg, jpeg, png, gif, pdf
@@ -346,11 +346,11 @@ POST /api/upload
 ### कार्ट
 
 ```
-POST /api/cart
+POST /api/v1/cart
   बॉडी: { sku_id, region_id, quantity, cycle }
-GET /api/cart
-DELETE /api/cart/{id}
-PUT /api/cart/{id}
+GET /api/v1/cart
+DELETE /api/v1/cart/{id}
+PUT /api/v1/cart/{id}
   बॉडी: { quantity }
 ```
 
@@ -360,21 +360,21 @@ PUT /api/cart/{id}
 ### ऑर्डर
 
 ```
-POST /api/orders
+POST /api/v1/orders
   → कार्ट से ऑर्डर बनाएं
   ← { order, order_no, items, subtotal, discount, tax, total }   # subtotal/discount/tax/total: string 4dp
 
-GET /api/orders
+GET /api/v1/orders
   पैरामीटर: page, status (pending/paid/provisioning/completed/refunded, अवैध मान पर 400)
   → मेरे ऑर्डर की सूची
 
-GET /api/orders/{id}
+GET /api/v1/orders/{id}
   → ऑर्डर विवरण (items, timeline सहित)
 
-GET /api/orders/{id}/payment-methods
+GET /api/v1/orders/{id}/payment-methods
   → उपलब्ध भुगतान चैनल + प्रत्येक चैनल की वास्तविक भुगतान राशि
 
-POST /api/orders/{id}/pay    🔒 पासवर्ड पुष्टि
+POST /api/v1/orders/{id}/pay    🔒 पासवर्ड पुष्टि
   बॉडी: { channel_id, confirm_password }
   → { client_secret, transaction_id }
 ```
@@ -382,7 +382,7 @@ POST /api/orders/{id}/pay    🔒 पासवर्ड पुष्टि
 ### कूपन
 
 ```
-POST /api/coupons/validate
+POST /api/v1/coupons/validate
   बॉडी: { code, order_total }
   → { coupon_id, discount, type }   # discount: string 4dp (जैसे "2.0000")
 
@@ -392,10 +392,10 @@ POST /api/coupons/validate
 ### चालान
 
 ```
-GET /api/invoices
+GET /api/v1/invoices
   पैरामीटर: page
-GET /api/invoices/{id}
-GET /api/invoices/{id}/download
+GET /api/v1/invoices/{id}
+GET /api/v1/invoices/{id}/download
   → PDF डाउनलोड
 ```
 
@@ -404,20 +404,20 @@ GET /api/invoices/{id}/download
 ## पाँच, संसाधन प्रबंधन
 
 ```
-GET /api/resources
+GET /api/v1/resources
   पैरामीटर: page, status
   → मेरे संसाधनों की सूची
 
-GET /api/resources/{id}
+GET /api/v1/resources/{id}
   → संसाधन विवरण
 
-GET /api/resources/{id}/status
+GET /api/v1/resources/{id}/status
   → संसाधन की वर्तमान स्थिति + मीट्रिक
 
-GET /api/resources/{id}/console
+GET /api/v1/resources/{id}/console
   → VNC/कंसोल URL
 
-POST /api/resources/batch
+POST /api/v1/resources/batch
   बॉडी: { action: start/stop/restart, resource_ids: [...] }
 ```
 
@@ -426,13 +426,13 @@ POST /api/resources/batch
 ## छह, DNS प्रबंधन
 
 ```
-GET /api/dns/{domain}
+GET /api/v1/dns/{domain}
   → DNS रिकॉर्ड सूची
 
-POST /api/dns/{domain}/records
+POST /api/v1/dns/{domain}/records
   बॉडी: { type, name, value, ttl?, priority? }
 
-DELETE /api/dns/{domain}/records/{id}   🔒 पासवर्ड पुष्टि
+DELETE /api/v1/dns/{domain}/records/{id}   🔒 पासवर्ड पुष्टि
 ```
 
 ---
@@ -440,15 +440,15 @@ DELETE /api/dns/{domain}/records/{id}   🔒 पासवर्ड पुष्�
 ## सात, टिकट
 
 ```
-POST /api/tickets
+POST /api/v1/tickets
   बॉडी: { resource_id?, category, priority?, title, content }
 
-GET /api/tickets
+GET /api/v1/tickets
   पैरामीटर: page, status
 
-GET /api/tickets/{id}
+GET /api/v1/tickets/{id}
 
-POST /api/tickets/{id}/reply
+POST /api/v1/tickets/{id}/reply
   बॉडी: { content }
 ```
 
@@ -457,19 +457,19 @@ POST /api/tickets/{id}/reply
 ## आठ, आपूर्तिकर्ता (आंतरिक API)
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
   बॉडी: { company_name, contact_name, contact_phone, contact_email, settlement_method }
 
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
   → निपटान रिपोर्ट सूची
 
-POST /api/supplier/withdraw    🔒 पासवर्ड पुष्टि
+POST /api/v1/supplier/withdraw    🔒 पासवर्ड पुष्टि
   बॉडी: { amount, confirm_password, account_info: { method, bank_name, account_number } }
 
-GET /api/supplier/products
-POST /api/supplier/products
+GET /api/v1/supplier/products
+POST /api/v1/supplier/products
   बॉडी: { product_id, commission_rate }
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 ---
@@ -481,27 +481,27 @@ DELETE /api/supplier/products/{id}
 **दर सीमा:** 120 req/min (निकासी 10 req/min)
 
 ```
-GET /api/supplier/external/orders
+GET /api/v1/supplier/external/orders
   पैरामीटर: page, page_size, status, from, to
 
-GET /api/supplier/external/orders/{id}
+GET /api/v1/supplier/external/orders/{id}
   → ऑर्डर विवरण (केवल इस आपूर्तिकर्ता से संबद्ध)
 
-GET /api/supplier/external/resources
+GET /api/v1/supplier/external/resources
   पैरामीटर: page, status, type
 
-GET /api/supplier/external/resources/{id}/status
+GET /api/v1/supplier/external/resources/{id}/status
   → { id, type, status, provisioned_at, expired_at }
 
-GET /api/supplier/external/settlements
+GET /api/v1/supplier/external/settlements
   पैरामीटर: page, status
 
-GET /api/supplier/external/settlements/{id}
+GET /api/v1/supplier/external/settlements/{id}
 
-POST /api/supplier/external/withdraw
+POST /api/v1/supplier/external/withdraw
   बॉडी: { amount, account_info: { method, ... } }
 
-GET /api/supplier/external/withdraws
+GET /api/v1/supplier/external/withdraws
   पैरामीटर: page
 ```
 
@@ -514,227 +514,227 @@ GET /api/supplier/external/withdraws
 ### डैशबोर्ड
 
 ```
-GET /admin/api/dashboard
+GET /admin/api/v1/dashboard
   → { today_stats, revenue_trend_30d, region_distribution, pending_orders, pending_kyc, open_tickets }
 ```
 
 ### उपयोगकर्ता प्रबंधन
 
 ```
-GET /admin/api/users              पैरामीटर: page, status, keyword
-GET /admin/api/users/export       → Excel डाउनलोड
-GET /admin/api/users/{id}
-PUT /admin/api/users/{id}/status  बॉडी: { status }
+GET /admin/api/v1/users              पैरामीटर: page, status, keyword
+GET /admin/api/v1/users/export       → Excel डाउनलोड
+GET /admin/api/v1/users/{id}
+PUT /admin/api/v1/users/{id}/status  बॉडी: { status }
 ```
 
 ### KYC समीक्षा
 
 ```
-GET /admin/api/kyc                पैरामीटर: page, status
+GET /admin/api/v1/kyc                पैरामीटर: page, status
 
-POST /admin/api/kyc/{id}/approve  🔒 पासवर्ड पुष्टि
+POST /admin/api/v1/kyc/{id}/approve  🔒 पासवर्ड पुष्टि
   बॉडी: { confirm_password }
 
-POST /admin/api/kyc/{id}/reject   🔒 पासवर्ड पुष्टि
+POST /admin/api/v1/kyc/{id}/reject   🔒 पासवर्ड पुष्टि
   बॉडी: { confirm_password, reason }
 ```
 
 ### उत्पाद प्रबंधन
 
 ```
-POST /admin/api/products
-PUT /admin/api/products/{id}
-DELETE /admin/api/products/{id}         🔒 पासवर्ड पुष्टि
-POST /admin/api/products/{productId}/skus
-PUT /admin/api/skus/{id}
-POST /admin/api/skus/{skuId}/region-price
-GET /admin/api/products/export         → CSV डाउनलोड
-POST /admin/api/products/import        → CSV अपलोड upsert
+POST /admin/api/v1/products
+PUT /admin/api/v1/products/{id}
+DELETE /admin/api/v1/products/{id}         🔒 पासवर्ड पुष्टि
+POST /admin/api/v1/products/{productId}/skus
+PUT /admin/api/v1/skus/{id}
+POST /admin/api/v1/skus/{skuId}/region-price
+GET /admin/api/v1/products/export         → CSV डाउनलोड
+POST /admin/api/v1/products/import        → CSV अपलोड upsert
 ```
 
 ### ऑर्डर प्रबंधन
 
 ```
-GET /admin/api/orders              पैरामीटर: page, status, keyword
-GET /admin/api/orders/export       → Excel डाउनलोड
-GET /admin/api/orders/{id}
+GET /admin/api/v1/orders              पैरामीटर: page, status, keyword
+GET /admin/api/v1/orders/export       → Excel डाउनलोड
+GET /admin/api/v1/orders/{id}
 
-POST /admin/api/orders/{id}/refund  🔒 पासवर्ड पुष्टि
+POST /admin/api/v1/orders/{id}/refund  🔒 पासवर्ड पुष्टि
   बॉडी: { confirm_password, amount?, reason }
 ```
 
 ### भुगतान प्रबंधन
 
 ```
-GET /admin/api/payments/channels
-PUT /admin/api/payments/channels/{id}
-GET /admin/api/payments/transactions  पैरामीटर: page, channel, status
-GET /admin/api/payments/reconcile     पैरामीटर: date; records.status: verified/mismatch/unverified
-POST /admin/api/payments/reconcile/run  पैरामीटर: date; दैनिक निपटान ट्रिगर
+GET /admin/api/v1/payments/channels
+PUT /admin/api/v1/payments/channels/{id}
+GET /admin/api/v1/payments/transactions  पैरामीटर: page, channel, status
+GET /admin/api/v1/payments/reconcile     पैरामीटर: date; records.status: verified/mismatch/unverified
+POST /admin/api/v1/payments/reconcile/run  पैरामीटर: date; दैनिक निपटान ट्रिगर
 ```
 
 ### संसाधन और प्रोविज़निंग
 
 ```
-GET /admin/api/provisioning/tasks              पैरामीटर: page, status
-POST /admin/api/provisioning/tasks/{id}/retry
-POST /admin/api/provisioning/resources/{id}/upgrade
+GET /admin/api/v1/provisioning/tasks              पैरामीटर: page, status
+POST /admin/api/v1/provisioning/tasks/{id}/retry
+POST /admin/api/v1/provisioning/resources/{id}/upgrade
   बॉडी: { cpu?, ram?, disk? }
-POST /admin/api/provisioning/resources/{id}/destroy   🔒 पासवर्ड पुष्टि
-GET /admin/api/provisioning/hosts
+POST /admin/api/v1/provisioning/resources/{id}/destroy   🔒 पासवर्ड पुष्टि
+GET /admin/api/v1/provisioning/hosts
 ```
 
 ### आपूर्तिकर्ता प्रबंधन
 
 ```
-GET /admin/api/suppliers                 पैरामीटर: page, status
-GET /admin/api/suppliers/export          → Excel डाउनलोड
+GET /admin/api/v1/suppliers                 पैरामीटर: page, status
+GET /admin/api/v1/suppliers/export          → Excel डाउनलोड
 
-POST /admin/api/suppliers/{id}/approve   🔒 पासवर्ड पुष्टि
-POST /admin/api/suppliers/{id}/settle    🔒 पासवर्ड पुष्टि
+POST /admin/api/v1/suppliers/{id}/approve   🔒 पासवर्ड पुष्टि
+POST /admin/api/v1/suppliers/{id}/settle    🔒 पासवर्ड पुष्टि
   बॉडी: { period_start, period_end, confirm_password }
 
-POST /admin/api/suppliers/withdraws/{id}/approve  🔒 पासवर्ड पुष्टि
+POST /admin/api/v1/suppliers/withdraws/{id}/approve  🔒 पासवर्ड पुष्टि
 ```
 
 ### आपूर्तिकर्ता API Key
 
 ```
-GET /admin/api/suppliers/{id}/api-keys
-POST /admin/api/suppliers/{id}/api-keys
+GET /admin/api/v1/suppliers/{id}/api-keys
+POST /admin/api/v1/suppliers/{id}/api-keys
   बॉडी: { name }
   ← { api_key: "sk_xxx...", prefix } (केवल एक बार दिखाया जाता है)
 
-DELETE /admin/api/suppliers/api-keys/{id}
+DELETE /admin/api/v1/suppliers/api-keys/{id}
 ```
 
 ### टिकट प्रबंधन
 
 ```
-GET /admin/api/tickets                  पैरामीटर: page, status, priority, assigned_to
-POST /admin/api/tickets/{id}/assign     बॉडी: { user_id }
-POST /admin/api/tickets/{id}/close
+GET /admin/api/v1/tickets                  पैरामीटर: page, status, priority, assigned_to
+POST /admin/api/v1/tickets/{id}/assign     बॉडी: { user_id }
+POST /admin/api/v1/tickets/{id}/close
 ```
 
 ### डोमेन प्रबंधन
 
 ```
-GET /admin/api/domains/tlds
-POST /admin/api/domains/tlds
+GET /admin/api/v1/domains/tlds
+POST /admin/api/v1/domains/tlds
   बॉडी: { tld, wholesale_price, retail_price, registrar, promo_price?, promo_end_at? }
-PUT /admin/api/domains/tlds/{id}
-DELETE /admin/api/domains/tlds/{id}
-GET /admin/api/domains/zones              पैरामीटर: page
-GET /admin/api/domains/transfers          पैरामीटर: page
-POST /admin/api/domains/transfers/{id}/approve
+PUT /admin/api/v1/domains/tlds/{id}
+DELETE /admin/api/v1/domains/tlds/{id}
+GET /admin/api/v1/domains/zones              पैरामीटर: page
+GET /admin/api/v1/domains/transfers          पैरामीटर: page
+POST /admin/api/v1/domains/transfers/{id}/approve
 ```
 
 ### सूचना प्रबंधन
 
 ```
-GET /admin/api/notifications/templates
-PUT /admin/api/notifications/templates/{id}
+GET /admin/api/v1/notifications/templates
+PUT /admin/api/v1/notifications/templates/{id}
   बॉडी: { name?, channels?, title_template?, body_template?, variables? }
-GET /admin/api/notifications/log          पैरामीटर: page
+GET /admin/api/v1/notifications/log          पैरामीटर: page
 ```
 
 ### कूपन
 
 ```
-GET /admin/api/coupons
-POST /admin/api/coupons
+GET /admin/api/v1/coupons
+POST /admin/api/v1/coupons
   बॉडी: { code, type, value, min_amount?, max_discount?, max_uses?, starts_at?, expires_at? }
-DELETE /admin/api/coupons/{id}
+DELETE /admin/api/v1/coupons/{id}
 ```
 
 ### सहायता लेख
 
 ```
-GET /admin/api/help
-POST /admin/api/help
+GET /admin/api/v1/help
+POST /admin/api/v1/help
   बॉडी: { category, title, slug, content, locale, sort?, status? }
-PUT /admin/api/help/{id}
-DELETE /admin/api/help/{id}              → सॉफ्ट डिलीट (status=archived)
+PUT /admin/api/v1/help/{id}
+DELETE /admin/api/v1/help/{id}              → सॉफ्ट डिलीट (status=archived)
 ```
 
 ### क्लाउड प्रदाता API
 
 ```
-GET /admin/api/providers
-POST /admin/api/providers
+GET /admin/api/v1/providers
+POST /admin/api/v1/providers
   बॉडी: { name, code, api_key?, api_secret?, webhook_secret? }
-PUT /admin/api/providers/{id}
-DELETE /admin/api/providers/{id}         → निष्क्रिय (status=disabled)
+PUT /admin/api/v1/providers/{id}
+DELETE /admin/api/v1/providers/{id}         → निष्क्रिय (status=disabled)
 ```
 
 ### Webhook प्रबंधन
 
 ```
-GET /admin/api/webhooks
-POST /admin/api/webhooks
+GET /admin/api/v1/webhooks
+POST /admin/api/v1/webhooks
   बॉडी: { url }
-DELETE /admin/api/webhooks               बॉडी: { id }
-POST /admin/api/webhooks/test            बॉडी: { url }
+DELETE /admin/api/v1/webhooks               बॉडी: { id }
+POST /admin/api/v1/webhooks/test            बॉडी: { url }
 ```
 
 ### रिपोर्ट
 
 ```
-GET /admin/api/reports/revenue            पैरामीटर: from, to, granularity
+GET /admin/api/v1/reports/revenue            पैरामीटर: from, to, granularity
   → { daily: [{date, currency, revenue, orders}], total_revenue, total_orders, by_category }
   # revenue/total_revenue: string 4dp (SUM(DECIMAL) और bcmath सारांश के अनुरूप)
-GET /admin/api/reports/supplier           पैरामीटर: from, to
+GET /admin/api/v1/reports/supplier           पैरामीटर: from, to
   → { settlements, total_payable, total_paid }   # payable/total_payable/total_paid: string 4dp
-GET /admin/api/reports/region             पैरामीटर: from, to
+GET /admin/api/v1/reports/region             पैरामीटर: from, to
   → [{region, orders, revenue}]                  # revenue: string 4dp
 ```
 
 ### मॉनिटरिंग
 
 ```
-GET /admin/api/monitor/dashboard
+GET /admin/api/v1/monitor/dashboard
   → { active_resources, alerts_today, resource_distribution, recent_alerts }
 
-GET /admin/api/monitor/resources/{id}
+GET /admin/api/v1/monitor/resources/{id}
   → { cpu_percent, mem_percent, disk_percent, bandwidth_usage, uptime }
 ```
 
 ### ऑडिट लॉग
 
 ```
-GET /admin/api/audit-logs                 पैरामीटर: page, user_id, action, from, to
+GET /admin/api/v1/audit-logs                 पैरामीटर: page, user_id, action, from, to
   → पृष्ठांकित ऑडिट लॉग (client_platform सहित)
 ```
 
 ### Feature Flags
 
 ```
-GET /admin/api/features
+GET /admin/api/v1/features
   → [{ name, enabled, default, source }]
 
-PUT /admin/api/features/{name}
+PUT /admin/api/v1/features/{name}
   बॉडी: { action: enable/disable/toggle/reset }
 ```
 
 ### सिस्टम कॉन्फ़िगरेशन
 
 ```
-PUT /admin/api/system/config              🔒 पासवर्ड पुष्टि
+PUT /admin/api/v1/system/config              🔒 पासवर्ड पुष्टि
 ```
 
 ### उत्पाद आयात/निर्यात
 
 ```
-GET /admin/api/products/export           → CSV डाउनलोड
-POST /admin/api/products/import          → CSV अपलोड upsert
+GET /admin/api/v1/products/export           → CSV डाउनलोड
+POST /admin/api/v1/products/import          → CSV अपलोड upsert
 ```
 
 ### आपूर्तिकर्ता + उपयोगकर्ता निर्यात
 
 ```
-GET /admin/api/suppliers/export          → Excel डाउनलोड
-GET /admin/api/users/export              → Excel डाउनलोड
-GET /admin/api/orders/export             → Excel डाउनलोड
+GET /admin/api/v1/suppliers/export          → Excel डाउनलोड
+GET /admin/api/v1/users/export              → Excel डाउनलोड
+GET /admin/api/v1/orders/export             → Excel डाउनलोड
 ```
 
 ---
@@ -744,19 +744,19 @@ GET /admin/api/orders/export             → Excel डाउनलोड
 ### उपयोगकर्ता अंत
 
 ```
-GET /api/ssl/plans
+GET /api/v1/ssl/plans
   → SSL पैकेज सूची (DV/OV/EV, मूल्य register/renew/transfer सहित)
 
-GET /api/ssl-certs
+GET /api/v1/ssl-certs
   → मेरे प्रमाणपत्रों की सूची (status: pending/active/expired/revoked सहित)
 
-GET /api/ssl-certs/{id}
+GET /api/v1/ssl-certs/{id}
   → प्रमाणपत्र विवरण (डोमेन, जारी करने वाला प्राधिकरण, वैधता अवधि, नवीनीकरण स्थिति)
 
-GET /api/ssl-certs/{id}/download
+GET /api/v1/ssl-certs/{id}/download
   → प्रमाणपत्र फ़ाइलें डाउनलोड करें (प्रमाणपत्र श्रृंखला + निजी कुंजी)
 
-POST /api/ssl-certs/{id}/auto-renew
+POST /api/v1/ssl-certs/{id}/auto-renew
   बॉडी: { auto_renew: true/false }
   → स्वचालित नवीनीकरण टॉगल करें
 ```
@@ -764,12 +764,12 @@ POST /api/ssl-certs/{id}/auto-renew
 ### प्रशासन अंत
 
 ```
-GET /admin/api/ssl/plans              → पैकेज सूची
-POST /admin/api/ssl/plans             → पैकेज बनाएं
-PUT /admin/api/ssl/plans/{id}         → पैकेज अपडेट करें
-DELETE /admin/api/ssl/plans/{id}      → पैकेज हटाएं
-GET /admin/api/ssl/certs              → सभी प्रमाणपत्र
-POST /admin/api/ssl/certs/{id}/revoke → प्रमाणपत्र रद्द करें
+GET /admin/api/v1/ssl/plans              → पैकेज सूची
+POST /admin/api/v1/ssl/plans             → पैकेज बनाएं
+PUT /admin/api/v1/ssl/plans/{id}         → पैकेज अपडेट करें
+DELETE /admin/api/v1/ssl/plans/{id}      → पैकेज हटाएं
+GET /admin/api/v1/ssl/certs              → सभी प्रमाणपत्र
+POST /admin/api/v1/ssl/certs/{id}/revoke → प्रमाणपत्र रद्द करें
 ```
 
 ---
@@ -779,21 +779,21 @@ POST /admin/api/ssl/certs/{id}/revoke → प्रमाणपत्र रद�
 S3 संगत ऑब्जेक्ट स्टोरेज, प्री-साइन्ड URL द्वारा अपलोड/डाउनलोड, कुंजियाँ बाहर नहीं जातीं।
 
 ```
-GET /api/storage/buckets
+GET /api/v1/storage/buckets
   → मेरे स्टोरेज बकेट की सूची (उपयोग, स्थिति)
 
-GET /api/storage/buckets/{id}
+GET /api/v1/storage/buckets/{id}
   → बकेट विवरण
 
-POST /api/storage/buckets/{id}/presign-upload
+POST /api/v1/storage/buckets/{id}/presign-upload
   बॉडी: { filename, content_type, size }
   → { upload_url, object_key } प्री-साइन्ड अपलोड URL (समय सीमित)
 
-POST /api/storage/buckets/{id}/presign-download
+POST /api/v1/storage/buckets/{id}/presign-download
   बॉडी: { object_key }
   → प्री-साइन्ड डाउनलोड URL (समय सीमित)
 
-GET /api/storage/buckets/{id}/credentials
+GET /api/v1/storage/buckets/{id}/credentials
   → अस्थायी एक्सेस क्रेडेंशियल (अल्पकालिक, SDK सीधे अपलोड के लिए)
 ```
 
@@ -804,10 +804,10 @@ GET /api/storage/buckets/{id}/credentials
 ### उपयोगकर्ता अंत
 
 ```
-GET /api/cdn/domains
+GET /api/v1/cdn/domains
   → मेरे CDN डोमेन की सूची (मूल सर्वर, स्थिति, पैकेज)
 
-POST /api/cdn/domains
+POST /api/v1/cdn/domains
   बॉडी: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
           origin_type (server|storage), origin_value, cert_config? }
   → CDN डोमेन बनाएं (सेवाप्रदाता पक्ष पर बनाकर ओरिजिन बाइंड करता है)
@@ -816,28 +816,28 @@ POST /api/cdn/domains
   → क्रेडेंशियल रिज़ॉल्यूशन: पहले डोमेन का बाउंड खाता (provider_account_id), अन्यथा code=cdn-{provider_type}
     वाला सक्रिय provider_apis खाता, दोनों अनुपस्थित होने पर env कॉन्फ़िगरेशन फ़ॉलबैक
 
-GET /api/cdn/domains/{id}
+GET /api/v1/cdn/domains/{id}
   → CDN डोमेन विवरण
 
-DELETE /api/cdn/domains/{id}
+DELETE /api/v1/cdn/domains/{id}
   → CDN डोमेन हटाएं (सेवाप्रदाता पक्ष का डोमेन निष्क्रिय करता है, आइडेम्पोटेंट)
 
-POST /api/cdn/domains/{id}/purge
+POST /api/v1/cdn/domains/{id}/purge
   बॉडी: { urls: ["https://cdn.example.com/path"] }
   → कैश साफ़ करें (डुप्लिकेट URL स्वचालित रूप से हटाए जाते हैं, आइडेम्पोटेंट; अधिकतम 100)
 
-GET /api/cdn/domains/{id}/stats
+GET /api/v1/cdn/domains/{id}/stats
   → डोमेन अवलोकन (cdn_domain / provider_type / plan / status / purged_at)
 ```
 
 ### प्रशासन अंत
 
 ```
-GET /admin/api/cdn/domains            → सभी CDN डोमेन (संबंधित उपयोगकर्ता सहित)
-PUT /admin/api/cdn/domains/{id}       → डोमेन पैकेज अपडेट करें (plan व्हाइटलिस्ट: standard | pro | enterprise)
+GET /admin/api/v1/cdn/domains            → सभी CDN डोमेन (संबंधित उपयोगकर्ता सहित)
+PUT /admin/api/v1/cdn/domains/{id}       → डोमेन पैकेज अपडेट करें (plan व्हाइटलिस्ट: standard | pro | enterprise)
 ```
 
-एडमिन CDN रूट `RbacMiddleware('cdn.manage')` से जुड़े हैं, पैकेज परिवर्तन ऑडिट लॉग में लिखे जाते हैं (`admin_cdn_update_plan`)। सेवाप्रदाता खाता क्रेडेंशियल `/admin/api/providers` CRUD के माध्यम से बनाए रखे जाते हैं (RbacMiddleware `provider.config`, `code` कन्वेंशन `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, क्रेडेंशियल Encryptable एन्क्रिप्शन के साथ संग्रहीत)।
+एडमिन CDN रूट `RbacMiddleware('cdn.manage')` से जुड़े हैं, पैकेज परिवर्तन ऑडिट लॉग में लिखे जाते हैं (`admin_cdn_update_plan`)। सेवाप्रदाता खाता क्रेडेंशियल `/admin/api/v1/providers` CRUD के माध्यम से बनाए रखे जाते हैं (RbacMiddleware `provider.config`, `code` कन्वेंशन `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, क्रेडेंशियल Encryptable एन्क्रिप्शन के साथ संग्रहीत)।
 
 ### CDN त्रुटि कोड
 
@@ -856,11 +856,11 @@ PUT /admin/api/cdn/domains/{id}       → डोमेन पैकेज अप
 ## चौदह, उपयोग-आधारित बिलिंग
 
 ```
-GET /admin/api/billing/rates          → बिलिंग दर सूची (संसाधन प्रकार/स्पेक के अनुसार)
-POST /admin/api/billing/rates         → दर बनाएं
-PUT /admin/api/billing/rates/{id}     → दर अपडेट करें
-DELETE /admin/api/billing/rates/{id}  → दर हटाएं
-GET /admin/api/billing/usage          → उपयोग सारांश (उपयोगकर्ता/संसाधन द्वारा समूहीकृत)
+GET /admin/api/v1/billing/rates          → बिलिंग दर सूची (संसाधन प्रकार/स्पेक के अनुसार)
+POST /admin/api/v1/billing/rates         → दर बनाएं
+PUT /admin/api/v1/billing/rates/{id}     → दर अपडेट करें
+DELETE /admin/api/v1/billing/rates/{id}  → दर हटाएं
+GET /admin/api/v1/billing/usage          → उपयोग सारांश (उपयोगकर्ता/संसाधन द्वारा समूहीकृत)
 ```
 
 बिलिंग पाइपलाइन: ResourceMonitor हर 5 मिनट में संग्रह → UsageAggregator हर घंटे एग्रीगेट → BillingEngine प्रतिदिन डेबिट, अपर्याप्त शेष राशि पर संसाधन निलंबित।
@@ -872,18 +872,18 @@ GET /admin/api/billing/usage          → उपयोग सारांश (�
 ### उपयोगकर्ता अंत
 
 ```
-GET /api/affiliate/summary
+GET /api/v1/affiliate/summary
   → कमीशन सारांश (संचयी/लंबित/निकासी योग्य, लिंक संख्या, रूपांतरण दर)
 
-POST /api/affiliate/links
+POST /api/v1/affiliate/links
   बॉडी: { source? }
   → प्रचार लिंक बनाएं (?ref=CODE)
 
-GET /api/affiliate/earnings
+GET /api/v1/affiliate/earnings
   पैरामीटर: status, page
   → कमीशन विवरण (ऑर्डर संबद्धता, अनुपात, स्थिति: pending/approved/paid)
 
-POST /api/affiliate/payout
+POST /api/v1/affiliate/payout
   बॉडी: { amount, method }
   → निकासी अनुरोध शुरू करें
 ```
@@ -891,12 +891,12 @@ POST /api/affiliate/payout
 ### प्रशासन अंत
 
 ```
-GET /admin/api/affiliate/plans                → कमीशन योजना सूची
-POST /admin/api/affiliate/plans               → कमीशन योजना बनाएं
-GET /admin/api/affiliate/earnings             → सभी कमीशन रिकॉर्ड
-POST /admin/api/affiliate/earnings/{id}/approve → कमीशन समीक्षा करें
-GET /admin/api/affiliate/payouts              → निकासी अनुरोध सूची
-POST /admin/api/affiliate/payouts/{id}/approve → निकासी समीक्षा/भुगतान करें
+GET /admin/api/v1/affiliate/plans                → कमीशन योजना सूची
+POST /admin/api/v1/affiliate/plans               → कमीशन योजना बनाएं
+GET /admin/api/v1/affiliate/earnings             → सभी कमीशन रिकॉर्ड
+POST /admin/api/v1/affiliate/earnings/{id}/approve → कमीशन समीक्षा करें
+GET /admin/api/v1/affiliate/payouts              → निकासी अनुरोध सूची
+POST /admin/api/v1/affiliate/payouts/{id}/approve → निकासी समीक्षा/भुगतान करें
 ```
 
 ---
@@ -908,7 +908,7 @@ POST /graphql
   → सार्वजनिक क्वेरी (उत्पाद, डोमेन, सहायता आदि केवल-पठनीय डेटा)
   सीमाएँ: क्वेरी गहराई 5 स्तर, जटिलता 100
 
-POST /api/graphql                          🔒 प्रमाणीकरण आवश्यक
+POST /api/v1/graphql                          🔒 प्रमाणीकरण आवश्यक
   → पूर्ण क्वेरी (उपयोगकर्ता डेटा सहित)
 ```
 
@@ -921,34 +921,34 @@ POST /api/graphql                          🔒 प्रमाणीकरण �
 ### सार्वजनिक
 
 ```
-GET /api/regions
+GET /api/v1/regions
   → उपलब्ध क्षेत्र सूची (मुद्रा/समय क्षेत्र सहित)
 
-GET /api/suppliers/{supplierId}/ratings
+GET /api/v1/suppliers/{supplierId}/ratings
   → आपूर्तिकर्ता रेटिंग सूची (चार आयाम: गुणवत्ता/सहायता/डिलीवरी गति/मूल्य-प्रदर्शन, केवल approved लौटाया जाता है)
 ```
 
 ### उपयोगकर्ता अंत (प्रमाणीकरण आवश्यक)
 
 ```
-POST /api/products/{productId}/reviews
+POST /api/v1/products/{productId}/reviews
   बॉडी: { rating, content, images? }
   → उत्पाद समीक्षा जमा करें (प्रति ऑर्डर एक बार, समीक्षा के बाद प्रदर्शित)
 
-POST /api/supplier/ratings
+POST /api/v1/supplier/ratings
   बॉडी: { supplier_id, quality, support, delivery_speed, value, comment? }
   → आपूर्तिकर्ता रेटिंग जमा करें (प्रति ऑर्डर एक बार)
 
-GET /api/supplier/ratings/me
+GET /api/v1/supplier/ratings/me
   → मेरे रेटिंग रिकॉर्ड
 ```
 
 ### प्रशासन अंत
 
 ```
-GET /admin/api/suppliers/{id}/ratings          → सभी रेटिंग (pending सहित)
-POST /admin/api/suppliers/ratings/{id}/approve → समीक्षा स्वीकृत करें
-POST /admin/api/suppliers/ratings/{id}/hide    → छुपाएं
+GET /admin/api/v1/suppliers/{id}/ratings          → सभी रेटिंग (pending सहित)
+POST /admin/api/v1/suppliers/ratings/{id}/approve → समीक्षा स्वीकृत करें
+POST /admin/api/v1/suppliers/ratings/{id}/hide    → छुपाएं
 ```
 
 ---
@@ -956,7 +956,7 @@ POST /admin/api/suppliers/ratings/{id}/hide    → छुपाएं
 ## अठारह, भुगतान Webhook
 
 ```
-POST /api/payments/webhook/stripe
+POST /api/v1/payments/webhook/stripe
   हेडर: Stripe-Signature: ...
   → Stripe कॉलबैक (भुगतान सफल/रिफ़ंड/विवाद), हस्ताक्षर सत्यापन विफल होने पर 400
 ```
@@ -1014,18 +1014,18 @@ POST /api/payments/webhook/stripe
 
 | संदेश | एंडपॉइंट |
 |------|------|
-| `Email or phone required` | /api/auth/register |
-| `Email already registered` | /api/auth/register |
-| `Invalid credentials` | /api/auth/login |
-| `Account temporarily locked` | /api/auth/login |
-| `You already have a supplier application` | /api/supplier/apply |
-| `Insufficient withdrawable balance` | /api/supplier/withdraw |
-| `Product already assigned to this supplier` | /api/supplier/products |
-| `Invalid or revoked API key` | /api/supplier/external/* |
-| `Captcha verification failed` | /api/auth/login, /api/auth/register |
-| `Email already verified` | /api/user/resend-verify-email |
-| `Password too short` | /api/auth/register |
-| `Unknown feature: xxx` | /admin/api/features/{name} |
-| `Refund window expired: server orders are refundable within 72 hours of payment` | /admin/api/orders/{id}/refund |
-| `Refund window expired: domain orders are refundable within 5 days of payment` | /admin/api/orders/{id}/refund |
-| `This product type (IP) is not refundable` | /admin/api/orders/{id}/refund |
+| `Email or phone required` | /api/v1/auth/register |
+| `Email already registered` | /api/v1/auth/register |
+| `Invalid credentials` | /api/v1/auth/login |
+| `Account temporarily locked` | /api/v1/auth/login |
+| `You already have a supplier application` | /api/v1/supplier/apply |
+| `Insufficient withdrawable balance` | /api/v1/supplier/withdraw |
+| `Product already assigned to this supplier` | /api/v1/supplier/products |
+| `Invalid or revoked API key` | /api/v1/supplier/external/* |
+| `Captcha verification failed` | /api/v1/auth/login, /api/v1/auth/register |
+| `Email already verified` | /api/v1/user/resend-verify-email |
+| `Password too short` | /api/v1/auth/register |
+| `Unknown feature: xxx` | /admin/api/v1/features/{name} |
+| `Refund window expired: server orders are refundable within 72 hours of payment` | /admin/api/v1/orders/{id}/refund |
+| `Refund window expired: domain orders are refundable within 5 days of payment` | /admin/api/v1/orders/{id}/refund |
+| `This product type (IP) is not refundable` | /admin/api/v1/orders/{id}/refund |

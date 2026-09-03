@@ -5,7 +5,7 @@
 ### 1.1 Registration
 
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
   → WAF scan
   → Rate limit 3 req/min
   → Password validation len≥8
@@ -24,7 +24,7 @@ POST /api/auth/register
 ```
 Client                    Middleware Chain           AuthService              DB
   │                           │                        │                     │
-  │ POST /api/auth/register   │                        │                     │
+  │ POST /api/v1/auth/register   │                        │                     │
   │──────────────────────────▶│ WAF→RateLimit→Encrypt  │                     │
   │                           │───────────────────────▶│                     │
   │                           │                        │ User::create() ────▶│
@@ -40,7 +40,7 @@ Client                    Middleware Chain           AuthService              DB
 ### 1.2 Login
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
   → WAF scan
   → Rate limit 5 req/min
   → Captcha verification (click CAPTCHA, 3-attempt limit)
@@ -59,7 +59,7 @@ POST /api/auth/login
 ### 1.3 OAuth (Google / Apple)
 
 ```
-GET /api/auth/google → Google OAuth → callback?code=xxx
+GET /api/v1/auth/google → Google OAuth → callback?code=xxx
   1. Verify Google/Apple ID Token
   2. Find or create user (email match)
   3. Issue tokens (with client_platform)
@@ -69,30 +69,30 @@ GET /api/auth/google → Google OAuth → callback?code=xxx
 ### 1.4 TOTP Two-Factor Authentication
 
 ```
-1. POST /api/user/totp/setup
+1. POST /api/v1/user/totp/setup
      → Generate secret + QR URL (staged in Redis for 10 minutes, not persisted)
      ← {secret, qr_url, manual}
-2. POST /api/user/totp/verify
+2. POST /api/v1/user/totp/verify
      → Verify TOTP code (first call enables setup, afterwards it validates)
      ← {verified: true}
-3. GET /api/user/totp/recovery-codes
+3. GET /api/v1/user/totp/recovery-codes
      → Generate 8 one-time recovery codes (requires password confirmation)
      ← {recovery_codes: [8 codes]}
 4. At login: enter the TOTP code or use a recovery code
-     → POST /api/auth/login/recovery (login, password, recovery_code)
+     → POST /api/v1/auth/login/recovery (login, password, recovery_code)
 ```
 
 ### 1.5 Session Management
 
 ```
-GET /api/user/sessions
+GET /api/v1/user/sessions
   → RefreshToken::where(user_id, revoked=false)
   ← [{id, fingerprint, client_platform, created_at, expires_at}]
 
-DELETE /api/user/sessions/{id}
+DELETE /api/v1/user/sessions/{id}
   → RefreshToken::update(revoked=true)
 
-DELETE /api/user/account (GDPR deletion)
+DELETE /api/v1/user/account (GDPR deletion)
   → Secondary password confirmation
   → Soft-delete User
   → All RefreshTokens revoked
@@ -122,7 +122,7 @@ Product (1) ────── (N) ProductAttribute
 ### 2.2 Product List (with Cache)
 
 ```
-GET /api/products?category_id=1&region_id=2&keyword=vps&page=1
+GET /api/v1/products?category_id=1&region_id=2&keyword=vps&page=1
 
 CacheService::remember('products:list:{hash}', TTL 5min)
   → Product::published()
@@ -140,7 +140,7 @@ Cache invalidation:
 ### 2.3 Product Search (Elasticsearch)
 
 ```
-GET /api/products/search?q=vps&page=1
+GET /api/v1/products/search?q=vps&page=1
   → Product::search('vps')
     → Elasticsearch (IK Analyzer Chinese tokenization)
     → where('status', 'published')
@@ -150,11 +150,11 @@ GET /api/products/search?q=vps&page=1
 ### 2.4 Product Reviews
 
 ```
-GET /api/products/{id}/reviews
+GET /api/v1/products/{id}/reviews
   → Approved reviews + average rating + rating distribution
   ← {reviews, avg_rating, total, distribution: {5: 12, 4: 8, ...}}
 
-POST /api/products/{id}/reviews (login required)
+POST /api/v1/products/{id}/reviews (login required)
   → rating (1-5) + content
   → status = pending (displayed after admin review)
 ```
@@ -162,10 +162,10 @@ POST /api/products/{id}/reviews (login required)
 ### 2.5 Bulk Import/Export
 
 ```
-GET /admin/api/products/export
+GET /admin/api/v1/products/export
   → CSV download (products + SKUs + regional pricing)
 
-POST /admin/api/products/import
+POST /admin/api/v1/products/import
   → CSV upload upsert
   ← {imported: N, errors: [...]}
 ```
@@ -177,28 +177,28 @@ POST /admin/api/products/import
 ### 3.1 Cart
 
 ```
-POST /api/cart          → addToCart(sku_id, region_id, quantity, cycle)
-GET /api/cart           → Cart list (with SKU details + live prices)
-DELETE /api/cart/{id}   → removeFromCart
-PUT /api/cart/{id}      → updateCartQuantity
+POST /api/v1/cart          → addToCart(sku_id, region_id, quantity, cycle)
+GET /api/v1/cart           → Cart list (with SKU details + live prices)
+DELETE /api/v1/cart/{id}   → removeFromCart
+PUT /api/v1/cart/{id}      → updateCartQuantity
 ```
 
 ### 3.2 Checkout Flow
 
 ```
-1. POST /api/orders                            Create order
+1. POST /api/v1/orders                            Create order
      → Validate stock, calculate price, apply coupon
      ← {order_id, order_no, items, total}
 
-2. POST /api/coupons/validate                  Apply coupon
+2. POST /api/v1/coupons/validate                  Apply coupon
      → {code: "SAVE10"}
      ← {coupon_id, discount, type: percent/fixed}
 
-3. GET /api/orders/{id}/payment-methods        Get available payment channels
+3. GET /api/v1/orders/{id}/payment-methods        Get available payment channels
      → PaymentRouter::getAvailableChannels(order)
      ← [{channel_id, name, code, amount, fee, total_amount}]
 
-4. POST /api/orders/{id}/pay                   Initiate payment
+4. POST /api/v1/orders/{id}/pay                   Initiate payment
      → Secondary password confirmation (ConfirmationMiddleware)
      → StripeChannel::createPaymentIntent()
      ← {client_secret, transaction_id}
@@ -379,19 +379,19 @@ Retry strategy:
 ### 6.1 Onboarding Flow
 
 ```
-POST /api/supplier/apply (user login required)
+POST /api/v1/supplier/apply (user login required)
   → {company_name, contact_name, contact_phone, contact_email, settlement_method}
   → status = 'pending'
   → Admin review
 
 Admin approval:
-  POST /admin/api/suppliers/{id}/approve (password confirmation)
+  POST /admin/api/v1/suppliers/{id}/approve (password confirmation)
     → Supplier::status = 'active'
     → User::role = 'supplier'
     → User gains supplier permissions
 
 Product listing:
-  POST /api/supplier/products
+  POST /api/v1/supplier/products
     → {product_id, commission_rate}
     → Link supplier product
 
@@ -402,7 +402,7 @@ Settlement:
     → Create SupplierSettlement
 
 Withdrawal:
-  POST /api/supplier/withdraw (password confirmation)
+  POST /api/v1/supplier/withdraw (password confirmation)
     → Check withdrawable balance
     → Create SupplierWithdraw (status=pending)
     → Admin approval and payout
@@ -411,13 +411,13 @@ Withdrawal:
 ### 6.2 External API
 
 ```
-POST /admin/api/suppliers/{id}/api-keys
+POST /admin/api/v1/suppliers/{id}/api-keys
   → sk_ . bin2hex(random_bytes(24))
   → Store hash('sha256', rawKey)
   ← {api_key: "sk_xxx..."} (shown only once)
 
 Supplier usage:
-  GET /api/supplier/external/orders
+  GET /api/v1/supplier/external/orders
     Authorization: Bearer sk_xxx...
     → SupplierApiKeyMiddleware signature verification
     → Filter data by supplierId
@@ -428,11 +428,11 @@ Supplier usage:
 ## 7. Domains & DNS
 
 ```
-GET /api/domain/check/{domain}/{tld}    # Domain availability
-GET /api/domain/tlds                     # Registrable TLD list (cached 1h)
-GET /api/dns/{domain}                    # DNS record list
-POST /api/dns/{domain}/records           # Add DNS record
-DELETE /api/dns/{domain}/records/{id}    # Delete DNS record (password confirmation)
+GET /api/v1/domain/check/{domain}/{tld}    # Domain availability
+GET /api/v1/domain/tlds                     # Registrable TLD list (cached 1h)
+GET /api/v1/dns/{domain}                    # DNS record list
+POST /api/v1/dns/{domain}/records           # Add DNS record
+DELETE /api/v1/dns/{domain}/records/{id}    # Delete DNS record (password confirmation)
 ```
 
 ---
@@ -440,15 +440,15 @@ DELETE /api/dns/{domain}/records/{id}    # Delete DNS record (password confirmat
 ## 8. Ticket System
 
 ```
-POST /api/tickets                    # Create ticket
-GET /api/tickets                     # My tickets
-GET /api/tickets/{id}                # Ticket details
-POST /api/tickets/{id}/reply         # Reply to ticket
+POST /api/v1/tickets                    # Create ticket
+GET /api/v1/tickets                     # My tickets
+GET /api/v1/tickets/{id}                # Ticket details
+POST /api/v1/tickets/{id}/reply         # Reply to ticket
 
 Admin:
-  GET /admin/api/tickets              # Ticket queue
-  POST /admin/api/tickets/{id}/assign # Assign support agent
-  POST /admin/api/tickets/{id}/close  # Close ticket
+  GET /admin/api/v1/tickets              # Ticket queue
+  POST /admin/api/v1/tickets/{id}/assign # Assign support agent
+  POST /admin/api/v1/tickets/{id}/close  # Close ticket
 
 Event-driven:
   TicketCreated event
@@ -498,9 +498,9 @@ Cron: CollectMetrics (every 5 minutes)
   → Store metrics to Redis hash (TTL 1h)
 
 Admin:
-  GET /admin/api/monitor/dashboard
+  GET /admin/api/v1/monitor/dashboard
     → Overview stats + recent alerts
-  GET /admin/api/monitor/resources/{id}
+  GET /admin/api/v1/monitor/resources/{id}
     → Live metrics (read from Redis)
 ```
 
@@ -564,8 +564,8 @@ config/features.php (default values)
 Redis feature:{name} (TTL 1h, dynamically adjustable via the admin API)
 
 Admin API:
-  GET /admin/api/features → list all Flags with status/source
-  PUT /admin/api/features/{name} → enable/disable/toggle/reset
+  GET /admin/api/v1/features → list all Flags with status/source
+  PUT /admin/api/v1/features/{name} → enable/disable/toggle/reset
 
 Current Flags:
   supplier_external_api, websocket_push, maintenance_redirect,
@@ -610,7 +610,7 @@ The CDN product supports four providers (Cloudflare / AWS CloudFront / Aliyun CD
 
 **Strict snapshot binding:** `provider_account_id` is fixed at domain creation; subsequent deletion/cache purge only uses the bound account. Missing or disabled account returns 4003, never silently switching accounts. Aliyun/Tencent domains require ICP registration, returning 4002 when unregistered (with `requires_icp_registration` hint).
 
-**Cache purge:** `POST /api/cdn/domains/{id}/purge`, URLs are automatically deduplicated and trimmed (max 100), only the domain itself or its subdomains are allowed, wildcards and external URLs are rejected, idempotent.
+**Cache purge:** `POST /api/v1/cdn/domains/{id}/purge`, URLs are automatically deduplicated and trimmed (max 100), only the domain itself or its subdomains are allowed, wildcards and external URLs are rejected, idempotent.
 
 **Interfaces:** CdnAdapterInterface + CdnProvider (reuses the ProvisionProvider upgrade channel, supports plan upgrades)
 
@@ -643,7 +643,7 @@ Users generate referral links (?ref=CODE); new users bind the affiliate_code at 
 
 ## 20. GraphQL API
 
-Provides two endpoints: POST /graphql (public queries) and POST /api/graphql (authenticated queries). Built on webonyx/graphql-php, query depth limited to 5 levels, complexity limited to 100.
+Provides two endpoints: POST /graphql (public queries) and POST /api/v1/graphql (authenticated queries). Built on webonyx/graphql-php, query depth limited to 5 levels, complexity limited to 100.
 
 **Sensitive operations stay REST-only:** payments, withdrawals, refunds, KYC review.
 

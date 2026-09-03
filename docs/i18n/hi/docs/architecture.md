@@ -136,7 +136,7 @@ common/
 ├── security/            # CORS / WAF / RateLimit / GeoBlock / Maintenance / AuditLogger / LogSanitizer
 ├── snowflake/           # स्नोफ्लेक ID सेवा + Eloquent Trait
 ├── metrics/             # Prometheus मीट्रिक कलेक्टर + रेंडरर + HTTP अनुरोध काउंट मिडलवेयर
-├── version/             # VersionMiddleware (X-Api-Version हेडर)
+├── version/             # VersionMiddleware (URL पथ से API संस्करण)
 └── webhook/             # Webhook इवेंट डिस्पैचर
 ```
 
@@ -170,15 +170,15 @@ CdnAdapterFactory.resolve(type, accountId, strict)
 HTTP अनुरोध
   │
   ▼
-1. VersionMiddleware         ← X-Api-Version हेडर जाँच, अनुपस्थित पर डिफ़ॉल्ट v1, अमान्य पर 400
-  │                            केवल /api/ और /admin/api/ पर प्रभावी
+1. VersionMiddleware         ← URL पथ से API संस्करण जाँच (जैसे /api/v1/), अमान्य पर 400
+  │                            केवल /api/v1/ और /admin/api/v1/ पर प्रभावी
   ▼
 2. CorsMiddleware            ← OPTIONS प्रीफ्लाइट CORS हेडर रिटर्न, Origin रिफ्लेक्ट
   ▼
 3. SecurityHeadersMiddleware ← HSTS / X-Frame-Options / CSP / Referrer-Policy सुरक्षा प्रतिक्रिया हेडर
   ▼
 4. ClientPlatformMiddleware  ← X-Client-Platform हेडर पहचान (8 प्लेटफ़ॉर्म), properties इंजेक्ट
-  │                            केवल /api/ और /admin/api/ पर प्रभावी
+  │                            केवल /api/v1/ और /admin/api/v1/ पर प्रभावी
   ▼
 5. GeoBlockMiddleware        ← GEO_BLOCKED_COUNTRIES देश ब्लॉक (MaxMind GeoIP2)
   ▼
@@ -204,7 +204,7 @@ HTTP अनुरोध
   ├─ /health (आंतरिक मॉनिटरिंग) ────────────
   │   InternalTokenMiddleware      ← आंतरिक टोकन जाँच /health/live|ready|deps
   │
-  ├─ /api/auth ─────────────────────
+  ├─ /api/v1/auth ─────────────────────
   │   EncryptionMiddleware          ← AES-256-GCM अनुरोध/प्रतिक्रिया बॉडी एन्क्रिप्ट/डिक्रिप्ट
   │
   ├─ /api (उपयोगकर्ता प्रमाणीकरण) ───────────────
@@ -216,7 +216,7 @@ HTTP अनुरोध
   │   AuthMiddleware
   │   ConfirmationMiddleware        ← पासवर्ड द्वितीयक पुष्टि, Redis काउंटर, 5 बार लॉक 15min
   │
-  ├─ /api/supplier/external ────────
+  ├─ /api/v1/supplier/external ────────
   │   VersionMiddleware
   │   SupplierApiKeyMiddleware      ← sk_xxx SHA256 सत्यापन → $request->supplierId
   │
@@ -239,7 +239,7 @@ HTTP अनुरोध
 
 | मिडलवेयर | स्थान | पंजीकरण | जिम्मेदारी |
 |--------|------|---------|------|
-| `VersionMiddleware` | common/Version | ग्लोबल | `X-Api-Version` जाँच, अनुपस्थित पर डिफ़ॉल्ट v1 |
+| `VersionMiddleware` | common/Version | ग्लोबल | URL पथ से API संस्करण जाँच, अमान्य पर 400 |
 | `CorsMiddleware` | common/Security | ग्लोबल | OPTIONS प्रीफ्लाइट, Origin रिफ्लेक्ट |
 | `SecurityHeadersMiddleware` | common/Security | ग्लोबल | HSTS / X-Frame-Options / CSP / Referrer-Policy सुरक्षा हेडर |
 | `ClientPlatformMiddleware` | common/ClientPlatform | ग्लोबल | `X-Client-Platform` 8 प्लेटफ़ॉर्म पहचान |
@@ -280,7 +280,7 @@ HTTP अनुरोध
 
 ```
 अनुरोध प्रवाह:
-  Client: GET /api/products/aB3xK7mQ9w
+  Client: GET /api/v1/products/aB3xK7mQ9w
     → HashidRequestMiddleware डिकोड → int(1234567890)
       → Controller/Service पूर्णांक ID के साथ ऑपरेशन
         → Response::success() / Response::paginated()

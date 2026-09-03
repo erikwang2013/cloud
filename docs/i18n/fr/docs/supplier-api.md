@@ -6,12 +6,12 @@ La fonctionnalité fournisseur propose deux ensembles d'API :
 
 | Type | Authentification | Préfixe | Statut |
 |------|---------|------|------|
-| **API interne** | Bearer Token utilisateur | `/api/supplier/` | Disponible |
-| **API externe** | API Key (`sk_xxx`) | `/api/supplier/external/` | Disponible |
+| **API interne** | Bearer Token utilisateur | `/api/v1/supplier/` | Disponible |
+| **API externe** | API Key (`sk_xxx`) | `/api/v1/supplier/external/` | Disponible |
 
 **Base URL** : `https://api.example.com`
 
-**Contrôle de version** : spécifié via l'en-tête HTTP `X-Api-Version: v1`. Par défaut `v1` si absent, les versions non prises en charge renvoient `400`. Effectif uniquement sur les chemins `/api/*` et `/admin/api/*`, traité de façon unifiée par `VersionMiddleware`.
+**Contrôle de version** : la version d'API fait partie du chemin d'URL (p. ex. `/api/v1/supplier/apply` ; chemins d'administration sous `/admin/api/v1/...`). Les versions non prises en charge renvoient `400` ; traité de façon unifiée par `VersionMiddleware`.
 
 ---
 
@@ -23,10 +23,9 @@ L'API interne utilise la même authentification Bearer Token utilisateur que les
 
 ```
 Authorization: Bearer <user_access_token>
-X-Api-Version: v1
 ```
 
-L'utilisateur doit d'abord se connecter via `/api/auth/login` pour obtenir un Token, et le rôle du compte doit être `supplier` (défini après approbation de la demande de fournisseur par l'administrateur).
+L'utilisateur doit d'abord se connecter via `/api/v1/auth/login` pour obtenir un Token, et le rôle du compte doit être `supplier` (défini après approbation de la demande de fournisseur par l'administrateur).
 
 ---
 
@@ -84,7 +83,7 @@ L'utilisateur doit d'abord se connecter via `/api/auth/login` pour obtenir un To
 #### 1. Installation du fournisseur
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
 ```
 
 Demander à devenir fournisseur. Chaque utilisateur ne peut soumettre qu'une seule demande.
@@ -138,9 +137,8 @@ Demander à devenir fournisseur. Chaque utilisateur ne peut soumettre qu'une seu
 | 422 | Demande de fournisseur déjà soumise |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/apply" \
+curl -X POST "https://api.example.com/api/v1/supplier/apply" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"company_name":"示例科技","contact_name":"张三","contact_phone":"13800138000","contact_email":"zhangsan@example.com"}'
 ```
@@ -152,7 +150,7 @@ curl -X POST "https://api.example.com/api/supplier/apply" \
 ##### Obtenir les produits attribués
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 **Paramètres de requête** :
@@ -185,7 +183,7 @@ GET /api/supplier/products
 ##### Ajouter un produit
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 Associer un produit existant au fournisseur actuel.
@@ -215,7 +213,7 @@ Associer un produit existant au fournisseur actuel.
 ##### Retirer un produit
 
 ```
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 Annuler l'association du produit avec le fournisseur.
@@ -237,7 +235,7 @@ Annuler l'association du produit avec le fournisseur.
 ##### Obtenir la liste des règlements
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 **Réponse** : tous les règlements du fournisseur actuel, triés par date de création décroissante
@@ -273,7 +271,7 @@ GET /api/supplier/settlements
 ##### Demander un retrait
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 > Cette opération nécessite une confirmation de mot de passe (champ `confirm_password`), validée par `ConfirmationMiddleware`.
@@ -321,9 +319,8 @@ POST /api/supplier/withdraw
 | 403 | Échec de confirmation du mot de passe |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/withdraw" \
+curl -X POST "https://api.example.com/api/v1/supplier/withdraw" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"amount":"5000.00","confirm_password":"mypassword","account_info":{"method":"bank_transfer","bank_name":"ICBC","account_number":"6222021234567890"}}'
 ```
@@ -334,12 +331,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 | Méthode | Chemin | Authentification | Confirmation du mot de passe | Description |
 |------|------|------|---------|------|
-| POST | `/api/supplier/apply` | Token | - | Demander à devenir fournisseur |
-| GET | `/api/supplier/products` | Token | - | Consulter les produits attribués |
-| POST | `/api/supplier/products` | Token | - | Ajouter une association de produit |
-| DELETE | `/api/supplier/products/{id}` | Token | - | Retirer une association de produit |
-| GET | `/api/supplier/settlements` | Token | - | Consulter les règlements |
-| POST | `/api/supplier/withdraw` | Token | requise | Demander un retrait |
+| POST | `/api/v1/supplier/apply` | Token | - | Demander à devenir fournisseur |
+| GET | `/api/v1/supplier/products` | Token | - | Consulter les produits attribués |
+| POST | `/api/v1/supplier/products` | Token | - | Ajouter une association de produit |
+| DELETE | `/api/v1/supplier/products/{id}` | Token | - | Retirer une association de produit |
+| GET | `/api/v1/supplier/settlements` | Token | - | Consulter les règlements |
+| POST | `/api/v1/supplier/withdraw` | Token | requise | Demander un retrait |
 
 ---
 
@@ -347,13 +344,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 L'API externe permet aux fournisseurs de gérer par programmation les commandes, les ressources et les règlements. Toutes les requêtes nécessitent une authentification par API Key.
 
-**Base URL** : `https://api.example.com/api`
+**Base URL** : `https://api.example.com/api/v1`
 
 ### Authentification
 
 ```
 Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-X-Api-Version: v1
 ```
 
 Les API Keys sont générées par l'administrateur de la plateforme dans le panneau d'administration, sous `Gestion des fournisseurs → API Keys`.
@@ -387,7 +383,7 @@ Identique à l'API interne, avec en plus `request_id` pour le suivi :
 ##### Obtenir la liste des commandes
 
 ```
-GET /api/supplier/orders
+GET /api/v1/supplier/orders
 ```
 
 **Paramètres de requête** :
@@ -403,7 +399,7 @@ GET /api/supplier/orders
 ##### Obtenir le détail d'une commande
 
 ```
-GET /api/supplier/orders/{id}
+GET /api/v1/supplier/orders/{id}
 ```
 
 ---
@@ -413,7 +409,7 @@ GET /api/supplier/orders/{id}
 ##### Obtenir la liste des ressources
 
 ```
-GET /api/supplier/resources
+GET /api/v1/supplier/resources
 ```
 
 **Paramètres de requête** : page, status (active/provisioning/stopped/destroyed), type (server/ip/disk/domain)
@@ -421,7 +417,7 @@ GET /api/supplier/resources
 ##### Obtenir le statut d'une ressource
 
 ```
-GET /api/supplier/resources/{id}/status
+GET /api/v1/supplier/resources/{id}/status
 ```
 
 ---
@@ -431,13 +427,13 @@ GET /api/supplier/resources/{id}/status
 ##### Obtenir la liste des règlements
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 ##### Obtenir le détail d'un règlement
 
 ```
-GET /api/supplier/settlements/{id}
+GET /api/v1/supplier/settlements/{id}
 ```
 
 ---
@@ -447,13 +443,13 @@ GET /api/supplier/settlements/{id}
 ##### Demander un retrait
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 ##### Historique des retraits
 
 ```
-GET /api/supplier/withdraws
+GET /api/v1/supplier/withdraws
 ```
 
 ---
@@ -463,13 +459,13 @@ GET /api/supplier/withdraws
 ##### Obtenir mes produits
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 ##### Soumettre une demande de mise en vente
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 ---
@@ -478,16 +474,16 @@ POST /api/supplier/products
 
 | Méthode | Chemin | Description |
 |------|------|------|
-| GET | `/api/supplier/orders` | Liste des commandes |
-| GET | `/api/supplier/orders/{id}` | Détail d'une commande |
-| GET | `/api/supplier/resources` | Liste des ressources |
-| GET | `/api/supplier/resources/{id}/status` | Statut d'une ressource |
-| GET | `/api/supplier/settlements` | Liste des règlements |
-| GET | `/api/supplier/settlements/{id}` | Détail d'un règlement |
-| POST | `/api/supplier/withdraw` | Demander un retrait |
-| GET | `/api/supplier/withdraws` | Historique des retraits |
-| GET | `/api/supplier/products` | Liste des produits |
-| POST | `/api/supplier/products` | Soumettre un produit |
+| GET | `/api/v1/supplier/orders` | Liste des commandes |
+| GET | `/api/v1/supplier/orders/{id}` | Détail d'une commande |
+| GET | `/api/v1/supplier/resources` | Liste des ressources |
+| GET | `/api/v1/supplier/resources/{id}/status` | Statut d'une ressource |
+| GET | `/api/v1/supplier/settlements` | Liste des règlements |
+| GET | `/api/v1/supplier/settlements/{id}` | Détail d'un règlement |
+| POST | `/api/v1/supplier/withdraw` | Demander un retrait |
+| GET | `/api/v1/supplier/withdraws` | Historique des retraits |
+| GET | `/api/v1/supplier/products` | Liste des produits |
+| POST | `/api/v1/supplier/products` | Soumettre un produit |
 
 ---
 
@@ -540,7 +536,7 @@ X-Webhook-Event: order.paid
 | Retrait API externe | 10 req/min (valeur suggérée, réglable dans `config/security.php`) |
 
 > Les règles de limitation de l'API externe sont définies dans `rate_limits.supplier_api` de `config/security.php`,
-> appliquées de façon unifiée par `RateLimitMiddleware` sur les chemins `/api/supplier/external/*` (comptage atomique INCR,
+> appliquées de façon unifiée par `RateLimitMiddleware` sur les chemins `/api/v1/supplier/external/*` (comptage atomique INCR,
 > accès autorisé si Redis est indisponible).
 
 En-têtes de limitation :
@@ -560,10 +556,9 @@ X-RateLimit-Reset: 1680000000
 ```php
 $token = 'user_access_token_here';
 $client = new GuzzleHttp\Client([
-    'base_uri' => 'https://api.example.com/api/',
+    'base_uri' => 'https://api.example.com/api/v1/',
     'headers' => [
         'Authorization' => "Bearer {$token}",
-        'X-Api-Version' => 'v1',
         'Accept'        => 'application/json',
     ],
 ]);
@@ -604,16 +599,15 @@ import requests
 
 headers = {
     'Authorization': 'Bearer <user_access_token>',
-    'X-Api-Version': 'v1',
 }
 
 # Obtenir les produits attribués
-resp = requests.get('https://api.example.com/api/supplier/products',
+resp = requests.get('https://api.example.com/api/v1/supplier/products',
                      headers=headers)
 products = resp.json()
 
 # Demander un retrait
-resp = requests.post('https://api.example.com/api/supplier/withdraw',
+resp = requests.post('https://api.example.com/api/v1/supplier/withdraw',
                       headers=headers,
                       json={
                           'amount': '5000.00',
@@ -645,11 +639,11 @@ Voici les points de terminaison liés à la gestion des fournisseurs (réservés
 
 | Méthode | Chemin | Description |
 |------|------|------|
-| GET | `/admin/api/suppliers` | Liste des fournisseurs (filtre par status pris en charge) |
-| GET | `/admin/api/suppliers/export` | Export des fournisseurs en Excel |
-| POST | `/admin/api/suppliers/{id}/approve` | Approuver un fournisseur |
-| POST | `/admin/api/suppliers/{id}/settle` | Générer un règlement |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | Approuver un retrait |
-| GET | `/admin/api/suppliers/{id}/api-keys` | Consulter la liste des API Keys du fournisseur |
-| POST | `/admin/api/suppliers/{id}/api-keys` | Créer une API Key (la clé brute n'est renvoyée qu'une seule fois) |
-| DELETE | `/admin/api/suppliers/api-keys/{id}` | Révoquer une API Key |
+| GET | `/admin/api/v1/suppliers` | Liste des fournisseurs (filtre par status pris en charge) |
+| GET | `/admin/api/v1/suppliers/export` | Export des fournisseurs en Excel |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | Approuver un fournisseur |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | Générer un règlement |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | Approuver un retrait |
+| GET | `/admin/api/v1/suppliers/{id}/api-keys` | Consulter la liste des API Keys du fournisseur |
+| POST | `/admin/api/v1/suppliers/{id}/api-keys` | Créer une API Key (la clé brute n'est renvoyée qu'une seule fois) |
+| DELETE | `/admin/api/v1/suppliers/api-keys/{id}` | Révoquer une API Key |

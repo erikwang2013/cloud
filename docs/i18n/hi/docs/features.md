@@ -5,7 +5,7 @@
 ### 1.1 रजिस्टर
 
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
   → WAF स्कैन
   → रेट लिमिट 3 req/min
   → पासवर्ड जाँच len≥8
@@ -24,7 +24,7 @@ POST /api/auth/register
 ```
 Client                    Middleware Chain           AuthService              DB
   │                           │                        │                     │
-  │ POST /api/auth/register   │                        │                     │
+  │ POST /api/v1/auth/register   │                        │                     │
   │──────────────────────────▶│ WAF→RateLimit→Encrypt  │                     │
   │                           │───────────────────────▶│                     │
   │                           │                        │ User::create() ────▶│
@@ -40,7 +40,7 @@ Client                    Middleware Chain           AuthService              DB
 ### 1.2 लॉगिन
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
   → WAF स्कैन
   → रेट लिमिट 5 req/min
   → Captcha सत्यापन (क्लिक कैप्चा, 3 प्रयास सीमा)
@@ -59,7 +59,7 @@ POST /api/auth/login
 ### 1.3 OAuth (Google / Apple)
 
 ```
-GET /api/auth/google → Google OAuth → callback?code=xxx
+GET /api/v1/auth/google → Google OAuth → callback?code=xxx
   1. Google/Apple ID Token सत्यापित करें
   2. उपयोगकर्ता खोजें या बनाएँ (email मिलान)
   3. टोकन जारी करें (client_platform सहित)
@@ -69,30 +69,30 @@ GET /api/auth/google → Google OAuth → callback?code=xxx
 ### 1.4 TOTP दो-चरणीय सत्यापन
 
 ```
-1. POST /api/user/totp/setup
+1. POST /api/v1/user/totp/setup
      → secret + QR URL जनरेट (Redis में 10 मिनट अस्थायी, पर्सिस्ट नहीं)
      ← {secret, qr_url, manual}
-2. POST /api/user/totp/verify
+2. POST /api/v1/user/totp/verify
      → TOTP code सत्यापित (पहली बार setup सक्षम करना, बाद में जाँच)
      ← {verified: true}
-3. GET /api/user/totp/recovery-codes
+3. GET /api/v1/user/totp/recovery-codes
      → 8 एक-बार रिकवरी कोड जनरेट (पासवर्ड पुष्टि आवश्यक)
      ← {recovery_codes: [8 कोड]}
 4. लॉगिन पर: TOTP code या रिकवरी कोड दर्ज करें
-     → POST /api/auth/login/recovery (login, password, recovery_code)
+     → POST /api/v1/auth/login/recovery (login, password, recovery_code)
 ```
 
 ### 1.5 सत्र प्रबंधन
 
 ```
-GET /api/user/sessions
+GET /api/v1/user/sessions
   → RefreshToken::where(user_id, revoked=false)
   ← [{id, fingerprint, client_platform, created_at, expires_at}]
 
-DELETE /api/user/sessions/{id}
+DELETE /api/v1/user/sessions/{id}
   → RefreshToken::update(revoked=true)
 
-DELETE /api/user/account (GDPR विलोपन)
+DELETE /api/v1/user/account (GDPR विलोपन)
   → पासवर्ड द्वितीयक पुष्टि
   → User सॉफ्ट-डिलीट
   → सभी RefreshToken revoked
@@ -122,7 +122,7 @@ Product (1) ────── (N) ProductAttribute
 ### 2.2 उत्पाद सूची (कैश के साथ)
 
 ```
-GET /api/products?category_id=1&region_id=2&keyword=vps&page=1
+GET /api/v1/products?category_id=1&region_id=2&keyword=vps&page=1
 
 CacheService::remember('products:list:{hash}', TTL 5min)
   → Product::published()
@@ -140,7 +140,7 @@ CacheService::remember('products:list:{hash}', TTL 5min)
 ### 2.3 उत्पाद खोज (Elasticsearch)
 
 ```
-GET /api/products/search?q=vps&page=1
+GET /api/v1/products/search?q=vps&page=1
   → Product::search('vps')
     → Elasticsearch (IK Analyzer चीनी टोकनाइज़ेशन)
     → where('status', 'published')
@@ -150,11 +150,11 @@ GET /api/products/search?q=vps&page=1
 ### 2.4 उत्पाद समीक्षा
 
 ```
-GET /api/products/{id}/reviews
+GET /api/v1/products/{id}/reviews
   → स्वीकृत समीक्षाएँ + औसत रेटिंग + रेटिंग वितरण
   ← {reviews, avg_rating, total, distribution: {5: 12, 4: 8, ...}}
 
-POST /api/products/{id}/reviews (लॉगिन आवश्यक)
+POST /api/v1/products/{id}/reviews (लॉगिन आवश्यक)
   → rating (1-5) + content
   → status = pending (एडमिन अनुमोदन के बाद दिखे)
 ```
@@ -162,10 +162,10 @@ POST /api/products/{id}/reviews (लॉगिन आवश्यक)
 ### 2.5 बैच इम्पोर्ट/एक्सपोर्ट
 
 ```
-GET /admin/api/products/export
+GET /admin/api/v1/products/export
   → CSV डाउनलोड (उत्पाद + SKU + क्षेत्र मूल्य निर्धारण)
 
-POST /admin/api/products/import
+POST /admin/api/v1/products/import
   → CSV अपलोड upsert
   ← {imported: N, errors: [...]}
 ```
@@ -177,28 +177,28 @@ POST /admin/api/products/import
 ### 3.1 कार्ट
 
 ```
-POST /api/cart          → addToCart(sku_id, region_id, quantity, cycle)
-GET /api/cart           → कार्ट सूची (SKU विवरण + रीयल-टाइम मूल्य सहित)
-DELETE /api/cart/{id}   → removeFromCart
-PUT /api/cart/{id}      → updateCartQuantity
+POST /api/v1/cart          → addToCart(sku_id, region_id, quantity, cycle)
+GET /api/v1/cart           → कार्ट सूची (SKU विवरण + रीयल-टाइम मूल्य सहित)
+DELETE /api/v1/cart/{id}   → removeFromCart
+PUT /api/v1/cart/{id}      → updateCartQuantity
 ```
 
 ### 3.2 ऑर्डर प्रवाह
 
 ```
-1. POST /api/orders                           ऑर्डर बनाएँ
+1. POST /api/v1/orders                           ऑर्डर बनाएँ
      → स्टॉक जाँच, मूल्य गणना, कूपन लागू
      ← {order_id, order_no, items, total}
 
-2. POST /api/coupons/validate                 कूपन लागू करें
+2. POST /api/v1/coupons/validate                 कूपन लागू करें
      → {code: "SAVE10"}
      ← {coupon_id, discount, type: percent/fixed}
 
-3. GET /api/orders/{id}/payment-methods       उपलब्ध पेमेंट चैनल प्राप्त करें
+3. GET /api/v1/orders/{id}/payment-methods       उपलब्ध पेमेंट चैनल प्राप्त करें
      → PaymentRouter::getAvailableChannels(order)
      ← [{channel_id, name, code, amount, fee, total_amount}]
 
-4. POST /api/orders/{id}/pay                  पेमेंट आरंभ करें
+4. POST /api/v1/orders/{id}/pay                  पेमेंट आरंभ करें
      → पासवर्ड द्वितीयक पुष्टि (ConfirmationMiddleware)
      → StripeChannel::createPaymentIntent()
      ← {client_secret, transaction_id}
@@ -379,19 +379,19 @@ ProvisionWorker (Redis Queue कंज़्यूम)
 ### 6.1 आवेदन प्रवाह
 
 ```
-POST /api/supplier/apply (उपयोगकर्ता लॉगिन आवश्यक)
+POST /api/v1/supplier/apply (उपयोगकर्ता लॉगिन आवश्यक)
   → {company_name, contact_name, contact_phone, contact_email, settlement_method}
   → status = 'pending'
   → एडमिन समीक्षा
 
 एडमिन अनुमोदन:
-  POST /admin/api/suppliers/{id}/approve (पासवर्ड पुष्टि)
+  POST /admin/api/v1/suppliers/{id}/approve (पासवर्ड पुष्टि)
     → Supplier::status = 'active'
     → User::role = 'supplier'
     → उपयोगकर्ता को सप्लायर अनुमति मिलती है
 
 उत्पाद लिस्टिंग:
-  POST /api/supplier/products
+  POST /api/v1/supplier/products
     → {product_id, commission_rate}
     → सप्लायर उत्पाद संबद्ध
 
@@ -402,7 +402,7 @@ POST /api/supplier/apply (उपयोगकर्ता लॉगिन आव�
     → SupplierSettlement बनाएँ
 
 निकासी:
-  POST /api/supplier/withdraw (पासवर्ड पुष्टि)
+  POST /api/v1/supplier/withdraw (पासवर्ड पुष्टि)
     → निकासी योग्य शेष राशि जाँच
     → SupplierWithdraw बनाएँ (status=pending)
     → एडमिन अनुमोदन और भुगतान
@@ -411,13 +411,13 @@ POST /api/supplier/apply (उपयोगकर्ता लॉगिन आव�
 ### 6.2 बाह्य API
 
 ```
-POST /admin/api/suppliers/{id}/api-keys
+POST /admin/api/v1/suppliers/{id}/api-keys
   → sk_ . bin2hex(random_bytes(24))
   → hash('sha256', rawKey) स्टोर
   ← {api_key: "sk_xxx..."} (केवल एक बार दिखे)
 
 सप्लायर उपयोग:
-  GET /api/supplier/external/orders
+  GET /api/v1/supplier/external/orders
     Authorization: Bearer sk_xxx...
     → SupplierApiKeyMiddleware हस्ताक्षर सत्यापन
     → supplierId के अनुसार डेटा फ़िल्टर
@@ -428,11 +428,11 @@ POST /admin/api/suppliers/{id}/api-keys
 ## 7. डोमेन और DNS
 
 ```
-GET /api/domain/check/{domain}/{tld}    # डोमेन उपलब्धता
-GET /api/domain/tlds                     # रजिस्ट्रेबल TLD सूची (कैश 1h)
-GET /api/dns/{domain}                    # DNS रिकॉर्ड सूची
-POST /api/dns/{domain}/records           # DNS रिकॉर्ड जोड़ें
-DELETE /api/dns/{domain}/records/{id}    # DNS रिकॉर्ड हटाएँ (पासवर्ड पुष्टि)
+GET /api/v1/domain/check/{domain}/{tld}    # डोमेन उपलब्धता
+GET /api/v1/domain/tlds                     # रजिस्ट्रेबल TLD सूची (कैश 1h)
+GET /api/v1/dns/{domain}                    # DNS रिकॉर्ड सूची
+POST /api/v1/dns/{domain}/records           # DNS रिकॉर्ड जोड़ें
+DELETE /api/v1/dns/{domain}/records/{id}    # DNS रिकॉर्ड हटाएँ (पासवर्ड पुष्टि)
 ```
 
 ---
@@ -440,15 +440,15 @@ DELETE /api/dns/{domain}/records/{id}    # DNS रिकॉर्ड हटा�
 ## 8. टिकट सिस्टम
 
 ```
-POST /api/tickets                    # टिकट बनाएँ
-GET /api/tickets                     # मेरे टिकट
-GET /api/tickets/{id}                # टिकट विवरण
-POST /api/tickets/{id}/reply         # टिकट उत्तर दें
+POST /api/v1/tickets                    # टिकट बनाएँ
+GET /api/v1/tickets                     # मेरे टिकट
+GET /api/v1/tickets/{id}                # टिकट विवरण
+POST /api/v1/tickets/{id}/reply         # टिकट उत्तर दें
 
 एडमिन:
-  GET /admin/api/tickets              # टिकट क्यू
-  POST /admin/api/tickets/{id}/assign # ग्राहक सेवा आवंटित करें
-  POST /admin/api/tickets/{id}/close  # टिकट बंद करें
+  GET /admin/api/v1/tickets              # टिकट क्यू
+  POST /admin/api/v1/tickets/{id}/assign # ग्राहक सेवा आवंटित करें
+  POST /admin/api/v1/tickets/{id}/close  # टिकट बंद करें
 
 इवेंट-ड्रिवन:
   TicketCreated इवेंट
@@ -498,9 +498,9 @@ Cron: CollectMetrics (हर 5 मिनट)
   → मीट्रिक Redis hash में स्टोर (TTL 1h)
 
 एडमिन:
-  GET /admin/api/monitor/dashboard
+  GET /admin/api/v1/monitor/dashboard
     → अवलोकन सांख्यिकी + हाल के अलर्ट
-  GET /admin/api/monitor/resources/{id}
+  GET /admin/api/v1/monitor/resources/{id}
     → रीयल-टाइम मीट्रिक (Redis से पढ़ें)
 ```
 
@@ -564,8 +564,8 @@ config/features.php (डिफ़ॉल्ट मान)
 Redis feature:{name} (TTL 1h, एडमिन API से गतिशील समायोजन)
 
 एडमिन API:
-  GET /admin/api/features → सभी Flags और स्थिति/स्रोत सूचीबद्ध करें
-  PUT /admin/api/features/{name} → enable/disable/toggle/reset
+  GET /admin/api/v1/features → सभी Flags और स्थिति/स्रोत सूचीबद्ध करें
+  PUT /admin/api/v1/features/{name} → enable/disable/toggle/reset
 
 वर्तमान Flags:
   supplier_external_api, websocket_push, maintenance_redirect,
@@ -610,7 +610,7 @@ CDN उत्पाद चार सेवाप्रदाताओं (Cloudf
 
 **सख्त स्नैपशॉट बाइंडिंग:** डोमेन निर्माण के समय `provider_account_id` तय होता है, बाद में डिलीट/कैश पर्ज केवल उस बाउंड खाते का उपयोग करता है; खाता अनुपस्थित या अक्षम होने पर 4003 लौटाया जाता है, खाता चुपचाप स्विच नहीं किया जाता। Aliyun/Tencent डोमेन के लिए ICP पंजीकरण आवश्यक है, पंजीकरण न होने पर 4002 लौटाया जाता है (`requires_icp_registration` संकेत सहित)।
 
-**कैश पर्ज:** `POST /api/cdn/domains/{id}/purge`, URL स्वचालित रूप से डीडुप्लिकेट और ट्रिम होते हैं (अधिकतम 100), केवल इस डोमेन या सबडोमेन की अनुमति, वाइल्डकार्ड और बाहरी URL अस्वीकार, आइडेम्पोटेंट।
+**कैश पर्ज:** `POST /api/v1/cdn/domains/{id}/purge`, URL स्वचालित रूप से डीडुप्लिकेट और ट्रिम होते हैं (अधिकतम 100), केवल इस डोमेन या सबडोमेन की अनुमति, वाइल्डकार्ड और बाहरी URL अस्वीकार, आइडेम्पोटेंट।
 
 **इंटरफ़ेस:** CdnAdapterInterface + CdnProvider (ProvisionProvider अपग्रेड चैनल का पुन: उपयोग, plan अपग्रेड समर्थित)
 
@@ -643,7 +643,7 @@ CDN उत्पाद चार सेवाप्रदाताओं (Cloudf
 
 ## 20. GraphQL API
 
-POST /graphql (पब्लिक क्वेरी) और POST /api/graphql (प्रमाणित क्वेरी) दो एंडपॉइंट प्रदान करता है। webonyx/graphql-php पर आधारित, क्वेरी डेप्थ सीमा 5 परतें, कॉम्प्लेक्सिटी सीमा 100।
+POST /graphql (पब्लिक क्वेरी) और POST /api/v1/graphql (प्रमाणित क्वेरी) दो एंडपॉइंट प्रदान करता है। webonyx/graphql-php पर आधारित, क्वेरी डेप्थ सीमा 5 परतें, कॉम्प्लेक्सिटी सीमा 100।
 
 **संवेदनशील ऑपरेशन REST-only रहते हैं:** पेमेंट, निकासी, रिफंड, KYC समीक्षा।
 

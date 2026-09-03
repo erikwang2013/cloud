@@ -208,7 +208,7 @@ cloud-php/
 │   │   ├── i18n/middleware/     # 多语言中间件（Locale）
 │   │   ├── security/           # CORS / WAF / 频率限制 / 地域封锁 / 维护模式 / 审计日志
 │   │   ├── snowflake/          # 雪花 ID 生成服务 / Eloquent HasSnowflakeId Trait
-│   │   ├── version/middleware/  # API 版本中间件（X-Api-Version 头校验）
+│   │   ├── version/middleware/  # API 版本中间件（URL 路径版本段校验）
 │   │   ├── clientplatform/middleware/  # 客户端平台中间件（X-Client-Platform 头识别）
 │   │   ├── feature/            # Feature Flags 功能开关服务
 │   │   └── webhook/            # Webhook 事件分发器
@@ -534,7 +534,7 @@ ProviderInterface
 - **Security Plugin** — 31 вид обнаружения атак (XSS/SQL-инъекции/инъекции команд/SSRF/десериализация/атаки на JWT/атаки на Host-заголовок/протаскивание запросов/инъекции GraphQL/утечка чувствительных данных и др.), белый список IP + автоматическая блокировка по чёрному списку IP
 - **Locale** — разбор `Accept-Language`, установка языка
 - **HashidRequest** — автоматическое декодирование строк hashid в запросах в реальные целочисленные ID
-- **Version** — проверка заголовка `X-Api-Version`; по умолчанию `v1`, неподдерживаемая версия возвращает `400`
+- **Version** — проверка сегмента версии в URL path (напр. `/api/v1/`); неподдерживаемая версия возвращает `400`
 - **ClientPlatform** — проверка заголовка `X-Client-Platform`, определение ОС клиента (iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web)
 - **Encryption** — шифрование передачи AES-256-GCM (интерфейсы аутентификации и панель управления), защита от перехвата и подмены атакующим
 - **Captcha** — капча по клику, проверка перед входом/регистрацией (GD-рисование + хранение в Redis, одноразовый ключ, срок действия 300 с, ограничение 3 попыток)

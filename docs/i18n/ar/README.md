@@ -208,7 +208,7 @@ cloud-php/
 │   │   ├── i18n/middleware/     # وسيط تعدد اللغات (Locale)
 │   │   ├── security/           # CORS / WAF / الحد من التردد / الحظر الجغرافي / وضع الصيانة / سجلات التدقيق
 │   │   ├── snowflake/          # خدمة توليد معرّفات Snowflake / Trait Eloquent HasSnowflakeId
-│   │   ├── version/middleware/  # وسيط إصدار API (التحقق من رأس X-Api-Version)
+│   │   ├── version/middleware/  # وسيط إصدار API (التحقق من إصدار مسار URL)
 │   │   ├── clientplatform/middleware/  # وسيط منصة العميل (التعرف على رأس X-Client-Platform)
 │   │   ├── feature/            # خدمة مفاتيح الميزات Feature Flags
 │   │   └── webhook/            # موزّع أحداث Webhook
@@ -534,7 +534,7 @@ ProviderInterface
 - **Security Plugin** — اكتشاف 31 نوعاً من الهجمات (XSS/SQL Injection/Command Injection/SSRF/Deserialization/Host Header Attack/Request Smuggling/GraphQL Injection/تسرب البيانات الحساسة وغيرها)، قائمة IP بيضاء + حظر تلقائي عبر القائمة السوداء
 - **Locale** — تحليل Accept-Language وتحديد اللغة
 - **HashidRequest** — فك ترميز سلاسل hashid في الطلبات تلقائياً إلى معرّفات أعداد صحيحة حقيقية
-- **Version** — التحقق من رأس `X-Api-Version`، الافتراضي `v1` عند الغياب، وإرجاع `400` للإصدارات غير المدعومة
+- **Version** — التحقق من إصدار مسار URL (مثل `/api/v1/`)، وإرجاع `400` للإصدارات غير المدعومة
 - **ClientPlatform** — التحقق من رأس `X-Client-Platform` والتعرف على منصة نظام تشغيل العميل (iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web)
 - **Encryption** — تشفير النقل AES-256-GCM (واجهات المصادقة ولوحة الإدارة)، لمنع التنصت والتلاعب في منتصف المسار
 - **Captcha** — كابتشا النقر، التحقق قبل تسجيل الدخول/التسجيل (رسم GD + تخزين Redis، مفتاح لمرة واحدة، صلاحية 300 ثانية، حد 3 محاولات)

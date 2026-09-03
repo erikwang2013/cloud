@@ -6,12 +6,12 @@
 
 | Тип | Способ аутентификации | Префикс | Статус |
 |------|---------|------|------|
-| **Внутренний API** | Пользовательский Bearer Token | `/api/supplier/` | Доступен |
-| **Внешний API** | API Key (`sk_xxx`) | `/api/supplier/external/` | Доступен |
+| **Внутренний API** | Пользовательский Bearer Token | `/api/v1/supplier/` | Доступен |
+| **Внешний API** | API Key (`sk_xxx`) | `/api/v1/supplier/external/` | Доступен |
 
 **Base URL**: `https://api.example.com`
 
-**Версионирование**: задаётся HTTP-заголовком `X-Api-Version: v1`. При отсутствии — по умолчанию `v1`, неподдерживаемые версии возвращают `400`. Действует только для путей `/api/*` и `/admin/api/*`, обрабатывается единым `VersionMiddleware`.
+**Версионирование**: указывается в пути URL (например, `/api/v1/supplier/products`). Неподдерживаемые версии возвращают `400`. Действует только для путей `/api/v1/*` и `/admin/api/v1/*`, обрабатывается единым `VersionMiddleware`.
 
 ---
 
@@ -23,10 +23,9 @@
 
 ```
 Authorization: Bearer <user_access_token>
-X-Api-Version: v1
 ```
 
-Пользователю нужно сначала войти через `/api/auth/login`, чтобы получить Token, при этом роль учётной записи должна быть `supplier` (устанавливается администратором после одобрения заявки поставщика).
+Пользователю нужно сначала войти через `/api/v1/auth/login`, чтобы получить Token, при этом роль учётной записи должна быть `supplier` (устанавливается администратором после одобрения заявки поставщика).
 
 ---
 
@@ -84,7 +83,7 @@ X-Api-Version: v1
 #### 1. Вступление в поставщики
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
 ```
 
 Подать заявку на роль поставщика. Каждый пользователь может подать только одну заявку.
@@ -138,9 +137,8 @@ POST /api/supplier/apply
 | 422 | Заявка поставщика уже подана |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/apply" \
+curl -X POST "https://api.example.com/api/v1/supplier/apply" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"company_name":"示例科技","contact_name":"张三","contact_phone":"13800138000","contact_email":"zhangsan@example.com"}'
 ```
@@ -152,7 +150,7 @@ curl -X POST "https://api.example.com/api/supplier/apply" \
 ##### Получить назначенные товары
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 **Query-параметры**:
@@ -185,7 +183,7 @@ GET /api/supplier/products
 ##### Добавить товар
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 Привязать существующий товар к текущему поставщику.
@@ -215,7 +213,7 @@ POST /api/supplier/products
 ##### Убрать товар
 
 ```
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 Отменить привязку товара к поставщику.
@@ -237,7 +235,7 @@ DELETE /api/supplier/products/{id}
 ##### Получить список расчётных документов
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 **Ответ**: все расчётные документы текущего поставщика в порядке убывания времени создания
@@ -273,7 +271,7 @@ GET /api/supplier/settlements
 ##### Подать заявку на вывод
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 > Для этой операции требуется повторное подтверждение пароля (поле `confirm_password`), проверяется `ConfirmationMiddleware`.
@@ -321,9 +319,8 @@ POST /api/supplier/withdraw
 | 403 | Не пройдено подтверждение пароля |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/withdraw" \
+curl -X POST "https://api.example.com/api/v1/supplier/withdraw" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"amount":"5000.00","confirm_password":"mypassword","account_info":{"method":"bank_transfer","bank_name":"ICBC","account_number":"6222021234567890"}}'
 ```
@@ -334,12 +331,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 | Метод | Путь | Аутентификация | Подтверждение пароля | Описание |
 |------|------|------|---------|------|
-| POST | `/api/supplier/apply` | Token | - | Подать заявку на роль поставщика |
-| GET | `/api/supplier/products` | Token | - | Просмотр назначенных товаров |
-| POST | `/api/supplier/products` | Token | - | Добавить привязку товара |
-| DELETE | `/api/supplier/products/{id}` | Token | - | Убрать привязку товара |
-| GET | `/api/supplier/settlements` | Token | - | Просмотр расчётных документов |
-| POST | `/api/supplier/withdraw` | Token | требуется | Подать заявку на вывод средств |
+| POST | `/api/v1/supplier/apply` | Token | - | Подать заявку на роль поставщика |
+| GET | `/api/v1/supplier/products` | Token | - | Просмотр назначенных товаров |
+| POST | `/api/v1/supplier/products` | Token | - | Добавить привязку товара |
+| DELETE | `/api/v1/supplier/products/{id}` | Token | - | Убрать привязку товара |
+| GET | `/api/v1/supplier/settlements` | Token | - | Просмотр расчётных документов |
+| POST | `/api/v1/supplier/withdraw` | Token | требуется | Подать заявку на вывод средств |
 
 ---
 
@@ -347,13 +344,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 Внешний API позволяет поставщикам программно управлять заказами, ресурсами и расчётами. Все запросы требуют аутентификации по API Key.
 
-**Base URL**: `https://api.example.com/api`
+**Base URL**: `https://api.example.com/api/v1`
 
 ### Аутентификация
 
 ```
 Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-X-Api-Version: v1
 ```
 
 API Key генерирует администратор платформы в панели управления: `供应商管理 → API Keys`.
@@ -387,7 +383,7 @@ API Key генерирует администратор платформы в п
 ##### Получить список заказов
 
 ```
-GET /api/supplier/orders
+GET /api/v1/supplier/orders
 ```
 
 **Query-параметры**:
@@ -403,7 +399,7 @@ GET /api/supplier/orders
 ##### Получить детали заказа
 
 ```
-GET /api/supplier/orders/{id}
+GET /api/v1/supplier/orders/{id}
 ```
 
 ---
@@ -413,7 +409,7 @@ GET /api/supplier/orders/{id}
 ##### Получить список ресурсов
 
 ```
-GET /api/supplier/resources
+GET /api/v1/supplier/resources
 ```
 
 **Query-параметры**: page, status (active/provisioning/stopped/destroyed), type (server/ip/disk/domain)
@@ -421,7 +417,7 @@ GET /api/supplier/resources
 ##### Получить статус ресурса
 
 ```
-GET /api/supplier/resources/{id}/status
+GET /api/v1/supplier/resources/{id}/status
 ```
 
 ---
@@ -431,13 +427,13 @@ GET /api/supplier/resources/{id}/status
 ##### Получить список расчётных документов
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 ##### Получить детали расчётного документа
 
 ```
-GET /api/supplier/settlements/{id}
+GET /api/v1/supplier/settlements/{id}
 ```
 
 ---
@@ -447,13 +443,13 @@ GET /api/supplier/settlements/{id}
 ##### Подать заявку на вывод
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 ##### История выводов
 
 ```
-GET /api/supplier/withdraws
+GET /api/v1/supplier/withdraws
 ```
 
 ---
@@ -463,13 +459,13 @@ GET /api/supplier/withdraws
 ##### Получить мои товары
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 ##### Подать заявку на размещение товара
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 ---
@@ -478,16 +474,16 @@ POST /api/supplier/products
 
 | Метод | Путь | Описание |
 |------|------|------|
-| GET | `/api/supplier/orders` | Список заказов |
-| GET | `/api/supplier/orders/{id}` | Детали заказа |
-| GET | `/api/supplier/resources` | Список ресурсов |
-| GET | `/api/supplier/resources/{id}/status` | Статус ресурса |
-| GET | `/api/supplier/settlements` | Список расчётных документов |
-| GET | `/api/supplier/settlements/{id}` | Детали расчётного документа |
-| POST | `/api/supplier/withdraw` | Подать заявку на вывод |
-| GET | `/api/supplier/withdraws` | История выводов |
-| GET | `/api/supplier/products` | Список товаров |
-| POST | `/api/supplier/products` | Подать товар |
+| GET | `/api/v1/supplier/orders` | Список заказов |
+| GET | `/api/v1/supplier/orders/{id}` | Детали заказа |
+| GET | `/api/v1/supplier/resources` | Список ресурсов |
+| GET | `/api/v1/supplier/resources/{id}/status` | Статус ресурса |
+| GET | `/api/v1/supplier/settlements` | Список расчётных документов |
+| GET | `/api/v1/supplier/settlements/{id}` | Детали расчётного документа |
+| POST | `/api/v1/supplier/withdraw` | Подать заявку на вывод |
+| GET | `/api/v1/supplier/withdraws` | История выводов |
+| GET | `/api/v1/supplier/products` | Список товаров |
+| POST | `/api/v1/supplier/products` | Подать товар |
 
 ---
 
@@ -540,7 +536,7 @@ X-Webhook-Event: order.paid
 | Вывод во внешнем API | 10 req/min (рекомендованное значение, настраивается в `config/security.php`) |
 
 > Правила ограничения частоты внешнего API определены в `rate_limits.supplier_api` файла `config/security.php`,
-> `RateLimitMiddleware` единообразно применяет их к путям `/api/supplier/external/*` (атомарный счётчик INCR,
+> `RateLimitMiddleware` единообразно применяет их к путям `/api/v1/supplier/external/*` (атомарный счётчик INCR,
 > при недоступности Redis запрос пропускается).
 
 Заголовки ограничения частоты:
@@ -560,10 +556,9 @@ X-RateLimit-Reset: 1680000000
 ```php
 $token = 'user_access_token_here';
 $client = new GuzzleHttp\Client([
-    'base_uri' => 'https://api.example.com/api/',
+    'base_uri' => 'https://api.example.com/api/v1/',
     'headers' => [
         'Authorization' => "Bearer {$token}",
-        'X-Api-Version' => 'v1',
         'Accept'        => 'application/json',
     ],
 ]);
@@ -604,16 +599,15 @@ import requests
 
 headers = {
     'Authorization': 'Bearer <user_access_token>',
-    'X-Api-Version': 'v1',
 }
 
 # Получить назначенные товары
-resp = requests.get('https://api.example.com/api/supplier/products',
+resp = requests.get('https://api.example.com/api/v1/supplier/products',
                      headers=headers)
 products = resp.json()
 
 # Подать заявку на вывод
-resp = requests.post('https://api.example.com/api/supplier/withdraw',
+resp = requests.post('https://api.example.com/api/v1/supplier/withdraw',
                       headers=headers,
                       json={
                           'amount': '5000.00',
@@ -645,11 +639,11 @@ print(resp.json())
 
 | Метод | Путь | Описание |
 |------|------|------|
-| GET | `/admin/api/suppliers` | Список поставщиков (поддерживается фильтр по status) |
-| GET | `/admin/api/suppliers/export` | Экспорт поставщиков в Excel |
-| POST | `/admin/api/suppliers/{id}/approve` | Одобрить заявку поставщика |
-| POST | `/admin/api/suppliers/{id}/settle` | Сформировать расчётный документ |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | Одобрить вывод средств |
-| GET | `/admin/api/suppliers/{id}/api-keys` | Просмотр списка API Key поставщика |
-| POST | `/admin/api/suppliers/{id}/api-keys` | Создать API Key (исходный Key возвращается только один раз) |
-| DELETE | `/admin/api/suppliers/api-keys/{id}` | Отозвать API Key |
+| GET | `/admin/api/v1/suppliers` | Список поставщиков (поддерживается фильтр по status) |
+| GET | `/admin/api/v1/suppliers/export` | Экспорт поставщиков в Excel |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | Одобрить заявку поставщика |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | Сформировать расчётный документ |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | Одобрить вывод средств |
+| GET | `/admin/api/v1/suppliers/{id}/api-keys` | Просмотр списка API Key поставщика |
+| POST | `/admin/api/v1/suppliers/{id}/api-keys` | Создать API Key (исходный Key возвращается только один раз) |
+| DELETE | `/admin/api/v1/suppliers/api-keys/{id}` | Отозвать API Key |

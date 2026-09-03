@@ -6,12 +6,12 @@ Fitur pemasok menyediakan dua set API:
 
 | Jenis | Cara autentikasi | Prefix | Status |
 |------|---------|------|------|
-| **API Internal** | Bearer Token pengguna | `/api/supplier/` | Tersedia |
-| **API Eksternal** | API Key (`sk_xxx`) | `/api/supplier/external/` | Tersedia |
+| **API Internal** | Bearer Token pengguna | `/api/v1/supplier/` | Tersedia |
+| **API Eksternal** | API Key (`sk_xxx`) | `/api/v1/supplier/external/` | Tersedia |
 
 **Base URL**: `https://api.example.com`
 
-**Versioning**: ditentukan melalui header HTTP `X-Api-Version: v1`. Jika tidak ada, default `v1`, versi yang tidak didukung mengembalikan `400`. Hanya berlaku untuk path `/api/*` dan `/admin/api/*`, ditangani secara terpadu oleh `VersionMiddleware`.
+**Versioning**: versi API ditentukan di path URL (contoh: `/api/v1/...`). Versi yang tidak didukung mengembalikan `400`. Hanya berlaku untuk path `/api/v1/*` dan `/admin/api/v1/*`, ditangani secara terpadu oleh `VersionMiddleware`.
 
 ---
 
@@ -23,10 +23,9 @@ API internal menggunakan autentikasi Bearer Token pengguna yang sama dengan anta
 
 ```
 Authorization: Bearer <user_access_token>
-X-Api-Version: v1
 ```
 
-Pengguna harus login melalui `/api/auth/login` terlebih dahulu untuk mendapatkan Token, dan peran akun harus `supplier` (diatur oleh admin setelah menyetujui aplikasi pemasok).
+Pengguna harus login melalui `/api/v1/auth/login` terlebih dahulu untuk mendapatkan Token, dan peran akun harus `supplier` (diatur oleh admin setelah menyetujui aplikasi pemasok).
 
 ---
 
@@ -84,7 +83,7 @@ Pengguna harus login melalui `/api/auth/login` terlebih dahulu untuk mendapatkan
 #### 1. Pendaftaran Pemasok
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
 ```
 
 Mengajukan permohonan menjadi pemasok. Setiap pengguna hanya dapat mengajukan satu kali.
@@ -138,9 +137,8 @@ Mengajukan permohonan menjadi pemasok. Setiap pengguna hanya dapat mengajukan sa
 | 422 | Sudah pernah mengajukan aplikasi pemasok |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/apply" \
+curl -X POST "https://api.example.com/api/v1/supplier/apply" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"company_name":"示例科技","contact_name":"张三","contact_phone":"13800138000","contact_email":"zhangsan@example.com"}'
 ```
@@ -152,7 +150,7 @@ curl -X POST "https://api.example.com/api/supplier/apply" \
 ##### Mendapatkan Produk yang Ditugaskan
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 **Parameter Query**:
@@ -185,7 +183,7 @@ GET /api/supplier/products
 ##### Menambahkan Produk
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 Mengaitkan produk yang sudah ada ke pemasok saat ini.
@@ -215,7 +213,7 @@ Mengaitkan produk yang sudah ada ke pemasok saat ini.
 ##### Menghapus Produk
 
 ```
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 Membatalkan keterkaitan produk dengan pemasok.
@@ -237,7 +235,7 @@ Membatalkan keterkaitan produk dengan pemasok.
 ##### Mendapatkan Daftar Settlement
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 **Respons**: semua settlement pemasok saat ini, urut berdasarkan waktu pembuatan terbalik
@@ -273,7 +271,7 @@ GET /api/supplier/settlements
 ##### Mengajukan Penarikan
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 > Operasi ini memerlukan konfirmasi ulang kata sandi (kolom `confirm_password`), divalidasi oleh `ConfirmationMiddleware`.
@@ -321,9 +319,8 @@ POST /api/supplier/withdraw
 | 403 | Konfirmasi kata sandi gagal |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/withdraw" \
+curl -X POST "https://api.example.com/api/v1/supplier/withdraw" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"amount":"5000.00","confirm_password":"mypassword","account_info":{"method":"bank_transfer","bank_name":"ICBC","account_number":"6222021234567890"}}'
 ```
@@ -334,12 +331,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 | Metode | Path | Autentikasi | Konfirmasi kata sandi | Keterangan |
 |------|------|------|---------|------|
-| POST | `/api/supplier/apply` | Token | - | Mengajukan menjadi pemasok |
-| GET | `/api/supplier/products` | Token | - | Melihat produk yang ditugaskan |
-| POST | `/api/supplier/products` | Token | - | Menambahkan keterkaitan produk |
-| DELETE | `/api/supplier/products/{id}` | Token | - | Menghapus keterkaitan produk |
-| GET | `/api/supplier/settlements` | Token | - | Melihat settlement |
-| POST | `/api/supplier/withdraw` | Token | Diperlukan | Mengajukan penarikan |
+| POST | `/api/v1/supplier/apply` | Token | - | Mengajukan menjadi pemasok |
+| GET | `/api/v1/supplier/products` | Token | - | Melihat produk yang ditugaskan |
+| POST | `/api/v1/supplier/products` | Token | - | Menambahkan keterkaitan produk |
+| DELETE | `/api/v1/supplier/products/{id}` | Token | - | Menghapus keterkaitan produk |
+| GET | `/api/v1/supplier/settlements` | Token | - | Melihat settlement |
+| POST | `/api/v1/supplier/withdraw` | Token | Diperlukan | Mengajukan penarikan |
 
 ---
 
@@ -353,7 +350,6 @@ API eksternal memungkinkan pemasok mengelola pesanan, sumber daya, dan settlemen
 
 ```
 Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-X-Api-Version: v1
 ```
 
 API Key dibuat oleh admin platform di panel admin `Manajemen Pemasok → API Keys`.
@@ -387,7 +383,7 @@ Sama dengan API internal, dengan tambahan `request_id` untuk pelacakan:
 ##### Mendapatkan Daftar Pesanan
 
 ```
-GET /api/supplier/orders
+GET /api/v1/supplier/orders
 ```
 
 **Parameter Query**:
@@ -403,7 +399,7 @@ GET /api/supplier/orders
 ##### Mendapatkan Detail Pesanan
 
 ```
-GET /api/supplier/orders/{id}
+GET /api/v1/supplier/orders/{id}
 ```
 
 ---
@@ -413,7 +409,7 @@ GET /api/supplier/orders/{id}
 ##### Mendapatkan Daftar Sumber Daya
 
 ```
-GET /api/supplier/resources
+GET /api/v1/supplier/resources
 ```
 
 **Parameter Query**: page, status (active/provisioning/stopped/destroyed), type (server/ip/disk/domain)
@@ -421,7 +417,7 @@ GET /api/supplier/resources
 ##### Mendapatkan Status Sumber Daya
 
 ```
-GET /api/supplier/resources/{id}/status
+GET /api/v1/supplier/resources/{id}/status
 ```
 
 ---
@@ -431,13 +427,13 @@ GET /api/supplier/resources/{id}/status
 ##### Mendapatkan Daftar Settlement
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 ##### Mendapatkan Detail Settlement
 
 ```
-GET /api/supplier/settlements/{id}
+GET /api/v1/supplier/settlements/{id}
 ```
 
 ---
@@ -447,13 +443,13 @@ GET /api/supplier/settlements/{id}
 ##### Mengajukan Penarikan
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 ##### Catatan Penarikan
 
 ```
-GET /api/supplier/withdraws
+GET /api/v1/supplier/withdraws
 ```
 
 ---
@@ -463,13 +459,13 @@ GET /api/supplier/withdraws
 ##### Mendapatkan Produk Saya
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 ##### Mengajukan Permohonan Penayangan Produk
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 ---
@@ -478,16 +474,16 @@ POST /api/supplier/products
 
 | Metode | Path | Keterangan |
 |------|------|------|
-| GET | `/api/supplier/orders` | Daftar pesanan |
-| GET | `/api/supplier/orders/{id}` | Detail pesanan |
-| GET | `/api/supplier/resources` | Daftar sumber daya |
-| GET | `/api/supplier/resources/{id}/status` | Status sumber daya |
-| GET | `/api/supplier/settlements` | Daftar settlement |
-| GET | `/api/supplier/settlements/{id}` | Detail settlement |
-| POST | `/api/supplier/withdraw` | Mengajukan penarikan |
-| GET | `/api/supplier/withdraws` | Catatan penarikan |
-| GET | `/api/supplier/products` | Daftar produk |
-| POST | `/api/supplier/products` | Mengirimkan produk |
+| GET | `/api/v1/supplier/orders` | Daftar pesanan |
+| GET | `/api/v1/supplier/orders/{id}` | Detail pesanan |
+| GET | `/api/v1/supplier/resources` | Daftar sumber daya |
+| GET | `/api/v1/supplier/resources/{id}/status` | Status sumber daya |
+| GET | `/api/v1/supplier/settlements` | Daftar settlement |
+| GET | `/api/v1/supplier/settlements/{id}` | Detail settlement |
+| POST | `/api/v1/supplier/withdraw` | Mengajukan penarikan |
+| GET | `/api/v1/supplier/withdraws` | Catatan penarikan |
+| GET | `/api/v1/supplier/products` | Daftar produk |
+| POST | `/api/v1/supplier/products` | Mengirimkan produk |
 
 ---
 
@@ -540,7 +536,7 @@ X-Webhook-Event: order.paid
 | Penarikan API Eksternal | 10 req/menit (nilai yang disarankan, dapat diatur di `config/security.php`) |
 
 > Aturan pembatasan API eksternal didefinisikan di `rate_limits.supplier_api` pada `config/security.php`,
-> dieksekusi secara terpadu oleh `RateLimitMiddleware` untuk path `/api/supplier/external/*` (penghitungan INCR atomik,
+> dieksekusi secara terpadu oleh `RateLimitMiddleware` untuk path `/api/v1/supplier/external/*` (penghitungan INCR atomik,
 > jika Redis tidak tersedia maka dibiarkan lewat).
 
 Header pembatasan:
@@ -560,10 +556,9 @@ X-RateLimit-Reset: 1680000000
 ```php
 $token = 'user_access_token_here';
 $client = new GuzzleHttp\Client([
-    'base_uri' => 'https://api.example.com/api/',
+    'base_uri' => 'https://api.example.com/api/v1/',
     'headers' => [
         'Authorization' => "Bearer {$token}",
-        'X-Api-Version' => 'v1',
         'Accept'        => 'application/json',
     ],
 ]);
@@ -604,16 +599,15 @@ import requests
 
 headers = {
     'Authorization': 'Bearer <user_access_token>',
-    'X-Api-Version': 'v1',
 }
 
 # 获取已分配商品
-resp = requests.get('https://api.example.com/api/supplier/products',
+resp = requests.get('https://api.example.com/api/v1/supplier/products',
                      headers=headers)
 products = resp.json()
 
 # 申请提现
-resp = requests.post('https://api.example.com/api/supplier/withdraw',
+resp = requests.post('https://api.example.com/api/v1/supplier/withdraw',
                       headers=headers,
                       json={
                           'amount': '5000.00',
@@ -645,11 +639,11 @@ Berikut adalah endpoint terkait pemasok untuk admin (hanya untuk penggunaan back
 
 | Metode | Path | Keterangan |
 |------|------|------|
-| GET | `/admin/api/suppliers` | Daftar pemasok (mendukung filter status) |
-| GET | `/admin/api/suppliers/export` | Ekspor pemasok ke Excel |
-| POST | `/admin/api/suppliers/{id}/approve` | Menyetujui pemasok |
-| POST | `/admin/api/suppliers/{id}/settle` | Membuat settlement |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | Menyetujui penarikan |
-| GET | `/admin/api/suppliers/{id}/api-keys` | Melihat daftar API Key pemasok |
-| POST | `/admin/api/suppliers/{id}/api-keys` | Membuat API Key (hanya mengembalikan Key mentah satu kali) |
-| DELETE | `/admin/api/suppliers/api-keys/{id}` | Mencabut API Key |
+| GET | `/admin/api/v1/suppliers` | Daftar pemasok (mendukung filter status) |
+| GET | `/admin/api/v1/suppliers/export` | Ekspor pemasok ke Excel |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | Menyetujui pemasok |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | Membuat settlement |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | Menyetujui penarikan |
+| GET | `/admin/api/v1/suppliers/{id}/api-keys` | Melihat daftar API Key pemasok |
+| POST | `/admin/api/v1/suppliers/{id}/api-keys` | Membuat API Key (hanya mengembalikan Key mentah satu kali) |
+| DELETE | `/admin/api/v1/suppliers/api-keys/{id}` | Mencabut API Key |

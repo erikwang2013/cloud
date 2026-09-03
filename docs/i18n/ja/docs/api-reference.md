@@ -4,7 +4,7 @@
 
 **Base URL:** `https://api.example.com`
 
-**バージョン管理:** HTTP リクエストヘッダー `X-Api-Version: v1` で指定します。欠落時はデフォルトで `v1`、サポート外のバージョンは `400` を返します。バージョンは URL パスには含まれません。
+**バージョン管理:** API バージョンは URL パスに含まれます（例: `/api/v1/products`）。サポート外のバージョンは `400` を返します。
 
 **認証方式:**
 
@@ -66,14 +66,14 @@
 
 | ルートグループ | ミドルウェア | プレフィックス |
 |--------|--------|------|
-| 公開 | グローバルミドルウェアチェーン | `/health`, `/api/*` |
+| 公開 | グローバルミドルウェアチェーン | `/health`, `/api/v1/*` |
 | `/health` (内部) | グローバル + InternalToken | `/health/live`, `/health/ready`, `/health/deps` |
-| `/api/auth` | グローバル + Encryption | `/api/auth/*` |
-| `/api` (ユーザー) | グローバル + Encryption + Auth | `/api/user/*`, `/api/cart`, `/api/orders` |
-| `/api` (機密) | グローバル + Encryption + Auth + Confirmation | `/api/orders/{id}/pay` |
-| `/api/supplier/external` | Version + SupplierApiKey | サプライヤー外部 API |
-| `/admin/api` | グローバル + Encryption + Auth + AdminRole | 管理バックエンド API |
-| `/admin/api` (機密) | グローバル + Encryption + Auth + AdminRole + Confirmation | 機密管理操作 |
+| `/api/v1/auth` | グローバル + Encryption | `/api/v1/auth/*` |
+| `/api/v1` (ユーザー) | グローバル + Encryption + Auth | `/api/v1/user/*`, `/api/v1/cart`, `/api/v1/orders` |
+| `/api/v1` (機密) | グローバル + Encryption + Auth + Confirmation | `/api/v1/orders/{id}/pay` |
+| `/api/v1/supplier/external` | Version + SupplierApiKey | サプライヤー外部 API |
+| `/admin/api/v1` | グローバル + Encryption + Auth + AdminRole | 管理バックエンド API |
+| `/admin/api/v1` (機密) | グローバル + Encryption + Auth + AdminRole + Confirmation | 機密管理操作 |
 
 ---
 
@@ -88,7 +88,7 @@ GET /health
 ### サービスステータス
 
 ```
-GET /api/status
+GET /api/v1/status
 → {
   "overall": "operational",
   "components": {
@@ -104,18 +104,18 @@ GET /api/status
 ### 商品
 
 ```
-GET /api/products
+GET /api/v1/products
   パラメータ: category_id, region_id, keyword, supplier_id, page (デフォルト1), page_size (デフォルト20, 最大50)
   → ページネーション付き商品リスト (category, skus.regionPrices を含む)
 
-GET /api/products/search
+GET /api/v1/products/search
   パラメータ: q (必須), page
   → Elasticsearch 全文検索
 
-GET /api/products/{id}
+GET /api/v1/products/{id}
   → 商品詳細 (category, skus, images, reviews を含む)
 
-GET /api/products/{productId}/reviews
+GET /api/v1/products/{productId}/reviews
   → レビューリスト + avg_rating + total + distribution
   ステータス列挙: pending(審査待ち)/approved(承認済み)/rejected(却下済み)、approved のみ返す
 ```
@@ -123,25 +123,25 @@ GET /api/products/{productId}/reviews
 ### ドメイン
 
 ```
-GET /api/domain/check/{domain}/{tld}
+GET /api/v1/domain/check/{domain}/{tld}
   → { domain, tld, available: true, price: { register, renew, transfer } }
 
-GET /api/domain/tlds
+GET /api/v1/domain/tlds
   → 利用可能な TLD リスト (Redis キャッシュ 1h)
 ```
 
 ### ヘルプセンター
 
 ```
-GET /api/help
+GET /api/v1/help
   パラメータ: category, page
   ヘッダー: Accept-Language (en-US / zh-CN)
   → ページネーション付きヘルプ記事
 
-GET /api/help/categories
+GET /api/v1/help/categories
   → 記事カテゴリリスト
 
-GET /api/help/{slug}
+GET /api/v1/help/{slug}
   → 記事詳細
 ```
 
@@ -151,7 +151,7 @@ GET /api/help/{slug}
 ### 認証コード（CAPTCHA）
 
 ```
-POST /api/captcha/create
+POST /api/v1/captcha/create
   ヘッダー: X-Encrypted: 1
   → { key, image (base64), target_count, expires_in }
 ```
@@ -159,7 +159,7 @@ POST /api/captcha/create
 ### 登録
 
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
   ヘッダー: X-Encrypted: 1
   ボディ(暗号化): { email?, phone?, password, language?, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -173,7 +173,7 @@ POST /api/auth/register
 ### ログイン
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
   ヘッダー: X-Encrypted: 1
   ボディ(暗号化): { login (email/phone), password, captcha_key, captcha_points, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -186,7 +186,7 @@ POST /api/auth/login
 ### Token リフレッシュ
 
 ```
-POST /api/auth/refresh
+POST /api/v1/auth/refresh
   ヘッダー: X-Encrypted: 1
   ボディ(暗号化): { refresh_token, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -200,9 +200,9 @@ POST /api/auth/refresh
 （.env の `{PROVIDER}_OAUTH_CLIENT_ID` 等の設定で有効化が決定）
 
 ```
-GET /api/auth/{provider}            → { url }        # 認可ページへのリダイレクト（PKCE/nonce でリプレイ防止）
-GET /api/auth/{provider}/callback?code=xxx&state=yyy
-POST /api/auth/{provider}/callback  ボディ: { code, state }
+GET /api/v1/auth/{provider}            → { url }        # 認可ページへのリダイレクト（PKCE/nonce でリプレイ防止）
+GET /api/v1/auth/{provider}/callback?code=xxx&state=yyy
+POST /api/v1/auth/{provider}/callback  ボディ: { code, state }
 ```
 
 - Apple/Microsoft は id_token を返し、サーバー側で JWKS により署名、iss/aud/exp/nonce を検証
@@ -213,11 +213,11 @@ POST /api/auth/{provider}/callback  ボディ: { code, state }
 ### パスワードリセット
 
 ```
-POST /api/auth/forgot-password
+POST /api/v1/auth/forgot-password
   ボディ: { email }
   → 認証コードメールを送信
 
-POST /api/auth/reset-password
+POST /api/v1/auth/reset-password
   ボディ: { email, code, password }
   → リセット成功
   → エラー累計 5 回 → 429 レート制限 10 分
@@ -226,14 +226,14 @@ POST /api/auth/reset-password
 ### メール検証
 
 ```
-GET /api/auth/verify-email?token=xxx
+GET /api/v1/auth/verify-email?token=xxx
   → 検証成功
 ```
 
 ### SMS 検証
 
 ```
-POST /api/auth/send-sms
+POST /api/v1/auth/send-sms
   ボディ: { phone }
   → SMS 認証コードを送信 (60s クールダウン)
 ```
@@ -241,11 +241,11 @@ POST /api/auth/send-sms
 ### TOTP 二段階認証
 
 ```
-POST /api/user/totp/setup        → { secret, qr_url }        # 未永続化、10 分以内に verify で有効化
-POST /api/user/totp/verify       ボディ: { code } → { verified: true }   # 初回有効化時に有効化成功メッセージを返す
-POST /api/user/totp/disable      ボディ: { password }             # パスワード確認が必要、それ以外は 403
-GET /api/user/totp/recovery-codes → { recovery_codes }        # 毎回 8 個のワンタイムコードを生成、パスワード確認が必要、それ以外は 403
-POST /api/auth/login/recovery    ボディ: { login, password, recovery_code }
+POST /api/v1/user/totp/setup        → { secret, qr_url }        # 未永続化、10 分以内に verify で有効化
+POST /api/v1/user/totp/verify       ボディ: { code } → { verified: true }   # 初回有効化時に有効化成功メッセージを返す
+POST /api/v1/user/totp/disable      ボディ: { password }             # パスワード確認が必要、それ以外は 403
+GET /api/v1/user/totp/recovery-codes → { recovery_codes }        # 毎回 8 個のワンタイムコードを生成、パスワード確認が必要、それ以外は 403
+POST /api/v1/auth/login/recovery    ボディ: { login, password, recovery_code }
 ```
 
 - ユーザーが TOTP を有効化した後のログインは `totp_code` 必須、それ以外は 401
@@ -257,25 +257,25 @@ POST /api/auth/login/recovery    ボディ: { login, password, recovery_code }
 ### プロフィール
 
 ```
-GET /api/user/profile
-PUT /api/user/profile
+GET /api/v1/user/profile
+PUT /api/v1/user/profile
   ボディ: { nickname?, avatar?, country?, language?, timezone? }
 ```
 
 ### KYC 実名認証
 
 ```
-POST /api/user/kyc
+POST /api/v1/user/kyc
   ボディ: { id_type, id_number, real_name, front_image, back_image }
 ```
 
 ### 残高
 
 ```
-GET /api/user/balance
+GET /api/v1/user/balance
   → { balances: [{currency, balance, frozen}] }
 
-GET /api/user/balance/transactions
+GET /api/v1/user/balance/transactions
   パラメータ: page
   → 残高変動履歴
 ```
@@ -283,23 +283,23 @@ GET /api/user/balance/transactions
 ### アドレス管理
 
 ```
-GET /api/user/addresses
-POST /api/user/addresses
+GET /api/v1/user/addresses
+POST /api/v1/user/addresses
   ボディ: { type: billing/shipping, name, phone, country, state, city, address, postcode, is_default }
-PUT /api/user/addresses/{id}
-DELETE /api/user/addresses/{id}
+PUT /api/v1/user/addresses/{id}
+DELETE /api/v1/user/addresses/{id}
 ```
 
 ### セッション管理
 
 ```
-GET /api/user/sessions
+GET /api/v1/user/sessions
   → [{ id, fingerprint, client_platform, created_at, expires_at }]
 
-DELETE /api/user/sessions/{id}
+DELETE /api/v1/user/sessions/{id}
   → 指定セッションを失効
 
-DELETE /api/user/account
+DELETE /api/v1/user/account
   ボディ: { confirm_password }
   → GDPR アカウント削除
 ```
@@ -307,29 +307,29 @@ DELETE /api/user/account
 ### 通知
 
 ```
-GET /api/user/notifications
+GET /api/v1/user/notifications
   パラメータ: page
   → ページネーション付き通知リスト
 
-POST /api/user/notifications/{id}/read
+POST /api/v1/user/notifications/{id}/read
   → 既読にする
 
-GET /api/user/notification-prefs
-PUT /api/user/notification-prefs
+GET /api/v1/user/notification-prefs
+PUT /api/v1/user/notification-prefs
   ボディ: { email: {order_paid: true, ...}, push: {...} }
 ```
 
 ### メール
 
 ```
-POST /api/user/resend-verify-email
+POST /api/v1/user/resend-verify-email
   → 検証メールを再送信
 ```
 
 ### ファイルアップロード
 
 ```
-POST /api/upload
+POST /api/v1/upload
   ボディ: multipart/form-data { file, type: avatar/kyc/attach }
   制限: avatar 2MB, kyc 5MB, attach 10MB
   許可: jpg, jpeg, png, gif, pdf
@@ -342,11 +342,11 @@ POST /api/upload
 ### カート
 
 ```
-POST /api/cart
+POST /api/v1/cart
   ボディ: { sku_id, region_id, quantity, cycle }
-GET /api/cart
-DELETE /api/cart/{id}
-PUT /api/cart/{id}
+GET /api/v1/cart
+DELETE /api/v1/cart/{id}
+PUT /api/v1/cart/{id}
   ボディ: { quantity }
 ```
 
@@ -356,21 +356,21 @@ PUT /api/cart/{id}
 ### 注文
 
 ```
-POST /api/orders
+POST /api/v1/orders
   → カートから注文を作成
   ← { order, order_no, items, subtotal, discount, tax, total }   # subtotal/discount/tax/total: string 4dp
 
-GET /api/orders
+GET /api/v1/orders
   パラメータ: page, status (pending/paid/provisioning/completed/refunded、不正な値は 400)
   → 自分の注文リスト
 
-GET /api/orders/{id}
+GET /api/v1/orders/{id}
   → 注文詳細 (items, timeline を含む)
 
-GET /api/orders/{id}/payment-methods
+GET /api/v1/orders/{id}/payment-methods
   → 利用可能な決済チャネル + 各チャネルの実支払金額
 
-POST /api/orders/{id}/pay    🔒 パスワード確認
+POST /api/v1/orders/{id}/pay    🔒 パスワード確認
   ボディ: { channel_id, confirm_password }
   → { client_secret, transaction_id }
 ```
@@ -378,7 +378,7 @@ POST /api/orders/{id}/pay    🔒 パスワード確認
 ### クーポン
 
 ```
-POST /api/coupons/validate
+POST /api/v1/coupons/validate
   ボディ: { code, order_total }
   → { coupon_id, discount, type }   # discount: string 4dp（例 "2.0000"）
 
@@ -388,10 +388,10 @@ POST /api/coupons/validate
 ### 請求書
 
 ```
-GET /api/invoices
+GET /api/v1/invoices
   パラメータ: page
-GET /api/invoices/{id}
-GET /api/invoices/{id}/download
+GET /api/v1/invoices/{id}
+GET /api/v1/invoices/{id}/download
   → PDF ダウンロード
 ```
 
@@ -399,20 +399,20 @@ GET /api/invoices/{id}/download
 
 ## 5. リソース管理
 ```
-GET /api/resources
+GET /api/v1/resources
   パラメータ: page, status
   → 自分のリソースリスト
 
-GET /api/resources/{id}
+GET /api/v1/resources/{id}
   → リソース詳細
 
-GET /api/resources/{id}/status
+GET /api/v1/resources/{id}/status
   → リソースの現在のステータス + メトリクス
 
-GET /api/resources/{id}/console
+GET /api/v1/resources/{id}/console
   → VNC/コンソール URL
 
-POST /api/resources/batch
+POST /api/v1/resources/batch
   ボディ: { action: start/stop/restart, resource_ids: [...] }
 ```
 
@@ -420,28 +420,28 @@ POST /api/resources/batch
 
 ## 6. DNS 管理
 ```
-GET /api/dns/{domain}
+GET /api/v1/dns/{domain}
   → DNS レコードリスト
 
-POST /api/dns/{domain}/records
+POST /api/v1/dns/{domain}/records
   ボディ: { type, name, value, ttl?, priority? }
 
-DELETE /api/dns/{domain}/records/{id}   🔒 パスワード確認
+DELETE /api/v1/dns/{domain}/records/{id}   🔒 パスワード確認
 ```
 
 ---
 
 ## 7. チケット
 ```
-POST /api/tickets
+POST /api/v1/tickets
   ボディ: { resource_id?, category, priority?, title, content }
 
-GET /api/tickets
+GET /api/v1/tickets
   パラメータ: page, status
 
-GET /api/tickets/{id}
+GET /api/v1/tickets/{id}
 
-POST /api/tickets/{id}/reply
+POST /api/v1/tickets/{id}/reply
   ボディ: { content }
 ```
 
@@ -449,19 +449,19 @@ POST /api/tickets/{id}/reply
 
 ## 8. サプライヤー（内部 API）
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
   ボディ: { company_name, contact_name, contact_phone, contact_email, settlement_method }
 
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
   → 決済明細リスト
 
-POST /api/supplier/withdraw    🔒 パスワード確認
+POST /api/v1/supplier/withdraw    🔒 パスワード確認
   ボディ: { amount, confirm_password, account_info: { method, bank_name, account_number } }
 
-GET /api/supplier/products
-POST /api/supplier/products
+GET /api/v1/supplier/products
+POST /api/v1/supplier/products
   ボディ: { product_id, commission_rate }
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 ---
@@ -472,27 +472,27 @@ DELETE /api/supplier/products/{id}
 **レート制限:** 120 req/min（出金は 10 req/min）
 
 ```
-GET /api/supplier/external/orders
+GET /api/v1/supplier/external/orders
   パラメータ: page, page_size, status, from, to
 
-GET /api/supplier/external/orders/{id}
+GET /api/v1/supplier/external/orders/{id}
   → 注文詳細（自サプライヤー関連のみ）
 
-GET /api/supplier/external/resources
+GET /api/v1/supplier/external/resources
   パラメータ: page, status, type
 
-GET /api/supplier/external/resources/{id}/status
+GET /api/v1/supplier/external/resources/{id}/status
   → { id, type, status, provisioned_at, expired_at }
 
-GET /api/supplier/external/settlements
+GET /api/v1/supplier/external/settlements
   パラメータ: page, status
 
-GET /api/supplier/external/settlements/{id}
+GET /api/v1/supplier/external/settlements/{id}
 
-POST /api/supplier/external/withdraw
+POST /api/v1/supplier/external/withdraw
   ボディ: { amount, account_info: { method, ... } }
 
-GET /api/supplier/external/withdraws
+GET /api/v1/supplier/external/withdraws
   パラメータ: page
 ```
 
@@ -504,227 +504,227 @@ GET /api/supplier/external/withdraws
 ### ダッシュボード
 
 ```
-GET /admin/api/dashboard
+GET /admin/api/v1/dashboard
   → { today_stats, revenue_trend_30d, region_distribution, pending_orders, pending_kyc, open_tickets }
 ```
 
 ### ユーザー管理
 
 ```
-GET /admin/api/users              パラメータ: page, status, keyword
-GET /admin/api/users/export       → Excel ダウンロード
-GET /admin/api/users/{id}
-PUT /admin/api/users/{id}/status  ボディ: { status }
+GET /admin/api/v1/users              パラメータ: page, status, keyword
+GET /admin/api/v1/users/export       → Excel ダウンロード
+GET /admin/api/v1/users/{id}
+PUT /admin/api/v1/users/{id}/status  ボディ: { status }
 ```
 
 ### KYC 審査
 
 ```
-GET /admin/api/kyc                パラメータ: page, status
+GET /admin/api/v1/kyc                パラメータ: page, status
 
-POST /admin/api/kyc/{id}/approve   🔒 パスワード確認
+POST /admin/api/v1/kyc/{id}/approve   🔒 パスワード確認
   ボディ: { confirm_password }
 
-POST /admin/api/kyc/{id}/reject    🔒 パスワード確認
+POST /admin/api/v1/kyc/{id}/reject    🔒 パスワード確認
   ボディ: { confirm_password, reason }
 ```
 
 ### 商品管理
 
 ```
-POST /admin/api/products
-PUT /admin/api/products/{id}
-DELETE /admin/api/products/{id}         🔒 パスワード確認
-POST /admin/api/products/{productId}/skus
-PUT /admin/api/skus/{id}
-POST /admin/api/skus/{skuId}/region-price
-GET /admin/api/products/export         → CSV ダウンロード
-POST /admin/api/products/import        → CSV アップロード upsert
+POST /admin/api/v1/products
+PUT /admin/api/v1/products/{id}
+DELETE /admin/api/v1/products/{id}         🔒 パスワード確認
+POST /admin/api/v1/products/{productId}/skus
+PUT /admin/api/v1/skus/{id}
+POST /admin/api/v1/skus/{skuId}/region-price
+GET /admin/api/v1/products/export         → CSV ダウンロード
+POST /admin/api/v1/products/import        → CSV アップロード upsert
 ```
 
 ### 注文管理
 
 ```
-GET /admin/api/orders              パラメータ: page, status, keyword
-GET /admin/api/orders/export       → Excel ダウンロード
-GET /admin/api/orders/{id}
+GET /admin/api/v1/orders              パラメータ: page, status, keyword
+GET /admin/api/v1/orders/export       → Excel ダウンロード
+GET /admin/api/v1/orders/{id}
 
-POST /admin/api/orders/{id}/refund  🔒 パスワード確認
+POST /admin/api/v1/orders/{id}/refund  🔒 パスワード確認
   ボディ: { confirm_password, amount?, reason }
 ```
 
 ### 決済管理
 
 ```
-GET /admin/api/payments/channels
-PUT /admin/api/payments/channels/{id}
-GET /admin/api/payments/transactions  パラメータ: page, channel, status
-GET /admin/api/payments/reconcile     パラメータ: date; records.status: verified/mismatch/unverified
-POST /admin/api/payments/reconcile/run  パラメータ: date; 日次照合をトリガー
+GET /admin/api/v1/payments/channels
+PUT /admin/api/v1/payments/channels/{id}
+GET /admin/api/v1/payments/transactions  パラメータ: page, channel, status
+GET /admin/api/v1/payments/reconcile     パラメータ: date; records.status: verified/mismatch/unverified
+POST /admin/api/v1/payments/reconcile/run  パラメータ: date; 日次照合をトリガー
 ```
 
 ### リソースと開通
 
 ```
-GET /admin/api/provisioning/tasks              パラメータ: page, status
-POST /admin/api/provisioning/tasks/{id}/retry
-POST /admin/api/provisioning/resources/{id}/upgrade
+GET /admin/api/v1/provisioning/tasks              パラメータ: page, status
+POST /admin/api/v1/provisioning/tasks/{id}/retry
+POST /admin/api/v1/provisioning/resources/{id}/upgrade
   ボディ: { cpu?, ram?, disk? }
-POST /admin/api/provisioning/resources/{id}/destroy   🔒 パスワード確認
-GET /admin/api/provisioning/hosts
+POST /admin/api/v1/provisioning/resources/{id}/destroy   🔒 パスワード確認
+GET /admin/api/v1/provisioning/hosts
 ```
 
 ### サプライヤー管理
 
 ```
-GET /admin/api/suppliers                 パラメータ: page, status
-GET /admin/api/suppliers/export          → Excel ダウンロード
+GET /admin/api/v1/suppliers                 パラメータ: page, status
+GET /admin/api/v1/suppliers/export          → Excel ダウンロード
 
-POST /admin/api/suppliers/{id}/approve    🔒 パスワード確認
-POST /admin/api/suppliers/{id}/settle     🔒 パスワード確認
+POST /admin/api/v1/suppliers/{id}/approve    🔒 パスワード確認
+POST /admin/api/v1/suppliers/{id}/settle     🔒 パスワード確認
   ボディ: { period_start, period_end, confirm_password }
 
-POST /admin/api/suppliers/withdraws/{id}/approve  🔒 パスワード確認
+POST /admin/api/v1/suppliers/withdraws/{id}/approve  🔒 パスワード確認
 ```
 
 ### サプライヤー API Key
 
 ```
-GET /admin/api/suppliers/{id}/api-keys
-POST /admin/api/suppliers/{id}/api-keys
+GET /admin/api/v1/suppliers/{id}/api-keys
+POST /admin/api/v1/suppliers/{id}/api-keys
   ボディ: { name }
   ← { api_key: "sk_xxx...", prefix } (1 回だけ表示)
 
-DELETE /admin/api/suppliers/api-keys/{id}
+DELETE /admin/api/v1/suppliers/api-keys/{id}
 ```
 
 ### チケット管理
 
 ```
-GET /admin/api/tickets                  パラメータ: page, status, priority, assigned_to
-POST /admin/api/tickets/{id}/assign     ボディ: { user_id }
-POST /admin/api/tickets/{id}/close
+GET /admin/api/v1/tickets                  パラメータ: page, status, priority, assigned_to
+POST /admin/api/v1/tickets/{id}/assign     ボディ: { user_id }
+POST /admin/api/v1/tickets/{id}/close
 ```
 
 ### ドメイン管理
 
 ```
-GET /admin/api/domains/tlds
-POST /admin/api/domains/tlds
+GET /admin/api/v1/domains/tlds
+POST /admin/api/v1/domains/tlds
   ボディ: { tld, wholesale_price, retail_price, registrar, promo_price?, promo_end_at? }
-PUT /admin/api/domains/tlds/{id}
-DELETE /admin/api/domains/tlds/{id}
-GET /admin/api/domains/zones             パラメータ: page
-GET /admin/api/domains/transfers         パラメータ: page
-POST /admin/api/domains/transfers/{id}/approve
+PUT /admin/api/v1/domains/tlds/{id}
+DELETE /admin/api/v1/domains/tlds/{id}
+GET /admin/api/v1/domains/zones             パラメータ: page
+GET /admin/api/v1/domains/transfers         パラメータ: page
+POST /admin/api/v1/domains/transfers/{id}/approve
 ```
 
 ### 通知管理
 
 ```
-GET /admin/api/notifications/templates
-PUT /admin/api/notifications/templates/{id}
+GET /admin/api/v1/notifications/templates
+PUT /admin/api/v1/notifications/templates/{id}
   ボディ: { name?, channels?, title_template?, body_template?, variables? }
-GET /admin/api/notifications/log         パラメータ: page
+GET /admin/api/v1/notifications/log         パラメータ: page
 ```
 
 ### クーポン
 
 ```
-GET /admin/api/coupons
-POST /admin/api/coupons
+GET /admin/api/v1/coupons
+POST /admin/api/v1/coupons
   ボディ: { code, type, value, min_amount?, max_discount?, max_uses?, starts_at?, expires_at? }
-DELETE /admin/api/coupons/{id}
+DELETE /admin/api/v1/coupons/{id}
 ```
 
 ### ヘルプ記事
 
 ```
-GET /admin/api/help
-POST /admin/api/help
+GET /admin/api/v1/help
+POST /admin/api/v1/help
   ボディ: { category, title, slug, content, locale, sort?, status? }
-PUT /admin/api/help/{id}
-DELETE /admin/api/help/{id}              → ソフト削除 (status=archived)
+PUT /admin/api/v1/help/{id}
+DELETE /admin/api/v1/help/{id}              → ソフト削除 (status=archived)
 ```
 
 ### クラウドベンダー API
 
 ```
-GET /admin/api/providers
-POST /admin/api/providers
+GET /admin/api/v1/providers
+POST /admin/api/v1/providers
   ボディ: { name, code, api_key?, api_secret?, webhook_secret? }
-PUT /admin/api/providers/{id}
-DELETE /admin/api/providers/{id}         → 無効化 (status=disabled)
+PUT /admin/api/v1/providers/{id}
+DELETE /admin/api/v1/providers/{id}         → 無効化 (status=disabled)
 ```
 
 ### Webhook 管理
 
 ```
-GET /admin/api/webhooks
-POST /admin/api/webhooks
+GET /admin/api/v1/webhooks
+POST /admin/api/v1/webhooks
   ボディ: { url }
-DELETE /admin/api/webhooks              ボディ: { id }
-POST /admin/api/webhooks/test           ボディ: { url }
+DELETE /admin/api/v1/webhooks              ボディ: { id }
+POST /admin/api/v1/webhooks/test           ボディ: { url }
 ```
 
 ### レポート
 
 ```
-GET /admin/api/reports/revenue           パラメータ: from, to, granularity
+GET /admin/api/v1/reports/revenue           パラメータ: from, to, granularity
   → { daily: [{date, currency, revenue, orders}], total_revenue, total_orders, by_category }
   # revenue/total_revenue: string 4dp（SUM(DECIMAL) と bcmath 集計が一致）
-GET /admin/api/reports/supplier          パラメータ: from, to
+GET /admin/api/v1/reports/supplier          パラメータ: from, to
   → { settlements, total_payable, total_paid }   # payable/total_payable/total_paid: string 4dp
-GET /admin/api/reports/region            パラメータ: from, to
+GET /admin/api/v1/reports/region            パラメータ: from, to
   → [{region, orders, revenue}]                  # revenue: string 4dp
 ```
 
 ### モニタリング
 
 ```
-GET /admin/api/monitor/dashboard
+GET /admin/api/v1/monitor/dashboard
   → { active_resources, alerts_today, resource_distribution, recent_alerts }
 
-GET /admin/api/monitor/resources/{id}
+GET /admin/api/v1/monitor/resources/{id}
   → { cpu_percent, mem_percent, disk_percent, bandwidth_usage, uptime }
 ```
 
 ### 監査ログ
 
 ```
-GET /admin/api/audit-logs                パラメータ: page, user_id, action, from, to
+GET /admin/api/v1/audit-logs                パラメータ: page, user_id, action, from, to
   → ページネーション付き監査ログ (client_platform を含む)
 ```
 
 ### Feature Flags
 
 ```
-GET /admin/api/features
+GET /admin/api/v1/features
   → [{ name, enabled, default, source }]
 
-PUT /admin/api/features/{name}
+PUT /admin/api/v1/features/{name}
   ボディ: { action: enable/disable/toggle/reset }
 ```
 
 ### システム設定
 
 ```
-PUT /admin/api/system/config              🔒 パスワード確認
+PUT /admin/api/v1/system/config              🔒 パスワード確認
 ```
 
 ### 商品インポートエクスポート
 
 ```
-GET /admin/api/products/export           → CSV ダウンロード
-POST /admin/api/products/import          → CSV アップロード upsert
+GET /admin/api/v1/products/export           → CSV ダウンロード
+POST /admin/api/v1/products/import          → CSV アップロード upsert
 ```
 
 ### サプライヤー + ユーザーエクスポート
 
 ```
-GET /admin/api/suppliers/export          → Excel ダウンロード
-GET /admin/api/users/export              → Excel ダウンロード
-GET /admin/api/orders/export             → Excel ダウンロード
+GET /admin/api/v1/suppliers/export          → Excel ダウンロード
+GET /admin/api/v1/users/export              → Excel ダウンロード
+GET /admin/api/v1/orders/export             → Excel ダウンロード
 ```
 
 ---
@@ -733,19 +733,19 @@ GET /admin/api/orders/export             → Excel ダウンロード
 ### ユーザー端
 
 ```
-GET /api/ssl/plans
+GET /api/v1/ssl/plans
   → SSL プランリスト（DV/OV/EV、価格は register/renew/transfer を含む）
 
-GET /api/ssl-certs
+GET /api/v1/ssl-certs
   → 自分の証明書リスト（status: pending/active/expired/revoked を含む）
 
-GET /api/ssl-certs/{id}
+GET /api/v1/ssl-certs/{id}
   → 証明書詳細（ドメイン、発行機関、有効期間、更新ステータス）
 
-GET /api/ssl-certs/{id}/download
+GET /api/v1/ssl-certs/{id}/download
   → 証明書ファイルをダウンロード（証明書チェーン + 秘密鍵）
 
-POST /api/ssl-certs/{id}/auto-renew
+POST /api/v1/ssl-certs/{id}/auto-renew
   ボディ: { auto_renew: true/false }
   → 自動更新の切り替え
 ```
@@ -753,12 +753,12 @@ POST /api/ssl-certs/{id}/auto-renew
 ### 管理端
 
 ```
-GET /admin/api/ssl/plans              → プランリスト
-POST /admin/api/ssl/plans             → プラン作成
-PUT /admin/api/ssl/plans/{id}         → プラン更新
-DELETE /admin/api/ssl/plans/{id}      → プラン削除
-GET /admin/api/ssl/certs              → 全証明書
-POST /admin/api/ssl/certs/{id}/revoke → 証明書の失効
+GET /admin/api/v1/ssl/plans              → プランリスト
+POST /admin/api/v1/ssl/plans             → プラン作成
+PUT /admin/api/v1/ssl/plans/{id}         → プラン更新
+DELETE /admin/api/v1/ssl/plans/{id}      → プラン削除
+GET /admin/api/v1/ssl/certs              → 全証明書
+POST /admin/api/v1/ssl/certs/{id}/revoke → 証明書の失効
 ```
 
 ---
@@ -767,21 +767,21 @@ POST /admin/api/ssl/certs/{id}/revoke → 証明書の失効
 S3 互換オブジェクトストレージ。署名付き URL でアップロード/ダウンロードし、シークレットは外部に出しません。
 
 ```
-GET /api/storage/buckets
+GET /api/v1/storage/buckets
   → 自分のバケットリスト（使用量、ステータス）
 
-GET /api/storage/buckets/{id}
+GET /api/v1/storage/buckets/{id}
   → バケット詳細
 
-POST /api/storage/buckets/{id}/presign-upload
+POST /api/v1/storage/buckets/{id}/presign-upload
   ボディ: { filename, content_type, size }
   → { upload_url, object_key } 事前署名付きアップロード URL（期限付き）
 
-POST /api/storage/buckets/{id}/presign-download
+POST /api/v1/storage/buckets/{id}/presign-download
   ボディ: { object_key }
   → 事前署名付きダウンロード URL（期限付き）
 
-GET /api/storage/buckets/{id}/credentials
+GET /api/v1/storage/buckets/{id}/credentials
   → 一時アクセス資格情報（短期有効、SDK 直接アップロード用）
 ```
 
@@ -791,10 +791,10 @@ GET /api/storage/buckets/{id}/credentials
 ### ユーザー端
 
 ```
-GET /api/cdn/domains
+GET /api/v1/cdn/domains
   → 自分の CDN ドメインリスト（オリジン、ステータス、プラン）
 
-POST /api/cdn/domains
+POST /api/v1/cdn/domains
   ボディ: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
             origin_type (server|storage), origin_value, cert_config? }
   → CDN ドメイン作成（プロバイダー側で作成しオリジンをバインド）
@@ -804,28 +804,28 @@ POST /api/cdn/domains
     なければ code=cdn-{provider_type} のアクティブな provider_apis アカウント、
     いずれもなければ env 設定にフォールバック
 
-GET /api/cdn/domains/{id}
+GET /api/v1/cdn/domains/{id}
   → CDN ドメイン詳細
 
-DELETE /api/cdn/domains/{id}
+DELETE /api/v1/cdn/domains/{id}
   → CDN ドメイン削除（プロバイダー側ドメインを無効化、冪等）
 
-POST /api/cdn/domains/{id}/purge
+POST /api/v1/cdn/domains/{id}/purge
   ボディ: { urls: ["https://cdn.example.com/path"] }
   → キャッシュ削除（重複 URL は自動的に除去、冪等、最大 100 個）
 
-GET /api/cdn/domains/{id}/stats
+GET /api/v1/cdn/domains/{id}/stats
   → ドメイン概要（cdn_domain / provider_type / plan / status / purged_at）
 ```
 
 ### 管理端
 
 ```
-GET /admin/api/cdn/domains            → 全 CDN ドメイン（所属ユーザー含む）
-PUT /admin/api/cdn/domains/{id}       → ドメインプラン更新（plan ホワイトリスト: standard | pro | enterprise）
+GET /admin/api/v1/cdn/domains            → 全 CDN ドメイン（所属ユーザー含む）
+PUT /admin/api/v1/cdn/domains/{id}       → ドメインプラン更新（plan ホワイトリスト: standard | pro | enterprise）
 ```
 
-管理側の CDN ルートは `RbacMiddleware('cdn.manage')` を適用し、プラン変更は監査ログに記録される（`admin_cdn_update_plan`）。プロバイダーアカウントの資格情報は `/admin/api/providers` CRUD で管理する（RbacMiddleware `provider.config`、`code` は `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent` と規定、資格情報は Encryptable で暗号化して保存）。
+管理側の CDN ルートは `RbacMiddleware('cdn.manage')` を適用し、プラン変更は監査ログに記録される（`admin_cdn_update_plan`）。プロバイダーアカウントの資格情報は `/admin/api/v1/providers` CRUD で管理する（RbacMiddleware `provider.config`、`code` は `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent` と規定、資格情報は Encryptable で暗号化して保存）。
 
 ### CDN エラーコード
 
@@ -843,11 +843,11 @@ PUT /admin/api/cdn/domains/{id}       → ドメインプラン更新（plan ホ
 
 ## 14. 従量課金
 ```
-GET /admin/api/billing/rates          → 課金レートリスト（リソースタイプ/スペック別）
-POST /admin/api/billing/rates         → レート作成
-PUT /admin/api/billing/rates/{id}     → レート更新
-DELETE /admin/api/billing/rates/{id}  → レート削除
-GET /admin/api/billing/usage          → 使用量サマリー（ユーザー/リソース単位で集計）
+GET /admin/api/v1/billing/rates          → 課金レートリスト（リソースタイプ/スペック別）
+POST /admin/api/v1/billing/rates         → レート作成
+PUT /admin/api/v1/billing/rates/{id}     → レート更新
+DELETE /admin/api/v1/billing/rates/{id}  → レート削除
+GET /admin/api/v1/billing/usage          → 使用量サマリー（ユーザー/リソース単位で集計）
 ```
 
 課金パイプライン: ResourceMonitor が 5 分ごとに収集 → UsageAggregator が毎時間集計 → BillingEngine が日次で課金。残高不足時はリソースをサスペンド。
@@ -858,18 +858,18 @@ GET /admin/api/billing/usage          → 使用量サマリー（ユーザー/�
 ### ユーザー端
 
 ```
-GET /api/affiliate/summary
+GET /api/v1/affiliate/summary
   → コミッション概要（累計/未決済/出金可能、リンク数、コンバージョン率）
 
-POST /api/affiliate/links
+POST /api/v1/affiliate/links
   ボディ: { source? }
   → プロモーションリンクを生成（?ref=CODE）
 
-GET /api/affiliate/earnings
+GET /api/v1/affiliate/earnings
   パラメータ: status, page
   → コミッション明細（注文帰属、割合、ステータス: pending/approved/paid）
 
-POST /api/affiliate/payout
+POST /api/v1/affiliate/payout
   ボディ: { amount, method }
   → 出金申請を発起
 ```
@@ -877,12 +877,12 @@ POST /api/affiliate/payout
 ### 管理端
 
 ```
-GET /admin/api/affiliate/plans                → コミッションプランリスト
-POST /admin/api/affiliate/plans               → コミッションプラン作成
-GET /admin/api/affiliate/earnings             → 全コミッション記録
-POST /admin/api/affiliate/earnings/{id}/approve → コミッション審査
-GET /admin/api/affiliate/payouts              → 出金申請リスト
-POST /admin/api/affiliate/payouts/{id}/approve → 出金の審査/振込
+GET /admin/api/v1/affiliate/plans                → コミッションプランリスト
+POST /admin/api/v1/affiliate/plans               → コミッションプラン作成
+GET /admin/api/v1/affiliate/earnings             → 全コミッション記録
+POST /admin/api/v1/affiliate/earnings/{id}/approve → コミッション審査
+GET /admin/api/v1/affiliate/payouts              → 出金申請リスト
+POST /admin/api/v1/affiliate/payouts/{id}/approve → 出金の審査/振込
 ```
 
 ---
@@ -893,7 +893,7 @@ POST /graphql
   → 公開クエリ（商品、ドメイン、ヘルプなどの読み取り専用データ）
   制限: クエリ深度 5 層、複雑度 100
 
-POST /api/graphql                          🔒 認証必須
+POST /api/v1/graphql                          🔒 認証必須
   → 完全クエリ（ユーザーデータを含む）
 ```
 
@@ -905,41 +905,41 @@ POST /api/graphql                          🔒 認証必須
 ### 公開
 
 ```
-GET /api/regions
+GET /api/v1/regions
   → 利用可能な地域リスト（通貨/タイムゾーンを含む）
 
-GET /api/suppliers/{supplierId}/ratings
+GET /api/v1/suppliers/{supplierId}/ratings
   → サプライヤー評価リスト（4 次元: 品質/サポート/納品スピード/コスパ、approved のみ返す）
 ```
 
 ### ユーザー端（認証必須）
 
 ```
-POST /api/products/{productId}/reviews
+POST /api/v1/products/{productId}/reviews
   ボディ: { rating, content, images? }
   → 商品レビューを投稿（注文ごとに 1 回、審査後に表示）
 
-POST /api/supplier/ratings
+POST /api/v1/supplier/ratings
   ボディ: { supplier_id, quality, support, delivery_speed, value, comment? }
   → サプライヤー評価を投稿（注文ごとに 1 回）
 
-GET /api/supplier/ratings/me
+GET /api/v1/supplier/ratings/me
   → 自分の評価履歴
 ```
 
 ### 管理端
 
 ```
-GET /admin/api/suppliers/{id}/ratings          → 全評価（pending を含む）
-POST /admin/api/suppliers/ratings/{id}/approve → 審査承認
-POST /admin/api/suppliers/ratings/{id}/hide    → 非表示
+GET /admin/api/v1/suppliers/{id}/ratings          → 全評価（pending を含む）
+POST /admin/api/v1/suppliers/ratings/{id}/approve → 審査承認
+POST /admin/api/v1/suppliers/ratings/{id}/hide    → 非表示
 ```
 
 ---
 
 ## 18. 決済 Webhook
 ```
-POST /api/payments/webhook/stripe
+POST /api/v1/payments/webhook/stripe
   ヘッダー: Stripe-Signature: ...
   → Stripe コールバック（支払い成功/返金/紛争）、署名検証失敗は 400
 ```
@@ -995,18 +995,18 @@ POST /api/payments/webhook/stripe
 
 | メッセージ | エンドポイント |
 |------|------|
-| `Email or phone required` | /api/auth/register |
-| `Email already registered` | /api/auth/register |
-| `Invalid credentials` | /api/auth/login |
-| `Account temporarily locked` | /api/auth/login |
-| `You already have a supplier application` | /api/supplier/apply |
-| `Insufficient withdrawable balance` | /api/supplier/withdraw |
-| `Product already assigned to this supplier` | /api/supplier/products |
-| `Invalid or revoked API key` | /api/supplier/external/* |
-| `Captcha verification failed` | /api/auth/login, /api/auth/register |
-| `Email already verified` | /api/user/resend-verify-email |
-| `Password too short` | /api/auth/register |
-| `Unknown feature: xxx` | /admin/api/features/{name} |
-| `Refund window expired: server orders are refundable within 72 hours of payment` | /admin/api/orders/{id}/refund |
-| `Refund window expired: domain orders are refundable within 5 days of payment` | /admin/api/orders/{id}/refund |
-| `This product type (IP) is not refundable` | /admin/api/orders/{id}/refund |
+| `Email or phone required` | /api/v1/auth/register |
+| `Email already registered` | /api/v1/auth/register |
+| `Invalid credentials` | /api/v1/auth/login |
+| `Account temporarily locked` | /api/v1/auth/login |
+| `You already have a supplier application` | /api/v1/supplier/apply |
+| `Insufficient withdrawable balance` | /api/v1/supplier/withdraw |
+| `Product already assigned to this supplier` | /api/v1/supplier/products |
+| `Invalid or revoked API key` | /api/v1/supplier/external/* |
+| `Captcha verification failed` | /api/v1/auth/login, /api/v1/auth/register |
+| `Email already verified` | /api/v1/user/resend-verify-email |
+| `Password too short` | /api/v1/auth/register |
+| `Unknown feature: xxx` | /admin/api/v1/features/{name} |
+| `Refund window expired: server orders are refundable within 72 hours of payment` | /admin/api/v1/orders/{id}/refund |
+| `Refund window expired: domain orders are refundable within 5 days of payment` | /admin/api/v1/orders/{id}/refund |
+| `This product type (IP) is not refundable` | /admin/api/v1/orders/{id}/refund |

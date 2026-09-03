@@ -208,7 +208,7 @@ cloud-php/
 │   │   ├── i18n/middleware/     # 多语言中间件（Locale）
 │   │   ├── security/           # CORS / WAF / 频率限制 / 地域封锁 / 维护模式 / 审计日志
 │   │   ├── snowflake/          # 雪花 ID 生成服务 / Eloquent HasSnowflakeId Trait
-│   │   ├── version/middleware/  # API 版本中间件（X-Api-Version 头校验）
+│   │   ├── version/middleware/  # API 版本中间件（URL 路径版本段校验）
 │   │   ├── clientplatform/middleware/  # 客户端平台中间件（X-Client-Platform 头识别）
 │   │   ├── feature/            # Feature Flags 功能开关服务
 │   │   └── webhook/            # Webhook 事件分发器
@@ -534,7 +534,7 @@ Cadeia global de middlewares: `Version → CORS → SecurityHeaders → ClientPl
 - **Security Plugin** — detecção de 31 tipos de ataques (XSS/injeção de SQL/injeção de comando/SSRF/desserialização/ataques JWT/ataques de Host header/smuggling de requisição/injeção GraphQL/vazamento de dados sensíveis etc.), com lista de permissões e banimento automático de IPs na lista negra
 - **Locale** — analisa `Accept-Language` e define o idioma
 - **HashidRequest** — decodifica automaticamente strings hashid nas requisições para IDs inteiros reais
-- **Version** — valida o cabeçalho `X-Api-Version`; se ausente, o padrão é `v1`; versões não suportadas retornam `400`
+- **Version** — valida o segmento de versão no URL path (ex.: `/api/v1/`); versões não suportadas retornam `400`
 - **ClientPlatform** — valida o cabeçalho `X-Client-Platform` e identifica a plataforma do sistema operacional do cliente (iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web)
 - **Encryption** — criptografia de transporte AES-256-GCM (interfaces de autenticação e painel administrativo), evita interceptação e adulteração intermediária
 - **Captcha** — captcha de clique, verificado antes do login/registro (desenho GD + armazenamento em Redis, chave de uso único, validade de 300s, limite de 3 tentativas)

@@ -208,7 +208,7 @@ cloud-php/
 │   │   ├── i18n/middleware/     # 多语言中间件（Locale）
 │   │   ├── security/           # CORS / WAF / 频率限制 / 地域封锁 / 维护模式 / 审计日志
 │   │   ├── snowflake/          # 雪花 ID 生成服务 / Eloquent HasSnowflakeId Trait
-│   │   ├── version/middleware/  # API 版本中间件（X-Api-Version 头校验）
+│   │   ├── version/middleware/  # API 版本中间件（URL 路径版本段校验）
 │   │   ├── clientplatform/middleware/  # 客户端平台中间件（X-Client-Platform 头识别）
 │   │   ├── feature/            # Feature Flags 功能开关服务
 │   │   └── webhook/            # Webhook 事件分发器
@@ -534,7 +534,7 @@ ProviderInterface
 - **Security Plugin** — 31 种攻击检测（XSS/SQL注入/命令注入/SSRF/反序列化/JWT攻击/Host头攻击/请求走私/GraphQL注入/敏感数据泄露等），IP 白名单 + IP 黑名单自动封禁
 - **Locale** — 解析 Accept-Language，设置多语言
 - **HashidRequest** — 自动解码请求中的 hashid 字符串为真实整数 ID
-- **Version** — 校验 `X-Api-Version` 请求头，缺失默认 `v1`，不支持的版本返回 `400`
+- **Version** — 校验 URL 路径中的版本段（如 `/api/v1/`），不支持的版本返回 `400`
 - **ClientPlatform** — 校验 `X-Client-Platform` 请求头，识别客户端操作系统平台（iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web）
 - **Encryption** — AES-256-GCM 传输加密（认证接口和管理后台），防中间人窃听和篡改
 - **Captcha** — 点击验证码，登录/注册前验证（GD 绘图 + Redis 存储，一次性密钥，300s 有效期，3 次尝试限制）

@@ -31,7 +31,7 @@
 
 ### 2.2 انحرافات التوثيق عن الكود (4 بنود معلقة من P1)
 
-- فلترة status في GET /api/orders غير منفذة
+- فلترة status في GET /api/v1/orders غير منفذة
 - أحداث دفع WebSocket مفقودة (وثائق websocket_push تعلن عنها)
 - نطاق إطلاق ticket.updated غير واضح
 - product_attributes schema ميت (لا يستخدمه أي كود)

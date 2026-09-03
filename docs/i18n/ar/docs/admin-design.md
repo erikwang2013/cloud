@@ -195,8 +195,7 @@ class User extends Base
 ```
 Client                         Server
 ──────                         ──────
-POST /api/captcha/create
-  Header: X-Api-Version: v1
+POST /api/v1/captcha/create
   → CaptchaService::create()
     → captcha_create('click')
       → ClickCaptcha::generate()
@@ -204,8 +203,7 @@ POST /api/captcha/create
         → Stores targets + key in Redis/File storage
       ← {key, image (base64), target_count, expires_in}
 
-POST /api/auth/login
-  Header: X-Api-Version: v1
+POST /api/v1/auth/login
   (with captcha_key + captcha_points)
   → AuthController::verifyCaptcha()
     → CaptchaService::verify(key, [[x1,y1], [x2,y2], ...])
@@ -233,8 +231,7 @@ POST /api/auth/login
 ```
 Client                              Server
 ──────                              ──────
-POST /api/orders/{id}/pay
-  Header: X-Api-Version: v1
+POST /api/v1/orders/{id}/pay
   (with confirm_password field)
     → ConfirmationMiddleware::process()
       → Checks userId present (401 if missing)
@@ -255,24 +252,24 @@ POST /api/orders/{id}/pay
 **نقاط نهاية المستخدم الحساسة** (Auth + Confirmation):
 | الطريقة | المسار | العملية |
 |--------|------|-----------|
-| POST | `/api/orders/{id}/pay` | بدء الدفع |
-| POST | `/api/supplier/withdraw` | طلب السحب |
-| DELETE | `/api/dns/{domain}/records/{id}` | حذف سجل DNS |
+| POST | `/api/v1/orders/{id}/pay` | بدء الدفع |
+| POST | `/api/v1/supplier/withdraw` | طلب السحب |
+| DELETE | `/api/v1/dns/{domain}/records/{id}` | حذف سجل DNS |
 
 **نقاط نهاية المشرف الحساسة** (Auth + AdminRole + Confirmation):
 | الطريقة | المسار | العملية |
 |--------|------|-----------|
-| DELETE | `/admin/api/products/{id}` | حذف المنتج |
-| POST | `/admin/api/orders/{id}/refund` | استرداد الطلب |
-| POST | `/admin/api/provisioning/resources/{id}/destroy` | إتلاف المورد |
-| POST | `/admin/api/kyc/{id}/approve` | الموافقة على KYC |
-| POST | `/admin/api/kyc/{id}/reject` | رفض KYC |
-| POST | `/admin/api/suppliers/{id}/approve` | الموافقة على المورد |
-| POST | `/admin/api/suppliers/{id}/settle` | إنشاء التسوية |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | الموافقة على السحب |
-| PUT | `/admin/api/system/config` | تحديث إعدادات النظام |
+| DELETE | `/admin/api/v1/products/{id}` | حذف المنتج |
+| POST | `/admin/api/v1/orders/{id}/refund` | استرداد الطلب |
+| POST | `/admin/api/v1/provisioning/resources/{id}/destroy` | إتلاف المورد |
+| POST | `/admin/api/v1/kyc/{id}/approve` | الموافقة على KYC |
+| POST | `/admin/api/v1/kyc/{id}/reject` | رفض KYC |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | الموافقة على المورد |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | إنشاء التسوية |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | الموافقة على السحب |
+| PUT | `/admin/api/v1/system/config` | تحديث إعدادات النظام |
 
-يُحمَل إصدار الـ API في رأس `X-Api-Version` (الافتراضي: `v1`)، وليس في مسار الـ URL.
+يُحمَل إصدار الـ API في مسار الـ URL (مثل `/api/v1/...`)، وليس في رأس الطلب.
 
 **ميزات الأمان**:
 - التحقق من كلمة المرور بـ bcrypt عبر `Hash::check()`
@@ -399,11 +396,11 @@ public function export(Request $request): Response
 
 | نقطة النهاية | المتحكم | البيانات المُصدَّرة |
 |----------|-----------|---------------|
-| `GET /admin/api/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
-| `GET /admin/api/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
-| `GET /admin/api/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
+| `GET /admin/api/v1/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
+| `GET /admin/api/v1/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
+| `GET /admin/api/v1/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
 
-تتطلب جميع نقاط نهاية الـ API رأس `X-Api-Version` (الافتراضي: `v1`).
+يقع إصدار الـ API في مسار الـ URL لجميع نقاط النهاية (مثل `/api/v1/...`).
 
 تُوضع مسارات التصدير قبل مسارات المعاملات `/{id}` لتجنب التعارضات.
 
@@ -411,7 +408,7 @@ public function export(Request $request): Response
 
 ### نقاط نهاية Admin API (طبقة الخدمة)
 
-جميع نقاط نهاية REST للإدارة مسبوقة بـ `/admin/api` وتتطلب `AdminRoleMiddleware`.
+جميع نقاط نهاية REST للإدارة مسبوقة بـ `/admin/api/v1` وتتطلب `AdminRoleMiddleware`.
 
 | المجموعة | نقاط النهاية | المتحكم |
 |-------|-----------|------------|
@@ -444,15 +441,15 @@ public function export(Request $request): Response
 
 **إعداد حسابات المزودين** (يعيد استخدام نموذج ProviderApi، `Admin\ProviderApiController`):
 
-- `GET/POST /admin/api/providers`، `PUT/DELETE /admin/api/providers/{id}`، مسبوقة بـ `RbacMiddleware('provider.config')`
+- `GET/POST /admin/api/v1/providers`، `PUT/DELETE /admin/api/v1/providers/{id}`، مسبوقة بـ `RbacMiddleware('provider.config')`
 - `code` بميثاق `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`؛ حقول الاعتمادات مشفّرة عند التخزين عبر Encryptable، وعمود `config` JSON يحفظ البيانات الوصفية غير الحساسة
 - أولوية تحليل الاعتمادات في طرف المستخدم: الحساب المربوط ← حساب نشط مطابق للـ code ← env كبديل أخير؛ الحذف/purge عبر لقطة صارمة (الحساب المربوط فقط، 4003 عند الغياب/التعطيل)
 
 **إدارة نطاقات CDN** (`Admin\CdnController`):
 
 ```
-GET /admin/api/cdn/domains        → جميع النطاقات (بما فيها user_id المالك)، مسبوقة بـ RbacMiddleware('cdn.manage')
-PUT /admin/api/cdn/domains/{id}   → تحديث الباقة، قائمة بيضاء للـ plan: standard | pro | enterprise،
+GET /admin/api/v1/cdn/domains        → جميع النطاقات (بما فيها user_id المالك)، مسبوقة بـ RbacMiddleware('cdn.manage')
+PUT /admin/api/v1/cdn/domains/{id}   → تحديث الباقة، قائمة بيضاء للـ plan: standard | pro | enterprise،
                                     القيم غير الصالحة تُعيد 400؛ تُكتب التغييرات في سجل التدقيق admin_cdn_update_plan
 ```
 
@@ -892,21 +889,21 @@ PHPUnit 10.5 | 295 tests | 455 assertions
 
 | المجموعة | نقاط النهاية | المتحكم |
 |-------|-----------|------------|
-| الفواتير | `GET /admin/api/invoices`، `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
-| واجهات المزود | `GET/POST /admin/api/providers`، `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
-| مفاتيح API للموردين | `GET/POST /admin/api/suppliers/{id}/api-keys`، `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
-| القسائم | `GET/POST /admin/api/coupons`، `DELETE .../coupons/{id}` | `Admin\CouponController` |
-| الويب هوكس | `GET/POST/DELETE /admin/api/webhooks`، `POST .../webhooks/test` | `Admin\WebhookController` |
-| استيراد/تصدير المنتجات | `GET /admin/api/products/export`، `POST .../products/import` | `Admin\ImportExportController` |
-| إدارة النطاقات | `GET/POST/PUT/DELETE /admin/api/domains/tlds`، `GET .../zones`، `GET .../transfers`، `POST .../transfers/{id}/approve` | `Admin\DomainController` |
-| قوالب الإشعارات | `GET /admin/api/notifications/templates`، `PUT .../templates/{id}`، `GET .../log` | `Admin\NotificationController` |
-| مقالات المساعدة | `GET/POST /admin/api/help`، `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
+| الفواتير | `GET /admin/api/v1/invoices`، `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
+| واجهات المزود | `GET/POST /admin/api/v1/providers`، `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
+| مفاتيح API للموردين | `GET/POST /admin/api/v1/suppliers/{id}/api-keys`، `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
+| القسائم | `GET/POST /admin/api/v1/coupons`، `DELETE .../coupons/{id}` | `Admin\CouponController` |
+| الويب هوكس | `GET/POST/DELETE /admin/api/v1/webhooks`، `POST .../webhooks/test` | `Admin\WebhookController` |
+| استيراد/تصدير المنتجات | `GET /admin/api/v1/products/export`، `POST .../products/import` | `Admin\ImportExportController` |
+| إدارة النطاقات | `GET/POST/PUT/DELETE /admin/api/v1/domains/tlds`، `GET .../zones`، `GET .../transfers`، `POST .../transfers/{id}/approve` | `Admin\DomainController` |
+| قوالب الإشعارات | `GET /admin/api/v1/notifications/templates`، `PUT .../templates/{id}`، `GET .../log` | `Admin\NotificationController` |
+| مقالات المساعدة | `GET/POST /admin/api/v1/help`، `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
 
 ### وسائط جديدة
 
 | الوسيط | الغرض |
 |------------|---------|
-| `VersionMiddleware` | قراءة إصدار الـ API من رأس X-Api-Version والتحقق منه |
+| `VersionMiddleware` | قراءة إصدار الـ API من مسار الـ URL والتحقق منه |
 | `RateLimitMiddleware` | حد معدل Redis بدلو الرموز (الافتراضي 60 طلب/دقيقة، تسجيل الدخول 5 طلبات/دقيقة) |
 | `GeoBlockMiddleware` | حظر جغرافي عبر MaxMind GeoIP2 |
 | `MaintenanceMiddleware` | وضع الصيانة (مفتاح متغير البيئة + قائمة IP البيضاء) |

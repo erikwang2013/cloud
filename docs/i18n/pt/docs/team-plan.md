@@ -31,7 +31,7 @@
 
 ### 2.2 Divergências Documentação-Código (4 itens não resolvidos em P1)
 
-- Filtro de status em GET /api/orders não implementado
+- Filtro de status em GET /api/v1/orders não implementado
 - Eventos de push WebSocket ausentes (a documentação de websocket_push declara existência)
 - Escopo de disparo de ticket.updated indefinido
 - product_attributes é um schema morto (nenhum código o utiliza)

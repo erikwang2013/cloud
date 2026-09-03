@@ -208,7 +208,7 @@ cloud-php/
 │   │   ├── i18n/middleware/     # Middleware multi-bahasa (Locale)
 │   │   ├── security/           # CORS / WAF / pembatasan frekuensi / pemblokiran geografis / mode pemeliharaan / log audit
 │   │   ├── snowflake/          # Layanan generasi Snowflake ID / Eloquent HasSnowflakeId Trait
-│   │   ├── version/middleware/  # Middleware versi API (validasi header X-Api-Version)
+│   │   ├── version/middleware/  # Middleware versi API (validasi versi pada URL path)
 │   │   ├── clientplatform/middleware/  # Middleware platform klien (identifikasi header X-Client-Platform)
 │   │   ├── feature/            # Layanan sakelar fitur Feature Flags
 │   │   └── webhook/            # Pendistribusi peristiwa Webhook
@@ -534,7 +534,7 @@ Rantai middleware global: `Version → CORS → SecurityHeaders → ClientPlatfo
 - **Security Plugin** — 31 jenis deteksi serangan (XSS/SQL injection/injeksi perintah/SSRF/deserialisasi/serangan JWT/serangan Host header/smuggling permintaan/injeksi GraphQL/kebocoran data sensitif, dll.), daftar putih IP + pemblokiran otomatis daftar hitam IP
 - **Locale** — mengurai Accept-Language, mengatur bahasa
 - **HashidRequest** — otomatis mendekode string hashid dalam permintaan menjadi ID integer asli
-- **Version** — memvalidasi header `X-Api-Version`; default `v1` jika tidak ada, versi yang tidak didukung mengembalikan `400`
+- **Version** — memvalidasi segmen versi pada URL path (mis. `/api/v1/`); versi tidak didukung mengembalikan `400`
 - **ClientPlatform** — memvalidasi header `X-Client-Platform`, mengidentifikasi platform sistem operasi klien (iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web)
 - **Encryption** — enkripsi transmisi AES-256-GCM (antarmuka autentikasi dan panel admin), mencegah penyadapan dan manipulasi man-in-the-middle
 - **Captcha** — CAPTCHA klik, diverifikasi sebelum login/registrasi (gambar GD + penyimpanan Redis, kunci sekali pakai, masa berlaku 300 detik, batas 3 kali percobaan)

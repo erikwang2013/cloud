@@ -6,12 +6,12 @@
 
 | 유형 | 인증 방식 | 접두사 | 상태 |
 |------|---------|------|------|
-| **내부 API** | 사용자 Bearer Token | `/api/supplier/` | 사용 가능 |
-| **외부 API** | API Key (`sk_xxx`) | `/api/supplier/external/` | 사용 가능 |
+| **내부 API** | 사용자 Bearer Token | `/api/v1/supplier/` | 사용 가능 |
+| **외부 API** | API Key (`sk_xxx`) | `/api/v1/supplier/external/` | 사용 가능 |
 
 **Base URL**: `https://api.example.com`
 
-**버전 관리**: HTTP 헤더 `X-Api-Version: v1`로 지정. 누락 시 기본 `v1`, 지원하지 않는 버전은 `400` 반환. `/api/*`와 `/admin/api/*` 경로에만 적용되며, `VersionMiddleware`가 일괄 처리.
+**버전 관리**: URL 경로로 지정됩니다（예: `/api/v1/supplier/products`）. 지원하지 않는 버전은 `400`을 반환합니다. `/api/v1/*`와 `/admin/api/v1/*` 경로에만 적용되며, `VersionMiddleware`가 일괄 처리.
 
 ---
 
@@ -23,10 +23,9 @@
 
 ```
 Authorization: Bearer <user_access_token>
-X-Api-Version: v1
 ```
 
-사용자는 먼저 `/api/auth/login`으로 로그인해 Token을 받아야 하며, 계정 역할이 `supplier`여야 합니다（관리자가 공급업체 신청을 승인한 후 설정됨）.
+사용자는 먼저 `/api/v1/auth/login`으로 로그인해 Token을 받아야 하며, 계정 역할이 `supplier`여야 합니다（관리자가 공급업체 신청을 승인한 후 설정됨）.
 
 ---
 
@@ -84,7 +83,7 @@ X-Api-Version: v1
 #### 1. 공급업체 입점
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
 ```
 
 공급업체 신청. 사용자당 한 번만 신청 가능.
@@ -138,9 +137,8 @@ POST /api/supplier/apply
 | 422 | 이미 공급업체 신청 제출함 |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/apply" \
+curl -X POST "https://api.example.com/api/v1/supplier/apply" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"company_name":"示例科技","contact_name":"张三","contact_phone":"13800138000","contact_email":"zhangsan@example.com"}'
 ```
@@ -152,7 +150,7 @@ curl -X POST "https://api.example.com/api/supplier/apply" \
 ##### 할당된 상품 조회
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 **Query 파라미터**:
@@ -185,7 +183,7 @@ GET /api/supplier/products
 ##### 상품 추가
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 기존 상품을 현재 공급업체에 연결.
@@ -215,7 +213,7 @@ POST /api/supplier/products
 ##### 상품 제거
 
 ```
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 상품과 공급업체의 연결 해제.
@@ -237,7 +235,7 @@ DELETE /api/supplier/products/{id}
 ##### 정산서 목록 조회
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 **응답**: 현재 공급업체의 모든 정산서, 생성 시간 역순
@@ -273,7 +271,7 @@ GET /api/supplier/settlements
 ##### 출금 신청
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 > 이 작업은 비밀번호 재확인（`confirm_password` 필드）이 필요하며, `ConfirmationMiddleware`가 검증.
@@ -321,9 +319,8 @@ POST /api/supplier/withdraw
 | 403 | 비밀번호 재확인 실패 |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/withdraw" \
+curl -X POST "https://api.example.com/api/v1/supplier/withdraw" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"amount":"5000.00","confirm_password":"mypassword","account_info":{"method":"bank_transfer","bank_name":"ICBC","account_number":"6222021234567890"}}'
 ```
@@ -334,12 +331,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 | 메서드 | 경로 | 인증 | 비밀번호 재확인 | 설명 |
 |------|------|------|---------|------|
-| POST | `/api/supplier/apply` | Token | - | 공급업체 신청 |
-| GET | `/api/supplier/products` | Token | - | 할당된 상품 조회 |
-| POST | `/api/supplier/products` | Token | - | 상품 연결 추가 |
-| DELETE | `/api/supplier/products/{id}` | Token | - | 상품 연결 제거 |
-| GET | `/api/supplier/settlements` | Token | - | 정산서 조회 |
-| POST | `/api/supplier/withdraw` | Token | 필요 | 출금 신청 |
+| POST | `/api/v1/supplier/apply` | Token | - | 공급업체 신청 |
+| GET | `/api/v1/supplier/products` | Token | - | 할당된 상품 조회 |
+| POST | `/api/v1/supplier/products` | Token | - | 상품 연결 추가 |
+| DELETE | `/api/v1/supplier/products/{id}` | Token | - | 상품 연결 제거 |
+| GET | `/api/v1/supplier/settlements` | Token | - | 정산서 조회 |
+| POST | `/api/v1/supplier/withdraw` | Token | 필요 | 출금 신청 |
 
 ---
 
@@ -347,13 +344,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 외부 API는 공급업체가 프로그래밍 방식으로 주문, 리소스, 정산을 관리할 수 있게 합니다. 모든 요청은 API Key 인증 필요.
 
-**Base URL**: `https://api.example.com/api`
+**Base URL**: `https://api.example.com/api/v1`
 
 ### 인증
 
 ```
 Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-X-Api-Version: v1
 ```
 
 API Key는 플랫폼 관리자가 관리 백오피스 `공급업체 관리 → API Keys`에서 생성.
@@ -387,7 +383,7 @@ API Key는 플랫폼 관리자가 관리 백오피스 `공급업체 관리 → A
 ##### 주문 목록 조회
 
 ```
-GET /api/supplier/orders
+GET /api/v1/supplier/orders
 ```
 
 **Query 파라미터**:
@@ -403,7 +399,7 @@ GET /api/supplier/orders
 ##### 주문 상세 조회
 
 ```
-GET /api/supplier/orders/{id}
+GET /api/v1/supplier/orders/{id}
 ```
 
 ---
@@ -413,7 +409,7 @@ GET /api/supplier/orders/{id}
 ##### 리소스 목록 조회
 
 ```
-GET /api/supplier/resources
+GET /api/v1/supplier/resources
 ```
 
 **Query 파라미터**: page, status (active/provisioning/stopped/destroyed), type (server/ip/disk/domain)
@@ -421,7 +417,7 @@ GET /api/supplier/resources
 ##### 리소스 상태 조회
 
 ```
-GET /api/supplier/resources/{id}/status
+GET /api/v1/supplier/resources/{id}/status
 ```
 
 ---
@@ -431,13 +427,13 @@ GET /api/supplier/resources/{id}/status
 ##### 정산서 목록 조회
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 ##### 정산서 상세 조회
 
 ```
-GET /api/supplier/settlements/{id}
+GET /api/v1/supplier/settlements/{id}
 ```
 
 ---
@@ -447,13 +443,13 @@ GET /api/supplier/settlements/{id}
 ##### 출금 신청
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 ##### 출금 기록
 
 ```
-GET /api/supplier/withdraws
+GET /api/v1/supplier/withdraws
 ```
 
 ---
@@ -463,13 +459,13 @@ GET /api/supplier/withdraws
 ##### 내 상품 조회
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 ##### 상품 상장 신청 제출
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 ---
@@ -478,16 +474,16 @@ POST /api/supplier/products
 
 | 메서드 | 경로 | 설명 |
 |------|------|------|
-| GET | `/api/supplier/orders` | 주문 목록 |
-| GET | `/api/supplier/orders/{id}` | 주문 상세 |
-| GET | `/api/supplier/resources` | 리소스 목록 |
-| GET | `/api/supplier/resources/{id}/status` | 리소스 상태 |
-| GET | `/api/supplier/settlements` | 정산서 목록 |
-| GET | `/api/supplier/settlements/{id}` | 정산서 상세 |
-| POST | `/api/supplier/withdraw` | 출금 신청 |
-| GET | `/api/supplier/withdraws` | 출금 기록 |
-| GET | `/api/supplier/products` | 상품 목록 |
-| POST | `/api/supplier/products` | 상품 제출 |
+| GET | `/api/v1/supplier/orders` | 주문 목록 |
+| GET | `/api/v1/supplier/orders/{id}` | 주문 상세 |
+| GET | `/api/v1/supplier/resources` | 리소스 목록 |
+| GET | `/api/v1/supplier/resources/{id}/status` | 리소스 상태 |
+| GET | `/api/v1/supplier/settlements` | 정산서 목록 |
+| GET | `/api/v1/supplier/settlements/{id}` | 정산서 상세 |
+| POST | `/api/v1/supplier/withdraw` | 출금 신청 |
+| GET | `/api/v1/supplier/withdraws` | 출금 기록 |
+| GET | `/api/v1/supplier/products` | 상품 목록 |
+| POST | `/api/v1/supplier/products` | 상품 제출 |
 
 ---
 
@@ -540,7 +536,7 @@ X-Webhook-Event: order.paid
 | 외부 API 출금 | 10 req/min（권장값, `config/security.php`에서 조정 가능） |
 
 > 외부 API 빈도 제한 규칙은 `config/security.php`의 `rate_limits.supplier_api`에 정의되어 있으며,
-> `RateLimitMiddleware`가 `/api/supplier/external/*` 경로에 대해 일괄 실행（원자 INCR 카운트,
+> `RateLimitMiddleware`가 `/api/v1/supplier/external/*` 경로에 대해 일괄 실행（원자 INCR 카운트,
 > Redis 불가 시 방출）.
 
 빈도 제한 헤더:
@@ -560,10 +556,9 @@ X-RateLimit-Reset: 1680000000
 ```php
 $token = 'user_access_token_here';
 $client = new GuzzleHttp\Client([
-    'base_uri' => 'https://api.example.com/api/',
+    'base_uri' => 'https://api.example.com/api/v1/',
     'headers' => [
         'Authorization' => "Bearer {$token}",
-        'X-Api-Version' => 'v1',
         'Accept'        => 'application/json',
     ],
 ]);
@@ -604,16 +599,15 @@ import requests
 
 headers = {
     'Authorization': 'Bearer <user_access_token>',
-    'X-Api-Version': 'v1',
 }
 
 # 할당된 상품 조회
-resp = requests.get('https://api.example.com/api/supplier/products',
+resp = requests.get('https://api.example.com/api/v1/supplier/products',
                      headers=headers)
 products = resp.json()
 
 # 출금 신청
-resp = requests.post('https://api.example.com/api/supplier/withdraw',
+resp = requests.post('https://api.example.com/api/v1/supplier/withdraw',
                       headers=headers,
                       json={
                           'amount': '5000.00',
@@ -645,11 +639,11 @@ print(resp.json())
 
 | 메서드 | 경로 | 설명 |
 |------|------|------|
-| GET | `/admin/api/suppliers` | 공급업체 목록（status 필터 지원） |
-| GET | `/admin/api/suppliers/export` | 공급업체 Excel 내보내기 |
-| POST | `/admin/api/suppliers/{id}/approve` | 공급업체 승인 |
-| POST | `/admin/api/suppliers/{id}/settle` | 정산서 생성 |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | 출금 승인 |
-| GET | `/admin/api/suppliers/{id}/api-keys` | 공급업체 API Key 목록 조회 |
-| POST | `/admin/api/suppliers/{id}/api-keys` | API Key 생성（원본 Key 한 번만 반환） |
-| DELETE | `/admin/api/suppliers/api-keys/{id}` | API Key 폐기 |
+| GET | `/admin/api/v1/suppliers` | 공급업체 목록（status 필터 지원） |
+| GET | `/admin/api/v1/suppliers/export` | 공급업체 Excel 내보내기 |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | 공급업체 승인 |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | 정산서 생성 |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | 출금 승인 |
+| GET | `/admin/api/v1/suppliers/{id}/api-keys` | 공급업체 API Key 목록 조회 |
+| POST | `/admin/api/v1/suppliers/{id}/api-keys` | API Key 생성（원본 Key 한 번만 반환） |
+| DELETE | `/admin/api/v1/suppliers/api-keys/{id}` | API Key 폐기 |

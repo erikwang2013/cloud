@@ -6,12 +6,12 @@
 
 | प्रकार | प्रमाणीकरण विधि | प्रीफ़िक्स | स्थिति |
 |------|---------|------|------|
-| **आंतरिक API** | उपयोगकर्ता Bearer Token | `/api/supplier/` | उपलब्ध |
-| **बाहरी API** | API Key (`sk_xxx`) | `/api/supplier/external/` | उपलब्ध |
+| **आंतरिक API** | उपयोगकर्ता Bearer Token | `/api/v1/supplier/` | उपलब्ध |
+| **बाहरी API** | API Key (`sk_xxx`) | `/api/v1/supplier/external/` | उपलब्ध |
 
 **Base URL**: `https://api.example.com`
 
-**संस्करण नियंत्रण**: HTTP हेडर `X-Api-Version: v1` द्वारा निर्दिष्ट। अनुपस्थित होने पर डिफ़ॉल्ट `v1`, असमर्थित संस्करण `400` लौटाता है। केवल `/api/*` और `/admin/api/*` पथों पर प्रभावी, `VersionMiddleware` द्वारा एकीकृत रूप से संभाला जाता है।
+**संस्करण नियंत्रण**: API संस्करण URL पथ में निर्दिष्ट है (जैसे `/api/v1/...`)। असमर्थित संस्करण `400` लौटाता है। केवल `/api/v1/*` और `/admin/api/v1/*` पथों पर प्रभावी, `VersionMiddleware` द्वारा एकीकृत रूप से संभाला जाता है।
 
 ---
 
@@ -23,10 +23,9 @@
 
 ```
 Authorization: Bearer <user_access_token>
-X-Api-Version: v1
 ```
 
-उपयोगकर्ता को पहले `/api/auth/login` के माध्यम से लॉगिन करके Token प्राप्त करना होता है, और खाता भूमिका `supplier` होनी चाहिए (प्रशासक द्वारा आपूर्तिकर्ता आवेदन स्वीकृत करने के बाद सेट की जाती है)।
+उपयोगकर्ता को पहले `/api/v1/auth/login` के माध्यम से लॉगिन करके Token प्राप्त करना होता है, और खाता भूमिका `supplier` होनी चाहिए (प्रशासक द्वारा आपूर्तिकर्ता आवेदन स्वीकृत करने के बाद सेट की जाती है)।
 
 ---
 
@@ -84,7 +83,7 @@ X-Api-Version: v1
 #### 1. आपूर्तिकर्ता पंजीकरण
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
 ```
 
 आपूर्तिकर्ता बनने के लिए आवेदन करें। प्रत्येक उपयोगकर्ता केवल एक बार आवेदन कर सकता है।
@@ -138,9 +137,8 @@ POST /api/supplier/apply
 | 422 | आवेदन पहले ही जमा हो चुका |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/apply" \
+curl -X POST "https://api.example.com/api/v1/supplier/apply" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"company_name":"示例科技","contact_name":"张三","contact_phone":"13800138000","contact_email":"zhangsan@example.com"}'
 ```
@@ -152,7 +150,7 @@ curl -X POST "https://api.example.com/api/supplier/apply" \
 ##### असाइन किए गए उत्पाद प्राप्त करें
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 **Query पैरामीटर**:
@@ -185,7 +183,7 @@ GET /api/supplier/products
 ##### उत्पाद जोड़ें
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 मौजूदा उत्पाद को वर्तमान आपूर्तिकर्ता से संबद्ध करें।
@@ -215,7 +213,7 @@ POST /api/supplier/products
 ##### उत्पाद हटाएं
 
 ```
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 उत्पाद और आपूर्तिकर्ता के बीच संबद्धता रद्द करें।
@@ -237,7 +235,7 @@ DELETE /api/supplier/products/{id}
 ##### निपटान रिपोर्ट सूची प्राप्त करें
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 **प्रतिक्रिया**: वर्तमान आपूर्तिकर्ता की सभी निपटान रिपोर्ट, निर्माण समय के अनुसार उल्टे क्रम में
@@ -273,7 +271,7 @@ GET /api/supplier/settlements
 ##### निकासी के लिए आवेदन करें
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 > इस संचालन के लिए पासवर्ड द्वितीयक पुष्टि (`confirm_password` फ़ील्ड) आवश्यक है, `ConfirmationMiddleware` द्वारा सत्यापित।
@@ -321,9 +319,8 @@ POST /api/supplier/withdraw
 | 403 | पासवर्ड पुष्टि विफल |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/withdraw" \
+curl -X POST "https://api.example.com/api/v1/supplier/withdraw" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"amount":"5000.00","confirm_password":"mypassword","account_info":{"method":"bank_transfer","bank_name":"ICBC","account_number":"6222021234567890"}}'
 ```
@@ -334,12 +331,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 | विधि | पथ | प्रमाणीकरण | पासवर्ड पुष्टि | विवरण |
 |------|------|------|---------|------|
-| POST | `/api/supplier/apply` | Token | - | आपूर्तिकर्ता बनने के लिए आवेदन |
-| GET | `/api/supplier/products` | Token | - | असाइन किए गए उत्पाद देखें |
-| POST | `/api/supplier/products` | Token | - | उत्पाद संबद्धता जोड़ें |
-| DELETE | `/api/supplier/products/{id}` | Token | - | उत्पाद संबद्धता हटाएं |
-| GET | `/api/supplier/settlements` | Token | - | निपटान रिपोर्ट देखें |
-| POST | `/api/supplier/withdraw` | Token | आवश्यक | निकासी के लिए आवेदन करें |
+| POST | `/api/v1/supplier/apply` | Token | - | आपूर्तिकर्ता बनने के लिए आवेदन |
+| GET | `/api/v1/supplier/products` | Token | - | असाइन किए गए उत्पाद देखें |
+| POST | `/api/v1/supplier/products` | Token | - | उत्पाद संबद्धता जोड़ें |
+| DELETE | `/api/v1/supplier/products/{id}` | Token | - | उत्पाद संबद्धता हटाएं |
+| GET | `/api/v1/supplier/settlements` | Token | - | निपटान रिपोर्ट देखें |
+| POST | `/api/v1/supplier/withdraw` | Token | आवश्यक | निकासी के लिए आवेदन करें |
 
 ---
 
@@ -353,7 +350,6 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 ```
 Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-X-Api-Version: v1
 ```
 
 API Key प्लेटफ़ॉर्म प्रशासक द्वारा प्रशासन पैनल के `供应商管理 → API Keys` में बनाई जाती है।
@@ -387,7 +383,7 @@ API Key प्लेटफ़ॉर्म प्रशासक द्वार�
 ##### ऑर्डर सूची प्राप्त करें
 
 ```
-GET /api/supplier/orders
+GET /api/v1/supplier/orders
 ```
 
 **Query पैरामीटर**:
@@ -403,7 +399,7 @@ GET /api/supplier/orders
 ##### ऑर्डर विवरण प्राप्त करें
 
 ```
-GET /api/supplier/orders/{id}
+GET /api/v1/supplier/orders/{id}
 ```
 
 ---
@@ -413,7 +409,7 @@ GET /api/supplier/orders/{id}
 ##### संसाधन सूची प्राप्त करें
 
 ```
-GET /api/supplier/resources
+GET /api/v1/supplier/resources
 ```
 
 **Query पैरामीटर**: page, status (active/provisioning/stopped/destroyed), type (server/ip/disk/domain)
@@ -421,7 +417,7 @@ GET /api/supplier/resources
 ##### संसाधन स्थिति प्राप्त करें
 
 ```
-GET /api/supplier/resources/{id}/status
+GET /api/v1/supplier/resources/{id}/status
 ```
 
 ---
@@ -431,13 +427,13 @@ GET /api/supplier/resources/{id}/status
 ##### निपटान रिपोर्ट सूची प्राप्त करें
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 ##### निपटान रिपोर्ट विवरण प्राप्त करें
 
 ```
-GET /api/supplier/settlements/{id}
+GET /api/v1/supplier/settlements/{id}
 ```
 
 ---
@@ -447,13 +443,13 @@ GET /api/supplier/settlements/{id}
 ##### निकासी के लिए आवेदन करें
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 ##### निकासी रिकॉर्ड
 
 ```
-GET /api/supplier/withdraws
+GET /api/v1/supplier/withdraws
 ```
 
 ---
@@ -463,13 +459,13 @@ GET /api/supplier/withdraws
 ##### मेरे उत्पाद प्राप्त करें
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 ##### उत्पाद सूचीकरण आवेदन जमा करें
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 ---
@@ -478,16 +474,16 @@ POST /api/supplier/products
 
 | विधि | पथ | विवरण |
 |------|------|------|
-| GET | `/api/supplier/orders` | ऑर्डर सूची |
-| GET | `/api/supplier/orders/{id}` | ऑर्डर विवरण |
-| GET | `/api/supplier/resources` | संसाधन सूची |
-| GET | `/api/supplier/resources/{id}/status` | संसाधन स्थिति |
-| GET | `/api/supplier/settlements` | निपटान रिपोर्ट सूची |
-| GET | `/api/supplier/settlements/{id}` | निपटान रिपोर्ट विवरण |
-| POST | `/api/supplier/withdraw` | निकासी के लिए आवेदन करें |
-| GET | `/api/supplier/withdraws` | निकासी रिकॉर्ड |
-| GET | `/api/supplier/products` | उत्पाद सूची |
-| POST | `/api/supplier/products` | उत्पाद जमा करें |
+| GET | `/api/v1/supplier/orders` | ऑर्डर सूची |
+| GET | `/api/v1/supplier/orders/{id}` | ऑर्डर विवरण |
+| GET | `/api/v1/supplier/resources` | संसाधन सूची |
+| GET | `/api/v1/supplier/resources/{id}/status` | संसाधन स्थिति |
+| GET | `/api/v1/supplier/settlements` | निपटान रिपोर्ट सूची |
+| GET | `/api/v1/supplier/settlements/{id}` | निपटान रिपोर्ट विवरण |
+| POST | `/api/v1/supplier/withdraw` | निकासी के लिए आवेदन करें |
+| GET | `/api/v1/supplier/withdraws` | निकासी रिकॉर्ड |
+| GET | `/api/v1/supplier/products` | उत्पाद सूची |
+| POST | `/api/v1/supplier/products` | उत्पाद जमा करें |
 
 ---
 
@@ -540,7 +536,7 @@ X-Webhook-Event: order.paid
 | बाहरी API निकासी | 10 req/min (अनुशंसित मान, `config/security.php` में समायोज्य) |
 
 > बाहरी API दर सीमा नियम `config/security.php` के `rate_limits.supplier_api` में परिभाषित है,
-> `RateLimitMiddleware` द्वारा `/api/supplier/external/*` पथों पर एकीकृत रूप से लागू (परमाणु INCR गणना,
+> `RateLimitMiddleware` द्वारा `/api/v1/supplier/external/*` पथों पर एकीकृत रूप से लागू (परमाणु INCR गणना,
 > Redis अनुपलब्ध होने पर अनुमति दी जाती है)।
 
 दर सीमा हेडर:
@@ -560,10 +556,9 @@ X-RateLimit-Reset: 1680000000
 ```php
 $token = 'user_access_token_here';
 $client = new GuzzleHttp\Client([
-    'base_uri' => 'https://api.example.com/api/',
+    'base_uri' => 'https://api.example.com/api/v1/',
     'headers' => [
         'Authorization' => "Bearer {$token}",
-        'X-Api-Version' => 'v1',
         'Accept'        => 'application/json',
     ],
 ]);
@@ -604,16 +599,15 @@ import requests
 
 headers = {
     'Authorization': 'Bearer <user_access_token>',
-    'X-Api-Version': 'v1',
 }
 
 # असाइन किए गए उत्पाद प्राप्त करें
-resp = requests.get('https://api.example.com/api/supplier/products',
+resp = requests.get('https://api.example.com/api/v1/supplier/products',
                      headers=headers)
 products = resp.json()
 
 # निकासी के लिए आवेदन करें
-resp = requests.post('https://api.example.com/api/supplier/withdraw',
+resp = requests.post('https://api.example.com/api/v1/supplier/withdraw',
                       headers=headers,
                       json={
                           'amount': '5000.00',
@@ -645,11 +639,11 @@ print(resp.json())
 
 | विधि | पथ | विवरण |
 |------|------|------|
-| GET | `/admin/api/suppliers` | आपूर्तिकर्ता सूची (status फ़िल्टर समर्थित) |
-| GET | `/admin/api/suppliers/export` | आपूर्तिकर्ता Excel निर्यात |
-| POST | `/admin/api/suppliers/{id}/approve` | आपूर्तिकर्ता स्वीकृत करें |
-| POST | `/admin/api/suppliers/{id}/settle` | निपटान रिपोर्ट बनाएं |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | निकासी स्वीकृत करें |
-| GET | `/admin/api/suppliers/{id}/api-keys` | आपूर्तिकर्ता API Key सूची देखें |
-| POST | `/admin/api/suppliers/{id}/api-keys` | API Key बनाएं (कच्ची Key केवल एक बार लौटाई जाती है) |
-| DELETE | `/admin/api/suppliers/api-keys/{id}` | API Key रद्द करें |
+| GET | `/admin/api/v1/suppliers` | आपूर्तिकर्ता सूची (status फ़िल्टर समर्थित) |
+| GET | `/admin/api/v1/suppliers/export` | आपूर्तिकर्ता Excel निर्यात |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | आपूर्तिकर्ता स्वीकृत करें |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | निपटान रिपोर्ट बनाएं |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | निकासी स्वीकृत करें |
+| GET | `/admin/api/v1/suppliers/{id}/api-keys` | आपूर्तिकर्ता API Key सूची देखें |
+| POST | `/admin/api/v1/suppliers/{id}/api-keys` | API Key बनाएं (कच्ची Key केवल एक बार लौटाई जाती है) |
+| DELETE | `/admin/api/v1/suppliers/api-keys/{id}` | API Key रद्द करें |

@@ -208,7 +208,7 @@ cloud-php/
 │   │   ├── i18n/middleware/     # Mehrsprachigkeits-Middleware (Locale)
 │   │   ├── security/           # CORS / WAF / Rate-Limiting / Geo-Sperre / Wartungsmodus / Audit-Protokolle
 │   │   ├── snowflake/          # Snowflake-ID-Dienst / Eloquent HasSnowflakeId Trait
-│   │   ├── version/middleware/  # API-Versions-Middleware (X-Api-Version-Header-Prüfung)
+│   │   ├── version/middleware/  # API-Versions-Middleware (Version im URL-Pfad, z. B. /api/v1/)
 │   │   ├── clientplatform/middleware/  # Client-Plattform-Middleware (X-Client-Platform-Header-Erkennung)
 │   │   ├── feature/            # Feature-Flags-Dienst
 │   │   └── webhook/            # Webhook-Ereignisverteiler
@@ -535,7 +535,7 @@ Globale Middleware-Kette: `Version → CORS → SecurityHeaders → ClientPlatfo
 - **Security Plugin** — 31 Angriffserkennungen (XSS/SQL-Injection/Command-Injection/SSRF/Deserialisierung/JWT-Angriffe/Host-Header-Angriffe/Request-Smuggling/GraphQL-Injection/Leak sensibler Daten usw.), IP-Whitelist + automatische IP-Blacklist-Sperrung
 - **Locale** — Parsen von Accept-Language, Einstellung der Sprache
 - **HashidRequest** — automatische Decodierung von hashid-Strings in Anfragen in echte Integer-IDs
-- **Version** — prüft den `X-Api-Version`-Header; fehlt er, gilt standardmäßig `v1`; nicht unterstützte Versionen liefern `400`
+- **Version** — prüft den Versionsabschnitt im URL-Pfad (z. B. `/api/v1/`), nicht unterstützte Versionen liefern `400`
 - **ClientPlatform** — prüft den `X-Client-Platform`-Header und erkennt die Client-Plattform (iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web)
 - **Encryption** — AES-256-GCM-Transportverschlüsselung (Authentifizierungs-APIs und Admin-Backend), schützt vor Man-in-the-Middle-Abhören und Manipulation
 - **Captcha** — Klick-CAPTCHA, Prüfung vor Login/Registrierung (GD-Zeichnung + Redis-Speicherung, Einmal-Schlüssel, 300s gültig, 3 Versuchsversuche)

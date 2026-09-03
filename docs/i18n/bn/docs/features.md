@@ -5,7 +5,7 @@
 ### 1.1 রেজিস্ট্রেশন
 
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
   → WAF স্ক্যান
   → রেট লিমিট 3 req/min
   → পাসওয়ার্ড ভ্যালিডেশন len≥8
@@ -24,7 +24,7 @@ POST /api/auth/register
 ```
 Client                    Middleware Chain           AuthService              DB
   │                           │                        │                     │
-  │ POST /api/auth/register   │                        │                     │
+  │ POST /api/v1/auth/register   │                        │                     │
   │──────────────────────────▶│ WAF→RateLimit→Encrypt  │                     │
   │                           │───────────────────────▶│                     │
   │                           │                        │ User::create() ────▶│
@@ -40,7 +40,7 @@ Client                    Middleware Chain           AuthService              DB
 ### 1.2 লগইন
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
   → WAF স্ক্যান
   → রেট লিমিট 5 req/min
   → Captcha ভেরিফিকেশন (ক্লিক ক্যাপচা, ৩ বার চেষ্টার সীমা)
@@ -59,7 +59,7 @@ POST /api/auth/login
 ### 1.3 OAuth (Google / Apple)
 
 ```
-GET /api/auth/google → Google OAuth → callback?code=xxx
+GET /api/v1/auth/google → Google OAuth → callback?code=xxx
   1. Google/Apple ID Token ভেরিফাই
   2. ইউজার খোঁজা বা তৈরি (email ম্যাচ)
   3. token ইস্যু (client_platform সহ)
@@ -69,30 +69,30 @@ GET /api/auth/google → Google OAuth → callback?code=xxx
 ### 1.4 TOTP টু-স্টেপ ভেরিফিকেশন
 
 ```
-1. POST /api/user/totp/setup
+1. POST /api/v1/user/totp/setup
      → secret + QR URL জেনারেশন (Redis-এ ১০ মিনিট সাময়িক, পারসিস্টেন্ট নয়)
      ← {secret, qr_url, manual}
-2. POST /api/user/totp/verify
+2. POST /api/v1/user/totp/verify
      → TOTP code ভেরিফাই (প্রথমবার setup এনাবল, পরে ভেরিফিকেশন)
      ← {verified: true}
-3. GET /api/user/totp/recovery-codes
+3. GET /api/v1/user/totp/recovery-codes
      → ৮টি ওয়ান-টাইম রিকভারি কোড জেনারেশন (পাসওয়ার্ড কনফার্মেশন প্রয়োজন)
      ← {recovery_codes: [৮টি]}
 4. লগইনের সময়: TOTP code বা রিকভারি কোড ইনপুট
-     → POST /api/auth/login/recovery (login, password, recovery_code)
+     → POST /api/v1/auth/login/recovery (login, password, recovery_code)
 ```
 
 ### 1.5 সেশন ম্যানেজমেন্ট
 
 ```
-GET /api/user/sessions
+GET /api/v1/user/sessions
   → RefreshToken::where(user_id, revoked=false)
   ← [{id, fingerprint, client_platform, created_at, expires_at}]
 
-DELETE /api/user/sessions/{id}
+DELETE /api/v1/user/sessions/{id}
   → RefreshToken::update(revoked=true)
 
-DELETE /api/user/account (GDPR ডিলিশন)
+DELETE /api/v1/user/account (GDPR ডিলিশন)
   → পাসওয়ার্ড সেকেন্ডারি কনফার্মেশন
   → User সফট-ডিলিট
   → সব RefreshToken revoked
@@ -122,7 +122,7 @@ Product (1) ────── (N) ProductAttribute
 ### 2.2 প্রোডাক্ট লিস্ট (ক্যাশসহ)
 
 ```
-GET /api/products?category_id=1&region_id=2&keyword=vps&page=1
+GET /api/v1/products?category_id=1&region_id=2&keyword=vps&page=1
 
 CacheService::remember('products:list:{hash}', TTL 5min)
   → Product::published()
@@ -140,7 +140,7 @@ CacheService::remember('products:list:{hash}', TTL 5min)
 ### 2.3 প্রোডাক্ট সার্চ (Elasticsearch)
 
 ```
-GET /api/products/search?q=vps&page=1
+GET /api/v1/products/search?q=vps&page=1
   → Product::search('vps')
     → Elasticsearch (IK Analyzer চাইনিজ টোকেনাইজেশন)
     → where('status', 'published')
@@ -150,11 +150,11 @@ GET /api/products/search?q=vps&page=1
 ### 2.4 প্রোডাক্ট রিভিউ
 
 ```
-GET /api/products/{id}/reviews
+GET /api/v1/products/{id}/reviews
   → অ্যাপ্রুভড রিভিউ + গড় রেটিং + রেটিং ডিস্ট্রিবিউশন
   ← {reviews, avg_rating, total, distribution: {5: 12, 4: 8, ...}}
 
-POST /api/products/{id}/reviews (লগইন প্রয়োজন)
+POST /api/v1/products/{id}/reviews (লগইন প্রয়োজন)
   → rating (1-5) + content
   → status = pending (অ্যাডমিন রিভিউর পর ডিসপ্লে)
 ```
@@ -162,10 +162,10 @@ POST /api/products/{id}/reviews (লগইন প্রয়োজন)
 ### 2.5 ব্যাচ ইমপোর্ট/এক্সপোর্ট
 
 ```
-GET /admin/api/products/export
+GET /admin/api/v1/products/export
   → CSV ডাউনলোড (প্রোডাক্ট + SKU + রিজিয়ন প্রাইসিং)
 
-POST /admin/api/products/import
+POST /admin/api/v1/products/import
   → CSV আপলোড upsert
   ← {imported: N, errors: [...]}
 ```
@@ -177,28 +177,28 @@ POST /admin/api/products/import
 ### 3.1 কার্ট
 
 ```
-POST /api/cart          → addToCart(sku_id, region_id, quantity, cycle)
-GET /api/cart           → কার্ট লিস্ট (SKU ডিটেইল + রিয়েল-টাইম প্রাইসসহ)
-DELETE /api/cart/{id}   → removeFromCart
-PUT /api/cart/{id}      → updateCartQuantity
+POST /api/v1/cart          → addToCart(sku_id, region_id, quantity, cycle)
+GET /api/v1/cart           → কার্ট লিস্ট (SKU ডিটেইল + রিয়েল-টাইম প্রাইসসহ)
+DELETE /api/v1/cart/{id}   → removeFromCart
+PUT /api/v1/cart/{id}      → updateCartQuantity
 ```
 
 ### 3.2 অর্ডার প্লেসমেন্ট ফ্লো
 
 ```
-1. POST /api/orders                           অর্ডার তৈরি
+1. POST /api/v1/orders                           অর্ডার তৈরি
      → ইনভেন্টরি ভ্যালিডেশন, প্রাইস ক্যালকুলেশন, কুপন প্রয়োগ
      ← {order_id, order_no, items, total}
 
-2. POST /api/coupons/validate                 কুপন প্রয়োগ
+2. POST /api/v1/coupons/validate                 কুপন প্রয়োগ
      → {code: "SAVE10"}
      ← {coupon_id, discount, type: percent/fixed}
 
-3. GET /api/orders/{id}/payment-methods       উপলব্ধ পেমেন্ট চ্যানেল
+3. GET /api/v1/orders/{id}/payment-methods       উপলব্ধ পেমেন্ট চ্যানেল
      → PaymentRouter::getAvailableChannels(order)
      ← [{channel_id, name, code, amount, fee, total_amount}]
 
-4. POST /api/orders/{id}/pay                  পেমেন্ট শুরু
+4. POST /api/v1/orders/{id}/pay                  পেমেন্ট শুরু
      → পাসওয়ার্ড সেকেন্ডারি কনফার্মেশন (ConfirmationMiddleware)
      → StripeChannel::createPaymentIntent()
      ← {client_secret, transaction_id}
@@ -379,19 +379,19 @@ ProvisionWorker (Redis Queue কনজিউমার)
 ### 6.1 অনবোর্ডিং ফ্লো
 
 ```
-POST /api/supplier/apply (ইউজার লগইন প্রয়োজন)
+POST /api/v1/supplier/apply (ইউজার লগইন প্রয়োজন)
   → {company_name, contact_name, contact_phone, contact_email, settlement_method}
   → status = 'pending'
   → অ্যাডমিন রিভিউ
 
 অ্যাডমিন অ্যাপ্রুভাল:
-  POST /admin/api/suppliers/{id}/approve (পাসওয়ার্ড কনফার্মেশন)
+  POST /admin/api/v1/suppliers/{id}/approve (পাসওয়ার্ড কনফার্মেশন)
     → Supplier::status = 'active'
     → User::role = 'supplier'
     → ইউজার সাপ্লায়ার পারমিশন পায়
 
 প্রোডাক্ট লিস্টিং:
-  POST /api/supplier/products
+  POST /api/v1/supplier/products
     → {product_id, commission_rate}
     → সাপ্লায়ার প্রোডাক্টে অ্যাসোসিয়েট
 
@@ -402,7 +402,7 @@ POST /api/supplier/apply (ইউজার লগইন প্রয়োজন)
     → SupplierSettlement তৈরি
 
 উইথড্রয়াল:
-  POST /api/supplier/withdraw (পাসওয়ার্ড কনফার্মেশন)
+  POST /api/v1/supplier/withdraw (পাসওয়ার্ড কনফার্মেশন)
     → উইথড্রেবল ব্যালেন্স চেক
     → SupplierWithdraw তৈরি (status=pending)
     → অ্যাডমিন অ্যাপ্রুভাল ও পেমেন্ট
@@ -411,13 +411,13 @@ POST /api/supplier/apply (ইউজার লগইন প্রয়োজন)
 ### 6.2 এক্সটার্নাল API
 
 ```
-POST /admin/api/suppliers/{id}/api-keys
+POST /admin/api/v1/suppliers/{id}/api-keys
   → sk_ . bin2hex(random_bytes(24))
   → hash('sha256', rawKey) স্টোর
   ← {api_key: "sk_xxx..."} (শুধু একবার দেখানো হয়)
 
 সাপ্লায়ার ব্যবহার:
-  GET /api/supplier/external/orders
+  GET /api/v1/supplier/external/orders
     Authorization: Bearer sk_xxx...
     → SupplierApiKeyMiddleware সিগনচার ভেরিফিকেশন
     → supplierId অনুযায়ী ডেটা ফিল্টার
@@ -428,11 +428,11 @@ POST /admin/api/suppliers/{id}/api-keys
 ## 7. ডোমেইন ও DNS
 
 ```
-GET /api/domain/check/{domain}/{tld}    # ডোমেইন অ্যাভেইলেবিলিটি
-GET /api/domain/tlds                     # রেজিস্ট্রেবল TLD লিস্ট (ক্যাশ 1h)
-GET /api/dns/{domain}                    # DNS রেকর্ড লিস্ট
-POST /api/dns/{domain}/records           # DNS রেকর্ড যোগ
-DELETE /api/dns/{domain}/records/{id}    # DNS রেকর্ড ডিলিট (পাসওয়ার্ড কনফার্মেশন)
+GET /api/v1/domain/check/{domain}/{tld}    # ডোমেইন অ্যাভেইলেবিলিটি
+GET /api/v1/domain/tlds                     # রেজিস্ট্রেবল TLD লিস্ট (ক্যাশ 1h)
+GET /api/v1/dns/{domain}                    # DNS রেকর্ড লিস্ট
+POST /api/v1/dns/{domain}/records           # DNS রেকর্ড যোগ
+DELETE /api/v1/dns/{domain}/records/{id}    # DNS রেকর্ড ডিলিট (পাসওয়ার্ড কনফার্মেশন)
 ```
 
 ---
@@ -440,15 +440,15 @@ DELETE /api/dns/{domain}/records/{id}    # DNS রেকর্ড ডিলি�
 ## 8. টিকেট সিস্টেম
 
 ```
-POST /api/tickets                    # টিকেট তৈরি
-GET /api/tickets                     # আমার টিকেট
-GET /api/tickets/{id}                # টিকেট ডিটেইল
-POST /api/tickets/{id}/reply         # টিকেট রিপ্লাই
+POST /api/v1/tickets                    # টিকেট তৈরি
+GET /api/v1/tickets                     # আমার টিকেট
+GET /api/v1/tickets/{id}                # টিকেট ডিটেইল
+POST /api/v1/tickets/{id}/reply         # টিকেট রিপ্লাই
 
 অ্যাডমিন:
-  GET /admin/api/tickets              # টিকেট কিউ
-  POST /admin/api/tickets/{id}/assign # কাস্টমার সার্ভিস অ্যাসাইন
-  POST /admin/api/tickets/{id}/close  # টিকেট ক্লোজ
+  GET /admin/api/v1/tickets              # টিকেট কিউ
+  POST /admin/api/v1/tickets/{id}/assign # কাস্টমার সার্ভিস অ্যাসাইন
+  POST /admin/api/v1/tickets/{id}/close  # টিকেট ক্লোজ
 
 ইভেন্ট-ড্রিভেন:
   TicketCreated ইভেন্ট
@@ -498,9 +498,9 @@ Cron: CollectMetrics (প্রতি ৫ মিনিট)
   → মেট্রিক্স Redis hash-এ স্টোর (TTL 1h)
 
 অ্যাডমিন:
-  GET /admin/api/monitor/dashboard
+  GET /admin/api/v1/monitor/dashboard
     → ওভারভিউ পরিসংখ্যান + সাম্প্রতিক অ্যালার্ট
-  GET /admin/api/monitor/resources/{id}
+  GET /admin/api/v1/monitor/resources/{id}
     → রিয়েল-টাইম মেট্রিক্স (Redis থেকে রিড)
 ```
 
@@ -564,8 +564,8 @@ config/features.php (ডিফল্ট মান)
 Redis feature:{name} (TTL 1h, অ্যাডমিন API দিয়ে ডাইনামিক অ্যাডজাস্ট)
 
 অ্যাডমিন API:
-  GET /admin/api/features → সব Flag ও স্ট্যাটাস/সোর্স লিস্ট
-  PUT /admin/api/features/{name} → enable/disable/toggle/reset
+  GET /admin/api/v1/features → সব Flag ও স্ট্যাটাস/সোর্স লিস্ট
+  PUT /admin/api/v1/features/{name} → enable/disable/toggle/reset
 
 বর্তমান Flags:
   supplier_external_api, websocket_push, maintenance_redirect,
@@ -610,7 +610,7 @@ CDN প্রোডাক্ট চারটি প্রোভাইডার �
 
 **স্ট্রিক্ট স্ন্যাপশট বাইন্ডিং:** ডোমেইন তৈরি হলে `provider_account_id` নির্ধারিত হয়, পরবর্তী ডিলিট/ক্যাশ পর্জ শুধু সেই বাইন্ডেড অ্যাকাউন্ট ব্যবহার করে; অ্যাকাউন্ট অনুপস্থিত বা ডিসেবল হলে 4003 রিটার্ন হয়, অ্যাকাউন্ট সাইলেন্টলি সুইচ হয় না। Aliyun/Tencent ডোমেইনে ICP রেজিস্ট্রেশন প্রয়োজন, রেজিস্ট্রেশন না থাকলে 4002 রিটার্ন (`requires_icp_registration` প্রম্পট সহ)।
 
-**ক্যাশ পর্জ:** `POST /api/cdn/domains/{id}/purge`, URL অটো ডিডুপ ও স্পেস রিমুভ (সর্বোচ্চ ১০০টি), শুধু নিজস্ব ডোমেইন বা সাবডোমেইন অনুমোদিত, ওয়াইল্ডকার্ড ও বাহ্যিক URL রিজেক্ট, ইডেম্পোটেন্ট।
+**ক্যাশ পর্জ:** `POST /api/v1/cdn/domains/{id}/purge`, URL অটো ডিডুপ ও স্পেস রিমুভ (সর্বোচ্চ ১০০টি), শুধু নিজস্ব ডোমেইন বা সাবডোমেইন অনুমোদিত, ওয়াইল্ডকার্ড ও বাহ্যিক URL রিজেক্ট, ইডেম্পোটেন্ট।
 
 **ইন্টারফেস:** CdnAdapterInterface + CdnProvider (ProvisionProvider আপগ্রেড চ্যানেল রিইউজ করে, plan আপগ্রেড সাপোর্ট)
 
@@ -643,7 +643,7 @@ CDN প্রোডাক্ট চারটি প্রোভাইডার �
 
 ## 20. GraphQL API
 
-POST /graphql (পাবলিক কোয়েরি) ও POST /api/graphql (অথেনটিকেটেড কোয়েরি) দুটি এন্ডপয়েন্ট প্রদান করে। webonyx/graphql-php ভিত্তিক, কোয়েরি ডেপথ লিমিট ৫ লেয়ার, কমপ্লেক্সিটি লিমিট ১০০।
+POST /graphql (পাবলিক কোয়েরি) ও POST /api/v1/graphql (অথেনটিকেটেড কোয়েরি) দুটি এন্ডপয়েন্ট প্রদান করে। webonyx/graphql-php ভিত্তিক, কোয়েরি ডেপথ লিমিট ৫ লেয়ার, কমপ্লেক্সিটি লিমিট ১০০।
 
 **সংবেদনশীল অপারেশন REST-only থাকে:** পেমেন্ট, উইথড্রয়াল, রিফান্ড, KYC রিভিউ।
 

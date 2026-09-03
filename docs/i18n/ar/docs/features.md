@@ -5,7 +5,7 @@
 ### 1.1 التسجيل
 
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
   → فحص WAF
   → تقييد التردد 3 طلبات/دقيقة
   → التحقق من كلمة المرور len≥8
@@ -24,7 +24,7 @@ POST /api/auth/register
 ```
 Client                    Middleware Chain           AuthService              DB
   │                           │                        │                     │
-  │ POST /api/auth/register   │                        │                     │
+  │ POST /api/v1/auth/register   │                        │                     │
   │──────────────────────────▶│ WAF→RateLimit→Encrypt  │                     │
   │                           │───────────────────────▶│                     │
   │                           │                        │ User::create() ────▶│
@@ -40,7 +40,7 @@ Client                    Middleware Chain           AuthService              DB
 ### 1.2 تسجيل الدخول
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
   → فحص WAF
   → تقييد التردد 5 طلبات/دقيقة
   → التحقق من الكابتشا (كابتشا النقر، حد 3 محاولات)
@@ -59,7 +59,7 @@ POST /api/auth/login
 ### 1.3 OAuth (Google / Apple)
 
 ```
-GET /api/auth/google → Google OAuth → callback?code=xxx
+GET /api/v1/auth/google → Google OAuth → callback?code=xxx
   1. التحقق من ID Token الخاص بـ Google/Apple
   2. البحث عن المستخدم أو إنشائه (مطابقة البريد الإلكتروني)
   3. إصدار token (يشمل client_platform)
@@ -69,30 +69,30 @@ GET /api/auth/google → Google OAuth → callback?code=xxx
 ### 1.4 التحقق الثنائي TOTP
 
 ```
-1. POST /api/user/totp/setup
+1. POST /api/v1/user/totp/setup
      → توليد secret + رابط QR (تخزين مؤقت في Redis لمدة 10 دقائق، لا يتم حفظه دائماً)
      ← {secret, qr_url, manual}
-2. POST /api/user/totp/verify
+2. POST /api/v1/user/totp/verify
      → التحقق من كود TOTP (المرة الأولى تفعيل setup، وبعدها تحقق)
      ← {verified: true}
-3. GET /api/user/totp/recovery-codes
+3. GET /api/v1/user/totp/recovery-codes
      → توليد 8 رموز استرداد لمرة واحدة (يتطلب تأكيد كلمة المرور)
      ← {recovery_codes: [8 رموز]}
 4. عند تسجيل الدخول: إدخال كود TOTP أو استخدام رمز الاسترداد
-     → POST /api/auth/login/recovery (login, password, recovery_code)
+     → POST /api/v1/auth/login/recovery (login, password, recovery_code)
 ```
 
 ### 1.5 إدارة الجلسات
 
 ```
-GET /api/user/sessions
+GET /api/v1/user/sessions
   → RefreshToken::where(user_id, revoked=false)
   ← [{id, fingerprint, client_platform, created_at, expires_at}]
 
-DELETE /api/user/sessions/{id}
+DELETE /api/v1/user/sessions/{id}
   → RefreshToken::update(revoked=true)
 
-DELETE /api/user/account (حذف الحساب وفقاً لـ GDPR)
+DELETE /api/v1/user/account (حذف الحساب وفقاً لـ GDPR)
   → تأكيد ثانٍ بكلمة المرور
   → حذف ناعم لـ User
   → إبطال كل RefreshToken
@@ -122,7 +122,7 @@ Product (1) ────── (N) ProductAttribute
 ### 2.2 قائمة المنتجات (مع التخزين المؤقت)
 
 ```
-GET /api/products?category_id=1&region_id=2&keyword=vps&page=1
+GET /api/v1/products?category_id=1&region_id=2&keyword=vps&page=1
 
 CacheService::remember('products:list:{hash}', TTL 5دقائق)
   → Product::published()
@@ -140,7 +140,7 @@ CacheService::remember('products:list:{hash}', TTL 5دقائق)
 ### 2.3 البحث في المنتجات (Elasticsearch)
 
 ```
-GET /api/products/search?q=vps&page=1
+GET /api/v1/products/search?q=vps&page=1
   → Product::search('vps')
     → Elasticsearch (محلل IK لتقسيم الصينية)
     → where('status', 'published')
@@ -150,11 +150,11 @@ GET /api/products/search?q=vps&page=1
 ### 2.4 تقييمات المنتجات
 
 ```
-GET /api/products/{id}/reviews
+GET /api/v1/products/{id}/reviews
   → التقييمات المراجعة + متوسط الدرجة + توزيع الدرجات
   ← {reviews, avg_rating, total, distribution: {5: 12, 4: 8, ...}}
 
-POST /api/products/{id}/reviews (يتطلب تسجيل الدخول)
+POST /api/v1/products/{id}/reviews (يتطلب تسجيل الدخول)
   → rating (1-5) + content
   → status = pending (تُعرض بعد مراجعة المسؤول)
 ```
@@ -162,10 +162,10 @@ POST /api/products/{id}/reviews (يتطلب تسجيل الدخول)
 ### 2.5 الاستيراد/التصدير بالجملة
 
 ```
-GET /admin/api/products/export
+GET /admin/api/v1/products/export
   → تنزيل CSV (المنتج + SKU + تسعير المناطق)
 
-POST /admin/api/products/import
+POST /admin/api/v1/products/import
   → رفع CSV مع upsert
   ← {imported: N, errors: [...]}
 ```
@@ -177,28 +177,28 @@ POST /admin/api/products/import
 ### 3.1 سلة التسوق
 
 ```
-POST /api/cart          → addToCart(sku_id, region_id, quantity, cycle)
-GET /api/cart           → قائمة السلة (تشمل تفاصيل SKU + الأسعار اللحظية)
-DELETE /api/cart/{id}   → removeFromCart
-PUT /api/cart/{id}      → updateCartQuantity
+POST /api/v1/cart          → addToCart(sku_id, region_id, quantity, cycle)
+GET /api/v1/cart           → قائمة السلة (تشمل تفاصيل SKU + الأسعار اللحظية)
+DELETE /api/v1/cart/{id}   → removeFromCart
+PUT /api/v1/cart/{id}      → updateCartQuantity
 ```
 
 ### 3.2 تدفق إنشاء الطلب
 
 ```
-1. POST /api/orders                            إنشاء الطلب
+1. POST /api/v1/orders                            إنشاء الطلب
      → التحقق من المخزون وحساب السعر وتطبيق القسيمة
      ← {order_id, order_no, items, total}
 
-2. POST /api/coupons/validate                  تطبيق القسيمة
+2. POST /api/v1/coupons/validate                  تطبيق القسيمة
      → {code: "SAVE10"}
      ← {coupon_id, discount, type: percent/fixed}
 
-3. GET /api/orders/{id}/payment-methods        الحصول على قنوات الدفع المتاحة
+3. GET /api/v1/orders/{id}/payment-methods        الحصول على قنوات الدفع المتاحة
      → PaymentRouter::getAvailableChannels(order)
      ← [{channel_id, name, code, amount, fee, total_amount}]
 
-4. POST /api/orders/{id}/pay                   إطلاق الدفع
+4. POST /api/v1/orders/{id}/pay                   إطلاق الدفع
      → تأكيد ثانٍ بكلمة المرور (ConfirmationMiddleware)
      → StripeChannel::createPaymentIntent()
      ← {client_secret, transaction_id}
@@ -379,19 +379,19 @@ ProvisionWorker (استهلاك Redis Queue)
 ### 6.1 تدفق التسجيل
 
 ```
-POST /api/supplier/apply (يتطلب تسجيل دخول المستخدم)
+POST /api/v1/supplier/apply (يتطلب تسجيل دخول المستخدم)
   → {company_name, contact_name, contact_phone, contact_email, settlement_method}
   → status = 'pending'
   → مراجعة المسؤول
 
 موافقة المسؤول:
-  POST /admin/api/suppliers/{id}/approve (تأكيد كلمة المرور)
+  POST /admin/api/v1/suppliers/{id}/approve (تأكيد كلمة المرور)
     → Supplier::status = 'active'
     → User::role = 'supplier'
     → يكتسب المستخدم صلاحيات المورد
 
 إدراج المنتجات:
-  POST /api/supplier/products
+  POST /api/v1/supplier/products
     → {product_id, commission_rate}
     → ربط منتج المورد
 
@@ -402,7 +402,7 @@ POST /api/supplier/apply (يتطلب تسجيل دخول المستخدم)
     → إنشاء SupplierSettlement
 
 السحب:
-  POST /api/supplier/withdraw (تأكيد كلمة المرور)
+  POST /api/v1/supplier/withdraw (تأكيد كلمة المرور)
     → فحص الرصيد القابل للسحب
     → إنشاء SupplierWithdraw (status=pending)
     → موافقة المسؤول والتحويل
@@ -411,13 +411,13 @@ POST /api/supplier/apply (يتطلب تسجيل دخول المستخدم)
 ### 6.2 API الخارجي
 
 ```
-POST /admin/api/suppliers/{id}/api-keys
+POST /admin/api/v1/suppliers/{id}/api-keys
   → sk_ . bin2hex(random_bytes(24))
   → تخزين hash('sha256', rawKey)
   ← {api_key: "sk_xxx..."} (يُعرض مرة واحدة فقط)
 
 استخدام المورد:
-  GET /api/supplier/external/orders
+  GET /api/v1/supplier/external/orders
     Authorization: Bearer sk_xxx...
     → التحقق من التوقيع عبر SupplierApiKeyMiddleware
     → تصفية البيانات حسب supplierId
@@ -428,11 +428,11 @@ POST /admin/api/suppliers/{id}/api-keys
 ## 7. النطاقات و DNS
 
 ```
-GET /api/domain/check/{domain}/{tld}    # توفر النطاق
-GET /api/domain/tlds                     # قائمة TLD القابلة للتسجيل (تخزين مؤقت ساعة)
-GET /api/dns/{domain}                    # قائمة سجلات DNS
-POST /api/dns/{domain}/records           # إضافة سجل DNS
-DELETE /api/dns/{domain}/records/{id}    # حذف سجل DNS (تأكيد كلمة المرور)
+GET /api/v1/domain/check/{domain}/{tld}    # توفر النطاق
+GET /api/v1/domain/tlds                     # قائمة TLD القابلة للتسجيل (تخزين مؤقت ساعة)
+GET /api/v1/dns/{domain}                    # قائمة سجلات DNS
+POST /api/v1/dns/{domain}/records           # إضافة سجل DNS
+DELETE /api/v1/dns/{domain}/records/{id}    # حذف سجل DNS (تأكيد كلمة المرور)
 ```
 
 ---
@@ -440,15 +440,15 @@ DELETE /api/dns/{domain}/records/{id}    # حذف سجل DNS (تأكيد كلم�
 ## 8. نظام التذاكر
 
 ```
-POST /api/tickets                    # إنشاء تذكرة
-GET /api/tickets                     # تذاكري
-GET /api/tickets/{id}                # تفاصيل التذكرة
-POST /api/tickets/{id}/reply         # الرد على التذكرة
+POST /api/v1/tickets                    # إنشاء تذكرة
+GET /api/v1/tickets                     # تذاكري
+GET /api/v1/tickets/{id}                # تفاصيل التذكرة
+POST /api/v1/tickets/{id}/reply         # الرد على التذكرة
 
 المسؤول:
-  GET /admin/api/tickets              # قائمة انتظار التذاكر
-  POST /admin/api/tickets/{id}/assign # توزيع خدمة العملاء
-  POST /admin/api/tickets/{id}/close  # إغلاق التذكرة
+  GET /admin/api/v1/tickets              # قائمة انتظار التذاكر
+  POST /admin/api/v1/tickets/{id}/assign # توزيع خدمة العملاء
+  POST /admin/api/v1/tickets/{id}/close  # إغلاق التذكرة
 
 القيادة بالأحداث:
   حدث TicketCreated
@@ -498,9 +498,9 @@ Cron: CollectMetrics (كل 5 دقائق)
   → تخزين المقاييس في Redis hash (TTL ساعة)
 
 المسؤول:
-  GET /admin/api/monitor/dashboard
+  GET /admin/api/v1/monitor/dashboard
     → إحصاءات عامة + آخر التنبيهات
-  GET /admin/api/monitor/resources/{id}
+  GET /admin/api/v1/monitor/resources/{id}
     → المقاييس اللحظية (قراءة من Redis)
 ```
 
@@ -564,8 +564,8 @@ config/features.php (القيم الافتراضية)
 Redis feature:{name} (TTL ساعة، تعديل ديناميكي عبر API الإدارة)
 
 واجهة الإدارة:
-  GET /admin/api/features ← سرد جميع الأعلام والحالة/المصدر
-  PUT /admin/api/features/{name} ← enable/disable/toggle/reset
+  GET /admin/api/v1/features ← سرد جميع الأعلام والحالة/المصدر
+  PUT /admin/api/v1/features/{name} ← enable/disable/toggle/reset
 
 الأعلام الحالية:
   supplier_external_api, websocket_push, maintenance_redirect,
@@ -610,7 +610,7 @@ Redis feature:{name} (TTL ساعة، تعديل ديناميكي عبر API ال
 
 **ربط اللقطة الصارم:** يُحدَّد `provider_account_id` عند إنشاء النطاق، ولا يُستخدم لاحقاً في الحذف/مسح التخزين المؤقت سوى هذا الحساب المربوط؛ عند غياب الحساب أو تعطيله يُعاد 4003 دون تبديل الحساب بصمت. تتطلب نطاقات Alibaba Cloud / Tencent Cloud تسجيل ICP، وعند غيابه يُعاد 4002 (مع حقل التنبيه `requires_icp_registration`).
 
-**مسح التخزين المؤقت:** `POST /api/cdn/domains/{id}/purge`، تُنقّى عناوين URL تلقائياً من التكرار والمسافات (بحد أقصى 100)، ولا تُقبل سوى عناوين النطاق نفسه أو النطاقات الفرعية، مع رفض أحرف البدل والعناوين الخارجية، والعملية idempotent.
+**مسح التخزين المؤقت:** `POST /api/v1/cdn/domains/{id}/purge`، تُنقّى عناوين URL تلقائياً من التكرار والمسافات (بحد أقصى 100)، ولا تُقبل سوى عناوين النطاق نفسه أو النطاقات الفرعية، مع رفض أحرف البدل والعناوين الخارجية، والعملية idempotent.
 
 **الواجهة:** CdnAdapterInterface + CdnProvider (يعيد استخدام قناة ترقية ProvisionProvider، ويدعم ترقية الباقة)
 
@@ -643,7 +643,7 @@ Redis feature:{name} (TTL ساعة، تعديل ديناميكي عبر API ال
 
 ## 20. واجهة GraphQL API
 
-توفر نقطتي نهاية: POST /graphql (استعلام عام) و POST /api/graphql (استعلام مصادق). مبنية على webonyx/graphql-php، حد عمق الاستعلام 5 مستويات، وحد التعقيد 100.
+توفر نقطتي نهاية: POST /graphql (استعلام عام) و POST /api/v1/graphql (استعلام مصادق). مبنية على webonyx/graphql-php، حد عمق الاستعلام 5 مستويات، وحد التعقيد 100.
 
 **العمليات الحساسة تبقى REST فقط:** الدفع والسحب والاسترداد ومراجعة KYC.
 

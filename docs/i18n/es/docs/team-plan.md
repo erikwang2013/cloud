@@ -31,7 +31,7 @@
 
 ### 2.2 Desviaciones documentación-código (4 P1 sin resolver)
 
-- El filtro por status de GET /api/orders no está implementado
+- El filtro por status de GET /api/v1/orders no está implementado
 - Faltan los eventos de push WebSocket (la documentación de websocket_push lo declara)
 - El alcance de disparo de ticket.updated no está claro
 - product_attributes es un schema muerto (ningún código lo usa)

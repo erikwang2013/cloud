@@ -208,7 +208,7 @@ cloud-php/
 │   │   ├── i18n/middleware/     # Middleware multilingue (Locale)
 │   │   ├── security/           # CORS / WAF / limitation de débit / blocage géographique / mode maintenance / journaux d'audit
 │   │   ├── snowflake/          # Service de génération d'ID flocon de neige / trait Eloquent HasSnowflakeId
-│   │   ├── version/middleware/  # Middleware de version d'API (vérification de l'en-tête X-Api-Version)
+│   │   ├── version/middleware/  # Middleware de version d'API (validation de la version dans le chemin URL)
 │   │   ├── clientplatform/middleware/  # Middleware de plateforme client (identification de l'en-tête X-Client-Platform)
 │   │   ├── feature/            # Service d'interrupteurs Feature Flags
 │   │   └── webhook/            # Distributeur d'événements Webhook
@@ -534,7 +534,7 @@ Chaîne de middlewares globale : `Version → CORS → SecurityHeaders → Clien
 - **Security Plugin** — détection de 31 types d'attaques (XSS / injection SQL / injection de commandes / SSRF / désérialisation / attaques JWT / attaques par en-tête Host / request smuggling / injection GraphQL / fuite de données sensibles, etc.), liste blanche IP + bannissement automatique par liste noire IP
 - **Locale** — analyse de Accept-Language, définition de la langue
 - **HashidRequest** — décodage automatique des chaînes hashid des requêtes en ID entiers réels
-- **Version** — validation de l'en-tête `X-Api-Version`, défaut `v1` si absent, `400` si version non prise en charge
+- **Version** — valide le segment de version dans le chemin URL (p. ex. `/api/v1/`), `400` si version non prise en charge
 - **ClientPlatform** — validation de l'en-tête `X-Client-Platform`, identification de la plateforme du système client (iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web)
 - **Encryption** — chiffrement de transport AES-256-GCM (interfaces authentifiées et panneau d'administration), protection contre l'écoute et l'altération
 - **Captcha** — captcha à clic, vérifié avant connexion/inscription (dessin GD + stockage Redis, clé à usage unique, validité 300 s, limite de 3 tentatives)

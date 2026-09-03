@@ -195,8 +195,7 @@ class User extends Base
 ```
 Client                         Server
 ──────                         ──────
-POST /api/captcha/create
-  Header: X-Api-Version: v1
+POST /api/v1/captcha/create
   → CaptchaService::create()
     → captcha_create('click')
       → ClickCaptcha::generate()
@@ -204,8 +203,7 @@ POST /api/captcha/create
         → Сохраняет targets + key в Redis/File хранилище
       ← {key, image (base64), target_count, expires_in}
 
-POST /api/auth/login
-  Header: X-Api-Version: v1
+POST /api/v1/auth/login
   (с captcha_key + captcha_points)
   → AuthController::verifyCaptcha()
     → CaptchaService::verify(key, [[x1,y1], [x2,y2], ...])
@@ -233,8 +231,7 @@ POST /api/auth/login
 ```
 Client                              Server
 ──────                              ──────
-POST /api/orders/{id}/pay
-  Header: X-Api-Version: v1
+POST /api/v1/orders/{id}/pay
   (с полем confirm_password)
     → ConfirmationMiddleware::process()
       → Проверка наличия userId (401 при отсутствии)
@@ -255,24 +252,24 @@ POST /api/orders/{id}/pay
 **Чувствительные пользовательские эндпоинты** (Auth + Confirmation):
 | Метод | Путь | Операция |
 |--------|------|-----------|
-| POST | `/api/orders/{id}/pay` | Инициация оплаты |
-| POST | `/api/supplier/withdraw` | Заявка на вывод средств |
-| DELETE | `/api/dns/{domain}/records/{id}` | Удаление DNS-записи |
+| POST | `/api/v1/orders/{id}/pay` | Инициация оплаты |
+| POST | `/api/v1/supplier/withdraw` | Заявка на вывод средств |
+| DELETE | `/api/v1/dns/{domain}/records/{id}` | Удаление DNS-записи |
 
 **Чувствительные эндпоинты админа** (Auth + AdminRole + Confirmation):
 | Метод | Путь | Операция |
 |--------|------|-----------|
-| DELETE | `/admin/api/products/{id}` | Удаление товара |
-| POST | `/admin/api/orders/{id}/refund` | Возврат по заказу |
-| POST | `/admin/api/provisioning/resources/{id}/destroy` | Уничтожение ресурса |
-| POST | `/admin/api/kyc/{id}/approve` | Одобрение KYC |
-| POST | `/admin/api/kyc/{id}/reject` | Отклонение KYC |
-| POST | `/admin/api/suppliers/{id}/approve` | Одобрение поставщика |
-| POST | `/admin/api/suppliers/{id}/settle` | Формирование расчётного документа |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | Одобрение вывода |
-| PUT | `/admin/api/system/config` | Обновление системной конфигурации |
+| DELETE | `/admin/api/v1/products/{id}` | Удаление товара |
+| POST | `/admin/api/v1/orders/{id}/refund` | Возврат по заказу |
+| POST | `/admin/api/v1/provisioning/resources/{id}/destroy` | Уничтожение ресурса |
+| POST | `/admin/api/v1/kyc/{id}/approve` | Одобрение KYC |
+| POST | `/admin/api/v1/kyc/{id}/reject` | Отклонение KYC |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | Одобрение поставщика |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | Формирование расчётного документа |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | Одобрение вывода |
+| PUT | `/admin/api/v1/system/config` | Обновление системной конфигурации |
 
-Версия API передаётся в заголовке `X-Api-Version` (по умолчанию: `v1`), а не в пути URL.
+Версия API указывается в пути URL (например, `/api/v1/products`).
 
 **Функции безопасности**:
 - Проверка пароля bcrypt через `Hash::check()`
@@ -399,11 +396,11 @@ public function export(Request $request): Response
 
 | Эндпоинт | Контроллер | Экспортируемые данные |
 |----------|-----------|---------------|
-| `GET /admin/api/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
-| `GET /admin/api/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
-| `GET /admin/api/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
+| `GET /admin/api/v1/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
+| `GET /admin/api/v1/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
+| `GET /admin/api/v1/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
 
-Все API-эндпоинты требуют заголовок `X-Api-Version` (по умолчанию: `v1`).
+Все API-эндпоинты включают версию в путь URL (например, `/api/v1/products`).
 
 Маршруты экспорта размещаются ПЕРЕД параметрическими маршрутами `/{id}`, чтобы избежать конфликтов.
 
@@ -411,7 +408,7 @@ public function export(Request $request): Response
 
 ### Эндпоинты управляющего API (слой service)
 
-Все REST-эндпоинты админа имеют префикс `/admin/api` и требуют `AdminRoleMiddleware`.
+Все REST-эндпоинты админа имеют префикс `/admin/api/v1` и требуют `AdminRoleMiddleware`.
 
 | Группа | Эндпоинты | Контроллер |
 |-------|-----------|------------|
@@ -444,15 +441,15 @@ public function export(Request $request): Response
 
 **Настройка учётных записей провайдеров** (переиспользует модель ProviderApi, `Admin\ProviderApiController`):
 
-- `GET/POST /admin/api/providers`, `PUT/DELETE /admin/api/providers/{id}`, защищено `RbacMiddleware('provider.config')`
+- `GET/POST /admin/api/v1/providers`, `PUT/DELETE /admin/api/v1/providers/{id}`, защищено `RbacMiddleware('provider.config')`
 - `code` по соглашению `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; учётные данные шифруются через Encryptable, колонка `config` (JSON) хранит нечувствительные метаданные
 - Приоритет разрешения учётных данных на стороне пользователя: привязанная запись → активная запись по code → env fallback; удаление/purge идут по строгой привязке (только привязанная запись, при отсутствии/отключении — 4003)
 
 **Управление CDN-доменами** (`Admin\CdnController`):
 
 ```
-GET /admin/api/cdn/domains        → все домены (с user_id владельца), защищено RbacMiddleware('cdn.manage')
-PUT /admin/api/cdn/domains/{id}   → обновление тарифа, белый список plan: standard | pro | enterprise,
+GET /admin/api/v1/cdn/domains        → все домены (с user_id владельца), защищено RbacMiddleware('cdn.manage')
+PUT /admin/api/v1/cdn/domains/{id}   → обновление тарифа, белый список plan: standard | pro | enterprise,
                                     недопустимое значение — 400; изменение пишется в журнал аудита admin_cdn_update_plan
 ```
 
@@ -892,21 +889,21 @@ Workflow GitHub Actions в `.github/workflows/ci.yml`.
 
 | Группа | Эндпоинты | Контроллер |
 |-------|-----------|------------|
-| Invoices | `GET /admin/api/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
-| API провайдеров | `GET/POST /admin/api/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
-| API-ключи поставщиков | `GET/POST /admin/api/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
-| Coupons | `GET/POST /admin/api/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
-| Webhooks | `GET/POST/DELETE /admin/api/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
-| Импорт/экспорт товаров | `GET /admin/api/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
-| Управление доменами | `GET/POST/PUT/DELETE /admin/api/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
-| Шаблоны уведомлений | `GET /admin/api/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
-| Статьи справки | `GET/POST /admin/api/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
+| Invoices | `GET /admin/api/v1/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
+| API провайдеров | `GET/POST /admin/api/v1/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
+| API-ключи поставщиков | `GET/POST /admin/api/v1/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
+| Coupons | `GET/POST /admin/api/v1/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
+| Webhooks | `GET/POST/DELETE /admin/api/v1/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
+| Импорт/экспорт товаров | `GET /admin/api/v1/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
+| Управление доменами | `GET/POST/PUT/DELETE /admin/api/v1/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
+| Шаблоны уведомлений | `GET /admin/api/v1/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
+| Статьи справки | `GET/POST /admin/api/v1/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
 
 ### Новые промежуточные слои
 
 | Промежуточный слой | Назначение |
 |------------|---------|
-| `VersionMiddleware` | версия API читается и проверяется из заголовка X-Api-Version |
+| `VersionMiddleware` | версия API читается и проверяется из пути URL |
 | `RateLimitMiddleware` | ограничение частоты Redis-токенбакетом (по умолчанию 60req/min, вход 5req/min) |
 | `GeoBlockMiddleware` | региональная блокировка MaxMind GeoIP2 |
 | `MaintenanceMiddleware` | режим обслуживания (переключатель через env-переменную + IP-белый список) |

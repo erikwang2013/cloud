@@ -195,8 +195,7 @@ class User extends Base
 ```
 Client                         Server
 ──────                         ──────
-POST /api/captcha/create
-  Header: X-Api-Version: v1
+POST /api/v1/captcha/create
   → CaptchaService::create()
     → captcha_create('click')
       → ClickCaptcha::generate()
@@ -204,8 +203,7 @@ POST /api/captcha/create
         → Stores targets + key in Redis/File storage
       ← {key, image (base64), target_count, expires_in}
 
-POST /api/auth/login
-  Header: X-Api-Version: v1
+POST /api/v1/auth/login
   (with captcha_key + captcha_points)
   → AuthController::verifyCaptcha()
     → CaptchaService::verify(key, [[x1,y1], [x2,y2], ...])
@@ -233,8 +231,7 @@ POST /api/auth/login
 ```
 Client                              Server
 ──────                              ──────
-POST /api/orders/{id}/pay
-  Header: X-Api-Version: v1
+POST /api/v1/orders/{id}/pay
   (with confirm_password field)
     → ConfirmationMiddleware::process()
       → Checks userId present (401 if missing)
@@ -255,24 +252,24 @@ POST /api/orders/{id}/pay
 **সংবেদনশীল ইউজার এন্ডপয়েন্ট** (Auth + Confirmation):
 | মেথড | পাথ | অপারেশন |
 |--------|------|-----------|
-| POST | `/api/orders/{id}/pay` | পেমেন্ট শুরু |
-| POST | `/api/supplier/withdraw` | উত্তোলন রিকোয়েস্ট |
-| DELETE | `/api/dns/{domain}/records/{id}` | DNS রেকর্ড মুছে ফেলা |
+| POST | `/api/v1/orders/{id}/pay` | পেমেন্ট শুরু |
+| POST | `/api/v1/supplier/withdraw` | উত্তোলন রিকোয়েস্ট |
+| DELETE | `/api/v1/dns/{domain}/records/{id}` | DNS রেকর্ড মুছে ফেলা |
 
 **সংবেদনশীল অ্যাডমিন এন্ডপয়েন্ট** (Auth + AdminRole + Confirmation):
 | মেথড | পাথ | অপারেশন |
 |--------|------|-----------|
-| DELETE | `/admin/api/products/{id}` | পণ্য মুছে ফেলা |
-| POST | `/admin/api/orders/{id}/refund` | অর্ডার রিফান্ড |
-| POST | `/admin/api/provisioning/resources/{id}/destroy` | রিসোর্স ধ্বংস |
-| POST | `/admin/api/kyc/{id}/approve` | KYC অনুমোদন |
-| POST | `/admin/api/kyc/{id}/reject` | KYC প্রত্যাখ্যান |
-| POST | `/admin/api/suppliers/{id}/approve` | সরবরাহকারী অনুমোদন |
-| POST | `/admin/api/suppliers/{id}/settle` | সেটেলমেন্ট তৈরি |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | উত্তোলন অনুমোদন |
-| PUT | `/admin/api/system/config` | সিস্টেম কনফিগ আপডেট |
+| DELETE | `/admin/api/v1/products/{id}` | পণ্য মুছে ফেলা |
+| POST | `/admin/api/v1/orders/{id}/refund` | অর্ডার রিফান্ড |
+| POST | `/admin/api/v1/provisioning/resources/{id}/destroy` | রিসোর্স ধ্বংস |
+| POST | `/admin/api/v1/kyc/{id}/approve` | KYC অনুমোদন |
+| POST | `/admin/api/v1/kyc/{id}/reject` | KYC প্রত্যাখ্যান |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | সরবরাহকারী অনুমোদন |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | সেটেলমেন্ট তৈরি |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | উত্তোলন অনুমোদন |
+| PUT | `/admin/api/v1/system/config` | সিস্টেম কনফিগ আপডেট |
 
-API ভার্সন `X-Api-Version` হেডারে বহন করা হয় (ডিফল্ট: `v1`), URL পাথে নয়।
+API ভার্সন URL পাথে বহন করা হয় (যেমন `/api/v1/...`), রিকোয়েস্ট হেডারে নয়।
 
 **নিরাপত্তা ফিচার**:
 - `Hash::check()` দিয়ে bcrypt পাসওয়ার্ড ভেরিফিকেশন
@@ -399,11 +396,11 @@ public function export(Request $request): Response
 
 | এন্ডপয়েন্ট | কন্ট্রোলার | এক্সপোর্ট করা ডেটা |
 |----------|-----------|---------------|
-| `GET /admin/api/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
-| `GET /admin/api/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
-| `GET /admin/api/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
+| `GET /admin/api/v1/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
+| `GET /admin/api/v1/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
+| `GET /admin/api/v1/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
 
-সব API এন্ডপয়েন্টে `X-Api-Version` হেডার প্রয়োজন (ডিফল্ট: `v1`)।
+সব API এন্ডপয়েন্টের ভার্সন URL পাথে থাকে (যেমন `/api/v1/...`)।
 
 কনফ্লিক্ট এড়াতে এক্সপোর্ট রুটগুলো `/{id}` প্যারামিটার রুটের **আগে** বসানো হয়।
 
@@ -411,7 +408,7 @@ public function export(Request $request): Response
 
 ### অ্যাডমিন API এন্ডপয়েন্ট (সার্ভিস লেয়ার)
 
-সব অ্যাডমিন REST এন্ডপয়েন্টের প্রিফিক্স `/admin/api` এবং `AdminRoleMiddleware` প্রয়োজন।
+সব অ্যাডমিন REST এন্ডপয়েন্টের প্রিফিক্স `/admin/api/v1` এবং `AdminRoleMiddleware` প্রয়োজন।
 
 | গ্রুপ | এন্ডপয়েন্ট | কন্ট্রোলার |
 |-------|-----------|------------|
@@ -444,15 +441,15 @@ CDN প্রোডাক্ট চারটি প্রোভাইডার �
 
 **প্রোভাইডার অ্যাকাউন্ট কনফিগ** (ProviderApi মডেল রিইউজ করে, `Admin\ProviderApiController`):
 
-- `GET/POST /admin/api/providers` ও `PUT/DELETE /admin/api/providers/{id}`, `RbacMiddleware('provider.config')` এ মাউন্ট করা
+- `GET/POST /admin/api/v1/providers` ও `PUT/DELETE /admin/api/v1/providers/{id}`, `RbacMiddleware('provider.config')` এ মাউন্ট করা
 - `code` কনভেনশন `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; ক্রেডেনশিয়াল ফিল্ড Encryptable এনক্রিপশনে স্টোর, `config` JSON কলামে নন-সেনসিটিভ মেটাডেটা থাকে
 - ইউজার সাইড ক্রেডেনশিয়াল রেজল্যুশন প্রায়োরিটি: বাইন্ডেড অ্যাকাউন্ট → code ম্যাচের অ্যাক্টিভ অ্যাকাউন্ট → env ফলব্যাক; ডিলিট/পর্জ স্ট্রিক্ট স্ন্যাপশট ব্যবহার করে (শুধু বাইন্ডেড অ্যাকাউন্ট, অনুপস্থিত/ডিসেবল হলে 4003)
 
 **CDN ডোমেইন ম্যানেজমেন্ট** (`Admin\CdnController`):
 
 ```
-GET /admin/api/cdn/domains        → সব ডোমেইন (মালিকানাধীন user_id সহ), RbacMiddleware('cdn.manage') এ মাউন্ট করা
-PUT /admin/api/cdn/domains/{id}   → প্ল্যান আপডেট, plan হোয়াইটলিস্ট standard | pro | enterprise,
+GET /admin/api/v1/cdn/domains        → সব ডোমেইন (মালিকানাধীন user_id সহ), RbacMiddleware('cdn.manage') এ মাউন্ট করা
+PUT /admin/api/v1/cdn/domains/{id}   → প্ল্যান আপডেট, plan হোয়াইটলিস্ট standard | pro | enterprise,
                                     অবৈধ মানে 400 রিটার্ন; পরিবর্তন অডিট লগে লেখা হয় admin_cdn_update_plan
 ```
 
@@ -893,21 +890,21 @@ GitHub Actions ওয়ার্কফ্লো `.github/workflows/ci.yml`-এ�
 
 | গ্রুপ | এন্ডপয়েন্ট | কন্ট্রোলার |
 |-------|-----------|------------|
-| ইনভয়েস | `GET /admin/api/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
-| Provider API | `GET/POST /admin/api/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
-| সরবরাহকারী API Key | `GET/POST /admin/api/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
-| কুপন | `GET/POST /admin/api/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
-| Webhook | `GET/POST/DELETE /admin/api/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
-| প্রোডাক্ট ইমপোর্ট/এক্সপোর্ট | `GET /admin/api/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
-| ডোমেইন ম্যানেজমেন্ট | `GET/POST/PUT/DELETE /admin/api/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
-| নোটিফিকেশন টেমপ্লেট | `GET /admin/api/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
-| হেল্প আর্টিকেল | `GET/POST /admin/api/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
+| ইনভয়েস | `GET /admin/api/v1/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
+| Provider API | `GET/POST /admin/api/v1/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
+| সরবরাহকারী API Key | `GET/POST /admin/api/v1/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
+| কুপন | `GET/POST /admin/api/v1/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
+| Webhook | `GET/POST/DELETE /admin/api/v1/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
+| প্রোডাক্ট ইমপোর্ট/এক্সপোর্ট | `GET /admin/api/v1/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
+| ডোমেইন ম্যানেজমেন্ট | `GET/POST/PUT/DELETE /admin/api/v1/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
+| নোটিফিকেশন টেমপ্লেট | `GET /admin/api/v1/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
+| হেল্প আর্টিকেল | `GET/POST /admin/api/v1/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
 
 ### নতুন মিডলওয়্যার
 
 | মিডলওয়্যার | উদ্দেশ্য |
 |------------|---------|
-| `VersionMiddleware` | X-Api-Version হেডার থেকে API ভার্সন পড়ে ও যাচাই করে |
+| `VersionMiddleware` | URL পাথ থেকে API ভার্সন পড়ে ও যাচাই করে |
 | `RateLimitMiddleware` | Redis টোকেন বাকেট রেট লিমিট (ডিফল্ট 60 req/min, লগইন 5 req/min) |
 | `GeoBlockMiddleware` | MaxMind GeoIP2 আঞ্চলিক ব্লকিং |
 | `MaintenanceMiddleware` | মেইনটেন্যান্স মোড (এনভায়রনমেন্ট ভেরিয়েবল সুইচ + IP হোয়াইটলিস্ট) |

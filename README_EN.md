@@ -203,7 +203,7 @@ cloud-php/
 │   │   ├── i18n/middleware/     # Locale middleware
 │   │   ├── security/           # CORS / WAF / rate limiting / geo-blocking / maintenance / audit logging
 │   │   ├── snowflake/          # Snowflake ID service / Eloquent HasSnowflakeId trait
-│   │   ├── version/middleware/  # API version middleware (X-Api-Version header validation)
+│   │   ├── version/middleware/  # API version middleware (URL path version validation)
 │   │   ├── clientplatform/middleware/  # Client platform middleware (X-Client-Platform header identification)
 │   │   ├── feature/            # Feature Flags service
 │   │   └── webhook/            # Webhook event dispatcher
@@ -529,7 +529,7 @@ Global middleware pipeline: `Version → CORS → SecurityHeaders → ClientPlat
 - **Security Plugin** — 31 attack detectors (XSS/SQLi/CMDi/SSRF/deserialization/JWT attack/host header/request smuggling/GraphQL injection/data leak etc.), IP whitelist + IP blacklist auto-ban
 - **Locale** — Parses Accept-Language, sets locale
 - **HashidRequest** — Auto-decodes hashid strings in requests to real integer IDs
-- **Version** — Validates `X-Api-Version` header, defaults to `v1` if missing, returns `400` for unsupported versions
+- **Version** — Validates the version segment in the URL path (e.g. `/api/v1/`), returns `400` for unsupported versions
 - **ClientPlatform** — Validates `X-Client-Platform` header, identifies client OS platform (iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web)
 - **Encryption** — AES-256-GCM transport encryption (auth + admin routes), prevents MITM eavesdropping and tampering
 - **Captcha** — Click CAPTCHA verified before login/register (GD rendering + Redis storage, one-time keys, 300s TTL, 3 attempts)

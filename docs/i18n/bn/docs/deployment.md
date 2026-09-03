@@ -215,7 +215,7 @@ MAIL_FROM_ADDRESS=noreply@yourdomain.com
 # Google OAuth
 GOOGLE_OAUTH_CLIENT_ID=xxx.apps.googleusercontent.com
 GOOGLE_OAUTH_CLIENT_SECRET=GOCSPX-xxx
-GOOGLE_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/google/callback
+GOOGLE_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/v1/auth/google/callback
 
 # Apple Sign In
 APPLE_OAUTH_CLIENT_ID=com.yourdomain.service
@@ -226,27 +226,27 @@ APPLE_PRIVATE_KEY_PATH=/home/wwwroot/cloud-php/service/storage/apple/AuthKey_xxx
 # Facebook OAuth
 FACEBOOK_OAUTH_CLIENT_ID=xxx
 FACEBOOK_OAUTH_CLIENT_SECRET=xxx
-FACEBOOK_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/facebook/callback
+FACEBOOK_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/v1/auth/facebook/callback
 
 # X (Twitter) OAuth
 X_OAUTH_CLIENT_ID=xxx
 X_OAUTH_CLIENT_SECRET=xxx
-X_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/x/callback
+X_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/v1/auth/x/callback
 
 # Microsoft OAuth
 MICROSOFT_OAUTH_CLIENT_ID=xxx
 MICROSOFT_OAUTH_CLIENT_SECRET=xxx
-MICROSOFT_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/microsoft/callback
+MICROSOFT_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/v1/auth/microsoft/callback
 
 # LinkedIn OAuth
 LINKEDIN_OAUTH_CLIENT_ID=xxx
 LINKEDIN_OAUTH_CLIENT_SECRET=xxx
-LINKEDIN_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/linkedin/callback
+LINKEDIN_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/v1/auth/linkedin/callback
 
 # GitHub OAuth
 GITHUB_OAUTH_CLIENT_ID=xxx
 GITHUB_OAUTH_CLIENT_SECRET=xxx
-GITHUB_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/github/callback
+GITHUB_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/v1/auth/github/callback
 
 # AWS (ঐচ্ছিক — ক্লাউড প্রোভাইডার ইন্টিগ্রেশন)
 AWS_ACCESS_KEY_ID=AKIAxxx
@@ -424,7 +424,7 @@ server {
 #     listen 80;
 #     server_name status.yourdomain.com;
 #     location / {
-#         proxy_pass http://127.0.0.1:8787/api/status;
+#         proxy_pass http://127.0.0.1:8787/api/v1/status;
 #     }
 # }
 ```
@@ -655,11 +655,10 @@ php start.php status
 - [ ] HTTPS সার্টিফিকেট বৈধ: `curl -I https://api.yourdomain.com/health`
 
 ### API এন্ডপয়েন্ট নমুনা চেক
-- [ ] `GET /api/status` → 200
-- [ ] `GET /api/products` → 200 (বৈধ JSON)
-- [ ] `POST /api/auth/login` (বডি ছাড়া) → 422 (প্যারামিটার ভ্যালিডেশন)
-- [ ] `GET /api/user/profile` (token ছাড়া) → 401 (অথেনটিকেশন)
-- [ ] ভার্সন হেডার: `curl -H 'X-Api-Version: v99' /api/products` → 400
+- [ ] `GET /api/v1/status` → 200
+- [ ] `GET /api/v1/products` → 200 (বৈধ JSON)
+- [ ] `POST /api/v1/auth/login` (বডি ছাড়া) → 422 (প্যারামিটার ভ্যালিডেশন)
+- [ ] `GET /api/v1/user/profile` (token ছাড়া) → 401 (অথেনটিকেশন)
 
 ### ক্রন টাস্ক
 - [ ] crontab কনফিগ করা

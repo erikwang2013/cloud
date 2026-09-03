@@ -31,7 +31,7 @@
 
 ### 2.2 Dokument-Code-Abweichungen (4 offene Punkte P1)
 
-- GET /api/orders Statusfilter nicht implementiert
+- GET /api/v1/orders Statusfilter nicht implementiert
 - WebSocket-Push-Ereignisse fehlen (in der websocket_push-Dokumentation deklariert)
 - ticket.updated-Auslösebereich unklar
 - product_attributes totes Schema (kein Code nutzt es)

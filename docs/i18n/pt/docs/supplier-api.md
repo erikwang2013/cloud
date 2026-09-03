@@ -6,12 +6,12 @@ A funcionalidade de fornecedores oferece dois conjuntos de APIs:
 
 | Tipo | Autenticação | Prefixo | Status |
 |------|---------|------|------|
-| **API interna** | Bearer Token do usuário | `/api/supplier/` | Disponível |
-| **API externa** | API Key (`sk_xxx`) | `/api/supplier/external/` | Disponível |
+| **API interna** | Bearer Token do usuário | `/api/v1/supplier/` | Disponível |
+| **API externa** | API Key (`sk_xxx`) | `/api/v1/supplier/external/` | Disponível |
 
 **Base URL**: `https://api.example.com`
 
-**Versionamento**: especificado pelo cabeçalho HTTP `X-Api-Version: v1`. Quando ausente, o padrão é `v1`; versões não suportadas retornam `400`. Aplica-se apenas aos caminhos `/api/*` e `/admin/api/*`, tratado de forma unificada pelo `VersionMiddleware`.
+**Versionamento**: especificado no caminho da URL (por exemplo, `/api/v1/supplier/products`). Versões não suportadas retornam `400`. Aplica-se apenas aos caminhos `/api/v1/*` e `/admin/api/v1/*`, tratado de forma unificada pelo `VersionMiddleware`.
 
 ---
 
@@ -23,10 +23,9 @@ A API interna usa a mesma autenticação por Bearer Token de usuário das demais
 
 ```
 Authorization: Bearer <user_access_token>
-X-Api-Version: v1
 ```
 
-O usuário deve primeiro obter o Token via `/api/auth/login`, e o papel da conta deve ser `supplier` (definido quando o administrador aprova a solicitação de fornecedor).
+O usuário deve primeiro obter o Token via `/api/v1/auth/login`, e o papel da conta deve ser `supplier` (definido quando o administrador aprova a solicitação de fornecedor).
 
 ---
 
@@ -84,7 +83,7 @@ O usuário deve primeiro obter o Token via `/api/auth/login`, e o papel da conta
 #### 1. Cadastro de Fornecedor
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
 ```
 
 Solicitar para se tornar fornecedor. Cada usuário só pode enviar uma solicitação.
@@ -138,9 +137,8 @@ Solicitar para se tornar fornecedor. Cada usuário só pode enviar uma solicita�
 | 422 | Solicitação de fornecedor já enviada |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/apply" \
+curl -X POST "https://api.example.com/api/v1/supplier/apply" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"company_name":"示例科技","contact_name":"张三","contact_phone":"13800138000","contact_email":"zhangsan@example.com"}'
 ```
@@ -152,7 +150,7 @@ curl -X POST "https://api.example.com/api/supplier/apply" \
 ##### Obter Produtos Atribuídos
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 **Parâmetros Query**:
@@ -185,7 +183,7 @@ GET /api/supplier/products
 ##### Adicionar Produto
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 Associa um produto existente ao fornecedor atual.
@@ -215,7 +213,7 @@ Associa um produto existente ao fornecedor atual.
 ##### Remover Produto
 
 ```
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 Cancela a associação entre produto e fornecedor.
@@ -237,7 +235,7 @@ Cancela a associação entre produto e fornecedor.
 ##### Obter Lista de Liquidações
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 **Resposta**: todas as liquidações do fornecedor atual, em ordem decrescente de criação
@@ -273,7 +271,7 @@ GET /api/supplier/settlements
 ##### Solicitar Saque
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 > Esta operação exige confirmação de senha secundária (campo `confirm_password`), verificada pelo `ConfirmationMiddleware`.
@@ -321,9 +319,8 @@ POST /api/supplier/withdraw
 | 403 | Falha na confirmação de senha |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/withdraw" \
+curl -X POST "https://api.example.com/api/v1/supplier/withdraw" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"amount":"5000.00","confirm_password":"mypassword","account_info":{"method":"bank_transfer","bank_name":"ICBC","account_number":"6222021234567890"}}'
 ```
@@ -334,12 +331,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 | Método | Caminho | Autenticação | Confirmação de senha | Descrição |
 |------|------|------|---------|------|
-| POST | `/api/supplier/apply` | Token | - | Solicitar para se tornar fornecedor |
-| GET | `/api/supplier/products` | Token | - | Ver produtos atribuídos |
-| POST | `/api/supplier/products` | Token | - | Adicionar associação de produto |
-| DELETE | `/api/supplier/products/{id}` | Token | - | Remover associação de produto |
-| GET | `/api/supplier/settlements` | Token | - | Ver liquidações |
-| POST | `/api/supplier/withdraw` | Token | sim | Solicitar saque |
+| POST | `/api/v1/supplier/apply` | Token | - | Solicitar para se tornar fornecedor |
+| GET | `/api/v1/supplier/products` | Token | - | Ver produtos atribuídos |
+| POST | `/api/v1/supplier/products` | Token | - | Adicionar associação de produto |
+| DELETE | `/api/v1/supplier/products/{id}` | Token | - | Remover associação de produto |
+| GET | `/api/v1/supplier/settlements` | Token | - | Ver liquidações |
+| POST | `/api/v1/supplier/withdraw` | Token | sim | Solicitar saque |
 
 ---
 
@@ -347,13 +344,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 A API externa permite que fornecedores gerenciem pedidos, recursos e liquidações de forma programática. Todas as requisições exigem autenticação por API Key.
 
-**Base URL**: `https://api.example.com/api`
+**Base URL**: `https://api.example.com/api/v1`
 
 ### Autenticação
 
 ```
 Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-X-Api-Version: v1
 ```
 
 A API Key é gerada pelo administrador da plataforma no painel administrativo, em `Gerenciamento de Fornecedores → API Keys`.
@@ -387,7 +383,7 @@ Igual ao da API interna, com `request_id` adicional para rastreamento:
 ##### Obter Lista de Pedidos
 
 ```
-GET /api/supplier/orders
+GET /api/v1/supplier/orders
 ```
 
 **Parâmetros Query**:
@@ -403,7 +399,7 @@ GET /api/supplier/orders
 ##### Obter Detalhes do Pedido
 
 ```
-GET /api/supplier/orders/{id}
+GET /api/v1/supplier/orders/{id}
 ```
 
 ---
@@ -413,7 +409,7 @@ GET /api/supplier/orders/{id}
 ##### Obter Lista de Recursos
 
 ```
-GET /api/supplier/resources
+GET /api/v1/supplier/resources
 ```
 
 **Parâmetros Query**: page, status (active/provisioning/stopped/destroyed), type (server/ip/disk/domain)
@@ -421,7 +417,7 @@ GET /api/supplier/resources
 ##### Obter Status do Recurso
 
 ```
-GET /api/supplier/resources/{id}/status
+GET /api/v1/supplier/resources/{id}/status
 ```
 
 ---
@@ -431,13 +427,13 @@ GET /api/supplier/resources/{id}/status
 ##### Obter Lista de Liquidações
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 ##### Obter Detalhes da Liquidação
 
 ```
-GET /api/supplier/settlements/{id}
+GET /api/v1/supplier/settlements/{id}
 ```
 
 ---
@@ -447,13 +443,13 @@ GET /api/supplier/settlements/{id}
 ##### Solicitar Saque
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 ##### Histórico de Saques
 
 ```
-GET /api/supplier/withdraws
+GET /api/v1/supplier/withdraws
 ```
 
 ---
@@ -463,13 +459,13 @@ GET /api/supplier/withdraws
 ##### Obter Meus Produtos
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 ##### Enviar Solicitação de Listagem de Produto
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 ---
@@ -478,16 +474,16 @@ POST /api/supplier/products
 
 | Método | Caminho | Descrição |
 |------|------|------|
-| GET | `/api/supplier/orders` | Lista de pedidos |
-| GET | `/api/supplier/orders/{id}` | Detalhes do pedido |
-| GET | `/api/supplier/resources` | Lista de recursos |
-| GET | `/api/supplier/resources/{id}/status` | Status do recurso |
-| GET | `/api/supplier/settlements` | Lista de liquidações |
-| GET | `/api/supplier/settlements/{id}` | Detalhes da liquidação |
-| POST | `/api/supplier/withdraw` | Solicitar saque |
-| GET | `/api/supplier/withdraws` | Histórico de saques |
-| GET | `/api/supplier/products` | Lista de produtos |
-| POST | `/api/supplier/products` | Enviar produto |
+| GET | `/api/v1/supplier/orders` | Lista de pedidos |
+| GET | `/api/v1/supplier/orders/{id}` | Detalhes do pedido |
+| GET | `/api/v1/supplier/resources` | Lista de recursos |
+| GET | `/api/v1/supplier/resources/{id}/status` | Status do recurso |
+| GET | `/api/v1/supplier/settlements` | Lista de liquidações |
+| GET | `/api/v1/supplier/settlements/{id}` | Detalhes da liquidação |
+| POST | `/api/v1/supplier/withdraw` | Solicitar saque |
+| GET | `/api/v1/supplier/withdraws` | Histórico de saques |
+| GET | `/api/v1/supplier/products` | Lista de produtos |
+| POST | `/api/v1/supplier/products` | Enviar produto |
 
 ---
 
@@ -540,7 +536,7 @@ X-Webhook-Event: order.paid
 | Saque da API externa | 10 req/min (valor sugerido, ajustável em `config/security.php`) |
 
 > A regra de limite da API externa é definida em `rate_limits.supplier_api` no `config/security.php`,
-> aplicada de forma unificada pelo `RateLimitMiddleware` aos caminhos `/api/supplier/external/*` (contagem atômica com INCR;
+> aplicada de forma unificada pelo `RateLimitMiddleware` aos caminhos `/api/v1/supplier/external/*` (contagem atômica com INCR;
 > quando o Redis está indisponível, o tráfego é liberado).
 
 Cabeçalhos de limite:
@@ -560,10 +556,9 @@ X-RateLimit-Reset: 1680000000
 ```php
 $token = 'user_access_token_here';
 $client = new GuzzleHttp\Client([
-    'base_uri' => 'https://api.example.com/api/',
+    'base_uri' => 'https://api.example.com/api/v1/',
     'headers' => [
         'Authorization' => "Bearer {$token}",
-        'X-Api-Version' => 'v1',
         'Accept'        => 'application/json',
     ],
 ]);
@@ -604,16 +599,15 @@ import requests
 
 headers = {
     'Authorization': 'Bearer <user_access_token>',
-    'X-Api-Version': 'v1',
 }
 
 # Obter produtos atribuídos
-resp = requests.get('https://api.example.com/api/supplier/products',
+resp = requests.get('https://api.example.com/api/v1/supplier/products',
                      headers=headers)
 products = resp.json()
 
 # Solicitar saque
-resp = requests.post('https://api.example.com/api/supplier/withdraw',
+resp = requests.post('https://api.example.com/api/v1/supplier/withdraw',
                       headers=headers,
                       json={
                           'amount': '5000.00',
@@ -645,11 +639,11 @@ Abaixo estão os endpoints de administração de fornecedores (somente para uso 
 
 | Método | Caminho | Descrição |
 |------|------|------|
-| GET | `/admin/api/suppliers` | Lista de fornecedores (suporta filtro por status) |
-| GET | `/admin/api/suppliers/export` | Exportar fornecedores em Excel |
-| POST | `/admin/api/suppliers/{id}/approve` | Aprovar fornecedor |
-| POST | `/admin/api/suppliers/{id}/settle` | Gerar liquidação |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | Aprovar saque |
-| GET | `/admin/api/suppliers/{id}/api-keys` | Ver lista de API Keys do fornecedor |
-| POST | `/admin/api/suppliers/{id}/api-keys` | Criar API Key (a Key original é retornada apenas uma vez) |
-| DELETE | `/admin/api/suppliers/api-keys/{id}` | Revogar API Key |
+| GET | `/admin/api/v1/suppliers` | Lista de fornecedores (suporta filtro por status) |
+| GET | `/admin/api/v1/suppliers/export` | Exportar fornecedores em Excel |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | Aprovar fornecedor |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | Gerar liquidação |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | Aprovar saque |
+| GET | `/admin/api/v1/suppliers/{id}/api-keys` | Ver lista de API Keys do fornecedor |
+| POST | `/admin/api/v1/suppliers/{id}/api-keys` | Criar API Key (a Key original é retornada apenas uma vez) |
+| DELETE | `/admin/api/v1/suppliers/api-keys/{id}` | Revogar API Key |

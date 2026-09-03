@@ -31,7 +31,7 @@
 
 ### 2.2 ডকুমেন্ট-কোড ডাইভারজেন্স (P1 অমীমাংসিত ৪টি)
 
-- GET /api/orders status ফিল্টার বাস্তবায়িত হয়নি
+- GET /api/v1/orders status ফিল্টার বাস্তবায়িত হয়নি
 - WebSocket পুশ ইভেন্ট অনুপস্থিত (websocket_push সম্পর্কিত ডকুমেন্টে ঘোষণা আছে)
 - ticket.updated ট্রিগার পরিধি অস্পষ্ট
 - product_attributes ডেড schema (কোনো কোড ব্যবহার করে না)

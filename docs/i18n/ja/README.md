@@ -208,7 +208,7 @@ cloud-php/
 │   │   ├── i18n/middleware/     # 多语言中间件（Locale）
 │   │   ├── security/           # CORS / WAF / 频率限制 / 地域封锁 / 维护模式 / 审计日志
 │   │   ├── snowflake/          # 雪花 ID 生成服务 / Eloquent HasSnowflakeId Trait
-│   │   ├── version/middleware/  # API 版本中间件（X-Api-Version 头校验）
+│   │   ├── version/middleware/  # API 版本中间件（URL 路径版本段校验）
 │   │   ├── clientplatform/middleware/  # 客户端平台中间件（X-Client-Platform 头识别）
 │   │   ├── feature/            # Feature Flags 功能开关服务
 │   │   └── webhook/            # Webhook 事件分发器
@@ -534,7 +534,7 @@ ProviderInterface
 - **Security Plugin** — 31 種の攻撃検知（XSS/SQLインジェクション/コマンドインジェクション/SSRF/デシリアライゼーション/JWT攻撃/Hostヘッダー攻撃/リクエストスモグリング/GraphQLインジェクション/機密データ漏洩など）、IP ホワイトリスト + IP ブラックリストの自動封鎖
 - **Locale** — Accept-Language を解析し、多言語を設定
 - **HashidRequest** — リクエスト内の hashid 文字列を実整数 ID に自動デコード
-- **Version** — `X-Api-Version` リクエストヘッダーを検証。欠落時はデフォルト `v1`、未サポートバージョンは `400` を返す
+- **Version** — URL パスのバージョンセグメントを検証（例: `/api/v1/`）。未サポートバージョンは `400` を返す
 - **ClientPlatform** — `X-Client-Platform` リクエストヘッダーを検証し、クライアント OS プラットフォームを識別（iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web）
 - **Encryption** — AES-256-GCM 転送暗号化（認証インターフェースと管理バックエンド）、中間者による盗聴と改ざんを防止
 - **Captcha** — クリック CAPTCHA。ログイン/登録前に検証（GD 描画 + Redis 保存、ワンタイムキー、300s 有効期限、3 回試行制限）

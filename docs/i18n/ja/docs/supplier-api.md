@@ -6,12 +6,12 @@
 
 | 種類 | 認証方式 | プレフィックス | ステータス |
 |------|---------|------|------|
-| **内部 API** | ユーザー Bearer Token | `/api/supplier/` | 利用可能 |
-| **外部 API** | API Key (`sk_xxx`) | `/api/supplier/external/` | 利用可能 |
+| **内部 API** | ユーザー Bearer Token | `/api/v1/supplier/` | 利用可能 |
+| **外部 API** | API Key (`sk_xxx`) | `/api/v1/supplier/external/` | 利用可能 |
 
 **Base URL**: `https://api.example.com`
 
-**バージョン管理**: HTTP ヘッダー `X-Api-Version: v1` で指定します。未指定時はデフォルトで `v1`、サポート外のバージョンは `400` を返します。`/api/*` と `/admin/api/*` パスのみに適用され、`VersionMiddleware` が一元的に処理します。
+**バージョン管理**: URL パスで指定します（例: `/api/v1/supplier/products`）。サポート外のバージョンは `400` を返します。`/api/v1/*` と `/admin/api/v1/*` パスのみに適用され、`VersionMiddleware` が一元的に処理します。
 
 ---
 
@@ -23,10 +23,9 @@
 
 ```
 Authorization: Bearer <user_access_token>
-X-Api-Version: v1
 ```
 
-ユーザーはまず `/api/auth/login` でログインして Token を取得する必要があり、アカウントのロールが `supplier` である必要があります（管理者がサプライヤー申請を承認すると設定されます）。
+ユーザーはまず `/api/v1/auth/login` でログインして Token を取得する必要があり、アカウントのロールが `supplier` である必要があります（管理者がサプライヤー申請を承認すると設定されます）。
 
 ---
 
@@ -84,7 +83,7 @@ X-Api-Version: v1
 #### 1. サプライヤー登録
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
 ```
 
 サプライヤーへの申込です。各ユーザーは 1 回しか申請できません。
@@ -138,9 +137,8 @@ POST /api/supplier/apply
 | 422 | サプライヤー申請を既に提出済み |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/apply" \
+curl -X POST "https://api.example.com/api/v1/supplier/apply" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"company_name":"示例科技","contact_name":"张三","contact_phone":"13800138000","contact_email":"zhangsan@example.com"}'
 ```
@@ -152,7 +150,7 @@ curl -X POST "https://api.example.com/api/supplier/apply" \
 ##### 割り当て済み商品の取得
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 **Query パラメータ**:
@@ -185,7 +183,7 @@ GET /api/supplier/products
 ##### 商品の追加
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 既存の商品を現在のサプライヤーに関連付けます。
@@ -215,7 +213,7 @@ POST /api/supplier/products
 ##### 商品の削除
 
 ```
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 商品とサプライヤーの関連付けを解除します。
@@ -237,7 +235,7 @@ DELETE /api/supplier/products/{id}
 ##### 決済明細リストの取得
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 **レスポンス**: 現在のサプライヤーの全決済明細を、作成日時の降順で返す
@@ -273,7 +271,7 @@ GET /api/supplier/settlements
 ##### 出金申請
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 > この操作にはパスワードの二次確認（`confirm_password` フィールド）が必要で、`ConfirmationMiddleware` が検証します。
@@ -321,9 +319,8 @@ POST /api/supplier/withdraw
 | 403 | パスワード確認失敗 |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/withdraw" \
+curl -X POST "https://api.example.com/api/v1/supplier/withdraw" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"amount":"5000.00","confirm_password":"mypassword","account_info":{"method":"bank_transfer","bank_name":"ICBC","account_number":"6222021234567890"}}'
 ```
@@ -334,12 +331,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 | メソッド | パス | 認証 | パスワード確認 | 説明 |
 |------|------|------|---------|------|
-| POST | `/api/supplier/apply` | Token | - | サプライヤーへの申込 |
-| GET | `/api/supplier/products` | Token | - | 割り当て済み商品の確認 |
-| POST | `/api/supplier/products` | Token | - | 商品関連付けの追加 |
-| DELETE | `/api/supplier/products/{id}` | Token | - | 商品関連付けの解除 |
-| GET | `/api/supplier/settlements` | Token | - | 決済明細の確認 |
-| POST | `/api/supplier/withdraw` | Token | 必要 | 出金申請 |
+| POST | `/api/v1/supplier/apply` | Token | - | サプライヤーへの申込 |
+| GET | `/api/v1/supplier/products` | Token | - | 割り当て済み商品の確認 |
+| POST | `/api/v1/supplier/products` | Token | - | 商品関連付けの追加 |
+| DELETE | `/api/v1/supplier/products/{id}` | Token | - | 商品関連付けの解除 |
+| GET | `/api/v1/supplier/settlements` | Token | - | 決済明細の確認 |
+| POST | `/api/v1/supplier/withdraw` | Token | 必要 | 出金申請 |
 
 ---
 
@@ -347,13 +344,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 外部 API はサプライヤーがプログラムで注文、リソース、決済を管理できるようにします。すべてのリクエストに API Key 認証が必要です。
 
-**Base URL**: `https://api.example.com/api`
+**Base URL**: `https://api.example.com/api/v1`
 
 ### 認証
 
 ```
 Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-X-Api-Version: v1
 ```
 
 API Key はプラットフォーム管理者が管理バックエンドの `供应商管理 → API Keys` で生成します。
@@ -387,7 +383,7 @@ API Key はプラットフォーム管理者が管理バックエンドの `供�
 ##### 注文リストの取得
 
 ```
-GET /api/supplier/orders
+GET /api/v1/supplier/orders
 ```
 
 **Query パラメータ**:
@@ -403,7 +399,7 @@ GET /api/supplier/orders
 ##### 注文詳細の取得
 
 ```
-GET /api/supplier/orders/{id}
+GET /api/v1/supplier/orders/{id}
 ```
 
 ---
@@ -413,7 +409,7 @@ GET /api/supplier/orders/{id}
 ##### リソースリストの取得
 
 ```
-GET /api/supplier/resources
+GET /api/v1/supplier/resources
 ```
 
 **Query パラメータ**: page, status (active/provisioning/stopped/destroyed), type (server/ip/disk/domain)
@@ -421,7 +417,7 @@ GET /api/supplier/resources
 ##### リソースステータスの取得
 
 ```
-GET /api/supplier/resources/{id}/status
+GET /api/v1/supplier/resources/{id}/status
 ```
 
 ---
@@ -431,13 +427,13 @@ GET /api/supplier/resources/{id}/status
 ##### 決済明細リストの取得
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 ##### 決済明細詳細の取得
 
 ```
-GET /api/supplier/settlements/{id}
+GET /api/v1/supplier/settlements/{id}
 ```
 
 ---
@@ -447,13 +443,13 @@ GET /api/supplier/settlements/{id}
 ##### 出金申請
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 ##### 出金履歴
 
 ```
-GET /api/supplier/withdraws
+GET /api/v1/supplier/withdraws
 ```
 
 ---
@@ -463,13 +459,13 @@ GET /api/supplier/withdraws
 ##### 自分の商品の取得
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 ##### 商品上架申請の提出
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 ---
@@ -478,16 +474,16 @@ POST /api/supplier/products
 
 | メソッド | パス | 説明 |
 |------|------|------|
-| GET | `/api/supplier/orders` | 注文リスト |
-| GET | `/api/supplier/orders/{id}` | 注文詳細 |
-| GET | `/api/supplier/resources` | リソースリスト |
-| GET | `/api/supplier/resources/{id}/status` | リソースステータス |
-| GET | `/api/supplier/settlements` | 決済明細リスト |
-| GET | `/api/supplier/settlements/{id}` | 決済明細詳細 |
-| POST | `/api/supplier/withdraw` | 出金申請 |
-| GET | `/api/supplier/withdraws` | 出金履歴 |
-| GET | `/api/supplier/products` | 商品リスト |
-| POST | `/api/supplier/products` | 商品の提出 |
+| GET | `/api/v1/supplier/orders` | 注文リスト |
+| GET | `/api/v1/supplier/orders/{id}` | 注文詳細 |
+| GET | `/api/v1/supplier/resources` | リソースリスト |
+| GET | `/api/v1/supplier/resources/{id}/status` | リソースステータス |
+| GET | `/api/v1/supplier/settlements` | 決済明細リスト |
+| GET | `/api/v1/supplier/settlements/{id}` | 決済明細詳細 |
+| POST | `/api/v1/supplier/withdraw` | 出金申請 |
+| GET | `/api/v1/supplier/withdraws` | 出金履歴 |
+| GET | `/api/v1/supplier/products` | 商品リスト |
+| POST | `/api/v1/supplier/products` | 商品の提出 |
 
 ---
 
@@ -540,7 +536,7 @@ X-Webhook-Event: order.paid
 | 外部 API 出金 | 10 req/min（推奨値、`config/security.php` で調整可） |
 
 > 外部 API のレート制限ルールは `config/security.php` の `rate_limits.supplier_api` で定義され、
-> `RateLimitMiddleware` が `/api/supplier/external/*` パスに一元的に適用します（アトミックな INCR カウント、
+> `RateLimitMiddleware` が `/api/v1/supplier/external/*` パスに一元的に適用します（アトミックな INCR カウント、
 > Redis が利用できない場合は許可）。
 
 レート制限ヘッダー:
@@ -560,10 +556,9 @@ X-RateLimit-Reset: 1680000000
 ```php
 $token = 'user_access_token_here';
 $client = new GuzzleHttp\Client([
-    'base_uri' => 'https://api.example.com/api/',
+    'base_uri' => 'https://api.example.com/api/v1/',
     'headers' => [
         'Authorization' => "Bearer {$token}",
-        'X-Api-Version' => 'v1',
         'Accept'        => 'application/json',
     ],
 ]);
@@ -604,16 +599,15 @@ import requests
 
 headers = {
     'Authorization': 'Bearer <user_access_token>',
-    'X-Api-Version': 'v1',
 }
 
 # 割り当て済み商品の取得
-resp = requests.get('https://api.example.com/api/supplier/products',
+resp = requests.get('https://api.example.com/api/v1/supplier/products',
                      headers=headers)
 products = resp.json()
 
 # 出金申請
-resp = requests.post('https://api.example.com/api/supplier/withdraw',
+resp = requests.post('https://api.example.com/api/v1/supplier/withdraw',
                       headers=headers,
                       json={
                           'amount': '5000.00',
@@ -645,11 +639,11 @@ print(resp.json())
 
 | メソッド | パス | 説明 |
 |------|------|------|
-| GET | `/admin/api/suppliers` | サプライヤーリスト（status フィルタ対応） |
-| GET | `/admin/api/suppliers/export` | サプライヤーの Excel エクスポート |
-| POST | `/admin/api/suppliers/{id}/approve` | サプライヤーの承認 |
-| POST | `/admin/api/suppliers/{id}/settle` | 決済明細の生成 |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | 出金の承認 |
-| GET | `/admin/api/suppliers/{id}/api-keys` | サプライヤーの API Key リスト表示 |
-| POST | `/admin/api/suppliers/{id}/api-keys` | API Key の作成（元の Key は 1 回だけ返却） |
-| DELETE | `/admin/api/suppliers/api-keys/{id}` | API Key の失効 |
+| GET | `/admin/api/v1/suppliers` | サプライヤーリスト（status フィルタ対応） |
+| GET | `/admin/api/v1/suppliers/export` | サプライヤーの Excel エクスポート |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | サプライヤーの承認 |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | 決済明細の生成 |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | 出金の承認 |
+| GET | `/admin/api/v1/suppliers/{id}/api-keys` | サプライヤーの API Key リスト表示 |
+| POST | `/admin/api/v1/suppliers/{id}/api-keys` | API Key の作成（元の Key は 1 回だけ返却） |
+| DELETE | `/admin/api/v1/suppliers/api-keys/{id}` | API Key の失効 |

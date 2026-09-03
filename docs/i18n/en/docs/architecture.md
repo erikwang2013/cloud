@@ -136,7 +136,7 @@ common/
 ├── security/            # CORS / WAF / RateLimit / GeoBlock / Maintenance / AuditLogger / LogSanitizer
 ├── snowflake/           # Snowflake ID service + Eloquent Trait
 ├── metrics/             # Prometheus metrics collector + renderer + HTTP request counting middleware
-├── version/             # VersionMiddleware (X-Api-Version header)
+├── version/             # VersionMiddleware (parses version from URL path)
 └── webhook/             # Webhook event dispatcher
 ```
 
@@ -189,15 +189,15 @@ The panel instance queries the business database directly (Order / OrderItem / P
 HTTP Request
   │
   ▼
-1. VersionMiddleware         ← X-Api-Version header validation, defaults v1 when missing, 400 on invalid
-  │                            Only applies to /api/ and /admin/api/
+1. VersionMiddleware         ← validates the version segment in the URL path, 400 on invalid
+  │                            Only applies to /api/v1/ and /admin/api/v1/
   ▼
 2. CorsMiddleware            ← OPTIONS preflight returns CORS headers, Origin reflection
   ▼
 3. SecurityHeadersMiddleware ← HSTS / X-Frame-Options / CSP / Referrer-Policy security response headers
   ▼
 4. ClientPlatformMiddleware  ← X-Client-Platform header detection (8 platforms), injects properties
-  │                            Only applies to /api/ and /admin/api/
+  │                            Only applies to /api/v1/ and /admin/api/v1/
   ▼
 5. GeoBlockMiddleware        ← GEO_BLOCKED_COUNTRIES country blocking (MaxMind GeoIP2)
   ▼
@@ -223,7 +223,7 @@ HTTP Request
   ├─ /health (internal monitoring) ──
   │   InternalTokenMiddleware      ← Internal token validation /health/live|ready|deps
   │
-  ├─ /api/auth ─────────────────────
+  ├─ /api/v1/auth ─────────────────────
   │   EncryptionMiddleware          ← AES-256-GCM request/response body encryption/decryption
   │
   ├─ /api (user authenticated) ─────
@@ -235,7 +235,7 @@ HTTP Request
   │   AuthMiddleware
   │   ConfirmationMiddleware        ← Secondary password confirmation, Redis counter, 5 failures lock 15min
   │
-  ├─ /api/supplier/external ────────
+  ├─ /api/v1/supplier/external ────────
   │   VersionMiddleware
   │   SupplierApiKeyMiddleware      ← sk_xxx SHA256 validation → $request->supplierId
   │
@@ -258,7 +258,7 @@ Controller → Service → Model → DB
 
 | Middleware | Location | Registration | Responsibility |
 |--------|------|---------|------|
-| `VersionMiddleware` | common/Version | Global | Validates `X-Api-Version`, defaults v1 when missing |
+| `VersionMiddleware` | common/Version | Global | Validates the version segment in the URL path, 400 on invalid |
 | `CorsMiddleware` | common/Security | Global | OPTIONS preflight, Origin reflection |
 | `SecurityHeadersMiddleware` | common/Security | Global | HSTS / X-Frame-Options / CSP / Referrer-Policy security response headers |
 | `ClientPlatformMiddleware` | common/ClientPlatform | Global | `X-Client-Platform` 8-platform detection |
@@ -299,7 +299,7 @@ All Eloquent Models auto-generate IDs in the `creating` event via the `HasSnowfl
 
 ```
 Request flow:
-  Client: GET /api/products/aB3xK7mQ9w
+  Client: GET /api/v1/products/aB3xK7mQ9w
     → HashidRequestMiddleware decodes → int(1234567890)
       → Controller/Service operates with integer IDs
         → Response::success() / Response::paginated()

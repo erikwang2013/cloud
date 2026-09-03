@@ -31,7 +31,7 @@
 
 ### 2.2 문서-코드 이탈（P1 미해결 4항목）
 
-- GET /api/orders status 필터 미구현
+- GET /api/v1/orders status 필터 미구현
 - WebSocket 푸시 이벤트 누락（websocket_push 관련 문서에 선언 있음）
 - ticket.updated 트리거 범위 불명확
 - product_attributes 죽은 스키마（사용하는 코드 없음）

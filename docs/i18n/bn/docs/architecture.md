@@ -136,7 +136,7 @@ common/
 ├── security/            # CORS / WAF / RateLimit / GeoBlock / Maintenance / AuditLogger / LogSanitizer
 ├── snowflake/           # Snowflake ID সার্ভিস + Eloquent Trait
 ├── metrics/             # Prometheus মেট্রিক্স কালেক্টর + রেন্ডারার + HTTP রিকোয়েস্ট কাউন্ট মিডলওয়্যার
-├── version/             # VersionMiddleware (X-Api-Version হেডার)
+├── version/             # VersionMiddleware (URL পাথ ভার্সন)
 └── webhook/             # Webhook ইভেন্ট ডিসপ্যাচার
 ```
 
@@ -170,15 +170,15 @@ CdnAdapterFactory.resolve(type, accountId, strict)
 HTTP রিকোয়েস্ট
   │
   ▼
-1. VersionMiddleware         ← X-Api-Version হেডার ভ্যালিডেশন, অনুপস্থিত হলে ডিফল্ট v1, ইনভ্যালিড হলে 400
-  │                            শুধু /api/ ও /admin/api/ এ কার্যকর
+1. VersionMiddleware         ← URL পাথে API ভার্সন ভ্যালিডেশন, ইনভ্যালিড হলে 400
+  │                            শুধু /api/v1/ ও /admin/api/v1/ এ কার্যকর
   ▼
 2. CorsMiddleware            ← OPTIONS প্রিফ্লাইটে CORS হেডার, Origin রিফ্লেক্ট
   ▼
 3. SecurityHeadersMiddleware ← HSTS / X-Frame-Options / CSP / Referrer-Policy সিকিউরিটি রেসপন্স হেডার
   ▼
 4. ClientPlatformMiddleware  ← X-Client-Platform হেডার ডিটেকশন (৮ প্ল্যাটফর্ম), properties ইনজেক্ট
-  │                            শুধু /api/ ও /admin/api/ এ কার্যকর
+  │                            শুধু /api/v1/ ও /admin/api/v1/ এ কার্যকর
   ▼
 5. GeoBlockMiddleware        ← GEO_BLOCKED_COUNTRIES দেশ ব্লকিং (MaxMind GeoIP2)
   ▼
@@ -204,28 +204,28 @@ HTTP রিকোয়েস্ট
   ├─ /health (ইন্টারনাল মনিটরিং) ────
   │   InternalTokenMiddleware      ← ইন্টারনাল টোকেন ভ্যালিডেশন /health/live|ready|deps
   │
-  ├─ /api/auth ─────────────────────
+  ├─ /api/v1/auth ─────────────────────
   │   EncryptionMiddleware          ← AES-256-GCM রিকোয়েস্ট/রেসপন্স বডি এনক্রিপশন
   │
-  ├─ /api (ইউজার অথেনটিকেশন) ───────
+  ├─ /api/v1 (ইউজার অথেনটিকেশন) ───────
   │   EncryptionMiddleware
   │   AuthMiddleware                ← JWT Bearer Token ভেরিফিকেশন → $request->userId/role
   │
-  ├─ /api (সংবেদনশীল অপারেশন) ──────
+  ├─ /api/v1 (সংবেদনশীল অপারেশন) ──────
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   ConfirmationMiddleware        ← পাসওয়ার্ড সেকেন্ডারি কনফার্মেশন, Redis কাউন্টার, ৫ বার লক 15min
   │
-  ├─ /api/supplier/external ────────
+  ├─ /api/v1/supplier/external ────────
   │   VersionMiddleware
   │   SupplierApiKeyMiddleware      ← sk_xxx SHA256 ভেরিফিকেশন → $request->supplierId
   │
-  ├─ /admin/api ────────────────────
+  ├─ /admin/api/v1 ────────────────────
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   AdminRoleMiddleware           ← RBAC পারমিশন চেক
   │
-  └─ /admin/api (সংবেদনশীল অপারেশন) ──
+  └─ /admin/api/v1 (সংবেদনশীল অপারেশন) ──
       EncryptionMiddleware
       AuthMiddleware
       AdminRoleMiddleware
@@ -239,7 +239,7 @@ HTTP রিকোয়েস্ট
 
 | মিডলওয়্যার | অবস্থান | রেজিস্ট্রেশন | দায়িত্ব |
 |--------|------|---------|------|
-| `VersionMiddleware` | common/Version | গ্লোবাল | `X-Api-Version` ভ্যালিডেশন, অনুপস্থিত হলে ডিফল্ট v1 |
+| `VersionMiddleware` | common/Version | গ্লোবাল | URL পাথে API ভার্সন ভ্যালিডেশন |
 | `CorsMiddleware` | common/Security | গ্লোবাল | OPTIONS প্রিফ্লাইট, Origin রিফ্লেক্ট |
 | `SecurityHeadersMiddleware` | common/Security | গ্লোবাল | HSTS / X-Frame-Options / CSP / Referrer-Policy সিকিউরিটি রেসপন্স হেডার |
 | `ClientPlatformMiddleware` | common/ClientPlatform | গ্লোবাল | `X-Client-Platform` ৮ প্ল্যাটফর্ম ডিটেকশন |
@@ -280,7 +280,7 @@ HTTP রিকোয়েস্ট
 
 ```
 রিকোয়েস্ট ফ্লো:
-  Client: GET /api/products/aB3xK7mQ9w
+  Client: GET /api/v1/products/aB3xK7mQ9w
     → HashidRequestMiddleware ডিকোড → int(1234567890)
       → Controller/Service ইন্টিজার ID দিয়ে অপারেশন
         → Response::success() / Response::paginated()

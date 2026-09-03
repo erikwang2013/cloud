@@ -4,7 +4,7 @@
 
 **Base URL** : `https://api.example.com`
 
-**Contrôle de version** : spécifié via l'en-tête de requête HTTP `X-Api-Version: v1`. Par défaut `v1` si absent, les versions non prises en charge renvoient `400`. La version ne se trouve pas dans le chemin d'URL.
+**Contrôle de version** : la version d'API se trouve dans le chemin d'URL, p. ex. `/api/v1/auth/login` ; les versions non prises en charge renvoient `400`.
 
 **Méthodes d'authentification** :
 
@@ -66,14 +66,14 @@
 
 | Groupe de routes | Middlewares | Préfixe |
 |--------|--------|------|
-| Public | Chaîne de middlewares globaux | `/health`, `/api/*` |
+| Public | Chaîne de middlewares globaux | `/health`, `/api/v1/*` |
 | `/health` (interne) | Globaux + InternalToken | `/health/live`, `/health/ready`, `/health/deps` |
-| `/api/auth` | Globaux + Encryption | `/api/auth/*` |
-| `/api` (utilisateur) | Globaux + Encryption + Auth | `/api/user/*`, `/api/cart`, `/api/orders` |
-| `/api` (sensible) | Globaux + Encryption + Auth + Confirmation | `/api/orders/{id}/pay` |
-| `/api/supplier/external` | Version + SupplierApiKey | API externe fournisseur |
-| `/admin/api` | Globaux + Encryption + Auth + AdminRole | API du panneau d'administration |
-| `/admin/api` (sensible) | Globaux + Encryption + Auth + AdminRole + Confirmation | Opérations d'administration sensibles |
+| `/api/v1/auth` | Globaux + Encryption | `/api/v1/auth/*` |
+| `/api/v1` (utilisateur) | Globaux + Encryption + Auth | `/api/v1/user/*`, `/api/v1/cart`, `/api/v1/orders` |
+| `/api/v1` (sensible) | Globaux + Encryption + Auth + Confirmation | `/api/v1/orders/{id}/pay` |
+| `/api/v1/supplier/external` | Version + SupplierApiKey | API externe fournisseur |
+| `/admin/api/v1` | Globaux + Encryption + Auth + AdminRole | API du panneau d'administration |
+| `/admin/api/v1` (sensible) | Globaux + Encryption + Auth + AdminRole + Confirmation | Opérations d'administration sensibles |
 
 ---
 
@@ -89,7 +89,7 @@ GET /health
 ### État du service
 
 ```
-GET /api/status
+GET /api/v1/status
 → {
   "overall": "operational",
   "components": {
@@ -105,19 +105,19 @@ GET /api/status
 ### Produits
 
 ```
-GET /api/products
+GET /api/v1/products
    Paramètres : category_id, region_id, keyword, supplier_id, page (défaut 1),
    page_size (défaut 20, max 50)
   → Liste de produits paginée (avec category, skus.regionPrices)
 
-GET /api/products/search
+GET /api/v1/products/search
    Paramètres : q (requis), page
   → Recherche plein texte Elasticsearch
 
-GET /api/products/{id}
+GET /api/v1/products/{id}
   → Détail du produit (avec category, skus, images, reviews)
 
-GET /api/products/{productId}/reviews
+GET /api/v1/products/{productId}/reviews
   → Liste d'avis + avg_rating + total + distribution
    Énumération de statut : pending (en attente)/approved (approuvé)/rejected
    (rejeté), seuls les approved sont renvoyés
@@ -126,25 +126,25 @@ GET /api/products/{productId}/reviews
 ### Domaines
 
 ```
-GET /api/domain/check/{domain}/{tld}
+GET /api/v1/domain/check/{domain}/{tld}
   → { domain, tld, available: true, price: { register, renew, transfer } }
 
-GET /api/domain/tlds
+GET /api/v1/domain/tlds
   → Liste des TLD disponibles (cache Redis 1 h)
 ```
 
 ### Centre d'aide
 
 ```
-GET /api/help
+GET /api/v1/help
    Paramètres : category, page
    En-tête : Accept-Language (en-US / zh-CN)
   → Articles d'aide paginés
 
-GET /api/help/categories
+GET /api/v1/help/categories
   → Liste des catégories d'articles
 
-GET /api/help/{slug}
+GET /api/v1/help/{slug}
   → Détail d'un article unique
 ```
 
@@ -155,7 +155,7 @@ GET /api/help/{slug}
 ### Captcha
 
 ```
-POST /api/captcha/create
+POST /api/v1/captcha/create
    En-tête : X-Encrypted: 1
   → { key, image (base64), target_count, expires_in }
 ```
@@ -163,7 +163,7 @@ POST /api/captcha/create
 ### Inscription
 
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
    En-tête : X-Encrypted: 1
    Corps (chiffré) : { email?, phone?, password, language?, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -177,7 +177,7 @@ Limitation de débit : 3 req/min
 ### Connexion
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
    En-tête : X-Encrypted: 1
    Corps (chiffré) : { login (email/phone), password, captcha_key, captcha_points, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -190,7 +190,7 @@ Limitation de débit : 5 req/min, 5 échecs → verrouillage 15 min
 ### Rafraîchissement du token
 
 ```
-POST /api/auth/refresh
+POST /api/v1/auth/refresh
    En-tête : X-Encrypted: 1
    Corps (chiffré) : { refresh_token, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -204,9 +204,9 @@ Fournisseurs pris en charge : google, apple, facebook, x, microsoft, linkedin, g
 (l'activation dépend de la configuration `{PROVIDER}_OAUTH_CLIENT_ID` etc. dans .env)
 
 ```
-GET /api/auth/{provider}            → { url }        # redirection vers la page d'autorisation (PKCE/nonce anti-rejeu)
-GET /api/auth/{provider}/callback?code=xxx&state=yyy
-POST /api/auth/{provider}/callback  Corps : { code, state }
+GET /api/v1/auth/{provider}            → { url }        # redirection vers la page d'autorisation (PKCE/nonce anti-rejeu)
+GET /api/v1/auth/{provider}/callback?code=xxx&state=yyy
+POST /api/v1/auth/{provider}/callback  Corps : { code, state }
 ```
 
 - Apple/Microsoft renvoient un id_token, le serveur vérifie la signature via JWKS, ainsi que iss/aud/exp/nonce
@@ -217,11 +217,11 @@ POST /api/auth/{provider}/callback  Corps : { code, state }
 ### Réinitialisation du mot de passe
 
 ```
-POST /api/auth/forgot-password
+POST /api/v1/auth/forgot-password
    Corps : { email }
   → Envoi d'un e-mail avec code de vérification
 
-POST /api/auth/reset-password
+POST /api/v1/auth/reset-password
    Corps : { email, code, password }
   → Réinitialisation réussie
   → 5 erreurs cumulées → 429, limitation de débit 10 minutes
@@ -230,14 +230,14 @@ POST /api/auth/reset-password
 ### Vérification d'e-mail
 
 ```
-GET /api/auth/verify-email?token=xxx
+GET /api/v1/auth/verify-email?token=xxx
   → Vérification réussie
 ```
 
 ### Vérification SMS
 
 ```
-POST /api/auth/send-sms
+POST /api/v1/auth/send-sms
    Corps : { phone }
   → Envoi d'un code de vérification SMS (refroidissement 60 s)
 ```
@@ -245,12 +245,12 @@ POST /api/auth/send-sms
 ### Vérification en deux étapes TOTP
 
 ```
-POST /api/user/totp/setup        → { secret, qr_url }        # non persisté, doit être vérifié sous 10 min
-POST /api/user/totp/verify       Corps : { code } → { verified: true }   # au premier activage, message de succès
-POST /api/user/totp/disable      Corps : { password }             # confirmation de mot de passe requise, sinon 403
-GET /api/user/totp/recovery-codes → { recovery_codes }        # génère 8 codes à usage unique à chaque fois,
+POST /api/v1/user/totp/setup        → { secret, qr_url }        # non persisté, doit être vérifié sous 10 min
+POST /api/v1/user/totp/verify       Corps : { code } → { verified: true }   # au premier activage, message de succès
+POST /api/v1/user/totp/disable      Corps : { password }             # confirmation de mot de passe requise, sinon 403
+GET /api/v1/user/totp/recovery-codes → { recovery_codes }        # génère 8 codes à usage unique à chaque fois,
                                                                # confirmation de mot de passe requise, sinon 403
-POST /api/auth/login/recovery    Corps : { login, password, recovery_code }
+POST /api/v1/auth/login/recovery    Corps : { login, password, recovery_code }
 ```
 
 - Une fois TOTP activé, la connexion doit porter `totp_code`, sinon 401
@@ -263,25 +263,25 @@ POST /api/auth/login/recovery    Corps : { login, password, recovery_code }
 ### Profil
 
 ```
-GET /api/user/profile
-PUT /api/user/profile
+GET /api/v1/user/profile
+PUT /api/v1/user/profile
    Corps : { nickname?, avatar?, country?, language?, timezone? }
 ```
 
 ### Vérification d'identité KYC
 
 ```
-POST /api/user/kyc
+POST /api/v1/user/kyc
    Corps : { id_type, id_number, real_name, front_image, back_image }
 ```
 
 ### Solde
 
 ```
-GET /api/user/balance
+GET /api/v1/user/balance
   → { balances: [{currency, balance, frozen}] }
 
-GET /api/user/balance/transactions
+GET /api/v1/user/balance/transactions
    Paramètres : page
   → Historique des mouvements de solde
 ```
@@ -289,23 +289,23 @@ GET /api/user/balance/transactions
 ### Gestion des adresses
 
 ```
-GET /api/user/addresses
-POST /api/user/addresses
+GET /api/v1/user/addresses
+POST /api/v1/user/addresses
    Corps : { type: billing/shipping, name, phone, country, state, city, address, postcode, is_default }
-PUT /api/user/addresses/{id}
-DELETE /api/user/addresses/{id}
+PUT /api/v1/user/addresses/{id}
+DELETE /api/v1/user/addresses/{id}
 ```
 
 ### Gestion de session
 
 ```
-GET /api/user/sessions
+GET /api/v1/user/sessions
   → [{ id, fingerprint, client_platform, created_at, expires_at }]
 
-DELETE /api/user/sessions/{id}
+DELETE /api/v1/user/sessions/{id}
   → Révoque la session spécifiée
 
-DELETE /api/user/account
+DELETE /api/v1/user/account
    Corps : { confirm_password }
   → Suppression de compte GDPR
 ```
@@ -313,29 +313,29 @@ DELETE /api/user/account
 ### Notifications
 
 ```
-GET /api/user/notifications
+GET /api/v1/user/notifications
    Paramètres : page
   → Liste de notifications paginée
 
-POST /api/user/notifications/{id}/read
+POST /api/v1/user/notifications/{id}/read
   → Marquer comme lue
 
-GET /api/user/notification-prefs
-PUT /api/user/notification-prefs
+GET /api/v1/user/notification-prefs
+PUT /api/v1/user/notification-prefs
    Corps : { email: {order_paid: true, ...}, push: {...} }
 ```
 
 ### E-mail
 
 ```
-POST /api/user/resend-verify-email
+POST /api/v1/user/resend-verify-email
   → Renvoi de l'e-mail de vérification
 ```
 
 ### Téléversement de fichiers
 
 ```
-POST /api/upload
+POST /api/v1/upload
    Corps : multipart/form-data { file, type: avatar/kyc/attach }
    Limites : avatar 2 Mo, kyc 5 Mo, attach 10 Mo
    Autorisés : jpg, jpeg, png, gif, pdf
@@ -350,11 +350,11 @@ POST /api/upload
 ### Panier
 
 ```
-POST /api/cart
+POST /api/v1/cart
    Corps : { sku_id, region_id, quantity, cycle }
-GET /api/cart
-DELETE /api/cart/{id}
-PUT /api/cart/{id}
+GET /api/v1/cart
+DELETE /api/v1/cart/{id}
+PUT /api/v1/cart/{id}
    Corps : { quantity }
 ```
 
@@ -367,22 +367,22 @@ PUT /api/cart/{id}
 ### Commandes
 
 ```
-POST /api/orders
+POST /api/v1/orders
   → Création de la commande depuis le panier
   ← { order, order_no, items, subtotal, discount, tax, total }   # subtotal/discount/tax/total : string 4dp
 
-GET /api/orders
+GET /api/v1/orders
    Paramètres : page, status (pending/paid/provisioning/completed/refunded,
    valeur invalide → 400)
   → Liste de mes commandes
 
-GET /api/orders/{id}
+GET /api/v1/orders/{id}
   → Détail de la commande (avec items, timeline)
 
-GET /api/orders/{id}/payment-methods
+GET /api/v1/orders/{id}/payment-methods
   → Canaux de paiement disponibles + montant réel à payer pour chaque canal
 
-POST /api/orders/{id}/pay    🔒 confirmation de mot de passe
+POST /api/v1/orders/{id}/pay    🔒 confirmation de mot de passe
    Corps : { channel_id, confirm_password }
   → { client_secret, transaction_id }
 ```
@@ -390,7 +390,7 @@ POST /api/orders/{id}/pay    🔒 confirmation de mot de passe
 ### Coupons
 
 ```
-POST /api/coupons/validate
+POST /api/v1/coupons/validate
    Corps : { code, order_total }
   → { coupon_id, discount, type }   # discount : string 4dp (ex. "2.0000")
 
@@ -400,10 +400,10 @@ POST /api/coupons/validate
 ### Factures
 
 ```
-GET /api/invoices
+GET /api/v1/invoices
    Paramètres : page
-GET /api/invoices/{id}
-GET /api/invoices/{id}/download
+GET /api/v1/invoices/{id}
+GET /api/v1/invoices/{id}/download
   → Téléchargement PDF
 ```
 
@@ -412,20 +412,20 @@ GET /api/invoices/{id}/download
 ## V. Gestion des ressources
 
 ```
-GET /api/resources
+GET /api/v1/resources
    Paramètres : page, status
   → Liste de mes ressources
 
-GET /api/resources/{id}
+GET /api/v1/resources/{id}
   → Détail de la ressource
 
-GET /api/resources/{id}/status
+GET /api/v1/resources/{id}/status
   → État actuel de la ressource + métriques
 
-GET /api/resources/{id}/console
+GET /api/v1/resources/{id}/console
   → URL VNC/console
 
-POST /api/resources/batch
+POST /api/v1/resources/batch
    Corps : { action: start/stop/restart, resource_ids: [...] }
 ```
 
@@ -434,13 +434,13 @@ POST /api/resources/batch
 ## VI. Gestion DNS
 
 ```
-GET /api/dns/{domain}
+GET /api/v1/dns/{domain}
   → Liste des enregistrements DNS
 
-POST /api/dns/{domain}/records
+POST /api/v1/dns/{domain}/records
    Corps : { type, name, value, ttl?, priority? }
 
-DELETE /api/dns/{domain}/records/{id}   🔒 confirmation de mot de passe
+DELETE /api/v1/dns/{domain}/records/{id}   🔒 confirmation de mot de passe
 ```
 
 ---
@@ -448,15 +448,15 @@ DELETE /api/dns/{domain}/records/{id}   🔒 confirmation de mot de passe
 ## VII. Tickets
 
 ```
-POST /api/tickets
+POST /api/v1/tickets
    Corps : { resource_id?, category, priority?, title, content }
 
-GET /api/tickets
+GET /api/v1/tickets
    Paramètres : page, status
 
-GET /api/tickets/{id}
+GET /api/v1/tickets/{id}
 
-POST /api/tickets/{id}/reply
+POST /api/v1/tickets/{id}/reply
    Corps : { content }
 ```
 
@@ -465,19 +465,19 @@ POST /api/tickets/{id}/reply
 ## VIII. Fournisseurs (API interne)
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
    Corps : { company_name, contact_name, contact_phone, contact_email, settlement_method }
 
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
   → Liste des règlements
 
-POST /api/supplier/withdraw    🔒 confirmation de mot de passe
+POST /api/v1/supplier/withdraw    🔒 confirmation de mot de passe
    Corps : { amount, confirm_password, account_info: { method, bank_name, account_number } }
 
-GET /api/supplier/products
-POST /api/supplier/products
+GET /api/v1/supplier/products
+POST /api/v1/supplier/products
    Corps : { product_id, commission_rate }
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 ---
@@ -489,27 +489,27 @@ DELETE /api/supplier/products/{id}
 **Limitation de débit** : 120 req/min (retrait 10 req/min)
 
 ```
-GET /api/supplier/external/orders
+GET /api/v1/supplier/external/orders
    Paramètres : page, page_size, status, from, to
 
-GET /api/supplier/external/orders/{id}
+GET /api/v1/supplier/external/orders/{id}
   → Détail de la commande (uniquement celles associées à ce fournisseur)
 
-GET /api/supplier/external/resources
+GET /api/v1/supplier/external/resources
    Paramètres : page, status, type
 
-GET /api/supplier/external/resources/{id}/status
+GET /api/v1/supplier/external/resources/{id}/status
   → { id, type, status, provisioned_at, expired_at }
 
-GET /api/supplier/external/settlements
+GET /api/v1/supplier/external/settlements
    Paramètres : page, status
 
-GET /api/supplier/external/settlements/{id}
+GET /api/v1/supplier/external/settlements/{id}
 
-POST /api/supplier/external/withdraw
+POST /api/v1/supplier/external/withdraw
    Corps : { amount, account_info: { method, ... } }
 
-GET /api/supplier/external/withdraws
+GET /api/v1/supplier/external/withdraws
    Paramètres : page
 ```
 
@@ -522,227 +522,227 @@ GET /api/supplier/external/withdraws
 ### Tableau de bord
 
 ```
-GET /admin/api/dashboard
+GET /admin/api/v1/dashboard
   → { today_stats, revenue_trend_30d, region_distribution, pending_orders, pending_kyc, open_tickets }
 ```
 
 ### Gestion des utilisateurs
 
 ```
-GET /admin/api/users               Paramètres : page, status, keyword
-GET /admin/api/users/export       → Téléchargement Excel
-GET /admin/api/users/{id}
-PUT /admin/api/users/{id}/status   Corps : { status }
+GET /admin/api/v1/users               Paramètres : page, status, keyword
+GET /admin/api/v1/users/export       → Téléchargement Excel
+GET /admin/api/v1/users/{id}
+PUT /admin/api/v1/users/{id}/status   Corps : { status }
 ```
 
 ### Examen KYC
 
 ```
-GET /admin/api/kyc                 Paramètres : page, status
+GET /admin/api/v1/kyc                 Paramètres : page, status
 
-POST /admin/api/kyc/{id}/approve   🔒 confirmation de mot de passe
+POST /admin/api/v1/kyc/{id}/approve   🔒 confirmation de mot de passe
    Corps : { confirm_password }
 
-POST /admin/api/kyc/{id}/reject    🔒 confirmation de mot de passe
+POST /admin/api/v1/kyc/{id}/reject    🔒 confirmation de mot de passe
    Corps : { confirm_password, reason }
 ```
 
 ### Gestion des produits
 
 ```
-POST /admin/api/products
-PUT /admin/api/products/{id}
-DELETE /admin/api/products/{id}         🔒 confirmation de mot de passe
-POST /admin/api/products/{productId}/skus
-PUT /admin/api/skus/{id}
-POST /admin/api/skus/{skuId}/region-price
-GET /admin/api/products/export         → Téléchargement CSV
-POST /admin/api/products/import        → Téléversement CSV upsert
+POST /admin/api/v1/products
+PUT /admin/api/v1/products/{id}
+DELETE /admin/api/v1/products/{id}         🔒 confirmation de mot de passe
+POST /admin/api/v1/products/{productId}/skus
+PUT /admin/api/v1/skus/{id}
+POST /admin/api/v1/skus/{skuId}/region-price
+GET /admin/api/v1/products/export         → Téléchargement CSV
+POST /admin/api/v1/products/import        → Téléversement CSV upsert
 ```
 
 ### Gestion des commandes
 
 ```
-GET /admin/api/orders               Paramètres : page, status, keyword
-GET /admin/api/orders/export       → Téléchargement Excel
-GET /admin/api/orders/{id}
+GET /admin/api/v1/orders               Paramètres : page, status, keyword
+GET /admin/api/v1/orders/export       → Téléchargement Excel
+GET /admin/api/v1/orders/{id}
 
-POST /admin/api/orders/{id}/refund  🔒 confirmation de mot de passe
+POST /admin/api/v1/orders/{id}/refund  🔒 confirmation de mot de passe
    Corps : { confirm_password, amount?, reason }
 ```
 
 ### Gestion des paiements
 
 ```
-GET /admin/api/payments/channels
-PUT /admin/api/payments/channels/{id}
-GET /admin/api/payments/transactions   Paramètres : page, channel, status
-GET /admin/api/payments/reconcile      Paramètres : date ; records.status : verified/mismatch/unverified
-POST /admin/api/payments/reconcile/run   Paramètres : date ; déclenche le rapprochement quotidien
+GET /admin/api/v1/payments/channels
+PUT /admin/api/v1/payments/channels/{id}
+GET /admin/api/v1/payments/transactions   Paramètres : page, channel, status
+GET /admin/api/v1/payments/reconcile      Paramètres : date ; records.status : verified/mismatch/unverified
+POST /admin/api/v1/payments/reconcile/run   Paramètres : date ; déclenche le rapprochement quotidien
 ```
 
 ### Ressources et livraison
 
 ```
-GET /admin/api/provisioning/tasks               Paramètres : page, status
-POST /admin/api/provisioning/tasks/{id}/retry
-POST /admin/api/provisioning/resources/{id}/upgrade
+GET /admin/api/v1/provisioning/tasks               Paramètres : page, status
+POST /admin/api/v1/provisioning/tasks/{id}/retry
+POST /admin/api/v1/provisioning/resources/{id}/upgrade
    Corps : { cpu?, ram?, disk? }
-POST /admin/api/provisioning/resources/{id}/destroy   🔒 confirmation de mot de passe
-GET /admin/api/provisioning/hosts
+POST /admin/api/v1/provisioning/resources/{id}/destroy   🔒 confirmation de mot de passe
+GET /admin/api/v1/provisioning/hosts
 ```
 
 ### Gestion des fournisseurs
 
 ```
-GET /admin/api/suppliers                  Paramètres : page, status
-GET /admin/api/suppliers/export          → Téléchargement Excel
+GET /admin/api/v1/suppliers                  Paramètres : page, status
+GET /admin/api/v1/suppliers/export          → Téléchargement Excel
 
-POST /admin/api/suppliers/{id}/approve    🔒 confirmation de mot de passe
-POST /admin/api/suppliers/{id}/settle     🔒 confirmation de mot de passe
+POST /admin/api/v1/suppliers/{id}/approve    🔒 confirmation de mot de passe
+POST /admin/api/v1/suppliers/{id}/settle     🔒 confirmation de mot de passe
    Corps : { period_start, period_end, confirm_password }
 
-POST /admin/api/suppliers/withdraws/{id}/approve  🔒 confirmation de mot de passe
+POST /admin/api/v1/suppliers/withdraws/{id}/approve  🔒 confirmation de mot de passe
 ```
 
 ### Clés API fournisseur
 
 ```
-GET /admin/api/suppliers/{id}/api-keys
-POST /admin/api/suppliers/{id}/api-keys
+GET /admin/api/v1/suppliers/{id}/api-keys
+POST /admin/api/v1/suppliers/{id}/api-keys
    Corps : { name }
   ← { api_key: "sk_xxx...", prefix } (affiché une seule fois)
 
-DELETE /admin/api/suppliers/api-keys/{id}
+DELETE /admin/api/v1/suppliers/api-keys/{id}
 ```
 
 ### Gestion des tickets
 
 ```
-GET /admin/api/tickets                   Paramètres : page, status, priority, assigned_to
-POST /admin/api/tickets/{id}/assign      Corps : { user_id }
-POST /admin/api/tickets/{id}/close
+GET /admin/api/v1/tickets                   Paramètres : page, status, priority, assigned_to
+POST /admin/api/v1/tickets/{id}/assign      Corps : { user_id }
+POST /admin/api/v1/tickets/{id}/close
 ```
 
 ### Gestion des domaines
 
 ```
-GET /admin/api/domains/tlds
-POST /admin/api/domains/tlds
+GET /admin/api/v1/domains/tlds
+POST /admin/api/v1/domains/tlds
    Corps : { tld, wholesale_price, retail_price, registrar, promo_price?, promo_end_at? }
-PUT /admin/api/domains/tlds/{id}
-DELETE /admin/api/domains/tlds/{id}
-GET /admin/api/domains/zones              Paramètres : page
-GET /admin/api/domains/transfers          Paramètres : page
-POST /admin/api/domains/transfers/{id}/approve
+PUT /admin/api/v1/domains/tlds/{id}
+DELETE /admin/api/v1/domains/tlds/{id}
+GET /admin/api/v1/domains/zones              Paramètres : page
+GET /admin/api/v1/domains/transfers          Paramètres : page
+POST /admin/api/v1/domains/transfers/{id}/approve
 ```
 
 ### Gestion des notifications
 
 ```
-GET /admin/api/notifications/templates
-PUT /admin/api/notifications/templates/{id}
+GET /admin/api/v1/notifications/templates
+PUT /admin/api/v1/notifications/templates/{id}
    Corps : { name?, channels?, title_template?, body_template?, variables? }
-GET /admin/api/notifications/log          Paramètres : page
+GET /admin/api/v1/notifications/log          Paramètres : page
 ```
 
 ### Coupons
 
 ```
-GET /admin/api/coupons
-POST /admin/api/coupons
+GET /admin/api/v1/coupons
+POST /admin/api/v1/coupons
    Corps : { code, type, value, min_amount?, max_discount?, max_uses?, starts_at?, expires_at? }
-DELETE /admin/api/coupons/{id}
+DELETE /admin/api/v1/coupons/{id}
 ```
 
 ### Articles d'aide
 
 ```
-GET /admin/api/help
-POST /admin/api/help
+GET /admin/api/v1/help
+POST /admin/api/v1/help
    Corps : { category, title, slug, content, locale, sort?, status? }
-PUT /admin/api/help/{id}
-DELETE /admin/api/help/{id}              → suppression logique (status=archived)
+PUT /admin/api/v1/help/{id}
+DELETE /admin/api/v1/help/{id}              → suppression logique (status=archived)
 ```
 
 ### API des fournisseurs cloud
 
 ```
-GET /admin/api/providers
-POST /admin/api/providers
+GET /admin/api/v1/providers
+POST /admin/api/v1/providers
    Corps : { name, code, api_key?, api_secret?, webhook_secret? }
-PUT /admin/api/providers/{id}
-DELETE /admin/api/providers/{id}         → désactivation (status=disabled)
+PUT /admin/api/v1/providers/{id}
+DELETE /admin/api/v1/providers/{id}         → désactivation (status=disabled)
 ```
 
 ### Gestion des Webhooks
 
 ```
-GET /admin/api/webhooks
-POST /admin/api/webhooks
+GET /admin/api/v1/webhooks
+POST /admin/api/v1/webhooks
    Corps : { url }
-DELETE /admin/api/webhooks               Corps : { id }
-POST /admin/api/webhooks/test            Corps : { url }
+DELETE /admin/api/v1/webhooks               Corps : { id }
+POST /admin/api/v1/webhooks/test            Corps : { url }
 ```
 
 ### Rapports
 
 ```
-GET /admin/api/reports/revenue            Paramètres : from, to, granularity
+GET /admin/api/v1/reports/revenue            Paramètres : from, to, granularity
   → { daily: [{date, currency, revenue, orders}], total_revenue, total_orders, by_category }
   # revenue/total_revenue : string 4dp (SUM(DECIMAL) cohérent avec l'agrégation bcmath)
-GET /admin/api/reports/supplier           Paramètres : from, to
+GET /admin/api/v1/reports/supplier           Paramètres : from, to
   → { settlements, total_payable, total_paid }   # payable/total_payable/total_paid : string 4dp
-GET /admin/api/reports/region             Paramètres : from, to
+GET /admin/api/v1/reports/region             Paramètres : from, to
   → [{region, orders, revenue}]                  # revenue : string 4dp
 ```
 
 ### Surveillance
 
 ```
-GET /admin/api/monitor/dashboard
+GET /admin/api/v1/monitor/dashboard
   → { active_resources, alerts_today, resource_distribution, recent_alerts }
 
-GET /admin/api/monitor/resources/{id}
+GET /admin/api/v1/monitor/resources/{id}
   → { cpu_percent, mem_percent, disk_percent, bandwidth_usage, uptime }
 ```
 
 ### Journaux d'audit
 
 ```
-GET /admin/api/audit-logs                 Paramètres : page, user_id, action, from, to
+GET /admin/api/v1/audit-logs                 Paramètres : page, user_id, action, from, to
   → Journaux d'audit paginés (avec client_platform)
 ```
 
 ### Feature Flags
 
 ```
-GET /admin/api/features
+GET /admin/api/v1/features
   → [{ name, enabled, default, source }]
 
-PUT /admin/api/features/{name}
+PUT /admin/api/v1/features/{name}
    Corps : { action: enable/disable/toggle/reset }
 ```
 
 ### Configuration système
 
 ```
-PUT /admin/api/system/config              🔒 confirmation de mot de passe
+PUT /admin/api/v1/system/config              🔒 confirmation de mot de passe
 ```
 
 ### Import/export de produits
 
 ```
-GET /admin/api/products/export           → Téléchargement CSV
-POST /admin/api/products/import          → Téléversement CSV upsert
+GET /admin/api/v1/products/export           → Téléchargement CSV
+POST /admin/api/v1/products/import          → Téléversement CSV upsert
 ```
 
 ### Export fournisseurs + utilisateurs
 
 ```
-GET /admin/api/suppliers/export          → Téléchargement Excel
-GET /admin/api/users/export              → Téléchargement Excel
-GET /admin/api/orders/export             → Téléchargement Excel
+GET /admin/api/v1/suppliers/export          → Téléchargement Excel
+GET /admin/api/v1/users/export              → Téléchargement Excel
+GET /admin/api/v1/orders/export             → Téléchargement Excel
 ```
 
 ---
@@ -752,19 +752,19 @@ GET /admin/api/orders/export             → Téléchargement Excel
 ### Côté utilisateur
 
 ```
-GET /api/ssl/plans
+GET /api/v1/ssl/plans
   → Liste des forfaits SSL (DV/OV/EV, prix incluant register/renew/transfer)
 
-GET /api/ssl-certs
+GET /api/v1/ssl-certs
   → Liste de mes certificats (avec status : pending/active/expired/revoked)
 
-GET /api/ssl-certs/{id}
+GET /api/v1/ssl-certs/{id}
   → Détail du certificat (domaine, autorité de délivrance, période de validité, état du renouvellement)
 
-GET /api/ssl-certs/{id}/download
+GET /api/v1/ssl-certs/{id}/download
   → Téléchargement des fichiers du certificat (chaîne de certificats + clé privée)
 
-POST /api/ssl-certs/{id}/auto-renew
+POST /api/v1/ssl-certs/{id}/auto-renew
    Corps : { auto_renew: true/false }
   → Bascule du renouvellement automatique
 ```
@@ -772,12 +772,12 @@ POST /api/ssl-certs/{id}/auto-renew
 ### Côté administration
 
 ```
-GET /admin/api/ssl/plans              → Liste des forfaits
-POST /admin/api/ssl/plans             → Création d'un forfait
-PUT /admin/api/ssl/plans/{id}         → Mise à jour d'un forfait
-DELETE /admin/api/ssl/plans/{id}      → Suppression d'un forfait
-GET /admin/api/ssl/certs              → Tous les certificats
-POST /admin/api/ssl/certs/{id}/revoke → Révocation d'un certificat
+GET /admin/api/v1/ssl/plans              → Liste des forfaits
+POST /admin/api/v1/ssl/plans             → Création d'un forfait
+PUT /admin/api/v1/ssl/plans/{id}         → Mise à jour d'un forfait
+DELETE /admin/api/v1/ssl/plans/{id}      → Suppression d'un forfait
+GET /admin/api/v1/ssl/certs              → Tous les certificats
+POST /admin/api/v1/ssl/certs/{id}/revoke → Révocation d'un certificat
 ```
 
 ---
@@ -787,21 +787,21 @@ POST /admin/api/ssl/certs/{id}/revoke → Révocation d'un certificat
 Stockage d'objets compatible S3, téléversement/téléchargement via URL pré-signées, la clé n'est jamais transmise.
 
 ```
-GET /api/storage/buckets
+GET /api/v1/storage/buckets
   → Liste de mes buckets de stockage (usage, statut)
 
-GET /api/storage/buckets/{id}
+GET /api/v1/storage/buckets/{id}
   → Détail du bucket
 
-POST /api/storage/buckets/{id}/presign-upload
+POST /api/v1/storage/buckets/{id}/presign-upload
    Corps : { filename, content_type, size }
   → { upload_url, object_key } URL de téléversement pré-signée (limitée dans le temps)
 
-POST /api/storage/buckets/{id}/presign-download
+POST /api/v1/storage/buckets/{id}/presign-download
    Corps : { object_key }
   → URL de téléchargement pré-signée (limitée dans le temps)
 
-GET /api/storage/buckets/{id}/credentials
+GET /api/v1/storage/buckets/{id}/credentials
   → Identifiants d'accès temporaires (valables peu de temps, pour un téléversement direct SDK)
 ```
 
@@ -812,10 +812,10 @@ GET /api/storage/buckets/{id}/credentials
 ### Côté utilisateur
 
 ```
-GET /api/cdn/domains
+GET /api/v1/cdn/domains
   → Liste de mes domaines CDN (origine, statut, forfait)
 
-POST /api/cdn/domains
+POST /api/v1/cdn/domains
    Corps : { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
         origin_type (server|storage), origin_value, cert_config? }
   → Création d'un domaine CDN (création côté fournisseur et liaison de l'origine)
@@ -825,28 +825,28 @@ POST /api/cdn/domains
      sinon le compte provider_apis actif selon code=cdn-{provider_type},
      sinon repli sur la configuration env
 
-GET /api/cdn/domains/{id}
+GET /api/v1/cdn/domains/{id}
   → Détail du domaine CDN
 
-DELETE /api/cdn/domains/{id}
+DELETE /api/v1/cdn/domains/{id}
   → Suppression du domaine CDN (désactivation côté fournisseur, idempotent)
 
-POST /api/cdn/domains/{id}/purge
+POST /api/v1/cdn/domains/{id}/purge
    Corps : { urls: ["https://cdn.example.com/path"] }
   → Purge du cache (URL en double automatiquement dédupliquées, idempotent ; 100 maximum)
 
-GET /api/cdn/domains/{id}/stats
+GET /api/v1/cdn/domains/{id}/stats
   → Aperçu du domaine (cdn_domain / provider_type / plan / status / purged_at)
 ```
 
 ### Côté administration
 
 ```
-GET /admin/api/cdn/domains            → Tous les domaines CDN (avec l'utilisateur propriétaire)
-PUT /admin/api/cdn/domains/{id}       → Mise à jour du forfait (liste blanche plan : standard | pro | enterprise)
+GET /admin/api/v1/cdn/domains            → Tous les domaines CDN (avec l'utilisateur propriétaire)
+PUT /admin/api/v1/cdn/domains/{id}       → Mise à jour du forfait (liste blanche plan : standard | pro | enterprise)
 ```
 
-Les routes CDN du panneau d'administration sont soumises à `RbacMiddleware('cdn.manage')` ; les changements de forfait sont écrits dans les journaux d'audit (`admin_cdn_update_plan`). Les identifiants des comptes fournisseurs sont gérés via le CRUD `/admin/api/providers` (RbacMiddleware `provider.config`, convention `code` `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, identifiants chiffrés en base via Encryptable).
+Les routes CDN du panneau d'administration sont soumises à `RbacMiddleware('cdn.manage')` ; les changements de forfait sont écrits dans les journaux d'audit (`admin_cdn_update_plan`). Les identifiants des comptes fournisseurs sont gérés via le CRUD `/admin/api/v1/providers` (RbacMiddleware `provider.config`, convention `code` `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, identifiants chiffrés en base via Encryptable).
 
 ### Codes d'erreur CDN
 
@@ -865,11 +865,11 @@ Les routes CDN du panneau d'administration sont soumises à `RbacMiddleware('cdn
 ## XIV. Facturation à l'usage
 
 ```
-GET /admin/api/billing/rates          → Liste des taux de facturation (par type/spécifications de ressource)
-POST /admin/api/billing/rates         → Création d'un taux
-PUT /admin/api/billing/rates/{id}     → Mise à jour d'un taux
-DELETE /admin/api/billing/rates/{id}  → Suppression d'un taux
-GET /admin/api/billing/usage          → Résumé de l'usage (agrégé par utilisateur/ressource)
+GET /admin/api/v1/billing/rates          → Liste des taux de facturation (par type/spécifications de ressource)
+POST /admin/api/v1/billing/rates         → Création d'un taux
+PUT /admin/api/v1/billing/rates/{id}     → Mise à jour d'un taux
+DELETE /admin/api/v1/billing/rates/{id}  → Suppression d'un taux
+GET /admin/api/v1/billing/usage          → Résumé de l'usage (agrégé par utilisateur/ressource)
 ```
 
 Pipeline de facturation : ResourceMonitor collecte toutes les 5 minutes → UsageAggregator agrège chaque heure → BillingEngine débite chaque jour, solde insuffisant → suspension de la ressource.
@@ -881,18 +881,18 @@ Pipeline de facturation : ResourceMonitor collecte toutes les 5 minutes → Usag
 ### Côté utilisateur
 
 ```
-GET /api/affiliate/summary
+GET /api/v1/affiliate/summary
   → Aperçu des commissions (cumulées/en attente de règlement/retirables, nombre de liens, taux de conversion)
 
-POST /api/affiliate/links
+POST /api/v1/affiliate/links
    Corps : { source? }
   → Génération d'un lien de promotion (?ref=CODE)
 
-GET /api/affiliate/earnings
+GET /api/v1/affiliate/earnings
    Paramètres : status, page
   → Détail des commissions (commande attribuée, taux, statut : pending/approved/paid)
 
-POST /api/affiliate/payout
+POST /api/v1/affiliate/payout
    Corps : { amount, method }
   → Lancement d'une demande de retrait
 ```
@@ -900,12 +900,12 @@ POST /api/affiliate/payout
 ### Côté administration
 
 ```
-GET /admin/api/affiliate/plans                → Liste des plans de commission
-POST /admin/api/affiliate/plans               → Création d'un plan de commission
-GET /admin/api/affiliate/earnings             → Tous les enregistrements de commissions
-POST /admin/api/affiliate/earnings/{id}/approve → Examen d'une commission
-GET /admin/api/affiliate/payouts              → Liste des demandes de retrait
-POST /admin/api/affiliate/payouts/{id}/approve → Examen/paiement d'un retrait
+GET /admin/api/v1/affiliate/plans                → Liste des plans de commission
+POST /admin/api/v1/affiliate/plans               → Création d'un plan de commission
+GET /admin/api/v1/affiliate/earnings             → Tous les enregistrements de commissions
+POST /admin/api/v1/affiliate/earnings/{id}/approve → Examen d'une commission
+GET /admin/api/v1/affiliate/payouts              → Liste des demandes de retrait
+POST /admin/api/v1/affiliate/payouts/{id}/approve → Examen/paiement d'un retrait
 ```
 
 ---
@@ -917,7 +917,7 @@ POST /graphql
   → Requêtes publiques (produits, domaines, aide et autres données en lecture seule)
    Limites : profondeur de requête 5 niveaux, complexité 100
 
-POST /api/graphql                          🔒 authentification requise
+POST /api/v1/graphql                          🔒 authentification requise
   → Requêtes complètes (y compris les données utilisateur)
 ```
 
@@ -930,10 +930,10 @@ POST /api/graphql                          🔒 authentification requise
 ### Public
 
 ```
-GET /api/regions
+GET /api/v1/regions
   → Liste des régions disponibles (avec devise/fuseau horaire)
 
-GET /api/suppliers/{supplierId}/ratings
+GET /api/v1/suppliers/{supplierId}/ratings
   → Liste des notations du fournisseur (quatre dimensions : qualité/prise en
   charge/vitesse de livraison/rapport qualité-prix, seuls les approved sont renvoyés)
 ```
@@ -941,24 +941,24 @@ GET /api/suppliers/{supplierId}/ratings
 ### Côté utilisateur (authentification requise)
 
 ```
-POST /api/products/{productId}/reviews
+POST /api/v1/products/{productId}/reviews
    Corps : { rating, content, images? }
   → Soumission d'un avis produit (une fois par commande, affiché après examen)
 
-POST /api/supplier/ratings
+POST /api/v1/supplier/ratings
    Corps : { supplier_id, quality, support, delivery_speed, value, comment? }
   → Soumission d'une notation fournisseur (une fois par commande)
 
-GET /api/supplier/ratings/me
+GET /api/v1/supplier/ratings/me
   → Mes enregistrements de notation
 ```
 
 ### Côté administration
 
 ```
-GET /admin/api/suppliers/{id}/ratings          → Toutes les notations (y compris pending)
-POST /admin/api/suppliers/ratings/{id}/approve → Approbation
-POST /admin/api/suppliers/ratings/{id}/hide    → Masquage
+GET /admin/api/v1/suppliers/{id}/ratings          → Toutes les notations (y compris pending)
+POST /admin/api/v1/suppliers/ratings/{id}/approve → Approbation
+POST /admin/api/v1/suppliers/ratings/{id}/hide    → Masquage
 ```
 
 ---
@@ -966,7 +966,7 @@ POST /admin/api/suppliers/ratings/{id}/hide    → Masquage
 ## XVIII. Webhooks de paiement
 
 ```
-POST /api/payments/webhook/stripe
+POST /api/v1/payments/webhook/stripe
    En-tête : Stripe-Signature: ...
   → Rappel Stripe (paiement réussi/remboursement/contestation),
     échec de vérification de signature → 400
@@ -1025,18 +1025,18 @@ L'authentification se fait par le premier message après la connexion (le token 
 
 | Message | Point de terminaison |
 |------|------|
-| `Email or phone required` | /api/auth/register |
-| `Email already registered` | /api/auth/register |
-| `Invalid credentials` | /api/auth/login |
-| `Account temporarily locked` | /api/auth/login |
-| `You already have a supplier application` | /api/supplier/apply |
-| `Insufficient withdrawable balance` | /api/supplier/withdraw |
-| `Product already assigned to this supplier` | /api/supplier/products |
-| `Invalid or revoked API key` | /api/supplier/external/* |
-| `Captcha verification failed` | /api/auth/login, /api/auth/register |
-| `Email already verified` | /api/user/resend-verify-email |
-| `Password too short` | /api/auth/register |
-| `Unknown feature: xxx` | /admin/api/features/{name} |
-| `Refund window expired: server orders are refundable within 72 hours of payment` | /admin/api/orders/{id}/refund |
-| `Refund window expired: domain orders are refundable within 5 days of payment` | /admin/api/orders/{id}/refund |
-| `This product type (IP) is not refundable` | /admin/api/orders/{id}/refund |
+| `Email or phone required` | /api/v1/auth/register |
+| `Email already registered` | /api/v1/auth/register |
+| `Invalid credentials` | /api/v1/auth/login |
+| `Account temporarily locked` | /api/v1/auth/login |
+| `You already have a supplier application` | /api/v1/supplier/apply |
+| `Insufficient withdrawable balance` | /api/v1/supplier/withdraw |
+| `Product already assigned to this supplier` | /api/v1/supplier/products |
+| `Invalid or revoked API key` | /api/v1/supplier/external/* |
+| `Captcha verification failed` | /api/v1/auth/login, /api/v1/auth/register |
+| `Email already verified` | /api/v1/user/resend-verify-email |
+| `Password too short` | /api/v1/auth/register |
+| `Unknown feature: xxx` | /admin/api/v1/features/{name} |
+| `Refund window expired: server orders are refundable within 72 hours of payment` | /admin/api/v1/orders/{id}/refund |
+| `Refund window expired: domain orders are refundable within 5 days of payment` | /admin/api/v1/orders/{id}/refund |
+| `This product type (IP) is not refundable` | /admin/api/v1/orders/{id}/refund |

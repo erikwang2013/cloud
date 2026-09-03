@@ -31,7 +31,7 @@
 
 ### 2.2 ドキュメント-コード乖離（P1 未決 4 項目）
 
-- GET /api/orders の status フィルタが未実装
+- GET /api/v1/orders の status フィルタが未実装
 - WebSocket プッシュイベント欠落（websocket_push 関連ドキュメントに宣言あり）
 - ticket.updated のトリガー範囲不明
 - product_attributes が死んだ schema（使用するコードなし）

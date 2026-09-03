@@ -208,7 +208,7 @@ cloud-php/
 │   │   ├── i18n/middleware/     # 다국어 미들웨어（Locale）
 │   │   ├── security/           # CORS / WAF / 빈도 제한 / 지역 차단 / 유지보수 모드 / 감사 로그
 │   │   ├── snowflake/          # 스노우플레이크 ID 생성 서비스 / Eloquent HasSnowflakeId Trait
-│   │   ├── version/middleware/  # API 버전 미들웨어（X-Api-Version 헤더 검증）
+│   │   ├── version/middleware/  # API 버전 미들웨어（URL 경로 버전 검증）
 │   │   ├── clientplatform/middleware/  # 클라이언트 플랫폼 미들웨어（X-Client-Platform 헤더 인식）
 │   │   ├── feature/            # Feature Flags 기능 스위치 서비스
 │   │   └── webhook/            # Webhook 이벤트 디스패처
@@ -534,7 +534,7 @@ ProviderInterface
 - **Security Plugin** — 31종 공격 탐지（XSS/SQL 주입/명령 주입/SSRF/역직렬화/JWT 공격/Host 헤더 공격/요청 스머글링/GraphQL 주입/민감 데이터 유출 등）, IP 화이트리스트 + IP 블랙리스트 자동 차단
 - **Locale** — Accept-Language 해석, 다국어 설정
 - **HashidRequest** — 요청 내 hashid 문자열을 실제 정수 ID로 자동 디코딩
-- **Version** — `X-Api-Version` 요청 헤더 검증, 누락 시 기본 `v1`, 지원하지 않는 버전은 `400` 반환
+- **Version** — URL 경로의 버전 세그먼트를 검증합니다(예: `/api/v1/`). 지원하지 않는 버전은 `400` 반환
 - **ClientPlatform** — `X-Client-Platform` 요청 헤더 검증, 클라이언트 OS 플랫폼 인식（iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web）
 - **Encryption** — AES-256-GCM 전송 암호화（인증 인터페이스 및 관리자 백오피스）, 중간자 도청·변조 방지
 - **Captcha** — 클릭 캡차, 로그인/가입 전 검증（GD 그리기 + Redis 저장, 일회용 키, 300s 유효, 3회 시도 제한）

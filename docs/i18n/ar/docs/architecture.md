@@ -137,7 +137,7 @@ common/
 ├── security/            # CORS / WAF / RateLimit / GeoBlock / Maintenance / AuditLogger / LogSanitizer
 ├── snowflake/           # خدمة معرّفات Snowflake + Eloquent Trait
 ├── metrics/             # جامع مقاييس Prometheus + العارض + وسيط عد طلبات HTTP
-├── version/             # VersionMiddleware (رأس X-Api-Version)
+├── version/             # VersionMiddleware (إصدار مسار الـ URL)
 └── webhook/             # موزع أحداث Webhook
 ```
 
@@ -171,15 +171,15 @@ CdnAdapterFactory.resolve(type, accountId, strict)
 طلب HTTP
   │
   ▼
-1. VersionMiddleware         ← التحقق من رأس X-Api-Version، الافتراضي v1 عند غيابه، و400 عند الإبطال
-  │                            يسري فقط على /api/ و /admin/api/
+1. VersionMiddleware         ← التحقق من إصدار الـ API في مسار الـ URL، و400 عند الإبطال
+  │                            يسري فقط على /api/v1/ و /admin/api/v1/
   ▼
 2. CorsMiddleware            ← طلبات OPTIONS الأولية تُعيد رؤوس CORS، وعكس Origin
   ▼
 3. SecurityHeadersMiddleware ← رؤوس استجابة أمنية HSTS / X-Frame-Options / CSP / Referrer-Policy
   ▼
 4. ClientPlatformMiddleware  ← التعرف على رأس X-Client-Platform (8 منصات)، حقن الخصائص
-  │                            يسري فقط على /api/ و /admin/api/
+  │                            يسري فقط على /api/v1/ و /admin/api/v1/
   ▼
 5. GeoBlockMiddleware        ← حجب الدول GEO_BLOCKED_COUNTRIES (MaxMind GeoIP2)
   ▼
@@ -205,28 +205,28 @@ CdnAdapterFactory.resolve(type, accountId, strict)
   ├─ /health (مراقبة داخلية) ────────────
   │   InternalTokenMiddleware      ← التحقق من الرمز الداخلي /health/live|ready|deps
   │
-  ├─ /api/auth ─────────────────────
+  ├─ /api/v1/auth ─────────────────────
   │   EncryptionMiddleware          ← تشفير/فك تشفير جسم الطلب/الاستجابة AES-256-GCM
   │
-  ├─ /api (مصادقة المستخدم) ───────────────
+  ├─ /api/v1 (مصادقة المستخدم) ───────────────
   │   EncryptionMiddleware
   │   AuthMiddleware                ← التحقق من JWT Bearer Token ← $request->userId/role
   │
-  ├─ /api (عمليات حساسة) ───────────────
+  ├─ /api/v1 (عمليات حساسة) ───────────────
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   ConfirmationMiddleware        ← تأكيد كلمة المرور الثانوي، عدّاد Redis، 5 محاولات تقفل 15د
   │
-  ├─ /api/supplier/external ────────
+  ├─ /api/v1/supplier/external ────────
   │   VersionMiddleware
   │   SupplierApiKeyMiddleware      ← التحقق من SHA256 لـ sk_xxx ← $request->supplierId
   │
-  ├─ /admin/api ────────────────────
+  ├─ /admin/api/v1 ────────────────────
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   AdminRoleMiddleware           ← فحص صلاحيات RBAC
   │
-  └─ /admin/api (عمليات حساسة) ─────────
+  └─ /admin/api/v1 (عمليات حساسة) ─────────
       EncryptionMiddleware
       AuthMiddleware
       AdminRoleMiddleware
@@ -240,7 +240,7 @@ Controller ← Service ← Model ← DB
 
 | الوسيط | الموقع | طريقة التسجيل | المسؤولية |
 |--------|------|---------|------|
-| `VersionMiddleware` | common/Version | عام | التحقق من `X-Api-Version`، الافتراضي v1 عند الغياب |
+| `VersionMiddleware` | common/Version | عام | التحقق من إصدار الـ API في مسار الـ URL |
 | `CorsMiddleware` | common/Security | عام | طلبات OPTIONS الأولية، عكس Origin |
 | `SecurityHeadersMiddleware` | common/Security | عام | رؤوس استجابة أمنية HSTS / X-Frame-Options / CSP / Referrer-Policy |
 | `ClientPlatformMiddleware` | common/ClientPlatform | عام | التعرف على 8 منصات عبر `X-Client-Platform` |
@@ -281,7 +281,7 @@ Controller ← Service ← Model ← DB
 
 ```
 تدفق الطلب:
-  Client: GET /api/products/aB3xK7mQ9w
+  Client: GET /api/v1/products/aB3xK7mQ9w
     ← HashidRequestMiddleware فك الترميز ← int(1234567890)
       ← Controller/Service يعمل بالمعرّف الصحيح
         ← Response::success() / Response::paginated()

@@ -31,7 +31,7 @@
 
 ### 2.2 दस्तावेज़-कोड विचलन (P1 के 4 अनसुलझे आइटम)
 
-- GET /api/orders status फ़िल्टर लागू नहीं
+- GET /api/v1/orders status फ़िल्टर लागू नहीं
 - WebSocket पुश इवेंट्स अनुपस्थित (websocket_push संबंधित दस्तावेज़ में घोषणा है)
 - ticket.updated ट्रिगर सीमा अस्पष्ट
 - product_attributes मृत schema (कोई कोड उपयोग नहीं करता)

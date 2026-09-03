@@ -208,7 +208,7 @@ cloud-php/
 │   │   ├── i18n/middleware/     # Middleware de idiomas (Locale)
 │   │   ├── security/           # CORS / WAF / límite de frecuencia / bloqueo geográfico / modo mantenimiento / registro de auditoría
 │   │   ├── snowflake/          # Servicio de generación de ID snowflake / Trait Eloquent HasSnowflakeId
-│   │   ├── version/middleware/  # Middleware de versión de API (validación del encabezado X-Api-Version)
+│   │   ├── version/middleware/  # Middleware de versión de API (validación de la versión en la ruta URL)
 │   │   ├── clientplatform/middleware/  # Middleware de plataforma de cliente (identificación del encabezado X-Client-Platform)
 │   │   ├── feature/            # Servicio de Feature Flags (interruptores de funciones)
 │   │   └── webhook/            # Distribuidor de eventos Webhook
@@ -536,7 +536,7 @@ Cadena de middlewares global: `Version → CORS → SecurityHeaders → ClientPl
 - **Security Plugin** — 31 tipos de detección de ataques (XSS/inyección SQL/inyección de comandos/SSRF/deserialización/ataques JWT/ataques de Host header/smuggling de solicitudes/inyección GraphQL/filtración de datos sensibles, etc.), lista blanca de IP + lista negra de IP con bloqueo automático
 - **Locale** — analiza Accept-Language y establece el idioma
 - **HashidRequest** — decodifica automáticamente las cadenas hashid de las solicitudes a IDs enteros reales
-- **Version** — valida el encabezado `X-Api-Version`; si falta, el valor por defecto es `v1`; las versiones no soportadas devuelven `400`
+- **Version** — valida el segmento de versión en la ruta URL (p. ej. `/api/v1/`), devuelve `400` si no se admite
 - **ClientPlatform** — valida el encabezado `X-Client-Platform` e identifica la plataforma del sistema operativo del cliente (iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web)
 - **Encryption** — cifrado de transporte AES-256-GCM (interfaces de autenticación y panel de administración), protege contra escuchas y manipulación en tránsito
 - **Captcha** — CAPTCHA de clic, verificación antes de iniciar sesión/registrarse (dibujo con GD + almacenamiento en Redis, clave de un solo uso, validez de 300s, límite de 3 intentos)

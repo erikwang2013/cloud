@@ -5,7 +5,7 @@
 ### 1.1 Registro
 
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
   → Escaneo WAF
   → Límite de frecuencia 3 req/min
   → Validación de contraseña len≥8
@@ -24,7 +24,7 @@ POST /api/auth/register
 ```
 Client                    Middleware Chain           AuthService              DB
   │                           │                        │                     │
-  │ POST /api/auth/register   │                        │                     │
+  │ POST /api/v1/auth/register   │                        │                     │
   │──────────────────────────▶│ WAF→RateLimit→Encrypt  │                     │
   │                           │───────────────────────▶│                     │
   │                           │                        │ User::create() ────▶│
@@ -40,7 +40,7 @@ Client                    Middleware Chain           AuthService              DB
 ### 1.2 Inicio de sesión
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
   → Escaneo WAF
   → Límite de frecuencia 5 req/min
   → Verificación Captcha (CAPTCHA de clic, límite de 3 intentos)
@@ -59,7 +59,7 @@ POST /api/auth/login
 ### 1.3 OAuth (Google / Apple)
 
 ```
-GET /api/auth/google → Google OAuth → callback?code=xxx
+GET /api/v1/auth/google → Google OAuth → callback?code=xxx
   1. Verificar el ID Token de Google/Apple
   2. Buscar o crear usuario (coincidencia por email)
   3. Emitir token (incluye client_platform)
@@ -69,30 +69,30 @@ GET /api/auth/google → Google OAuth → callback?code=xxx
 ### 1.4 Verificación en dos pasos TOTP
 
 ```
-1. POST /api/user/totp/setup
+1. POST /api/v1/user/totp/setup
      → Genera secret + URL de QR (guardado temporal en Redis 10 minutos, sin persistir)
      ← {secret, qr_url, manual}
-2. POST /api/user/totp/verify
+2. POST /api/v1/user/totp/verify
      → Verifica el código TOTP (la primera vez activa el setup, después valida)
      ← {verified: true}
-3. GET /api/user/totp/recovery-codes
+3. GET /api/v1/user/totp/recovery-codes
      → Genera 8 códigos de recuperación de un solo uso (requiere contraseña)
      ← {recovery_codes: [8 códigos]}
 4. Al iniciar sesión: introducir el código TOTP o usar un código de recuperación
-     → POST /api/auth/login/recovery (login, password, recovery_code)
+     → POST /api/v1/auth/login/recovery (login, password, recovery_code)
 ```
 
 ### 1.5 Gestión de sesiones
 
 ```
-GET /api/user/sessions
+GET /api/v1/user/sessions
   → RefreshToken::where(user_id, revoked=false)
   ← [{id, fingerprint, client_platform, created_at, expires_at}]
 
-DELETE /api/user/sessions/{id}
+DELETE /api/v1/user/sessions/{id}
   → RefreshToken::update(revoked=true)
 
-DELETE /api/user/account (eliminación RGPD)
+DELETE /api/v1/user/account (eliminación RGPD)
   → Doble confirmación de contraseña
   → Eliminación blanda de User
   → Todos los RefreshToken revocados
@@ -122,7 +122,7 @@ Product (1) ────── (N) ProductAttribute
 ### 2.2 Lista de productos (con caché)
 
 ```
-GET /api/products?category_id=1&region_id=2&keyword=vps&page=1
+GET /api/v1/products?category_id=1&region_id=2&keyword=vps&page=1
 
 CacheService::remember('products:list:{hash}', TTL 5min)
   → Product::published()
@@ -140,7 +140,7 @@ Invalidación de caché:
 ### 2.3 Búsqueda de productos (Elasticsearch)
 
 ```
-GET /api/products/search?q=vps&page=1
+GET /api/v1/products/search?q=vps&page=1
   → Product::search('vps')
     → Elasticsearch (segmentación china IK Analyzer)
     → where('status', 'published')
@@ -150,11 +150,11 @@ GET /api/products/search?q=vps&page=1
 ### 2.4 Reseñas de productos
 
 ```
-GET /api/products/{id}/reviews
+GET /api/v1/products/{id}/reviews
   → Reseñas aprobadas + valoración media + distribución de puntuaciones
   ← {reviews, avg_rating, total, distribution: {5: 12, 4: 8, ...}}
 
-POST /api/products/{id}/reviews (requiere inicio de sesión)
+POST /api/v1/products/{id}/reviews (requiere inicio de sesión)
   → rating (1-5) + content
   → status = pending (se muestra tras la revisión del administrador)
 ```
@@ -162,10 +162,10 @@ POST /api/products/{id}/reviews (requiere inicio de sesión)
 ### 2.5 Importación y exportación masiva
 
 ```
-GET /admin/api/products/export
+GET /admin/api/v1/products/export
   → Descarga CSV (producto + SKU + precio regional)
 
-POST /admin/api/products/import
+POST /admin/api/v1/products/import
   → Subida CSV upsert
   ← {imported: N, errors: [...]}
 ```
@@ -177,28 +177,28 @@ POST /admin/api/products/import
 ### 3.1 Carrito
 
 ```
-POST /api/cart          → addToCart(sku_id, region_id, quantity, cycle)
-GET /api/cart           → Lista del carrito (incluye detalle de SKU + precio en tiempo real)
-DELETE /api/cart/{id}   → removeFromCart
-PUT /api/cart/{id}      → updateCartQuantity
+POST /api/v1/cart          → addToCart(sku_id, region_id, quantity, cycle)
+GET /api/v1/cart           → Lista del carrito (incluye detalle de SKU + precio en tiempo real)
+DELETE /api/v1/cart/{id}   → removeFromCart
+PUT /api/v1/cart/{id}      → updateCartQuantity
 ```
 
 ### 3.2 Flujo de pedido
 
 ```
-1. POST /api/orders                           Crear pedido
+1. POST /api/v1/orders                           Crear pedido
      → Validar stock, calcular precio, aplicar cupón
      ← {order_id, order_no, items, total}
 
-2. POST /api/coupons/validate                 Aplicar cupón
+2. POST /api/v1/coupons/validate                 Aplicar cupón
      → {code: "SAVE10"}
      ← {coupon_id, discount, type: percent/fixed}
 
-3. GET /api/orders/{id}/payment-methods       Obtener canales de pago disponibles
+3. GET /api/v1/orders/{id}/payment-methods       Obtener canales de pago disponibles
      → PaymentRouter::getAvailableChannels(order)
      ← [{channel_id, name, code, amount, fee, total_amount}]
 
-4. POST /api/orders/{id}/pay                  Iniciar el pago
+4. POST /api/v1/orders/{id}/pay                  Iniciar el pago
      → Doble confirmación de contraseña (ConfirmationMiddleware)
      → StripeChannel::createPaymentIntent()
      ← {client_secret, transaction_id}
@@ -379,19 +379,19 @@ Estrategia de reintento:
 ### 6.1 Proceso de registro
 
 ```
-POST /api/supplier/apply (requiere inicio de sesión de usuario)
+POST /api/v1/supplier/apply (requiere inicio de sesión de usuario)
   → {company_name, contact_name, contact_phone, contact_email, settlement_method}
   → status = 'pending'
   → Revisión del administrador
 
 Aprobación del administrador:
-  POST /admin/api/suppliers/{id}/approve (confirmación de contraseña)
+  POST /admin/api/v1/suppliers/{id}/approve (confirmación de contraseña)
     → Supplier::status = 'active'
     → User::role = 'supplier'
     → El usuario obtiene permisos de proveedor
 
 Publicar productos:
-  POST /api/supplier/products
+  POST /api/v1/supplier/products
     → {product_id, commission_rate}
     → Asocia los productos del proveedor
 
@@ -402,7 +402,7 @@ Liquidación:
     → Crea SupplierSettlement
 
 Retiro:
-  POST /api/supplier/withdraw (confirmación de contraseña)
+  POST /api/v1/supplier/withdraw (confirmación de contraseña)
     → Comprueba el saldo retirable
     → Crea SupplierWithdraw (status=pending)
     → Aprobación y pago del administrador
@@ -411,13 +411,13 @@ Retiro:
 ### 6.2 API externa
 
 ```
-POST /admin/api/suppliers/{id}/api-keys
+POST /admin/api/v1/suppliers/{id}/api-keys
   → sk_ . bin2hex(random_bytes(24))
   → Almacena hash('sha256', rawKey)
   ← {api_key: "sk_xxx..."} (se muestra solo una vez)
 
 Uso del proveedor:
-  GET /api/supplier/external/orders
+  GET /api/v1/supplier/external/orders
     Authorization: Bearer sk_xxx...
     → SupplierApiKeyMiddleware verifica la firma
     → Filtra los datos por supplierId
@@ -428,11 +428,11 @@ Uso del proveedor:
 ## 7. Dominios y DNS
 
 ```
-GET /api/domain/check/{domain}/{tld}    # Disponibilidad del dominio
-GET /api/domain/tlds                     # Lista de TLD registrables (caché 1h)
-GET /api/dns/{domain}                    # Lista de registros DNS
-POST /api/dns/{domain}/records           # Añadir registro DNS
-DELETE /api/dns/{domain}/records/{id}    # Eliminar registro DNS (confirmación de contraseña)
+GET /api/v1/domain/check/{domain}/{tld}    # Disponibilidad del dominio
+GET /api/v1/domain/tlds                     # Lista de TLD registrables (caché 1h)
+GET /api/v1/dns/{domain}                    # Lista de registros DNS
+POST /api/v1/dns/{domain}/records           # Añadir registro DNS
+DELETE /api/v1/dns/{domain}/records/{id}    # Eliminar registro DNS (confirmación de contraseña)
 ```
 
 ---
@@ -440,15 +440,15 @@ DELETE /api/dns/{domain}/records/{id}    # Eliminar registro DNS (confirmación 
 ## 8. Sistema de tickets
 
 ```
-POST /api/tickets                    # Crear ticket
-GET /api/tickets                     # Mis tickets
-GET /api/tickets/{id}                # Detalle del ticket
-POST /api/tickets/{id}/reply         # Responder al ticket
+POST /api/v1/tickets                    # Crear ticket
+GET /api/v1/tickets                     # Mis tickets
+GET /api/v1/tickets/{id}                # Detalle del ticket
+POST /api/v1/tickets/{id}/reply         # Responder al ticket
 
 Administrador:
-  GET /admin/api/tickets              # Cola de tickets
-  POST /admin/api/tickets/{id}/assign # Asignar agente de soporte
-  POST /admin/api/tickets/{id}/close  # Cerrar ticket
+  GET /admin/api/v1/tickets              # Cola de tickets
+  POST /admin/api/v1/tickets/{id}/assign # Asignar agente de soporte
+  POST /admin/api/v1/tickets/{id}/close  # Cerrar ticket
 
 Dirigido por eventos:
   Evento TicketCreated
@@ -498,9 +498,9 @@ Cron: CollectMetrics (cada 5 minutos)
   → Almacena las métricas en hash de Redis (TTL 1h)
 
 Administrador:
-  GET /admin/api/monitor/dashboard
+  GET /admin/api/v1/monitor/dashboard
     → Estadísticas generales + alertas recientes
-  GET /admin/api/monitor/resources/{id}
+  GET /admin/api/v1/monitor/resources/{id}
     → Métricas en tiempo real (lectura desde Redis)
 ```
 
@@ -564,8 +564,8 @@ config/features.php (valores por defecto)
 Redis feature:{name} (TTL 1h, ajustable dinámicamente mediante API de administración)
 
 API de administración:
-  GET /admin/api/features → Lista todos los Flags con estado/origen
-  PUT /admin/api/features/{name} → enable/disable/toggle/reset
+  GET /admin/api/v1/features → Lista todos los Flags con estado/origen
+  PUT /admin/api/v1/features/{name} → enable/disable/toggle/reset
 
 Flags actuales:
   supplier_external_api, websocket_push, maintenance_redirect,
@@ -610,7 +610,7 @@ El producto CDN soporta integración con cuatro proveedores (Cloudflare / AWS Cl
 
 **Vinculación de instantánea estricta:** `provider_account_id` se determina al crear el dominio; las eliminaciones/purga de caché posteriores usan solo esa cuenta vinculada; si la cuenta falta o está deshabilitada, devuelve 4003 sin cambiar de cuenta silenciosamente. Los dominios de Aliyun/Tencent Cloud requieren registro ICP; sin él se devuelve 4002 (con el aviso `requires_icp_registration`).
 
-**Purga de caché:** `POST /api/cdn/domains/{id}/purge`; las URLs se deduplican y se les quitan espacios automáticamente (máximo 100), solo se permiten el propio dominio o subdominios, se rechazan comodines y URLs externas; es idempotente.
+**Purga de caché:** `POST /api/v1/cdn/domains/{id}/purge`; las URLs se deduplican y se les quitan espacios automáticamente (máximo 100), solo se permiten el propio dominio o subdominios, se rechazan comodines y URLs externas; es idempotente.
 
 **Interfaces:** CdnAdapterInterface + CdnProvider (reutiliza el canal de actualización de ProvisionProvider, con soporte de upgrade de plan)
 
@@ -643,7 +643,7 @@ Los usuarios generan enlaces de recomendación (?ref=CODE); al registrarse un nu
 
 ## 20. API GraphQL
 
-Proporciona dos endpoints: POST /graphql (consultas públicas) y POST /api/graphql (consultas autenticadas). Basado en webonyx/graphql-php, con profundidad de consulta limitada a 5 niveles y complejidad limitada a 100.
+Proporciona dos endpoints: POST /graphql (consultas públicas) y POST /api/v1/graphql (consultas autenticadas). Basado en webonyx/graphql-php, con profundidad de consulta limitada a 5 niveles y complejidad limitada a 100.
 
 **Las operaciones sensibles siguen siendo solo REST:** pagos, retiros, reembolsos y revisión de KYC.
 

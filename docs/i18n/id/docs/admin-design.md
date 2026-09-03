@@ -195,8 +195,8 @@ Menyediakan verifikasi CAPTCHA berbasis klik untuk login dan registrasi:
 ```
 Client                         Server
 ──────                         ──────
-POST /api/captcha/create
-  Header: X-Api-Version: v1
+POST /api/v1/captcha/create
+
   → CaptchaService::create()
     → captcha_create('click')
       → ClickCaptcha::generate()
@@ -204,8 +204,8 @@ POST /api/captcha/create
         → Stores targets + key in Redis/File storage
       ← {key, image (base64), target_count, expires_in}
 
-POST /api/auth/login
-  Header: X-Api-Version: v1
+POST /api/v1/auth/login
+
   (with captcha_key + captcha_points)
   → AuthController::verifyCaptcha()
     → CaptchaService::verify(key, [[x1,y1], [x2,y2], ...])
@@ -233,8 +233,8 @@ Melindungi operasi destruktif dan sensitif dengan mengharuskan pengguna memasukk
 ```
 Client                              Server
 ──────                              ──────
-POST /api/orders/{id}/pay
-  Header: X-Api-Version: v1
+POST /api/v1/orders/{id}/pay
+
   (with confirm_password field)
     → ConfirmationMiddleware::process()
       → Checks userId present (401 if missing)
@@ -255,24 +255,24 @@ POST /api/orders/{id}/pay
 **Endpoint pengguna sensitif** (Auth + Confirmation):
 | Metode | Path | Operasi |
 |--------|------|-----------|
-| POST | `/api/orders/{id}/pay` | Memulai pembayaran |
-| POST | `/api/supplier/withdraw` | Mengajukan penarikan |
-| DELETE | `/api/dns/{domain}/records/{id}` | Menghapus catatan DNS |
+| POST | `/api/v1/orders/{id}/pay` | Memulai pembayaran |
+| POST | `/api/v1/supplier/withdraw` | Mengajukan penarikan |
+| DELETE | `/api/v1/dns/{domain}/records/{id}` | Menghapus catatan DNS |
 
 **Endpoint admin sensitif** (Auth + AdminRole + Confirmation):
 | Metode | Path | Operasi |
 |--------|------|-----------|
-| DELETE | `/admin/api/products/{id}` | Menghapus produk |
-| POST | `/admin/api/orders/{id}/refund` | Refund pesanan |
-| POST | `/admin/api/provisioning/resources/{id}/destroy` | Menghancurkan sumber daya |
-| POST | `/admin/api/kyc/{id}/approve` | Menyetujui KYC |
-| POST | `/admin/api/kyc/{id}/reject` | Menolak KYC |
-| POST | `/admin/api/suppliers/{id}/approve` | Menyetujui pemasok |
-| POST | `/admin/api/suppliers/{id}/settle` | Membuat settlement |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | Menyetujui penarikan |
-| PUT | `/admin/api/system/config` | Memperbarui konfigurasi sistem |
+| DELETE | `/admin/api/v1/products/{id}` | Menghapus produk |
+| POST | `/admin/api/v1/orders/{id}/refund` | Refund pesanan |
+| POST | `/admin/api/v1/provisioning/resources/{id}/destroy` | Menghancurkan sumber daya |
+| POST | `/admin/api/v1/kyc/{id}/approve` | Menyetujui KYC |
+| POST | `/admin/api/v1/kyc/{id}/reject` | Menolak KYC |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | Menyetujui pemasok |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | Membuat settlement |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | Menyetujui penarikan |
+| PUT | `/admin/api/v1/system/config` | Memperbarui konfigurasi sistem |
 
-Versi API dibawa dalam header `X-Api-Version` (default: `v1`), bukan di path URL.
+Versi API ada di path URL (contoh: `/api/v1/...`).
 
 **Fitur keamanan**:
 - Verifikasi kata sandi bcrypt via `Hash::check()`
@@ -399,11 +399,9 @@ Backend service (`service/`) juga memiliki ekspor Excel melalui wrapper `Common\
 
 | Endpoint | Controller | Data yang diekspor |
 |----------|-----------|---------------|
-| `GET /admin/api/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
-| `GET /admin/api/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
-| `GET /admin/api/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
-
-Semua endpoint API memerlukan header `X-Api-Version` (default: `v1`).
+| `GET /admin/api/v1/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
+| `GET /admin/api/v1/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
+| `GET /admin/api/v1/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
 
 Rute ekspor ditempatkan SEBELUM rute parameter `/{id}` untuk menghindari konflik.
 
@@ -444,15 +442,15 @@ Produk CDN mendukung empat penyedia (Cloudflare / CloudFront / Aliyun / Tencent)
 
 **Konfigurasi akun penyedia** (memakai kembali model ProviderApi, `Admin\ProviderApiController`):
 
-- `GET/POST /admin/api/providers`、`PUT/DELETE /admin/api/providers/{id}`, dipasang `RbacMiddleware('provider.config')`
+- `GET/POST /admin/api/v1/providers`、`PUT/DELETE /admin/api/v1/providers/{id}`, dipasang `RbacMiddleware('provider.config')`
 - Konvensi `code`: `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; kolom kredensial dienkripsi Encryptable saat disimpan, kolom JSON `config` menyimpan metadata non-sensitif
 - Prioritas resolusi kredensial sisi pengguna: akun terikat → akun aktif yang cocok dengan `code` → fallback env; hapus/purge menggunakan snapshot ketat (hanya akun terikat, hilang/nonaktif mengembalikan 4003)
 
 **Manajemen domain CDN** (`Admin\CdnController`):
 
 ```
-GET /admin/api/cdn/domains        → semua domain (termasuk user_id pemilik), dipasang RbacMiddleware('cdn.manage')
-PUT /admin/api/cdn/domains/{id}   → perbarui paket, whitelist plan: standard | pro | enterprise,
+GET /admin/api/v1/cdn/domains        → semua domain (termasuk user_id pemilik), dipasang RbacMiddleware('cdn.manage')
+PUT /admin/api/v1/cdn/domains/{id}   → perbarui paket, whitelist plan: standard | pro | enterprise,
                                     nilai tidak valid mengembalikan 400; perubahan ditulis ke
                                     log audit admin_cdn_update_plan
 ```
@@ -893,21 +891,21 @@ Keempat job lulus: total 243 test (67 admin + 176 service), 400 assertion, kedua
 
 | Grup | Endpoint | Controller |
 |-------|-----------|------------|
-| Invoices | `GET /admin/api/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
-| Provider APIs | `GET/POST /admin/api/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
-| Supplier API Keys | `GET/POST /admin/api/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
-| Coupons | `GET/POST /admin/api/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
-| Webhooks | `GET/POST/DELETE /admin/api/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
-| Impor/Ekspor Produk | `GET /admin/api/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
-| Manajemen Domain | `GET/POST/PUT/DELETE /admin/api/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
-| Templat Notifikasi | `GET /admin/api/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
-| Artikel Bantuan | `GET/POST /admin/api/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
+| Invoices | `GET /admin/api/v1/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
+| Provider APIs | `GET/POST /admin/api/v1/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
+| Supplier API Keys | `GET/POST /admin/api/v1/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
+| Coupons | `GET/POST /admin/api/v1/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
+| Webhooks | `GET/POST/DELETE /admin/api/v1/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
+| Impor/Ekspor Produk | `GET /admin/api/v1/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
+| Manajemen Domain | `GET/POST/PUT/DELETE /admin/api/v1/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
+| Templat Notifikasi | `GET /admin/api/v1/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
+| Artikel Bantuan | `GET/POST /admin/api/v1/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
 
 ### Middleware Baru
 
 | Middleware | Tujuan |
 |------------|---------|
-| `VersionMiddleware` | Membaca dan memvalidasi versi API dari header X-Api-Version |
+| `VersionMiddleware` | Memvalidasi versi API dari path URL |
 | `RateLimitMiddleware` | Pembatasan token bucket Redis (default 60req/menit, login 5req/menit) |
 | `GeoBlockMiddleware` | Pemblokiran wilayah MaxMind GeoIP2 |
 | `MaintenanceMiddleware` | Mode pemeliharaan (sakelar variabel lingkungan + whitelist IP) |

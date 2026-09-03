@@ -5,7 +5,7 @@
 ### 1.1 Регистрация
 
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
   → WAF-сканирование
   → Ограничение частоты 3 req/min
   → Проверка пароля len≥8
@@ -24,7 +24,7 @@ POST /api/auth/register
 ```
 Client                    Middleware Chain           AuthService              DB
   │                           │                        │                     │
-  │ POST /api/auth/register   │                        │                     │
+  │ POST /api/v1/auth/register   │                        │                     │
   │──────────────────────────▶│ WAF→RateLimit→Encrypt  │                     │
   │                           │───────────────────────▶│                     │
   │                           │                        │ User::create() ────▶│
@@ -40,7 +40,7 @@ Client                    Middleware Chain           AuthService              DB
 ### 1.2 Вход
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
   → WAF-сканирование
   → Ограничение частоты 5 req/min
   → Проверка капчи (капча по клику, ограничение 3 попытки)
@@ -59,7 +59,7 @@ POST /api/auth/login
 ### 1.3 OAuth (Google / Apple)
 
 ```
-GET /api/auth/google → Google OAuth → callback?code=xxx
+GET /api/v1/auth/google → Google OAuth → callback?code=xxx
   1. Проверка ID Token Google/Apple
   2. Поиск или создание пользователя (сопоставление по email)
   3. Выдача токена (включая client_platform)
@@ -69,30 +69,30 @@ GET /api/auth/google → Google OAuth → callback?code=xxx
 ### 1.4 Двухшаговая проверка TOTP
 
 ```
-1. POST /api/user/totp/setup
+1. POST /api/v1/user/totp/setup
      → Генерация secret + QR URL (временное хранение в Redis 10 минут, не персистентно)
      ← {secret, qr_url, manual}
-2. POST /api/user/totp/verify
+2. POST /api/v1/user/totp/verify
      → Проверка TOTP code (первый раз — включение setup, далее — проверка)
      ← {verified: true}
-3. GET /api/user/totp/recovery-codes
+3. GET /api/v1/user/totp/recovery-codes
      → Генерация 8 одноразовых кодов восстановления (требуется подтверждение пароля)
      ← {recovery_codes: [8 шт.]}
 4. При входе: ввести TOTP code или использовать код восстановления
-     → POST /api/auth/login/recovery (login, password, recovery_code)
+     → POST /api/v1/auth/login/recovery (login, password, recovery_code)
 ```
 
 ### 1.5 Управление сессиями
 
 ```
-GET /api/user/sessions
+GET /api/v1/user/sessions
   → RefreshToken::where(user_id, revoked=false)
   ← [{id, fingerprint, client_platform, created_at, expires_at}]
 
-DELETE /api/user/sessions/{id}
+DELETE /api/v1/user/sessions/{id}
   → RefreshToken::update(revoked=true)
 
-DELETE /api/user/account (удаление по GDPR)
+DELETE /api/v1/user/account (удаление по GDPR)
   → Повторное подтверждение пароля
   → Мягкое удаление User
   → Все RefreshToken отозваны
@@ -122,7 +122,7 @@ Product (1) ────── (N) ProductAttribute
 ### 2.2 Список продуктов (с кэшированием)
 
 ```
-GET /api/products?category_id=1&region_id=2&keyword=vps&page=1
+GET /api/v1/products?category_id=1&region_id=2&keyword=vps&page=1
 
 CacheService::remember('products:list:{hash}', TTL 5min)
   → Product::published()
@@ -140,7 +140,7 @@ CacheService::remember('products:list:{hash}', TTL 5min)
 ### 2.3 Поиск товаров (Elasticsearch)
 
 ```
-GET /api/products/search?q=vps&page=1
+GET /api/v1/products/search?q=vps&page=1
   → Product::search('vps')
     → Elasticsearch (IK Analyzer китайская сегментация)
     → where('status', 'published')
@@ -150,11 +150,11 @@ GET /api/products/search?q=vps&page=1
 ### 2.4 Отзывы о товарах
 
 ```
-GET /api/products/{id}/reviews
+GET /api/v1/products/{id}/reviews
   → Одобренные отзывы + средняя оценка + распределение оценок
   ← {reviews, avg_rating, total, distribution: {5: 12, 4: 8, ...}}
 
-POST /api/products/{id}/reviews (требуется вход)
+POST /api/v1/products/{id}/reviews (требуется вход)
   → rating (1-5) + content
   → status = pending (отображается после модерации администратором)
 ```
@@ -162,10 +162,10 @@ POST /api/products/{id}/reviews (требуется вход)
 ### 2.5 Массовый импорт/экспорт
 
 ```
-GET /admin/api/products/export
+GET /admin/api/v1/products/export
   → Скачивание CSV (продукты + SKU + региональные цены)
 
-POST /admin/api/products/import
+POST /admin/api/v1/products/import
   → Загрузка CSV upsert
   ← {imported: N, errors: [...]}
 ```
@@ -177,28 +177,28 @@ POST /admin/api/products/import
 ### 3.1 Корзина
 
 ```
-POST /api/cart          → addToCart(sku_id, region_id, quantity, cycle)
-GET /api/cart           → Список корзины (детали SKU + актуальные цены)
-DELETE /api/cart/{id}   → removeFromCart
-PUT /api/cart/{id}      → updateCartQuantity
+POST /api/v1/cart          → addToCart(sku_id, region_id, quantity, cycle)
+GET /api/v1/cart           → Список корзины (детали SKU + актуальные цены)
+DELETE /api/v1/cart/{id}   → removeFromCart
+PUT /api/v1/cart/{id}      → updateCartQuantity
 ```
 
 ### 3.2 Процесс оформления заказа
 
 ```
-1. POST /api/orders                           Создание заказа
+1. POST /api/v1/orders                           Создание заказа
      → Проверка остатков, расчёт цены, применение купона
      ← {order_id, order_no, items, total}
 
-2. POST /api/coupons/validate                 Применение купона
+2. POST /api/v1/coupons/validate                 Применение купона
      → {code: "SAVE10"}
      ← {coupon_id, discount, type: percent/fixed}
 
-3. GET /api/orders/{id}/payment-methods       Получение доступных платёжных каналов
+3. GET /api/v1/orders/{id}/payment-methods       Получение доступных платёжных каналов
      → PaymentRouter::getAvailableChannels(order)
      ← [{channel_id, name, code, amount, fee, total_amount}]
 
-4. POST /api/orders/{id}/pay                  Инициация оплаты
+4. POST /api/v1/orders/{id}/pay                  Инициация оплаты
      → Повторное подтверждение пароля (ConfirmationMiddleware)
      → StripeChannel::createPaymentIntent()
      ← {client_secret, transaction_id}
@@ -379,19 +379,19 @@ ProvisionWorker (потребление из Redis Queue)
 ### 6.1 Процесс вступления
 
 ```
-POST /api/supplier/apply (требуется вход пользователя)
+POST /api/v1/supplier/apply (требуется вход пользователя)
   → {company_name, contact_name, contact_phone, contact_email, settlement_method}
   → status = 'pending'
   → Проверка администратором
 
 Одобрение администратором:
-  POST /admin/api/suppliers/{id}/approve (подтверждение пароля)
+  POST /admin/api/v1/suppliers/{id}/approve (подтверждение пароля)
     → Supplier::status = 'active'
     → User::role = 'supplier'
     → Пользователь получает права поставщика
 
 Размещение товара:
-  POST /api/supplier/products
+  POST /api/v1/supplier/products
     → {product_id, commission_rate}
     → Привязка товара к поставщику
 
@@ -402,7 +402,7 @@ POST /api/supplier/apply (требуется вход пользователя)
     → Создание SupplierSettlement
 
 Вывод средств:
-  POST /api/supplier/withdraw (подтверждение пароля)
+  POST /api/v1/supplier/withdraw (подтверждение пароля)
     → Проверка доступного остатка
     → Создание SupplierWithdraw (status=pending)
     → Одобрение администратором и выплата
@@ -411,13 +411,13 @@ POST /api/supplier/apply (требуется вход пользователя)
 ### 6.2 Внешний API
 
 ```
-POST /admin/api/suppliers/{id}/api-keys
+POST /admin/api/v1/suppliers/{id}/api-keys
   → sk_ . bin2hex(random_bytes(24))
   → Хранение hash('sha256', rawKey)
   ← {api_key: "sk_xxx..."} (показывается только один раз)
 
 Использование поставщиком:
-  GET /api/supplier/external/orders
+  GET /api/v1/supplier/external/orders
     Authorization: Bearer sk_xxx...
     → Проверка подписи SupplierApiKeyMiddleware
     → Фильтрация данных по supplierId
@@ -428,11 +428,11 @@ POST /admin/api/suppliers/{id}/api-keys
 ## 7. Домены и DNS
 
 ```
-GET /api/domain/check/{domain}/{tld}    # доступность домена
-GET /api/domain/tlds                     # список регистрируемых TLD (кэш 1h)
-GET /api/dns/{domain}                    # список DNS-записей
-POST /api/dns/{domain}/records           # добавление DNS-записи
-DELETE /api/dns/{domain}/records/{id}    # удаление DNS-записи (подтверждение пароля)
+GET /api/v1/domain/check/{domain}/{tld}    # доступность домена
+GET /api/v1/domain/tlds                     # список регистрируемых TLD (кэш 1h)
+GET /api/v1/dns/{domain}                    # список DNS-записей
+POST /api/v1/dns/{domain}/records           # добавление DNS-записи
+DELETE /api/v1/dns/{domain}/records/{id}    # удаление DNS-записи (подтверждение пароля)
 ```
 
 ---
@@ -440,15 +440,15 @@ DELETE /api/dns/{domain}/records/{id}    # удаление DNS-записи (п
 ## 8. Система тикетов
 
 ```
-POST /api/tickets                    # создание тикета
-GET /api/tickets                     # мои тикеты
-GET /api/tickets/{id}                # детали тикета
-POST /api/tickets/{id}/reply         # ответ по тикету
+POST /api/v1/tickets                    # создание тикета
+GET /api/v1/tickets                     # мои тикеты
+GET /api/v1/tickets/{id}                # детали тикета
+POST /api/v1/tickets/{id}/reply         # ответ по тикету
 
 Администратор:
-  GET /admin/api/tickets              # очередь тикетов
-  POST /admin/api/tickets/{id}/assign # назначение специалиста поддержки
-  POST /admin/api/tickets/{id}/close  # закрытие тикета
+  GET /admin/api/v1/tickets              # очередь тикетов
+  POST /admin/api/v1/tickets/{id}/assign # назначение специалиста поддержки
+  POST /admin/api/v1/tickets/{id}/close  # закрытие тикета
 
 Событийная модель:
   Событие TicketCreated
@@ -498,9 +498,9 @@ Cron: CollectMetrics (каждые 5 минут)
   → Хранение метрик в Redis hash (TTL 1h)
 
 Администратор:
-  GET /admin/api/monitor/dashboard
+  GET /admin/api/v1/monitor/dashboard
     → Обзорная статистика + последние предупреждения
-  GET /admin/api/monitor/resources/{id}
+  GET /admin/api/v1/monitor/resources/{id}
     → Актуальные метрики (чтение из Redis)
 ```
 
@@ -564,8 +564,8 @@ config/features.php (значения по умолчанию)
 Redis feature:{name} (TTL 1h, динамическая настройка через API управления)
 
 Управляющий API:
-  GET /admin/api/features → список всех Flag со статусом/источником
-  PUT /admin/api/features/{name} → enable/disable/toggle/reset
+  GET /admin/api/v1/features → список всех Flag со статусом/источником
+  PUT /admin/api/v1/features/{name} → enable/disable/toggle/reset
 
 Текущие Flags:
   supplier_external_api, websocket_push, maintenance_redirect,
@@ -610,7 +610,7 @@ Redis feature:{name} (TTL 1h, динамическая настройка чер
 
 **Строгая привязка (strict snapshot):** `provider_account_id` фиксируется при создании домена; последующие удаление/очистка кэша используют только эту привязанную запись; при её отсутствии или отключении возвращается 4003 без тихого переключения. Для Aliyun/Tencent требуется ICP-регистрация домена; при её отсутствии возвращается 4002 (с подсказкой `requires_icp_registration`).
 
-**Очистка кэша:** `POST /api/cdn/domains/{id}/purge` — URL автоматически дедуплицируются и очищаются от пробелов (не более 100), допускаются только сам домен и поддомены, подстановочные знаки и внешние URL отклоняются, операция идемпотентна.
+**Очистка кэша:** `POST /api/v1/cdn/domains/{id}/purge` — URL автоматически дедуплицируются и очищаются от пробелов (не более 100), допускаются только сам домен и поддомены, подстановочные знаки и внешние URL отклоняются, операция идемпотентна.
 
 **Интерфейсы:** CdnAdapterInterface + CdnProvider (переиспользует канал апгрейда ProvisionProvider, поддерживается повышение plan)
 
@@ -643,7 +643,7 @@ Redis feature:{name} (TTL 1h, динамическая настройка чер
 
 ## 20. GraphQL API
 
-Предоставляются два эндпоинта: POST /graphql (публичные запросы) и POST /api/graphql (аутентифицированные запросы). На базе webonyx/graphql-php, лимит глубины запроса 5 уровней, лимит сложности 100.
+Предоставляются два эндпоинта: POST /graphql (публичные запросы) и POST /api/v1/graphql (аутентифицированные запросы). На базе webonyx/graphql-php, лимит глубины запроса 5 уровней, лимит сложности 100.
 
 **Чувствительные операции остаются REST-only:** оплата, вывод средств, возвраты, проверка KYC.
 

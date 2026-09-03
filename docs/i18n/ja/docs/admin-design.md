@@ -195,8 +195,7 @@ class User extends Base
 ```
 Client                         Server
 ──────                         ──────
-POST /api/captcha/create
-  Header: X-Api-Version: v1
+POST /api/v1/captcha/create
   → CaptchaService::create()
     → captcha_create('click')
       → ClickCaptcha::generate()
@@ -204,8 +203,7 @@ POST /api/captcha/create
         → Stores targets + key in Redis/File storage
       ← {key, image (base64), target_count, expires_in}
 
-POST /api/auth/login
-  Header: X-Api-Version: v1
+POST /api/v1/auth/login
   (with captcha_key + captcha_points)
   → AuthController::verifyCaptcha()
     → CaptchaService::verify(key, [[x1,y1], [x2,y2], ...])
@@ -233,8 +231,7 @@ POST /api/auth/login
 ```
 Client                              Server
 ──────                              ──────
-POST /api/orders/{id}/pay
-  Header: X-Api-Version: v1
+POST /api/v1/orders/{id}/pay
   (with confirm_password field)
     → ConfirmationMiddleware::process()
       → Checks userId present (401 if missing)
@@ -255,24 +252,24 @@ POST /api/orders/{id}/pay
 **機密ユーザーエンドポイント** (Auth + Confirmation):
 | メソッド | パス | 操作 |
 |--------|------|-----------|
-| POST | `/api/orders/{id}/pay` | 支払い開始 |
-| POST | `/api/supplier/withdraw` | 出金申請 |
-| DELETE | `/api/dns/{domain}/records/{id}` | DNS レコード削除 |
+| POST | `/api/v1/orders/{id}/pay` | 支払い開始 |
+| POST | `/api/v1/supplier/withdraw` | 出金申請 |
+| DELETE | `/api/v1/dns/{domain}/records/{id}` | DNS レコード削除 |
 
 **機密管理エンドポイント** (Auth + AdminRole + Confirmation):
 | メソッド | パス | 操作 |
 |--------|------|-----------|
-| DELETE | `/admin/api/products/{id}` | 商品削除 |
-| POST | `/admin/api/orders/{id}/refund` | 注文の返金 |
-| POST | `/admin/api/provisioning/resources/{id}/destroy` | リソース破棄 |
-| POST | `/admin/api/kyc/{id}/approve` | KYC 承認 |
-| POST | `/admin/api/kyc/{id}/reject` | KYC 却下 |
-| POST | `/admin/api/suppliers/{id}/approve` | サプライヤー承認 |
-| POST | `/admin/api/suppliers/{id}/settle` | 決済明細の生成 |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | 出金承認 |
-| PUT | `/admin/api/system/config` | システム設定の更新 |
+| DELETE | `/admin/api/v1/products/{id}` | 商品削除 |
+| POST | `/admin/api/v1/orders/{id}/refund` | 注文の返金 |
+| POST | `/admin/api/v1/provisioning/resources/{id}/destroy` | リソース破棄 |
+| POST | `/admin/api/v1/kyc/{id}/approve` | KYC 承認 |
+| POST | `/admin/api/v1/kyc/{id}/reject` | KYC 却下 |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | サプライヤー承認 |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | 決済明細の生成 |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | 出金承認 |
+| PUT | `/admin/api/v1/system/config` | システム設定の更新 |
 
-API バージョンは URL パスではなく `X-Api-Version` ヘッダー（デフォルト: `v1`）で指定します。
+API バージョンは URL パスで指定します（例: `/api/v1/products`）。
 
 **セキュリティ機能**:
 - `Hash::check()` による bcrypt パスワード検証
@@ -399,11 +396,11 @@ service バックエンド（`service/`）にも独自の `Common\ExcelExport` �
 
 | エンドポイント | コントローラ | エクスポートデータ |
 |----------|-----------|---------------|
-| `GET /admin/api/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
-| `GET /admin/api/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
-| `GET /admin/api/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
+| `GET /admin/api/v1/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
+| `GET /admin/api/v1/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
+| `GET /admin/api/v1/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
 
-すべての API エンドポイントは `X-Api-Version` ヘッダー（デフォルト: `v1`）を必要とします。
+すべての API エンドポイントは URL パスでバージョンを指定します（例: `/api/v1/products`）。
 
 エクスポートルートは競合を避けるため `/{id}` パラメータルートの**前に**配置されます。
 
@@ -411,7 +408,7 @@ service バックエンド（`service/`）にも独自の `Common\ExcelExport` �
 
 ### 管理 API エンドポイント（Service レイヤー）
 
-すべての管理 REST エンドポイントは `/admin/api` プレフィックスで、`AdminRoleMiddleware` が必要です。
+すべての管理 REST エンドポイントは `/admin/api/v1` プレフィックスで、`AdminRoleMiddleware` が必要です。
 
 | グループ | エンドポイント | コントローラ |
 |-------|-----------|------------|
@@ -444,15 +441,15 @@ CDN 製品は 4 社のプロバイダー（Cloudflare / CloudFront / Aliyun / Te
 
 **プロバイダーアカウント設定**（ProviderApi モデルを再利用、`Admin\ProviderApiController`）：
 
-- `GET/POST /admin/api/providers`、`PUT/DELETE /admin/api/providers/{id}`、`RbacMiddleware('provider.config')` を適用
+- `GET/POST /admin/api/v1/providers`、`PUT/DELETE /admin/api/v1/providers/{id}`、`RbacMiddleware('provider.config')` を適用
 - `code` は `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent` と規定；資格情報フィールドは Encryptable で暗号化して保存、`config` JSON 列は非機密メタデータを保存
 - ユーザー側の資格情報解決順序：バインドアカウント → code 一致のアクティブアカウント → env フォールバック；削除/purge は厳格スナップショット（バインドアカウントのみ使用、欠落/無効は 4003）
 
 **CDN ドメイン管理**（`Admin\CdnController`）：
 
 ```
-GET /admin/api/cdn/domains        → 全ドメイン（所属 user_id 含む）、RbacMiddleware('cdn.manage') を適用
-PUT /admin/api/cdn/domains/{id}   → プラン更新、plan ホワイトリスト standard | pro | enterprise、
+GET /admin/api/v1/cdn/domains        → 全ドメイン（所属 user_id 含む）、RbacMiddleware('cdn.manage') を適用
+PUT /admin/api/v1/cdn/domains/{id}   → プラン更新、plan ホワイトリスト standard | pro | enterprise、
                                     不正値は 400 を返す；変更は監査ログ admin_cdn_update_plan に記録
 ```
 
@@ -892,21 +889,21 @@ PHPUnit 10.5 | 295 tests | 455 assertions
 
 | グループ | エンドポイント | コントローラ |
 |-------|-----------|------------|
-| Invoices | `GET /admin/api/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
-| Provider APIs | `GET/POST /admin/api/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
-| Supplier API Keys | `GET/POST /admin/api/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
-| Coupons | `GET/POST /admin/api/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
-| Webhooks | `GET/POST/DELETE /admin/api/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
-| Product Import/Export | `GET /admin/api/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
-| Domain Management | `GET/POST/PUT/DELETE /admin/api/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
-| Notification Templates | `GET /admin/api/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
-| Help Articles | `GET/POST /admin/api/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
+| Invoices | `GET /admin/api/v1/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
+| Provider APIs | `GET/POST /admin/api/v1/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
+| Supplier API Keys | `GET/POST /admin/api/v1/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
+| Coupons | `GET/POST /admin/api/v1/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
+| Webhooks | `GET/POST/DELETE /admin/api/v1/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
+| Product Import/Export | `GET /admin/api/v1/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
+| Domain Management | `GET/POST/PUT/DELETE /admin/api/v1/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
+| Notification Templates | `GET /admin/api/v1/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
+| Help Articles | `GET/POST /admin/api/v1/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
 
 ### 新しいミドルウェア
 
 | ミドルウェア | 目的 |
 |------------|---------|
-| `VersionMiddleware` | API バージョンを X-Api-Version ヘッダーから読み取り検証 |
+| `VersionMiddleware` | URL パスから API バージョンを読み取り検証 |
 | `RateLimitMiddleware` | Redis トークンバケットによるレート制限（デフォルト 60req/min、ログイン 5req/min） |
 | `GeoBlockMiddleware` | MaxMind GeoIP2 による地域ブロック |
 | `MaintenanceMiddleware` | メンテナンスモード（環境変数スイッチ + IP ホワイトリスト） |

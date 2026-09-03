@@ -31,7 +31,7 @@
 
 ### 2.2 Penyimpangan Dokumentasi-Kode (4 item P1 belum selesai)
 
-- Filter status GET /api/orders belum diimplementasikan
+- Filter status GET /api/v1/orders belum diimplementasikan
 - Peristiwa push WebSocket hilang (ada klaim dalam dokumentasi terkait websocket_push)
 - Cakupan pemicu ticket.updated tidak jelas
 - product_attributes skema mati (tidak ada kode yang menggunakannya)

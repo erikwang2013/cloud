@@ -145,7 +145,7 @@ common/
 ├── security/            # CORS / WAF / RateLimit / GeoBlock / Maintenance / AuditLogger / LogSanitizer
 ├── snowflake/           # Service d'ID Snowflake + Trait Eloquent
 ├── metrics/             # Collecteur + rendu de métriques Prometheus + middleware de comptage de requêtes HTTP
-├── version/             # VersionMiddleware (en-tête X-Api-Version)
+├── version/             # VersionMiddleware (version d'API depuis le chemin d'URL, p. ex. /api/v1/...)
 └── webhook/             # Répartiteur d'événements Webhook
 ```
 
@@ -179,8 +179,8 @@ CdnAdapterFactory.resolve(type, accountId, strict)
 Requête HTTP
   │
   ▼
-1. VersionMiddleware         ← validation de l'en-tête X-Api-Version, v1 par défaut si absent,
-  │                            invalid → 400 ; actif uniquement sur /api/ et /admin/api/
+1. VersionMiddleware         ← lecture de la version d'API depuis le chemin d'URL (`/api/v1/...`),
+  │                            invalid → 400 ; actif uniquement sur /api/v1/ et /admin/api/v1/
   ▼
 2. CorsMiddleware            ← pré-vérification OPTIONS renvoyant les en-têtes CORS,
   │                            réflexion de l'Origine
@@ -189,8 +189,8 @@ Requête HTTP
   │                            CSP / Referrer-Policy
   ▼
 4. ClientPlatformMiddleware  ← identification de l'en-tête X-Client-Platform (8 plateformes),
-  │                            injection dans properties ; actif uniquement sur /api/ et
-  │                            /admin/api/
+  │                            injection dans properties ; actif uniquement sur /api/v1/ et
+  │                            /admin/api/v1/
   ▼
 5. GeoBlockMiddleware        ← blocage par pays GEO_BLOCKED_COUNTRIES (MaxMind GeoIP2)
   ▼
@@ -218,30 +218,30 @@ Requête HTTP
   ├─ /health (surveillance interne) ──
   │   InternalTokenMiddleware      ← validation du jeton interne /health/live|ready|deps
   │
-  ├─ /api/auth ─────────────────────
+  ├─ /api/v1/auth ─────────────────────
   │   EncryptionMiddleware          ← chiffrement/déchiffrement du corps de requête/réponse
   │                                   AES-256-GCM
   │
-  ├─ /api (authentification utilisateur) ──
+  ├─ /api/v1 (authentification utilisateur) ──
   │   EncryptionMiddleware
   │   AuthMiddleware                ← vérification JWT Bearer Token → $request->userId/role
   │
-  ├─ /api (opérations sensibles) ───
+  ├─ /api/v1 (opérations sensibles) ───
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   ConfirmationMiddleware        ← confirmation de mot de passe, compteur Redis,
   │                                   5 échecs → verrouillage 15 min
   │
-  ├─ /api/supplier/external ────────
+  ├─ /api/v1/supplier/external ────────
   │   VersionMiddleware
   │   SupplierApiKeyMiddleware      ← vérification SHA256 sk_xxx → $request->supplierId
   │
-  ├─ /admin/api ────────────────────
+  ├─ /admin/api/v1 ────────────────────
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   AdminRoleMiddleware           ← vérification des permissions RBAC
   │
-  └─ /admin/api (opérations sensibles) ──
+  └─ /admin/api/v1 (opérations sensibles) ──
       EncryptionMiddleware
       AuthMiddleware
       AdminRoleMiddleware
@@ -255,7 +255,7 @@ Contrôleur → Service → Model → DB
 
 | Middleware | Emplacement | Mode d'enregistrement | Responsabilité |
 |--------|------|---------|------|
-| `VersionMiddleware` | common/Version | Global | Valide `X-Api-Version`, v1 par défaut si absent |
+| `VersionMiddleware` | common/Version | Global | Valide la version d'API depuis le chemin d'URL (p. ex. `/api/v1/...`) |
 | `CorsMiddleware` | common/Security | Global | Pré-vérification OPTIONS, réflexion de l'Origine |
 | `SecurityHeadersMiddleware` | common/Security | Global | En-têtes de réponse de sécurité HSTS / X-Frame-Options / CSP / Referrer-Policy |
 | `ClientPlatformMiddleware` | common/ClientPlatform | Global | Identification de `X-Client-Platform` (8 plateformes) |
@@ -297,7 +297,7 @@ Tous les modèles Eloquent génèrent automatiquement l'ID dans l'événement `c
 
 ```
 Flux de requête :
-  Client : GET /api/products/aB3xK7mQ9w
+  Client : GET /api/v1/products/aB3xK7mQ9w
     → décodage HashidRequestMiddleware → int(1234567890)
       → Controller/Service opère avec l'ID entier
         → Response::success() / Response::paginated()

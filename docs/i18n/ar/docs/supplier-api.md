@@ -6,12 +6,12 @@
 
 | النوع | طريقة المصادقة | البادئة | الحالة |
 |------|---------|------|------|
-| **الواجهة الداخلية** | رمز المستخدم Bearer Token | `/api/supplier/` | متاحة |
-| **الواجهة الخارجية** | مفتاح API (`sk_xxx`) | `/api/supplier/external/` | متاحة |
+| **الواجهة الداخلية** | رمز المستخدم Bearer Token | `/api/v1/supplier/` | متاحة |
+| **الواجهة الخارجية** | مفتاح API (`sk_xxx`) | `/api/v1/supplier/external/` | متاحة |
 
 **Base URL**: `https://api.example.com`
 
-**إدارة الإصدارات**: تُحدد عبر رأس HTTP `X-Api-Version: v1`. عند غيابه يفترض `v1`، وتُعيد الإصدارات غير المدعومة `400`. تسري فقط على مسارات `/api/*` و`/admin/api/*`، ويعالجها `VersionMiddleware` بشكل موحد.
+**إدارة الإصدارات**: يقع إصدار الـ API في مسار الـ URL (مثل `/api/v1/...`)، وليس في رأس HTTP. تُعيد الإصدارات غير المدعومة `400`. تسري فقط على مسارات `/api/v1/*` و`/admin/api/v1/*`، ويعالجها `VersionMiddleware` بشكل موحد.
 
 ---
 
@@ -23,10 +23,9 @@
 
 ```
 Authorization: Bearer <user_access_token>
-X-Api-Version: v1
 ```
 
-يجب على المستخدم أولاً تسجيل الدخول عبر `/api/auth/login` للحصول على الرمز، ويجب أن يكون دور الحساب `supplier` (يُعيّنه المشرف بعد الموافقة على طلب المورد).
+يجب على المستخدم أولاً تسجيل الدخول عبر `/api/v1/auth/login` للحصول على الرمز، ويجب أن يكون دور الحساب `supplier` (يُعيّنه المشرف بعد الموافقة على طلب المورد).
 
 ---
 
@@ -84,7 +83,7 @@ X-Api-Version: v1
 #### 1. انضمام المورد
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
 ```
 
 طلب الانضمام كمورد. يمكن لكل مستخدم تقديم طلب واحد فقط.
@@ -138,9 +137,8 @@ POST /api/supplier/apply
 | 422 | سبق تقديم طلب مورد |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/apply" \
+curl -X POST "https://api.example.com/api/v1/supplier/apply" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"company_name":"示例科技","contact_name":"张三","contact_phone":"13800138000","contact_email":"zhangsan@example.com"}'
 ```
@@ -152,7 +150,7 @@ curl -X POST "https://api.example.com/api/supplier/apply" \
 ##### الحصول على المنتجات المعينة
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 **معاملات Query**:
@@ -185,7 +183,7 @@ GET /api/supplier/products
 ##### إضافة منتج
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 ربط منتج موجود بالمورد الحالي.
@@ -215,7 +213,7 @@ POST /api/supplier/products
 ##### إزالة منتج
 
 ```
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 إلغاء ربط المنتج بالمورد.
@@ -237,7 +235,7 @@ DELETE /api/supplier/products/{id}
 ##### الحصول على قائمة التسويات
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 **الاستجابة**: جميع تسويات المورد الحالي، بترتيب إنشاء تنازلي
@@ -273,7 +271,7 @@ GET /api/supplier/settlements
 ##### طلب سحب
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 > تتطلب هذه العملية تأكيدًا ثانيًا لكلمة المرور (حقل `confirm_password`)، يتحقق منه `ConfirmationMiddleware`.
@@ -321,9 +319,8 @@ POST /api/supplier/withdraw
 | 403 | فشل تأكيد كلمة المرور |
 
 ```bash
-curl -X POST "https://api.example.com/api/supplier/withdraw" \
+curl -X POST "https://api.example.com/api/v1/supplier/withdraw" \
   -H "Authorization: Bearer <token>" \
-  -H "X-Api-Version: v1" \
   -H "Content-Type: application/json" \
   -d '{"amount":"5000.00","confirm_password":"mypassword","account_info":{"method":"bank_transfer","bank_name":"ICBC","account_number":"6222021234567890"}}'
 ```
@@ -334,12 +331,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 | الطريقة | المسار | المصادقة | تأكيد كلمة المرور | الوصف |
 |------|------|------|---------|------|
-| POST | `/api/supplier/apply` | Token | - | طلب الانضمام كمورد |
-| GET | `/api/supplier/products` | Token | - | عرض المنتجات المعينة |
-| POST | `/api/supplier/products` | Token | - | إضافة ربط منتج |
-| DELETE | `/api/supplier/products/{id}` | Token | - | إزالة ربط منتج |
-| GET | `/api/supplier/settlements` | Token | - | عرض التسويات |
-| POST | `/api/supplier/withdraw` | Token | مطلوب | طلب سحب |
+| POST | `/api/v1/supplier/apply` | Token | - | طلب الانضمام كمورد |
+| GET | `/api/v1/supplier/products` | Token | - | عرض المنتجات المعينة |
+| POST | `/api/v1/supplier/products` | Token | - | إضافة ربط منتج |
+| DELETE | `/api/v1/supplier/products/{id}` | Token | - | إزالة ربط منتج |
+| GET | `/api/v1/supplier/settlements` | Token | - | عرض التسويات |
+| POST | `/api/v1/supplier/withdraw` | Token | مطلوب | طلب سحب |
 
 ---
 
@@ -347,13 +344,12 @@ curl -X POST "https://api.example.com/api/supplier/withdraw" \
 
 تتيح الواجهة الخارجية للموردين إدارة الطلبات والموارد والتسويات برمجيًا. تتطلب جميع الطلبات مصادقة مفتاح API.
 
-**Base URL**: `https://api.example.com/api`
+**Base URL**: `https://api.example.com/api/v1`
 
 ### المصادقة
 
 ```
 Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-X-Api-Version: v1
 ```
 
 ينشئ مفتاح API مشرف المنصة من لوحة الإدارة في `إدارة الموردين → API Keys`.
@@ -387,7 +383,7 @@ X-Api-Version: v1
 ##### الحصول على قائمة الطلبات
 
 ```
-GET /api/supplier/orders
+GET /api/v1/supplier/orders
 ```
 
 **معاملات Query**:
@@ -403,7 +399,7 @@ GET /api/supplier/orders
 ##### الحصول على تفاصيل الطلب
 
 ```
-GET /api/supplier/orders/{id}
+GET /api/v1/supplier/orders/{id}
 ```
 
 ---
@@ -413,7 +409,7 @@ GET /api/supplier/orders/{id}
 ##### الحصول على قائمة الموارد
 
 ```
-GET /api/supplier/resources
+GET /api/v1/supplier/resources
 ```
 
 **معاملات Query**: page, status (active/provisioning/stopped/destroyed), type (server/ip/disk/domain)
@@ -421,7 +417,7 @@ GET /api/supplier/resources
 ##### الحصول على حالة المورد
 
 ```
-GET /api/supplier/resources/{id}/status
+GET /api/v1/supplier/resources/{id}/status
 ```
 
 ---
@@ -431,13 +427,13 @@ GET /api/supplier/resources/{id}/status
 ##### الحصول على قائمة التسويات
 
 ```
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
 ```
 
 ##### الحصول على تفاصيل التسوية
 
 ```
-GET /api/supplier/settlements/{id}
+GET /api/v1/supplier/settlements/{id}
 ```
 
 ---
@@ -447,13 +443,13 @@ GET /api/supplier/settlements/{id}
 ##### طلب سحب
 
 ```
-POST /api/supplier/withdraw
+POST /api/v1/supplier/withdraw
 ```
 
 ##### سجل السحوبات
 
 ```
-GET /api/supplier/withdraws
+GET /api/v1/supplier/withdraws
 ```
 
 ---
@@ -463,13 +459,13 @@ GET /api/supplier/withdraws
 ##### الحصول على منتجاتي
 
 ```
-GET /api/supplier/products
+GET /api/v1/supplier/products
 ```
 
 ##### تقديم طلب إدراج منتج
 
 ```
-POST /api/supplier/products
+POST /api/v1/supplier/products
 ```
 
 ---
@@ -478,16 +474,16 @@ POST /api/supplier/products
 
 | الطريقة | المسار | الوصف |
 |------|------|------|
-| GET | `/api/supplier/orders` | قائمة الطلبات |
-| GET | `/api/supplier/orders/{id}` | تفاصيل الطلب |
-| GET | `/api/supplier/resources` | قائمة الموارد |
-| GET | `/api/supplier/resources/{id}/status` | حالة المورد |
-| GET | `/api/supplier/settlements` | قائمة التسويات |
-| GET | `/api/supplier/settlements/{id}` | تفاصيل التسوية |
-| POST | `/api/supplier/withdraw` | طلب سحب |
-| GET | `/api/supplier/withdraws` | سجل السحوبات |
-| GET | `/api/supplier/products` | قائمة المنتجات |
-| POST | `/api/supplier/products` | تقديم منتج |
+| GET | `/api/v1/supplier/orders` | قائمة الطلبات |
+| GET | `/api/v1/supplier/orders/{id}` | تفاصيل الطلب |
+| GET | `/api/v1/supplier/resources` | قائمة الموارد |
+| GET | `/api/v1/supplier/resources/{id}/status` | حالة المورد |
+| GET | `/api/v1/supplier/settlements` | قائمة التسويات |
+| GET | `/api/v1/supplier/settlements/{id}` | تفاصيل التسوية |
+| POST | `/api/v1/supplier/withdraw` | طلب سحب |
+| GET | `/api/v1/supplier/withdraws` | سجل السحوبات |
+| GET | `/api/v1/supplier/products` | قائمة المنتجات |
+| POST | `/api/v1/supplier/products` | تقديم منتج |
 
 ---
 
@@ -540,7 +536,7 @@ X-Webhook-Event: order.paid
 | سحب الواجهة الخارجية | 10 طلبات/دقيقة (قيمة مقترحة، قابلة للتعديل في `config/security.php`) |
 
 > تُعرَّف قواعد حد معدل الواجهة الخارجية في `rate_limits.supplier_api` داخل `config/security.php`،
-> وينفذها `RateLimitMiddleware` بشكل موحد على مسارات `/api/supplier/external/*` (عداد INCR ذري،
+> وينفذها `RateLimitMiddleware` بشكل موحد على مسارات `/api/v1/supplier/external/*` (عداد INCR ذري،
 > والسماح بالمرور عند تعذر توفر Redis).
 
 ترويسات حد المعدل:
@@ -560,10 +556,9 @@ X-RateLimit-Reset: 1680000000
 ```php
 $token = 'user_access_token_here';
 $client = new GuzzleHttp\Client([
-    'base_uri' => 'https://api.example.com/api/',
+    'base_uri' => 'https://api.example.com/api/v1/',
     'headers' => [
         'Authorization' => "Bearer {$token}",
-        'X-Api-Version' => 'v1',
         'Accept'        => 'application/json',
     ],
 ]);
@@ -604,16 +599,15 @@ import requests
 
 headers = {
     'Authorization': 'Bearer <user_access_token>',
-    'X-Api-Version': 'v1',
 }
 
 # 获取已分配商品
-resp = requests.get('https://api.example.com/api/supplier/products',
+resp = requests.get('https://api.example.com/api/v1/supplier/products',
                      headers=headers)
 products = resp.json()
 
 # 申请提现
-resp = requests.post('https://api.example.com/api/supplier/withdraw',
+resp = requests.post('https://api.example.com/api/v1/supplier/withdraw',
                       headers=headers,
                       json={
                           'amount': '5000.00',
@@ -645,11 +639,11 @@ print(resp.json())
 
 | الطريقة | المسار | الوصف |
 |------|------|------|
-| GET | `/admin/api/suppliers` | قائمة الموردين (تدعم فلترة status) |
-| GET | `/admin/api/suppliers/export` | تصدير الموردين إلى Excel |
-| POST | `/admin/api/suppliers/{id}/approve` | الموافقة على المورد |
-| POST | `/admin/api/suppliers/{id}/settle` | إنشاء تسوية |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | الموافقة على السحب |
-| GET | `/admin/api/suppliers/{id}/api-keys` | عرض قائمة مفاتيح API للمورد |
-| POST | `/admin/api/suppliers/{id}/api-keys` | إنشاء مفتاح API (يُعرض المفتاح الأصلي مرة واحدة فقط) |
-| DELETE | `/admin/api/suppliers/api-keys/{id}` | إبطال مفتاح API |
+| GET | `/admin/api/v1/suppliers` | قائمة الموردين (تدعم فلترة status) |
+| GET | `/admin/api/v1/suppliers/export` | تصدير الموردين إلى Excel |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | الموافقة على المورد |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | إنشاء تسوية |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | الموافقة على السحب |
+| GET | `/admin/api/v1/suppliers/{id}/api-keys` | عرض قائمة مفاتيح API للمورد |
+| POST | `/admin/api/v1/suppliers/{id}/api-keys` | إنشاء مفتاح API (يُعرض المفتاح الأصلي مرة واحدة فقط) |
+| DELETE | `/admin/api/v1/suppliers/api-keys/{id}` | إبطال مفتاح API |

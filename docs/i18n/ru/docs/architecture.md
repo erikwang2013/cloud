@@ -138,7 +138,7 @@ common/
 ├── security/            # CORS / WAF / RateLimit / GeoBlock / Maintenance / AuditLogger / LogSanitizer
 ├── snowflake/           # сервис снежинок ID + Eloquent Trait
 ├── metrics/             # сборщик метрик Prometheus + рендерер + промежуточный слой счётчика HTTP-запросов
-├── version/             # VersionMiddleware (заголовок X-Api-Version)
+├── version/             # VersionMiddleware (проверка версии по пути URL)
 └── webhook/             # диспетчер событий Webhook
 ```
 
@@ -172,15 +172,15 @@ CdnAdapterFactory.resolve(type, accountId, strict)
 HTTP-запрос
   │
   ▼
-1. VersionMiddleware         ← проверка заголовка X-Api-Version, отсутствие → по умолчанию v1, недействительный → 400
-  │                            действует только на /api/ и /admin/api/
+1. VersionMiddleware         ← проверка версии из пути URL, недействительная → 400
+  │                            действует только на /api/v1/ и /admin/api/v1/
   ▼
 2. CorsMiddleware            ← OPTIONS preflight возвращает CORS-заголовки, отражение Origin
   ▼
 3. SecurityHeadersMiddleware ← безопасные заголовки ответа HSTS / X-Frame-Options / CSP / Referrer-Policy
   ▼
 4. ClientPlatformMiddleware  ← распознавание заголовка X-Client-Platform (8 платформ), инъекция в properties
-  │                            действует только на /api/ и /admin/api/
+  │                            действует только на /api/v1/ и /admin/api/v1/
   ▼
 5. GeoBlockMiddleware        ← блокировка стран GEO_BLOCKED_COUNTRIES (MaxMind GeoIP2)
   ▼
@@ -206,28 +206,28 @@ HTTP-запрос
   ├─ /health (внутренний мониторинг) ────────────
   │   InternalTokenMiddleware      ← проверка внутреннего токена /health/live|ready|deps
   │
-  ├─ /api/auth ─────────────────────
+  ├─ /api/v1/auth ─────────────────────
   │   EncryptionMiddleware          ← шифрование/дешифрование тела запроса/ответа AES-256-GCM
   │
-  ├─ /api (аутентификация пользователя) ───────────────
+  ├─ /api/v1 ((аутентификация пользователя) ───────────────
   │   EncryptionMiddleware
   │   AuthMiddleware                ← проверка JWT Bearer Token → $request->userId/role
   │
-  ├─ /api (чувствительные операции) ───────────────
+  ├─ /api/v1 ((чувствительные операции) ───────────────
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   ConfirmationMiddleware        ← повторное подтверждение пароля, счётчик Redis, 5 попыток → блокировка 15min
   │
-  ├─ /api/supplier/external ────────
+  ├─ /api/v1/supplier/external ────────
   │   VersionMiddleware
   │   SupplierApiKeyMiddleware      ← проверка sk_xxx SHA256 → $request->supplierId
   │
-  ├─ /admin/api ────────────────────
+  ├─ /admin/api/v1 ────────────────────
   │   EncryptionMiddleware
   │   AuthMiddleware
   │   AdminRoleMiddleware           ← проверка прав RBAC
   │
-  └─ /admin/api (чувствительные операции) ─────────
+  └─ /admin/api/v1 (чувствительные операции) ─────────
       EncryptionMiddleware
       AuthMiddleware
       AdminRoleMiddleware
@@ -241,7 +241,7 @@ Controller → Service → Model → DB
 
 | Промежуточный слой | Расположение | Способ регистрации | Обязанности |
 |--------|------|---------|------|
-| `VersionMiddleware` | common/Version | глобальный | проверка `X-Api-Version`, отсутствие → по умолчанию v1 |
+| `VersionMiddleware` | common/Version | глобальный | проверка версии по пути URL |
 | `CorsMiddleware` | common/Security | глобальный | OPTIONS preflight, отражение Origin |
 | `SecurityHeadersMiddleware` | common/Security | глобальный | безопасные заголовки ответа HSTS / X-Frame-Options / CSP / Referrer-Policy |
 | `ClientPlatformMiddleware` | common/ClientPlatform | глобальный | распознавание 8 платформ `X-Client-Platform` |
@@ -283,7 +283,7 @@ Controller → Service → Model → DB
 
 ```
 Поток запроса:
-  Client: GET /api/products/aB3xK7mQ9w
+  Client: GET /api/v1/products/aB3xK7mQ9w
     → HashidRequestMiddleware декодирует → int(1234567890)
       → Controller/Service работает с целочисленным ID
         → Response::success() / Response::paginated()

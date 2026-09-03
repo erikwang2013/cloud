@@ -195,8 +195,8 @@ class User extends Base
 ```
 Client                         Server
 ──────                         ──────
-POST /api/captcha/create
-  Header: X-Api-Version: v1
+POST /api/v1/captcha/create
+
   → CaptchaService::create()
     → captcha_create('click')
       → ClickCaptcha::generate()
@@ -204,8 +204,8 @@ POST /api/captcha/create
         → Redis/File स्टोरेज में targets + key स्टोर करता है
       ← {key, image (base64), target_count, expires_in}
 
-POST /api/auth/login
-  Header: X-Api-Version: v1
+POST /api/v1/auth/login
+
   (captcha_key + captcha_points के साथ)
   → AuthController::verifyCaptcha()
     → CaptchaService::verify(key, [[x1,y1], [x2,y2], ...])
@@ -233,8 +233,8 @@ POST /api/auth/login
 ```
 Client                              Server
 ──────                              ──────
-POST /api/orders/{id}/pay
-  Header: X-Api-Version: v1
+POST /api/v1/orders/{id}/pay
+
   (confirm_password फ़ील्ड के साथ)
     → ConfirmationMiddleware::process()
       → userId मौजूद है जाँचें (अनुपस्थित पर 401)
@@ -255,24 +255,24 @@ POST /api/orders/{id}/pay
 **संवेदनशील उपयोगकर्ता एंडपॉइंट** (Auth + Confirmation):
 | विधि | पथ | ऑपरेशन |
 |--------|------|-----------|
-| POST | `/api/orders/{id}/pay` | पेमेंट आरंभ करें |
-| POST | `/api/supplier/withdraw` | निकासी अनुरोध |
-| DELETE | `/api/dns/{domain}/records/{id}` | DNS रिकॉर्ड हटाएँ |
+| POST | `/api/v1/orders/{id}/pay` | पेमेंट आरंभ करें |
+| POST | `/api/v1/supplier/withdraw` | निकासी अनुरोध |
+| DELETE | `/api/v1/dns/{domain}/records/{id}` | DNS रिकॉर्ड हटाएँ |
 
 **संवेदनशील एडमिन एंडपॉइंट** (Auth + AdminRole + Confirmation):
 | विधि | पथ | ऑपरेशन |
 |--------|------|-----------|
-| DELETE | `/admin/api/products/{id}` | उत्पाद हटाएँ |
-| POST | `/admin/api/orders/{id}/refund` | ऑर्डर रिफंड |
-| POST | `/admin/api/provisioning/resources/{id}/destroy` | संसाधन नष्ट करें |
-| POST | `/admin/api/kyc/{id}/approve` | KYC अनुमोदित करें |
-| POST | `/admin/api/kyc/{id}/reject` | KYC अस्वीकार करें |
-| POST | `/admin/api/suppliers/{id}/approve` | सप्लायर अनुमोदित करें |
-| POST | `/admin/api/suppliers/{id}/settle` | सेटलमेंट जनरेट करें |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | निकासी अनुमोदित करें |
-| PUT | `/admin/api/system/config` | सिस्टम कॉन्फ़िग अपडेट |
+| DELETE | `/admin/api/v1/products/{id}` | उत्पाद हटाएँ |
+| POST | `/admin/api/v1/orders/{id}/refund` | ऑर्डर रिफंड |
+| POST | `/admin/api/v1/provisioning/resources/{id}/destroy` | संसाधन नष्ट करें |
+| POST | `/admin/api/v1/kyc/{id}/approve` | KYC अनुमोदित करें |
+| POST | `/admin/api/v1/kyc/{id}/reject` | KYC अस्वीकार करें |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | सप्लायर अनुमोदित करें |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | सेटलमेंट जनरेट करें |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | निकासी अनुमोदित करें |
+| PUT | `/admin/api/v1/system/config` | सिस्टम कॉन्फ़िग अपडेट |
 
-API संस्करण `X-Api-Version` हेडर में ले जाया जाता है (डिफ़ॉल्ट: `v1`), URL पथ में नहीं।
+API संस्करण URL पथ में होता है (जैसे `/api/v1/...`)।
 
 **सुरक्षा विशेषताएँ**:
 - `Hash::check()` के माध्यम से bcrypt पासवर्ड सत्यापन
@@ -399,11 +399,9 @@ service बैकएंड (`service/`) में भी अपने `Common\Ex
 
 | एंडपॉइंट | कंट्रोलर | एक्सपोर्टेड डेटा |
 |----------|-----------|---------------|
-| `GET /admin/api/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
-| `GET /admin/api/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
-| `GET /admin/api/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
-
-सभी API एंडपॉइंट को `X-Api-Version` हेडर की आवश्यकता है (डिफ़ॉल्ट: `v1`)।
+| `GET /admin/api/v1/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
+| `GET /admin/api/v1/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
+| `GET /admin/api/v1/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
 
 एक्सपोर्ट रूट्स टकराव से बचने के लिए `/{id}` पैरामीटर रूट्स से पहले रखे जाते हैं।
 
@@ -444,15 +442,15 @@ CDN उत्पाद चार सेवाप्रदाताओं (Cloudf
 
 **सेवाप्रदाता खाता कॉन्फ़िगरेशन** (ProviderApi मॉडल का पुन: उपयोग, `Admin\ProviderApiController`):
 
-- `GET/POST /admin/api/providers`、`PUT/DELETE /admin/api/providers/{id}`, `RbacMiddleware('provider.config')` से जुड़े
+- `GET/POST /admin/api/v1/providers`、`PUT/DELETE /admin/api/v1/providers/{id}`, `RbacMiddleware('provider.config')` से जुड़े
 - `code` कन्वेंशन `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; क्रेडेंशियल फ़ील्ड Encryptable एन्क्रिप्शन के साथ संग्रहीत, `config` JSON कॉलम गैर-संवेदनशील मेटाडेटा रखता है
 - उपयोगकर्ता-पक्ष क्रेडेंशियल रिज़ॉल्यूशन प्राथमिकता: बाउंड खाता → code मेल खाने वाला सक्रिय खाता → env फ़ॉलबैक; डिलीट/purge सख्त स्नैपशॉट से गुजरता है (केवल बाउंड खाता, अनुपस्थित/अक्षम होने पर 4003)
 
 **CDN डोमेन प्रबंधन** (`Admin\CdnController`):
 
 ```
-GET /admin/api/cdn/domains        → सभी डोमेन (user_id सहित), RbacMiddleware('cdn.manage') से जुड़े
-PUT /admin/api/cdn/domains/{id}   → पैकेज अपडेट, plan व्हाइटलिस्ट standard | pro | enterprise,
+GET /admin/api/v1/cdn/domains        → सभी डोमेन (user_id सहित), RbacMiddleware('cdn.manage') से जुड़े
+PUT /admin/api/v1/cdn/domains/{id}   → पैकेज अपडेट, plan व्हाइटलिस्ट standard | pro | enterprise,
                                     अमान्य मान पर 400; परिवर्तन ऑडिट लॉग admin_cdn_update_plan में लिखा जाता है
 ```
 
@@ -892,21 +890,21 @@ PHPUnit 10.5 | 295 tests | 455 assertions
 
 | समूह | एंडपॉइंट | कंट्रोलर |
 |-------|-----------|------------|
-| इनवॉइस | `GET /admin/api/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
-| Provider APIs | `GET/POST /admin/api/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
-| सप्लायर API Keys | `GET/POST /admin/api/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
-| कूपन | `GET/POST /admin/api/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
-| Webhooks | `GET/POST/DELETE /admin/api/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
-| उत्पाद इम्पोर्ट/एक्सपोर्ट | `GET /admin/api/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
-| डोमेन प्रबंधन | `GET/POST/PUT/DELETE /admin/api/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
-| नोटिफिकेशन टेम्पलेट | `GET /admin/api/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
-| सहायता लेख | `GET/POST /admin/api/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
+| इनवॉइस | `GET /admin/api/v1/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
+| Provider APIs | `GET/POST /admin/api/v1/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
+| सप्लायर API Keys | `GET/POST /admin/api/v1/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
+| कूपन | `GET/POST /admin/api/v1/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
+| Webhooks | `GET/POST/DELETE /admin/api/v1/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
+| उत्पाद इम्पोर्ट/एक्सपोर्ट | `GET /admin/api/v1/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
+| डोमेन प्रबंधन | `GET/POST/PUT/DELETE /admin/api/v1/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
+| नोटिफिकेशन टेम्पलेट | `GET /admin/api/v1/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
+| सहायता लेख | `GET/POST /admin/api/v1/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
 
 ### नए मिडलवेयर
 
 | मिडलवेयर | उद्देश्य |
 |------------|---------|
-| `VersionMiddleware` | API संस्करण X-Api-Version हेडर से पढ़कर सत्यापित करता है |
+| `VersionMiddleware` | URL पथ से API संस्करण सत्यापित करता है |
 | `RateLimitMiddleware` | Redis टोकन बकेट रेट लिमिट (डिफ़ॉल्ट 60req/min, लॉगिन 5req/min) |
 | `GeoBlockMiddleware` | MaxMind GeoIP2 क्षेत्र ब्लॉक |
 | `MaintenanceMiddleware` | मेंटेनेंस मोड (पर्यावरण वेरिएबल स्विच + IP व्हाइटलिस्ट) |

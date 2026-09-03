@@ -195,8 +195,7 @@ class User extends Base
 ```
 Client                         Server
 ──────                         ──────
-POST /api/captcha/create
-  Header: X-Api-Version: v1
+POST /api/v1/captcha/create
   → CaptchaService::create()
     → captcha_create('click')
       → ClickCaptcha::generate()
@@ -204,8 +203,7 @@ POST /api/captcha/create
         → targets + key를 Redis/File 스토리지에 저장
       ← {key, image (base64), target_count, expires_in}
 
-POST /api/auth/login
-  Header: X-Api-Version: v1
+POST /api/v1/auth/login
   (with captcha_key + captcha_points)
   → AuthController::verifyCaptcha()
     → CaptchaService::verify(key, [[x1,y1], [x2,y2], ...])
@@ -233,8 +231,7 @@ POST /api/auth/login
 ```
 Client                              Server
 ──────                              ──────
-POST /api/orders/{id}/pay
-  Header: X-Api-Version: v1
+POST /api/v1/orders/{id}/pay
   (with confirm_password field)
     → ConfirmationMiddleware::process()
       → userId 존재 확인 (없으면 401)
@@ -255,24 +252,24 @@ POST /api/orders/{id}/pay
 **민감 사용자 엔드포인트** (Auth + Confirmation):
 | 메서드 | 경로 | 작업 |
 |--------|------|-----------|
-| POST | `/api/orders/{id}/pay` | 결제 시작 |
-| POST | `/api/supplier/withdraw` | 출금 신청 |
-| DELETE | `/api/dns/{domain}/records/{id}` | DNS 레코드 삭제 |
+| POST | `/api/v1/orders/{id}/pay` | 결제 시작 |
+| POST | `/api/v1/supplier/withdraw` | 출금 신청 |
+| DELETE | `/api/v1/dns/{domain}/records/{id}` | DNS 레코드 삭제 |
 
 **민감 관리자 엔드포인트** (Auth + AdminRole + Confirmation):
 | 메서드 | 경로 | 작업 |
 |--------|------|-----------|
-| DELETE | `/admin/api/products/{id}` | 상품 삭제 |
-| POST | `/admin/api/orders/{id}/refund` | 주문 환불 |
-| POST | `/admin/api/provisioning/resources/{id}/destroy` | 리소스 파기 |
-| POST | `/admin/api/kyc/{id}/approve` | KYC 승인 |
-| POST | `/admin/api/kyc/{id}/reject` | KYC 거부 |
-| POST | `/admin/api/suppliers/{id}/approve` | 공급업체 승인 |
-| POST | `/admin/api/suppliers/{id}/settle` | 정산서 생성 |
-| POST | `/admin/api/suppliers/withdraws/{id}/approve` | 출금 승인 |
-| PUT | `/admin/api/system/config` | 시스템 구성 업데이트 |
+| DELETE | `/admin/api/v1/products/{id}` | 상품 삭제 |
+| POST | `/admin/api/v1/orders/{id}/refund` | 주문 환불 |
+| POST | `/admin/api/v1/provisioning/resources/{id}/destroy` | 리소스 파기 |
+| POST | `/admin/api/v1/kyc/{id}/approve` | KYC 승인 |
+| POST | `/admin/api/v1/kyc/{id}/reject` | KYC 거부 |
+| POST | `/admin/api/v1/suppliers/{id}/approve` | 공급업체 승인 |
+| POST | `/admin/api/v1/suppliers/{id}/settle` | 정산서 생성 |
+| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | 출금 승인 |
+| PUT | `/admin/api/v1/system/config` | 시스템 구성 업데이트 |
 
-API 버전은 URL 경로가 아닌 `X-Api-Version` 헤더로 전달 (기본: `v1`).
+API 버전은 URL 경로로 지정됩니다（예: `/api/v1/products`）.
 
 **보안 기능**:
 - `Hash::check()`로 bcrypt 비밀번호 검증
@@ -399,11 +396,11 @@ service 백엔드 (`service/`)도 자체 `Common\ExcelExport` 래퍼로 Excel �
 
 | 엔드포인트 | 컨트롤러 | 내보내는 데이터 |
 |----------|-----------|---------------|
-| `GET /admin/api/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
-| `GET /admin/api/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
-| `GET /admin/api/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
+| `GET /admin/api/v1/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
+| `GET /admin/api/v1/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
+| `GET /admin/api/v1/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
 
-모든 API 엔드포인트는 `X-Api-Version` 헤더 필요 (기본: `v1`).
+모든 API 엔드포인트는 URL 경로에 버전을 포함합니다（예: `/api/v1/products`）.
 
 충돌 방지를 위해 내보내기 라우트는 `/{id}` 파라미터 라우트보다 먼저 배치.
 
@@ -411,7 +408,7 @@ service 백엔드 (`service/`)도 자체 `Common\ExcelExport` 래퍼로 Excel �
 
 ### Admin API 엔드포인트 (Service 레이어)
 
-모든 admin REST 엔드포인트는 `/admin/api` 접두사가 있고 `AdminRoleMiddleware` 필요.
+모든 admin REST 엔드포인트는 `/admin/api/v1` 접두사가 있고 `AdminRoleMiddleware` 필요.
 
 | 그룹 | 엔드포인트 | 컨트롤러 |
 |-------|-----------|------------|
@@ -444,15 +441,15 @@ CDN 상품은 4개 서비스 제공업체（Cloudflare / CloudFront / Aliyun / T
 
 **서비스 제공업체 계정 구성**（ProviderApi 모델 재사용, `Admin\ProviderApiController`）:
 
-- `GET/POST /admin/api/providers`, `PUT/DELETE /admin/api/providers/{id}`, `RbacMiddleware('provider.config')` 적용
+- `GET/POST /admin/api/v1/providers`, `PUT/DELETE /admin/api/v1/providers/{id}`, `RbacMiddleware('provider.config')` 적용
 - `code` 규약 `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`; 자격 증명 필드는 Encryptable로 암호화 저장, `config` JSON 컬럼에는 비민감 메타데이터 저장
 - 사용자 측 자격 증명 해석 우선순위: 바인딩 계정 → code 일치 활성 계정 → env 폴백; 삭제/purge는 엄격한 스냅샷（바인딩 계정만 사용, 누락/비활성 시 4003 반환）
 
 **CDN 도메인 관리**（`Admin\CdnController`）:
 
 ```
-GET /admin/api/cdn/domains        → 전체 도메인（소속 user_id 포함）, RbacMiddleware('cdn.manage') 적용
-PUT /admin/api/cdn/domains/{id}   → 패키지 업데이트, plan 화이트리스트 standard | pro | enterprise,
+GET /admin/api/v1/cdn/domains        → 전체 도메인（소속 user_id 포함）, RbacMiddleware('cdn.manage') 적용
+PUT /admin/api/v1/cdn/domains/{id}   → 패키지 업데이트, plan 화이트리스트 standard | pro | enterprise,
                                     무효 값은 400 반환; 변경은 감사 로그 admin_cdn_update_plan 기록
 ```
 
@@ -892,21 +889,21 @@ PHPUnit 10.5 | 295 tests | 455 assertions
 
 | 그룹 | 엔드포인트 | 컨트롤러 |
 |-------|-----------|------------|
-| Invoices | `GET /admin/api/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
-| Provider APIs | `GET/POST /admin/api/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
-| 공급업체 API Key | `GET/POST /admin/api/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
-| Coupons | `GET/POST /admin/api/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
-| Webhooks | `GET/POST/DELETE /admin/api/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
-| 상품 가져오기/내보내기 | `GET /admin/api/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
-| 도메인 관리 | `GET/POST/PUT/DELETE /admin/api/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
-| 알림 템플릿 | `GET /admin/api/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
-| 도움말 문서 | `GET/POST /admin/api/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
+| Invoices | `GET /admin/api/v1/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
+| Provider APIs | `GET/POST /admin/api/v1/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
+| 공급업체 API Key | `GET/POST /admin/api/v1/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
+| Coupons | `GET/POST /admin/api/v1/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
+| Webhooks | `GET/POST/DELETE /admin/api/v1/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
+| 상품 가져오기/내보내기 | `GET /admin/api/v1/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
+| 도메인 관리 | `GET/POST/PUT/DELETE /admin/api/v1/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
+| 알림 템플릿 | `GET /admin/api/v1/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
+| 도움말 문서 | `GET/POST /admin/api/v1/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
 
 ### 신규 미들웨어
 
 | 미들웨어 | 용도 |
 |------------|---------|
-| `VersionMiddleware` | X-Api-Version 헤더에서 API 버전 읽고 검증 |
+| `VersionMiddleware` | URL 경로에서 API 버전 읽고 검증 |
 | `RateLimitMiddleware` | Redis 토큰 버킷 빈도 제한（기본 60req/min, 로그인 5req/min） |
 | `GeoBlockMiddleware` | MaxMind GeoIP2 지역 차단 |
 | `MaintenanceMiddleware` | 유지보수 모드（환경 변수 스위치 + IP 화이트리스트） |

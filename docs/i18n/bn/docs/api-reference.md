@@ -4,7 +4,7 @@
 
 **Base URL:** `https://api.example.com`
 
-**ভার্সন কন্ট্রোল:** HTTP রিকোয়েস্ট হেডার `X-Api-Version: v1` দিয়ে নির্দিষ্ট করা হয়। অনুপস্থিত থাকলে ডিফল্ট `v1`, অসমর্থিত ভার্সনে `400` রিটার্ন। ভার্সন URL পাথে থাকে না।
+**ভার্সন কন্ট্রোল:** API ভার্সন URL পাথে নির্দিষ্ট করা হয়, যেমন `/api/v1/...`। অসমর্থিত ভার্সনে `400` রিটার্ন।
 
 **অথেনটিকেশন পদ্ধতি:**
 
@@ -66,14 +66,14 @@
 
 | রাউট গ্রুপ | মিডলওয়্যার | প্রিফিক্স |
 |--------|--------|------|
-| পাবলিক | গ্লোবাল মিডলওয়্যার চেইন | `/health`, `/api/*` |
+| পাবলিক | গ্লোবাল মিডলওয়্যার চেইন | `/health`, `/api/v1/*` |
 | `/health` (ইন্টারনাল) | গ্লোবাল + InternalToken | `/health/live`, `/health/ready`, `/health/deps` |
-| `/api/auth` | গ্লোবাল + Encryption | `/api/auth/*` |
-| `/api` (ইউজার) | গ্লোবাল + Encryption + Auth | `/api/user/*`, `/api/cart`, `/api/orders` |
-| `/api` (সংবেদনশীল) | গ্লোবাল + Encryption + Auth + Confirmation | `/api/orders/{id}/pay` |
-| `/api/supplier/external` | Version + SupplierApiKey | সাপ্লায়ার এক্সটার্নাল API |
-| `/admin/api` | গ্লোবাল + Encryption + Auth + AdminRole | অ্যাডমিন প্যানেল API |
-| `/admin/api` (সংবেদনশীল) | গ্লোবাল + Encryption + Auth + AdminRole + Confirmation | সংবেদনশীল অ্যাডমিন অপারেশন |
+| `/api/v1/auth` | গ্লোবাল + Encryption | `/api/v1/auth/*` |
+| `/api/v1` (ইউজার) | গ্লোবাল + Encryption + Auth | `/api/v1/user/*`, `/api/v1/cart`, `/api/v1/orders` |
+| `/api/v1` (সংবেদনশীল) | গ্লোবাল + Encryption + Auth + Confirmation | `/api/v1/orders/{id}/pay` |
+| `/api/v1/supplier/external` | Version + SupplierApiKey | সাপ্লায়ার এক্সটার্নাল API |
+| `/admin/api/v1` | গ্লোবাল + Encryption + Auth + AdminRole | অ্যাডমিন প্যানেল API |
+| `/admin/api/v1` (সংবেদনশীল) | গ্লোবাল + Encryption + Auth + AdminRole + Confirmation | সংবেদনশীল অ্যাডমিন অপারেশন |
 
 ---
 
@@ -89,7 +89,7 @@ GET /health
 ### সার্ভিস স্ট্যাটাস
 
 ```
-GET /api/status
+GET /api/v1/status
 → {
   "overall": "operational",
   "components": {
@@ -105,18 +105,18 @@ GET /api/status
 ### প্রোডাক্ট
 
 ```
-GET /api/products
+GET /api/v1/products
    প্যারামিটার: category_id, region_id, keyword, supplier_id, page (ডিফল্ট 1), page_size (ডিফল্ট 20, সর্বোচ্চ 50)
   → পেজিনেটেড প্রোডাক্ট লিস্ট (category, skus.regionPrices সহ)
 
-GET /api/products/search
+GET /api/v1/products/search
    প্যারামিটার: q (বাধ্যতামূলক), page
   → Elasticsearch ফুল-টেক্সট সার্চ
 
-GET /api/products/{id}
+GET /api/v1/products/{id}
   → প্রোডাক্ট ডিটেইল (category, skus, images, reviews সহ)
 
-GET /api/products/{productId}/reviews
+GET /api/v1/products/{productId}/reviews
   → রিভিউ লিস্ট + avg_rating + total + distribution
    স্ট্যাটাস এনাম: pending(অপেক্ষমাণ)/approved(অনুমোদিত)/rejected(প্রত্যাখ্যাত), শুধু approved রিটার্ন
 ```
@@ -124,25 +124,25 @@ GET /api/products/{productId}/reviews
 ### ডোমেইন
 
 ```
-GET /api/domain/check/{domain}/{tld}
+GET /api/v1/domain/check/{domain}/{tld}
   → { domain, tld, available: true, price: { register, renew, transfer } }
 
-GET /api/domain/tlds
+GET /api/v1/domain/tlds
   → উপলব্ধ TLD লিস্ট (Redis ক্যাশ 1h)
 ```
 
 ### হেল্প সেন্টার
 
 ```
-GET /api/help
+GET /api/v1/help
    প্যারামিটার: category, page
    হেডার: Accept-Language (en-US / zh-CN)
   → পেজিনেটেড হেল্প আর্টিকেল
 
-GET /api/help/categories
+GET /api/v1/help/categories
   → আর্টিকেল ক্যাটাগরি লিস্ট
 
-GET /api/help/{slug}
+GET /api/v1/help/{slug}
   → একটি আর্টিকেলের ডিটেইল
 ```
 
@@ -153,7 +153,7 @@ GET /api/help/{slug}
 ### ক্যাপচা
 
 ```
-POST /api/captcha/create
+POST /api/v1/captcha/create
    হেডার: X-Encrypted: 1
   → { key, image (base64), target_count, expires_in }
 ```
@@ -161,7 +161,7 @@ POST /api/captcha/create
 ### রেজিস্ট্রেশন
 
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
    হেডার: X-Encrypted: 1
    বডি (এনক্রিপ্টেড): { email?, phone?, password, language?, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -175,7 +175,7 @@ POST /api/auth/register
 ### লগইন
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
    হেডার: X-Encrypted: 1
    বডি (এনক্রিপ্টেড): { login (email/phone), password, captcha_key, captcha_points, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -188,7 +188,7 @@ POST /api/auth/login
 ### Token রিফ্রেশ
 
 ```
-POST /api/auth/refresh
+POST /api/v1/auth/refresh
    হেডার: X-Encrypted: 1
    বডি (এনক্রিপ্টেড): { refresh_token, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -202,9 +202,9 @@ POST /api/auth/refresh
 (.env-এ `{PROVIDER}_OAUTH_CLIENT_ID` ইত্যাদি কনফিগ এনাবল/ডিসেবল করে)
 
 ```
-GET /api/auth/{provider}            → { url }        # অথরাইজেশন পেজে রিডাইরেক্ট (PKCE/nonce রিপ্লে-প্রতিরোধ)
-GET /api/auth/{provider}/callback?code=xxx&state=yyy
-POST /api/auth/{provider}/callback  বডি: { code, state }
+GET /api/v1/auth/{provider}            → { url }        # অথরাইজেশন পেজে রিডাইরেক্ট (PKCE/nonce রিপ্লে-প্রতিরোধ)
+GET /api/v1/auth/{provider}/callback?code=xxx&state=yyy
+POST /api/v1/auth/{provider}/callback  বডি: { code, state }
 ```
 
 - Apple/Microsoft id_token রিটার্ন করে, সার্ভার JWKS দিয়ে সিগনেচার, iss/aud/exp/nonce ভেরিফাই করে
@@ -215,11 +215,11 @@ POST /api/auth/{provider}/callback  বডি: { code, state }
 ### পাসওয়ার্ড রিসেট
 
 ```
-POST /api/auth/forgot-password
+POST /api/v1/auth/forgot-password
    বডি: { email }
   → ভেরিফিকেশন কোড ইমেইল পাঠানো
 
-POST /api/auth/reset-password
+POST /api/v1/auth/reset-password
    বডি: { email, code, password }
   → রিসেট সফল
   → এরর মোট ৫ বার → 429 রেট লিমিট ১০ মিনিট
@@ -228,14 +228,14 @@ POST /api/auth/reset-password
 ### ইমেইল ভেরিফিকেশন
 
 ```
-GET /api/auth/verify-email?token=xxx
+GET /api/v1/auth/verify-email?token=xxx
   → ভেরিফিকেশন সফল
 ```
 
 ### SMS ভেরিফিকেশন
 
 ```
-POST /api/auth/send-sms
+POST /api/v1/auth/send-sms
    বডি: { phone }
   → SMS ভেরিফিকেশন কোড পাঠানো (60s কুলডাউন)
 ```
@@ -243,11 +243,11 @@ POST /api/auth/send-sms
 ### TOTP টু-স্টেপ ভেরিফিকেশন
 
 ```
-POST /api/user/totp/setup        → { secret, qr_url }        # পারসিস্টেন্ট নয়, ১০ মিনিটের মধ্যে verify করলে কার্যকর
-POST /api/user/totp/verify       বডি: { code } → { verified: true }   # প্রথমবার এনাবলে সফল এনাবল মেসেজ রিটার্ন
-POST /api/user/totp/disable      বডি: { password }             # পাসওয়ার্ড কনফার্মেশন প্রয়োজন, না হলে 403
-GET /api/user/totp/recovery-codes → { recovery_codes }        # প্রতিবার ৮টি ওয়ান-টাইম কোড জেনারেট, পাসওয়ার্ড কনফার্মেশন প্রয়োজন, না হলে 403
-POST /api/auth/login/recovery    বডি: { login, password, recovery_code }
+POST /api/v1/user/totp/setup        → { secret, qr_url }        # পারসিস্টেন্ট নয়, ১০ মিনিটের মধ্যে verify করলে কার্যকর
+POST /api/v1/user/totp/verify       বডি: { code } → { verified: true }   # প্রথমবার এনাবলে সফল এনাবল মেসেজ রিটার্ন
+POST /api/v1/user/totp/disable      বডি: { password }             # পাসওয়ার্ড কনফার্মেশন প্রয়োজন, না হলে 403
+GET /api/v1/user/totp/recovery-codes → { recovery_codes }        # প্রতিবার ৮টি ওয়ান-টাইম কোড জেনারেট, পাসওয়ার্ড কনফার্মেশন প্রয়োজন, না হলে 403
+POST /api/v1/auth/login/recovery    বডি: { login, password, recovery_code }
 ```
 
 - ইউজার TOTP এনাবল করলে লগইনে `totp_code` বাধ্যতামূলক, না হলে 401
@@ -260,25 +260,25 @@ POST /api/auth/login/recovery    বডি: { login, password, recovery_code }
 ### প্রোফাইল
 
 ```
-GET /api/user/profile
-PUT /api/user/profile
+GET /api/v1/user/profile
+PUT /api/v1/user/profile
    বডি: { nickname?, avatar?, country?, language?, timezone? }
 ```
 
 ### KYC রিয়েল-নেম ভেরিফিকেশন
 
 ```
-POST /api/user/kyc
+POST /api/v1/user/kyc
    বডি: { id_type, id_number, real_name, front_image, back_image }
 ```
 
 ### ব্যালেন্স
 
 ```
-GET /api/user/balance
+GET /api/v1/user/balance
   → { balances: [{currency, balance, frozen}] }
 
-GET /api/user/balance/transactions
+GET /api/v1/user/balance/transactions
    প্যারামিটার: page
   → ব্যালেন্স পরিবর্তন রেকর্ড
 ```
@@ -286,23 +286,23 @@ GET /api/user/balance/transactions
 ### অ্যাড্রেস ম্যানেজমেন্ট
 
 ```
-GET /api/user/addresses
-POST /api/user/addresses
+GET /api/v1/user/addresses
+POST /api/v1/user/addresses
    বডি: { type: billing/shipping, name, phone, country, state, city, address, postcode, is_default }
-PUT /api/user/addresses/{id}
-DELETE /api/user/addresses/{id}
+PUT /api/v1/user/addresses/{id}
+DELETE /api/v1/user/addresses/{id}
 ```
 
 ### সেশন ম্যানেজমেন্ট
 
 ```
-GET /api/user/sessions
+GET /api/v1/user/sessions
   → [{ id, fingerprint, client_platform, created_at, expires_at }]
 
-DELETE /api/user/sessions/{id}
+DELETE /api/v1/user/sessions/{id}
   → নির্দিষ্ট সেশন রিভোক
 
-DELETE /api/user/account
+DELETE /api/v1/user/account
    বডি: { confirm_password }
   → GDPR অ্যাকাউন্ট ডিলিশন
 ```
@@ -310,29 +310,29 @@ DELETE /api/user/account
 ### নোটিফিকেশন
 
 ```
-GET /api/user/notifications
+GET /api/v1/user/notifications
    প্যারামিটার: page
   → পেজিনেটেড নোটিফিকেশন লিস্ট
 
-POST /api/user/notifications/{id}/read
+POST /api/v1/user/notifications/{id}/read
   → পঠিত হিসেবে চিহ্নিত
 
-GET /api/user/notification-prefs
-PUT /api/user/notification-prefs
+GET /api/v1/user/notification-prefs
+PUT /api/v1/user/notification-prefs
    বডি: { email: {order_paid: true, ...}, push: {...} }
 ```
 
 ### ইমেইল
 
 ```
-POST /api/user/resend-verify-email
+POST /api/v1/user/resend-verify-email
   → ভেরিফিকেশন ইমেইল পুনরায় পাঠানো
 ```
 
 ### ফাইল আপলোড
 
 ```
-POST /api/upload
+POST /api/v1/upload
    বডি: multipart/form-data { file, type: avatar/kyc/attach }
    সীমা: avatar 2MB, kyc 5MB, attach 10MB
    অনুমোদিত: jpg, jpeg, png, gif, pdf
@@ -346,11 +346,11 @@ POST /api/upload
 ### কার্ট
 
 ```
-POST /api/cart
+POST /api/v1/cart
    বডি: { sku_id, region_id, quantity, cycle }
-GET /api/cart
-DELETE /api/cart/{id}
-PUT /api/cart/{id}
+GET /api/v1/cart
+DELETE /api/v1/cart/{id}
+PUT /api/v1/cart/{id}
    বডি: { quantity }
 ```
 
@@ -360,21 +360,21 @@ PUT /api/cart/{id}
 ### অর্ডার
 
 ```
-POST /api/orders
+POST /api/v1/orders
   → কার্ট থেকে অর্ডার তৈরি
   ← { order, order_no, items, subtotal, discount, tax, total }   # subtotal/discount/tax/total: string 4dp
 
-GET /api/orders
+GET /api/v1/orders
    প্যারামিটার: page, status (pending/paid/provisioning/completed/refunded, অবৈধ মানে 400)
   → আমার অর্ডার লিস্ট
 
-GET /api/orders/{id}
+GET /api/v1/orders/{id}
   → অর্ডার ডিটেইল (items, timeline সহ)
 
-GET /api/orders/{id}/payment-methods
+GET /api/v1/orders/{id}/payment-methods
   → উপলব্ধ পেমেন্ট চ্যানেল + প্রতিটি চ্যানেলের প্রকৃত পেমেন্ট অ্যামাউন্ট
 
-POST /api/orders/{id}/pay    🔒 পাসওয়ার্ড কনফার্মেশন
+POST /api/v1/orders/{id}/pay    🔒 পাসওয়ার্ড কনফার্মেশন
    বডি: { channel_id, confirm_password }
   → { client_secret, transaction_id }
 ```
@@ -382,7 +382,7 @@ POST /api/orders/{id}/pay    🔒 পাসওয়ার্ড কনফার
 ### কুপন
 
 ```
-POST /api/coupons/validate
+POST /api/v1/coupons/validate
    বডি: { code, order_total }
   → { coupon_id, discount, type }   # discount: string 4dp (যেমন "2.0000")
 
@@ -392,10 +392,10 @@ POST /api/coupons/validate
 ### ইনভয়েস
 
 ```
-GET /api/invoices
+GET /api/v1/invoices
    প্যারামিটার: page
-GET /api/invoices/{id}
-GET /api/invoices/{id}/download
+GET /api/v1/invoices/{id}
+GET /api/v1/invoices/{id}/download
   → PDF ডাউনলোড
 ```
 
@@ -404,20 +404,20 @@ GET /api/invoices/{id}/download
 ## ৫. রিসোর্স ম্যানেজমেন্ট
 
 ```
-GET /api/resources
+GET /api/v1/resources
    প্যারামিটার: page, status
   → আমার রিসোর্স লিস্ট
 
-GET /api/resources/{id}
+GET /api/v1/resources/{id}
   → রিসোর্স ডিটেইল
 
-GET /api/resources/{id}/status
+GET /api/v1/resources/{id}/status
   → রিসোর্সের বর্তমান স্ট্যাটাস + মেট্রিক্স
 
-GET /api/resources/{id}/console
+GET /api/v1/resources/{id}/console
   → VNC/কনসোল URL
 
-POST /api/resources/batch
+POST /api/v1/resources/batch
    বডি: { action: start/stop/restart, resource_ids: [...] }
 ```
 
@@ -426,13 +426,13 @@ POST /api/resources/batch
 ## ৬. DNS ম্যানেজমেন্ট
 
 ```
-GET /api/dns/{domain}
+GET /api/v1/dns/{domain}
   → DNS রেকর্ড লিস্ট
 
-POST /api/dns/{domain}/records
+POST /api/v1/dns/{domain}/records
    বডি: { type, name, value, ttl?, priority? }
 
-DELETE /api/dns/{domain}/records/{id}   🔒 পাসওয়ার্ড কনফার্মেশন
+DELETE /api/v1/dns/{domain}/records/{id}   🔒 পাসওয়ার্ড কনফার্মেশন
 ```
 
 ---
@@ -440,15 +440,15 @@ DELETE /api/dns/{domain}/records/{id}   🔒 পাসওয়ার্ড ক�
 ## ৭. টিকেট
 
 ```
-POST /api/tickets
+POST /api/v1/tickets
    বডি: { resource_id?, category, priority?, title, content }
 
-GET /api/tickets
+GET /api/v1/tickets
    প্যারামিটার: page, status
 
-GET /api/tickets/{id}
+GET /api/v1/tickets/{id}
 
-POST /api/tickets/{id}/reply
+POST /api/v1/tickets/{id}/reply
    বডি: { content }
 ```
 
@@ -457,19 +457,19 @@ POST /api/tickets/{id}/reply
 ## ৮. সাপ্লায়ার (ইন্টারনাল API)
 
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
    বডি: { company_name, contact_name, contact_phone, contact_email, settlement_method }
 
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
   → সেটেলমেন্ট লিস্ট
 
-POST /api/supplier/withdraw    🔒 পাসওয়ার্ড কনফার্মেশন
+POST /api/v1/supplier/withdraw    🔒 পাসওয়ার্ড কনফার্মেশন
    বডি: { amount, confirm_password, account_info: { method, bank_name, account_number } }
 
-GET /api/supplier/products
-POST /api/supplier/products
+GET /api/v1/supplier/products
+POST /api/v1/supplier/products
    বডি: { product_id, commission_rate }
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 ---
@@ -481,27 +481,27 @@ DELETE /api/supplier/products/{id}
 **রেট লিমিট:** 120 req/min (উইথড্রয়াল 10 req/min)
 
 ```
-GET /api/supplier/external/orders
+GET /api/v1/supplier/external/orders
    প্যারামিটার: page, page_size, status, from, to
 
-GET /api/supplier/external/orders/{id}
+GET /api/v1/supplier/external/orders/{id}
   → অর্ডার ডিটেইল (শুধু এই সাপ্লায়ারের সাথে সম্পর্কিত)
 
-GET /api/supplier/external/resources
+GET /api/v1/supplier/external/resources
    প্যারামিটার: page, status, type
 
-GET /api/supplier/external/resources/{id}/status
+GET /api/v1/supplier/external/resources/{id}/status
   → { id, type, status, provisioned_at, expired_at }
 
-GET /api/supplier/external/settlements
+GET /api/v1/supplier/external/settlements
    প্যারামিটার: page, status
 
-GET /api/supplier/external/settlements/{id}
+GET /api/v1/supplier/external/settlements/{id}
 
-POST /api/supplier/external/withdraw
+POST /api/v1/supplier/external/withdraw
    বডি: { amount, account_info: { method, ... } }
 
-GET /api/supplier/external/withdraws
+GET /api/v1/supplier/external/withdraws
    প্যারামিটার: page
 ```
 
@@ -514,227 +514,227 @@ GET /api/supplier/external/withdraws
 ### ড্যাশবোর্ড
 
 ```
-GET /admin/api/dashboard
+GET /admin/api/v1/dashboard
   → { today_stats, revenue_trend_30d, region_distribution, pending_orders, pending_kyc, open_tickets }
 ```
 
 ### ইউজার ম্যানেজমেন্ট
 
 ```
-GET /admin/api/users               প্যারামিটার: page, status, keyword
-GET /admin/api/users/export       → Excel ডাউনলোড
-GET /admin/api/users/{id}
-PUT /admin/api/users/{id}/status   বডি: { status }
+GET /admin/api/v1/users               প্যারামিটার: page, status, keyword
+GET /admin/api/v1/users/export       → Excel ডাউনলোড
+GET /admin/api/v1/users/{id}
+PUT /admin/api/v1/users/{id}/status   বডি: { status }
 ```
 
 ### KYC রিভিউ
 
 ```
-GET /admin/api/kyc                 প্যারামিটার: page, status
+GET /admin/api/v1/kyc                 প্যারামিটার: page, status
 
-POST /admin/api/kyc/{id}/approve   🔒 পাসওয়ার্ড কনফার্মেশন
+POST /admin/api/v1/kyc/{id}/approve   🔒 পাসওয়ার্ড কনফার্মেশন
    বডি: { confirm_password }
 
-POST /admin/api/kyc/{id}/reject    🔒 পাসওয়ার্ড কনফার্মেশন
+POST /admin/api/v1/kyc/{id}/reject    🔒 পাসওয়ার্ড কনফার্মেশন
    বডি: { confirm_password, reason }
 ```
 
 ### প্রোডাক্ট ম্যানেজমেন্ট
 
 ```
-POST /admin/api/products
-PUT /admin/api/products/{id}
-DELETE /admin/api/products/{id}         🔒 পাসওয়ার্ড কনফার্মেশন
-POST /admin/api/products/{productId}/skus
-PUT /admin/api/skus/{id}
-POST /admin/api/skus/{skuId}/region-price
-GET /admin/api/products/export         → CSV ডাউনলোড
-POST /admin/api/products/import        → CSV আপলোড upsert
+POST /admin/api/v1/products
+PUT /admin/api/v1/products/{id}
+DELETE /admin/api/v1/products/{id}         🔒 পাসওয়ার্ড কনফার্মেশন
+POST /admin/api/v1/products/{productId}/skus
+PUT /admin/api/v1/skus/{id}
+POST /admin/api/v1/skus/{skuId}/region-price
+GET /admin/api/v1/products/export         → CSV ডাউনলোড
+POST /admin/api/v1/products/import        → CSV আপলোড upsert
 ```
 
 ### অর্ডার ম্যানেজমেন্ট
 
 ```
-GET /admin/api/orders               প্যারামিটার: page, status, keyword
-GET /admin/api/orders/export       → Excel ডাউনলোড
-GET /admin/api/orders/{id}
+GET /admin/api/v1/orders               প্যারামিটার: page, status, keyword
+GET /admin/api/v1/orders/export       → Excel ডাউনলোড
+GET /admin/api/v1/orders/{id}
 
-POST /admin/api/orders/{id}/refund  🔒 পাসওয়ার্ড কনফার্মেশন
+POST /admin/api/v1/orders/{id}/refund  🔒 পাসওয়ার্ড কনফার্মেশন
    বডি: { confirm_password, amount?, reason }
 ```
 
 ### পেমেন্ট ম্যানেজমেন্ট
 
 ```
-GET /admin/api/payments/channels
-PUT /admin/api/payments/channels/{id}
-GET /admin/api/payments/transactions   প্যারামিটার: page, channel, status
-GET /admin/api/payments/reconcile      প্যারামিটার: date; records.status: verified/mismatch/unverified
-POST /admin/api/payments/reconcile/run   প্যারামিটার: date; দৈনিক রিকনসিলিয়েশন ট্রিগার
+GET /admin/api/v1/payments/channels
+PUT /admin/api/v1/payments/channels/{id}
+GET /admin/api/v1/payments/transactions   প্যারামিটার: page, channel, status
+GET /admin/api/v1/payments/reconcile      প্যারামিটার: date; records.status: verified/mismatch/unverified
+POST /admin/api/v1/payments/reconcile/run   প্যারামিটার: date; দৈনিক রিকনসিলিয়েশন ট্রিগার
 ```
 
 ### রিসোর্স ও প্রোভিশনিং
 
 ```
-GET /admin/api/provisioning/tasks               প্যারামিটার: page, status
-POST /admin/api/provisioning/tasks/{id}/retry
-POST /admin/api/provisioning/resources/{id}/upgrade
+GET /admin/api/v1/provisioning/tasks               প্যারামিটার: page, status
+POST /admin/api/v1/provisioning/tasks/{id}/retry
+POST /admin/api/v1/provisioning/resources/{id}/upgrade
    বডি: { cpu?, ram?, disk? }
-POST /admin/api/provisioning/resources/{id}/destroy   🔒 পাসওয়ার্ড কনফার্মেশন
-GET /admin/api/provisioning/hosts
+POST /admin/api/v1/provisioning/resources/{id}/destroy   🔒 পাসওয়ার্ড কনফার্মেশন
+GET /admin/api/v1/provisioning/hosts
 ```
 
 ### সাপ্লায়ার ম্যানেজমেন্ট
 
 ```
-GET /admin/api/suppliers                  প্যারামিটার: page, status
-GET /admin/api/suppliers/export          → Excel ডাউনলোড
+GET /admin/api/v1/suppliers                  প্যারামিটার: page, status
+GET /admin/api/v1/suppliers/export          → Excel ডাউনলোড
 
-POST /admin/api/suppliers/{id}/approve    🔒 পাসওয়ার্ড কনফার্মেশন
-POST /admin/api/suppliers/{id}/settle     🔒 পাসওয়ার্ড কনফার্মেশন
+POST /admin/api/v1/suppliers/{id}/approve    🔒 পাসওয়ার্ড কনফার্মেশন
+POST /admin/api/v1/suppliers/{id}/settle     🔒 পাসওয়ার্ড কনফার্মেশন
    বডি: { period_start, period_end, confirm_password }
 
-POST /admin/api/suppliers/withdraws/{id}/approve  🔒 পাসওয়ার্ড কনফার্মেশন
+POST /admin/api/v1/suppliers/withdraws/{id}/approve  🔒 পাসওয়ার্ড কনফার্মেশন
 ```
 
 ### সাপ্লায়ার API Key
 
 ```
-GET /admin/api/suppliers/{id}/api-keys
-POST /admin/api/suppliers/{id}/api-keys
+GET /admin/api/v1/suppliers/{id}/api-keys
+POST /admin/api/v1/suppliers/{id}/api-keys
    বডি: { name }
   ← { api_key: "sk_xxx...", prefix } (শুধু একবার দেখানো হয়)
 
-DELETE /admin/api/suppliers/api-keys/{id}
+DELETE /admin/api/v1/suppliers/api-keys/{id}
 ```
 
 ### টিকেট ম্যানেজমেন্ট
 
 ```
-GET /admin/api/tickets                   প্যারামিটার: page, status, priority, assigned_to
-POST /admin/api/tickets/{id}/assign      বডি: { user_id }
-POST /admin/api/tickets/{id}/close
+GET /admin/api/v1/tickets                   প্যারামিটার: page, status, priority, assigned_to
+POST /admin/api/v1/tickets/{id}/assign      বডি: { user_id }
+POST /admin/api/v1/tickets/{id}/close
 ```
 
 ### ডোমেইন ম্যানেজমেন্ট
 
 ```
-GET /admin/api/domains/tlds
-POST /admin/api/domains/tlds
+GET /admin/api/v1/domains/tlds
+POST /admin/api/v1/domains/tlds
    বডি: { tld, wholesale_price, retail_price, registrar, promo_price?, promo_end_at? }
-PUT /admin/api/domains/tlds/{id}
-DELETE /admin/api/domains/tlds/{id}
-GET /admin/api/domains/zones              প্যারামিটার: page
-GET /admin/api/domains/transfers          প্যারামিটার: page
-POST /admin/api/domains/transfers/{id}/approve
+PUT /admin/api/v1/domains/tlds/{id}
+DELETE /admin/api/v1/domains/tlds/{id}
+GET /admin/api/v1/domains/zones              প্যারামিটার: page
+GET /admin/api/v1/domains/transfers          প্যারামিটার: page
+POST /admin/api/v1/domains/transfers/{id}/approve
 ```
 
 ### নোটিফিকেশন ম্যানেজমেন্ট
 
 ```
-GET /admin/api/notifications/templates
-PUT /admin/api/notifications/templates/{id}
+GET /admin/api/v1/notifications/templates
+PUT /admin/api/v1/notifications/templates/{id}
    বডি: { name?, channels?, title_template?, body_template?, variables? }
-GET /admin/api/notifications/log          প্যারামিটার: page
+GET /admin/api/v1/notifications/log          প্যারামিটার: page
 ```
 
 ### কুপন
 
 ```
-GET /admin/api/coupons
-POST /admin/api/coupons
+GET /admin/api/v1/coupons
+POST /admin/api/v1/coupons
    বডি: { code, type, value, min_amount?, max_discount?, max_uses?, starts_at?, expires_at? }
-DELETE /admin/api/coupons/{id}
+DELETE /admin/api/v1/coupons/{id}
 ```
 
 ### হেল্প আর্টিকেল
 
 ```
-GET /admin/api/help
-POST /admin/api/help
+GET /admin/api/v1/help
+POST /admin/api/v1/help
    বডি: { category, title, slug, content, locale, sort?, status? }
-PUT /admin/api/help/{id}
-DELETE /admin/api/help/{id}              → সফট ডিলিট (status=archived)
+PUT /admin/api/v1/help/{id}
+DELETE /admin/api/v1/help/{id}              → সফট ডিলিট (status=archived)
 ```
 
 ### ক্লাউড প্রোভাইডার API
 
 ```
-GET /admin/api/providers
-POST /admin/api/providers
+GET /admin/api/v1/providers
+POST /admin/api/v1/providers
    বডি: { name, code, api_key?, api_secret?, webhook_secret? }
-PUT /admin/api/providers/{id}
-DELETE /admin/api/providers/{id}         → ডিসেবল (status=disabled)
+PUT /admin/api/v1/providers/{id}
+DELETE /admin/api/v1/providers/{id}         → ডিসেবল (status=disabled)
 ```
 
 ### Webhook ম্যানেজমেন্ট
 
 ```
-GET /admin/api/webhooks
-POST /admin/api/webhooks
+GET /admin/api/v1/webhooks
+POST /admin/api/v1/webhooks
    বডি: { url }
-DELETE /admin/api/webhooks               বডি: { id }
-POST /admin/api/webhooks/test            বডি: { url }
+DELETE /admin/api/v1/webhooks               বডি: { id }
+POST /admin/api/v1/webhooks/test            বডি: { url }
 ```
 
 ### রিপোর্ট
 
 ```
-GET /admin/api/reports/revenue            প্যারামিটার: from, to, granularity
+GET /admin/api/v1/reports/revenue            প্যারামিটার: from, to, granularity
   → { daily: [{date, currency, revenue, orders}], total_revenue, total_orders, by_category }
   # revenue/total_revenue: string 4dp (SUM(DECIMAL) ও bcmath অ্যাগ্রিগেশনের সাথে সামঞ্জস্যপূর্ণ)
-GET /admin/api/reports/supplier           প্যারামিটার: from, to
+GET /admin/api/v1/reports/supplier           প্যারামিটার: from, to
   → { settlements, total_payable, total_paid }   # payable/total_payable/total_paid: string 4dp
-GET /admin/api/reports/region             প্যারামিটার: from, to
+GET /admin/api/v1/reports/region             প্যারামিটার: from, to
   → [{region, orders, revenue}]                  # revenue: string 4dp
 ```
 
 ### মনিটরিং
 
 ```
-GET /admin/api/monitor/dashboard
+GET /admin/api/v1/monitor/dashboard
   → { active_resources, alerts_today, resource_distribution, recent_alerts }
 
-GET /admin/api/monitor/resources/{id}
+GET /admin/api/v1/monitor/resources/{id}
   → { cpu_percent, mem_percent, disk_percent, bandwidth_usage, uptime }
 ```
 
 ### অডিট লগ
 
 ```
-GET /admin/api/audit-logs                 প্যারামিটার: page, user_id, action, from, to
+GET /admin/api/v1/audit-logs                 প্যারামিটার: page, user_id, action, from, to
   → পেজিনেটেড অডিট লগ (client_platform সহ)
 ```
 
 ### Feature Flags
 
 ```
-GET /admin/api/features
+GET /admin/api/v1/features
   → [{ name, enabled, default, source }]
 
-PUT /admin/api/features/{name}
+PUT /admin/api/v1/features/{name}
    বডি: { action: enable/disable/toggle/reset }
 ```
 
 ### সিস্টেম কনফিগ
 
 ```
-PUT /admin/api/system/config              🔒 পাসওয়ার্ড কনফার্মেশন
+PUT /admin/api/v1/system/config              🔒 পাসওয়ার্ড কনফার্মেশন
 ```
 
 ### প্রোডাক্ট ইমপোর্ট/এক্সপোর্ট
 
 ```
-GET /admin/api/products/export           → CSV ডাউনলোড
-POST /admin/api/products/import          → CSV আপলোড upsert
+GET /admin/api/v1/products/export           → CSV ডাউনলোড
+POST /admin/api/v1/products/import          → CSV আপলোড upsert
 ```
 
 ### সাপ্লায়ার + ইউজার এক্সপোর্ট
 
 ```
-GET /admin/api/suppliers/export          → Excel ডাউনলোড
-GET /admin/api/users/export              → Excel ডাউনলোড
-GET /admin/api/orders/export             → Excel ডাউনলোড
+GET /admin/api/v1/suppliers/export          → Excel ডাউনলোড
+GET /admin/api/v1/users/export              → Excel ডাউনলোড
+GET /admin/api/v1/orders/export             → Excel ডাউনলোড
 ```
 
 ---
@@ -744,19 +744,19 @@ GET /admin/api/orders/export             → Excel ডাউনলোড
 ### ইউজার সাইড
 
 ```
-GET /api/ssl/plans
+GET /api/v1/ssl/plans
   → SSL প্ল্যান লিস্ট (DV/OV/EV, দাম register/renew/transfer সহ)
 
-GET /api/ssl-certs
+GET /api/v1/ssl-certs
   → আমার সার্টিফিকেট লিস্ট (status সহ: pending/active/expired/revoked)
 
-GET /api/ssl-certs/{id}
+GET /api/v1/ssl-certs/{id}
   → সার্টিফিকেট ডিটেইল (ডোমেইন, ইস্যুকারী সংস্থা, মেয়াদ, রিনিউ স্ট্যাটাস)
 
-GET /api/ssl-certs/{id}/download
+GET /api/v1/ssl-certs/{id}/download
   → সার্টিফিকেট ফাইল ডাউনলোড (সার্টিফিকেট চেইন + প্রাইভেট কী)
 
-POST /api/ssl-certs/{id}/auto-renew
+POST /api/v1/ssl-certs/{id}/auto-renew
    বডি: { auto_renew: true/false }
   → অটো রিনিউ টগল
 ```
@@ -764,12 +764,12 @@ POST /api/ssl-certs/{id}/auto-renew
 ### অ্যাডমিন সাইড
 
 ```
-GET /admin/api/ssl/plans              → প্ল্যান লিস্ট
-POST /admin/api/ssl/plans             → প্ল্যান তৈরি
-PUT /admin/api/ssl/plans/{id}         → প্ল্যান আপডেট
-DELETE /admin/api/ssl/plans/{id}      → প্ল্যান ডিলিট
-GET /admin/api/ssl/certs              → সব সার্টিফিকেট
-POST /admin/api/ssl/certs/{id}/revoke → সার্টিফিকেট রিভোক
+GET /admin/api/v1/ssl/plans              → প্ল্যান লিস্ট
+POST /admin/api/v1/ssl/plans             → প্ল্যান তৈরি
+PUT /admin/api/v1/ssl/plans/{id}         → প্ল্যান আপডেট
+DELETE /admin/api/v1/ssl/plans/{id}      → প্ল্যান ডিলিট
+GET /admin/api/v1/ssl/certs              → সব সার্টিফিকেট
+POST /admin/api/v1/ssl/certs/{id}/revoke → সার্টিফিকেট রিভোক
 ```
 
 ---
@@ -779,21 +779,21 @@ POST /admin/api/ssl/certs/{id}/revoke → সার্টিফিকেট র�
 S3-কমপ্যাটিবল অবজেক্ট স্টোরেজ, প্রিসাইনড URL দিয়ে আপলোড/ডাউনলোড, সিক্রেট বাইরে যায় না।
 
 ```
-GET /api/storage/buckets
+GET /api/v1/storage/buckets
   → আমার স্টোরেজ বাকেট লিস্ট (ইউসেজ, স্ট্যাটাস)
 
-GET /api/storage/buckets/{id}
+GET /api/v1/storage/buckets/{id}
   → স্টোরেজ বাকেট ডিটেইল
 
-POST /api/storage/buckets/{id}/presign-upload
+POST /api/v1/storage/buckets/{id}/presign-upload
    বডি: { filename, content_type, size }
   → { upload_url, object_key } প্রিসাইনড আপলোড URL (সময়সীমাযুক্ত)
 
-POST /api/storage/buckets/{id}/presign-download
+POST /api/v1/storage/buckets/{id}/presign-download
    বডি: { object_key }
   → প্রিসাইনড ডাউনলোড URL (সময়সীমাযুক্ত)
 
-GET /api/storage/buckets/{id}/credentials
+GET /api/v1/storage/buckets/{id}/credentials
   → অস্থায়ী অ্যাক্সেস ক্রেডেনশিয়াল (স্বল্পমেয়াদী, SDK সরাসরি আপলোডের জন্য)
 ```
 
@@ -804,10 +804,10 @@ GET /api/storage/buckets/{id}/credentials
 ### ইউজার সাইড
 
 ```
-GET /api/cdn/domains
+GET /api/v1/cdn/domains
   → আমার CDN ডোমেইন লিস্ট (অরিজিন, স্ট্যাটাস, প্ল্যান)
 
-POST /api/cdn/domains
+POST /api/v1/cdn/domains
   বডি: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
          origin_type (server|storage), origin_value, cert_config? }
   → CDN ডোমেইন তৈরি (প্রোভাইডার সাইডে তৈরি করে অরিজিন বাইন্ড)
@@ -816,28 +816,28 @@ POST /api/cdn/domains
   → ক্রেডেনশিয়াল রেজল্যুশন: আগে ডোমেইনের বাইন্ডেড অ্যাকাউন্ট (provider_account_id),
     না হলে code=cdn-{provider_type} এর অ্যাক্টিভ provider_apis অ্যাকাউন্ট, সব না থাকলে env কনফিগ ফলব্যাক
 
-GET /api/cdn/domains/{id}
+GET /api/v1/cdn/domains/{id}
   → CDN ডোমেইন ডিটেইল
 
-DELETE /api/cdn/domains/{id}
+DELETE /api/v1/cdn/domains/{id}
   → CDN ডোমেইন ডিলিট (প্রোভাইডার সাইড ডোমেইন ডিসেবল করে, ইডেম্পোটেন্ট)
 
-POST /api/cdn/domains/{id}/purge
+POST /api/v1/cdn/domains/{id}/purge
   বডি: { urls: ["https://cdn.example.com/path"] }
   → ক্যাশ ক্লিয়ার (ডুপ্লিকেট URL অটো ডিডুপ, ইডেম্পোটেন্ট; সর্বোচ্চ ১০০টি)
 
-GET /api/cdn/domains/{id}/stats
+GET /api/v1/cdn/domains/{id}/stats
   → ডোমেইন ওভারভিউ (cdn_domain / provider_type / plan / status / purged_at)
 ```
 
 ### অ্যাডমিন সাইড
 
 ```
-GET /admin/api/cdn/domains            → সব CDN ডোমেইন (মালিকানাধীন ইউজার সহ)
-PUT /admin/api/cdn/domains/{id}       → ডোমেইন প্ল্যান আপডেট (plan হোয়াইটলিস্ট: standard | pro | enterprise)
+GET /admin/api/v1/cdn/domains            → সব CDN ডোমেইন (মালিকানাধীন ইউজার সহ)
+PUT /admin/api/v1/cdn/domains/{id}       → ডোমেইন প্ল্যান আপডেট (plan হোয়াইটলিস্ট: standard | pro | enterprise)
 ```
 
-অ্যাডমিন CDN রুট `RbacMiddleware('cdn.manage')` এ মাউন্ট করা, প্ল্যান পরিবর্তন অডিট লগে লেখা হয় (`admin_cdn_update_plan`)। প্রোভাইডার অ্যাকাউন্ট ক্রেডেনশিয়াল `/admin/api/providers` CRUD দিয়ে ম্যানটেইন হয় (RbacMiddleware `provider.config`, `code` কনভেনশন `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, ক্রেডেনশিয়াল Encryptable এনক্রিপশনে স্টোর)।
+অ্যাডমিন CDN রুট `RbacMiddleware('cdn.manage')` এ মাউন্ট করা, প্ল্যান পরিবর্তন অডিট লগে লেখা হয় (`admin_cdn_update_plan`)। প্রোভাইডার অ্যাকাউন্ট ক্রেডেনশিয়াল `/admin/api/v1/providers` CRUD দিয়ে ম্যানটেইন হয় (RbacMiddleware `provider.config`, `code` কনভেনশন `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`, ক্রেডেনশিয়াল Encryptable এনক্রিপশনে স্টোর)।
 
 ### CDN এরর কোড
 
@@ -856,11 +856,11 @@ PUT /admin/api/cdn/domains/{id}       → ডোমেইন প্ল্যা�
 ## ১৪. পে-অ্যাস-ইউ-গো বিলিং
 
 ```
-GET /admin/api/billing/rates          → বিলিং রেট লিস্ট (রিসোর্স টাইপ/স্পেক অনুযায়ী)
-POST /admin/api/billing/rates         → রেট তৈরি
-PUT /admin/api/billing/rates/{id}     → রেট আপডেট
-DELETE /admin/api/billing/rates/{id}  → রেট ডিলিট
-GET /admin/api/billing/usage          → ইউসেজ সারাংশ (ইউজার/রিসোর্স অনুযায়ী অ্যাগ্রিগেট)
+GET /admin/api/v1/billing/rates          → বিলিং রেট লিস্ট (রিসোর্স টাইপ/স্পেক অনুযায়ী)
+POST /admin/api/v1/billing/rates         → রেট তৈরি
+PUT /admin/api/v1/billing/rates/{id}     → রেট আপডেট
+DELETE /admin/api/v1/billing/rates/{id}  → রেট ডিলিট
+GET /admin/api/v1/billing/usage          → ইউসেজ সারাংশ (ইউজার/রিসোর্স অনুযায়ী অ্যাগ্রিগেট)
 ```
 
 বিলিং পাইপলাইন: ResourceMonitor প্রতি ৫ মিনিটে কালেক্ট → UsageAggregator প্রতি ঘণ্টায় অ্যাগ্রিগেট → BillingEngine প্রতিদিন ডেবিট, ব্যালেন্স অপর্যাপ্ত হলে রিসোর্স সাসপেন্ড।
@@ -872,18 +872,18 @@ GET /admin/api/billing/usage          → ইউসেজ সারাংশ (�
 ### ইউজার সাইড
 
 ```
-GET /api/affiliate/summary
+GET /api/v1/affiliate/summary
   → কমিশন ওভারভিউ (জমা/অপেক্ষমাণ সেটেলমেন্ট/উইথড্রেবল, লিংক সংখ্যা, কনভার্সন রেট)
 
-POST /api/affiliate/links
+POST /api/v1/affiliate/links
    বডি: { source? }
   → প্রোমো লিংক জেনারেশন (?ref=CODE)
 
-GET /api/affiliate/earnings
+GET /api/v1/affiliate/earnings
    প্যারামিটার: status, page
   → কমিশন বিস্তারিত (অর্ডার অ্যাট্রিবিউশন, রেট, স্ট্যাটাস: pending/approved/paid)
 
-POST /api/affiliate/payout
+POST /api/v1/affiliate/payout
    বডি: { amount, method }
   → উইথড্রয়াল আবেদন শুরু
 ```
@@ -891,12 +891,12 @@ POST /api/affiliate/payout
 ### অ্যাডমিন সাইড
 
 ```
-GET /admin/api/affiliate/plans                → কমিশন প্ল্যান লিস্ট
-POST /admin/api/affiliate/plans               → কমিশন প্ল্যান তৈরি
-GET /admin/api/affiliate/earnings             → সব কমিশন রেকর্ড
-POST /admin/api/affiliate/earnings/{id}/approve → কমিশন রিভিউ
-GET /admin/api/affiliate/payouts              → উইথড্রয়াল আবেদন লিস্ট
-POST /admin/api/affiliate/payouts/{id}/approve → উইথড্রয়াল রিভিউ/পেমেন্ট
+GET /admin/api/v1/affiliate/plans                → কমিশন প্ল্যান লিস্ট
+POST /admin/api/v1/affiliate/plans               → কমিশন প্ল্যান তৈরি
+GET /admin/api/v1/affiliate/earnings             → সব কমিশন রেকর্ড
+POST /admin/api/v1/affiliate/earnings/{id}/approve → কমিশন রিভিউ
+GET /admin/api/v1/affiliate/payouts              → উইথড্রয়াল আবেদন লিস্ট
+POST /admin/api/v1/affiliate/payouts/{id}/approve → উইথড্রয়াল রিভিউ/পেমেন্ট
 ```
 
 ---
@@ -908,7 +908,7 @@ POST /graphql
   → পাবলিক কোয়েরি (প্রোডাক্ট, ডোমেইন, হেল্প ইত্যাদি রিড-অনলি ডেটা)
    সীমা: কোয়েরি ডেপথ ৫ লেয়ার, কমপ্লেক্সিটি ১০০
 
-POST /api/graphql                          🔒 অথেনটিকেশন প্রয়োজন
+POST /api/v1/graphql                          🔒 অথেনটিকেশন প্রয়োজন
   → সম্পূর্ণ কোয়েরি (ইউজার ডেটাসহ)
 ```
 
@@ -921,34 +921,34 @@ POST /api/graphql                          🔒 অথেনটিকেশন �
 ### পাবলিক
 
 ```
-GET /api/regions
+GET /api/v1/regions
   → উপলব্ধ রিজিয়ন লিস্ট (কারেন্সি/টাইমজোন সহ)
 
-GET /api/suppliers/{supplierId}/ratings
+GET /api/v1/suppliers/{supplierId}/ratings
   → সাপ্লায়ার রেটিং লিস্ট (চার-ডাইমেনশন: কোয়ালিটি/সাপোর্ট/ডেলিভারি স্পিড/ভ্যালু, শুধু approved রিটার্ন)
 ```
 
 ### ইউজার সাইড (অথেনটিকেশন প্রয়োজন)
 
 ```
-POST /api/products/{productId}/reviews
+POST /api/v1/products/{productId}/reviews
    বডি: { rating, content, images? }
   → প্রোডাক্ট রিভিউ জমা (প্রতি অর্ডারে একবার, রিভিউর পর ডিসপ্লে)
 
-POST /api/supplier/ratings
+POST /api/v1/supplier/ratings
    বডি: { supplier_id, quality, support, delivery_speed, value, comment? }
   → সাপ্লায়ার রেটিং জমা (প্রতি অর্ডারে একবার)
 
-GET /api/supplier/ratings/me
+GET /api/v1/supplier/ratings/me
   → আমার রেটিং রেকর্ড
 ```
 
 ### অ্যাডমিন সাইড
 
 ```
-GET /admin/api/suppliers/{id}/ratings          → সব রেটিং (pending সহ)
-POST /admin/api/suppliers/ratings/{id}/approve → রিভিউ অ্যাপ্রুভ
-POST /admin/api/suppliers/ratings/{id}/hide    → হাইড
+GET /admin/api/v1/suppliers/{id}/ratings          → সব রেটিং (pending সহ)
+POST /admin/api/v1/suppliers/ratings/{id}/approve → রিভিউ অ্যাপ্রুভ
+POST /admin/api/v1/suppliers/ratings/{id}/hide    → হাইড
 ```
 
 ---
@@ -956,7 +956,7 @@ POST /admin/api/suppliers/ratings/{id}/hide    → হাইড
 ## ১৮. পেমেন্ট Webhook
 
 ```
-POST /api/payments/webhook/stripe
+POST /api/v1/payments/webhook/stripe
    হেডার: Stripe-Signature: ...
   → Stripe কলব্যাক (পেমেন্ট সফল/রিফান্ড/ডিসপিউট), সিগনেচার ভেরিফিকেশন ব্যর্থ হলে 400
 ```
@@ -1014,18 +1014,18 @@ POST /api/payments/webhook/stripe
 
 | মেসেজ | এন্ডপয়েন্ট |
 |------|------|
-| `Email or phone required` | /api/auth/register |
-| `Email already registered` | /api/auth/register |
-| `Invalid credentials` | /api/auth/login |
-| `Account temporarily locked` | /api/auth/login |
-| `You already have a supplier application` | /api/supplier/apply |
-| `Insufficient withdrawable balance` | /api/supplier/withdraw |
-| `Product already assigned to this supplier` | /api/supplier/products |
-| `Invalid or revoked API key` | /api/supplier/external/* |
-| `Captcha verification failed` | /api/auth/login, /api/auth/register |
-| `Email already verified` | /api/user/resend-verify-email |
-| `Password too short` | /api/auth/register |
-| `Unknown feature: xxx` | /admin/api/features/{name} |
-| `Refund window expired: server orders are refundable within 72 hours of payment` | /admin/api/orders/{id}/refund |
-| `Refund window expired: domain orders are refundable within 5 days of payment` | /admin/api/orders/{id}/refund |
-| `This product type (IP) is not refundable` | /admin/api/orders/{id}/refund |
+| `Email or phone required` | /api/v1/auth/register |
+| `Email already registered` | /api/v1/auth/register |
+| `Invalid credentials` | /api/v1/auth/login |
+| `Account temporarily locked` | /api/v1/auth/login |
+| `You already have a supplier application` | /api/v1/supplier/apply |
+| `Insufficient withdrawable balance` | /api/v1/supplier/withdraw |
+| `Product already assigned to this supplier` | /api/v1/supplier/products |
+| `Invalid or revoked API key` | /api/v1/supplier/external/* |
+| `Captcha verification failed` | /api/v1/auth/login, /api/v1/auth/register |
+| `Email already verified` | /api/v1/user/resend-verify-email |
+| `Password too short` | /api/v1/auth/register |
+| `Unknown feature: xxx` | /admin/api/v1/features/{name} |
+| `Refund window expired: server orders are refundable within 72 hours of payment` | /admin/api/v1/orders/{id}/refund |
+| `Refund window expired: domain orders are refundable within 5 days of payment` | /admin/api/v1/orders/{id}/refund |
+| `This product type (IP) is not refundable` | /admin/api/v1/orders/{id}/refund |

@@ -208,7 +208,7 @@ cloud-php/
 │   │   ├── i18n/middleware/     # बहुभाषा मिडलवेयर (Locale)
 │   │   ├── security/           # CORS / WAF / रेट लिमिट / जियो-ब्लॉकिंग / मेंटेनेंस मोड / ऑडिट लॉग
 │   │   ├── snowflake/          # स्नोफ्लेक ID जनरेशन सेवा / Eloquent HasSnowflakeId Trait
-│   │   ├── version/middleware/  # API वर्जन मिडलवेयर (X-Api-Version हेडर सत्यापन)
+│   │   ├── version/middleware/  # API वर्जन मिडलवेयर (URL पथ में वर्जन सत्यापन)
 │   │   ├── clientplatform/middleware/  # क्लाइंट प्लेटफ़ॉर्म मिडलवेयर (X-Client-Platform हेडर पहचान)
 │   │   ├── feature/            # Feature Flags फ़ंक्शन स्विच सेवा
 │   │   └── webhook/            # Webhook इवेंट डिस्पैचर
@@ -534,7 +534,7 @@ ProviderInterface
 - **Security Plugin** — 31 प्रकार की अटैक डिटेक्शन (XSS/SQL इंजेक्शन/कमांड इंजेक्शन/SSRF/डी-सीरियलाइज़ेशन/JWT अटैक/Host हेडर अटैक/अनुरोध स्मगलिंग/GraphQL इंजेक्शन/संवेदनशील डेटा लीक आदि), IP व्हाइटलिस्ट + IP ब्लैकलिस्ट स्वचालित बैन
 - **Locale** — Accept-Language पार्स करता है, बहुभाषा सेट करता है
 - **HashidRequest** — अनुरोध में hashid स्ट्रिंग को वास्तविक पूर्णांक ID में स्वचालित रूप से डिकोड करता है
-- **Version** — `X-Api-Version` अनुरोध हेडर सत्यापित करता है, अनुपलब्ध होने पर डिफ़ॉल्ट `v1`, असमर्थित संस्करण पर `400` लौटाता है
+- **Version** — URL पथ में वर्जन सेगमेंट सत्यापित करता है (जैसे `/api/v1/`), असमर्थित संस्करण पर `400` लौटाता है
 - **ClientPlatform** — `X-Client-Platform` अनुरोध हेडर सत्यापित करता है, क्लाइंट OS प्लेटफ़ॉर्म पहचानता है (iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web)
 - **Encryption** — AES-256-GCM ट्रांसमिशन एन्क्रिप्शन (प्रमाणित इंटरफ़ेस और एडमिन पैनल), मैन-इन-द-मिडल सुनने और छेड़छाड़ को रोकता है
 - **Captcha** — क्लिक कैप्चा, लॉगिन/रजिस्ट्रेशन से पहले सत्यापन (GD ड्रॉइंग + Redis स्टोरेज, एक-बार कुंजी, 300s वैधता, 3 प्रयास सीमा)

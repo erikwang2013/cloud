@@ -5,7 +5,7 @@
 ### 1.1 Registrasi
 
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
   → WAF 扫描
   → 限流 3 req/min
   → 密码校验 len≥8
@@ -24,7 +24,7 @@ POST /api/auth/register
 ```
 Client                    Middleware Chain           AuthService              DB
   │                           │                        │                     │
-  │ POST /api/auth/register   │                        │                     │
+  │ POST /api/v1/auth/register   │                        │                     │
   │──────────────────────────▶│ WAF→RateLimit→Encrypt  │                     │
   │                           │───────────────────────▶│                     │
   │                           │                        │ User::create() ────▶│
@@ -40,7 +40,7 @@ Client                    Middleware Chain           AuthService              DB
 ### 1.2 Login
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
   → WAF 扫描
   → 限流 5 req/min
   → Captcha 验证（点击验证码，3 次尝试限制）
@@ -59,7 +59,7 @@ POST /api/auth/login
 ### 1.3 OAuth (Google / Apple)
 
 ```
-GET /api/auth/google → Google OAuth → callback?code=xxx
+GET /api/v1/auth/google → Google OAuth → callback?code=xxx
   1. 验证 Google/Apple ID Token
   2. 查找或创建用户（email 匹配）
   3. 签发 token（含 client_platform）
@@ -69,30 +69,30 @@ GET /api/auth/google → Google OAuth → callback?code=xxx
 ### 1.4 Verifikasi Dua Langkah TOTP
 
 ```
-1. POST /api/user/totp/setup
+1. POST /api/v1/user/totp/setup
      → 生成 secret + QR URL（Redis 暂存 10 分钟，未持久化）
      ← {secret, qr_url, manual}
-2. POST /api/user/totp/verify
+2. POST /api/v1/user/totp/verify
      → 验证 TOTP code（首次为启用 setup，之后为校验）
      ← {verified: true}
-3. GET /api/user/totp/recovery-codes
+3. GET /api/v1/user/totp/recovery-codes
      → 生成 8 个一次性恢复码（需密码确认）
      ← {recovery_codes: [8 个]}
 4. 登录时：输入 TOTP code 或使用恢复码
-     → POST /api/auth/login/recovery (login, password, recovery_code)
+     → POST /api/v1/auth/login/recovery (login, password, recovery_code)
 ```
 
 ### 1.5 Manajemen Sesi
 
 ```
-GET /api/user/sessions
+GET /api/v1/user/sessions
   → RefreshToken::where(user_id, revoked=false)
   ← [{id, fingerprint, client_platform, created_at, expires_at}]
 
-DELETE /api/user/sessions/{id}
+DELETE /api/v1/user/sessions/{id}
   → RefreshToken::update(revoked=true)
 
-DELETE /api/user/account (GDPR 注销)
+DELETE /api/v1/user/account (GDPR 注销)
   → 密码二次确认
   → 软删除 User
   → 全部 RefreshToken revoked
@@ -122,7 +122,7 @@ Product (1) ────── (N) ProductAttribute
 ### 2.2 Daftar Produk (dengan cache)
 
 ```
-GET /api/products?category_id=1&region_id=2&keyword=vps&page=1
+GET /api/v1/products?category_id=1&region_id=2&keyword=vps&page=1
 
 CacheService::remember('products:list:{hash}', TTL 5min)
   → Product::published()
@@ -140,7 +140,7 @@ CacheService::remember('products:list:{hash}', TTL 5min)
 ### 2.3 Pencarian Produk (Elasticsearch)
 
 ```
-GET /api/products/search?q=vps&page=1
+GET /api/v1/products/search?q=vps&page=1
   → Product::search('vps')
     → Elasticsearch (IK Analyzer 中文分词)
     → where('status', 'published')
@@ -150,11 +150,11 @@ GET /api/products/search?q=vps&page=1
 ### 2.4 Ulasan Produk
 
 ```
-GET /api/products/{id}/reviews
+GET /api/v1/products/{id}/reviews
   → 已审核评价 + 平均评分 + 评分分布
   ← {reviews, avg_rating, total, distribution: {5: 12, 4: 8, ...}}
 
-POST /api/products/{id}/reviews (需登录)
+POST /api/v1/products/{id}/reviews (需登录)
   → rating (1-5) + content
   → status = pending (管理员审核后显示)
 ```
@@ -162,10 +162,10 @@ POST /api/products/{id}/reviews (需登录)
 ### 2.5 Impor/Ekspor Massal
 
 ```
-GET /admin/api/products/export
+GET /admin/api/v1/products/export
   → CSV 下载 (产品 + SKU + 区域定价)
 
-POST /admin/api/products/import
+POST /admin/api/v1/products/import
   → CSV 上传 upsert
   ← {imported: N, errors: [...]}
 ```
@@ -177,28 +177,28 @@ POST /admin/api/products/import
 ### 3.1 Keranjang Belanja
 
 ```
-POST /api/cart          → addToCart(sku_id, region_id, quantity, cycle)
-GET /api/cart           → 购物车列表 (含 SKU 详情 + 实时价格)
-DELETE /api/cart/{id}   → removeFromCart
-PUT /api/cart/{id}      → updateCartQuantity
+POST /api/v1/cart          → addToCart(sku_id, region_id, quantity, cycle)
+GET /api/v1/cart           → 购物车列表 (含 SKU 详情 + 实时价格)
+DELETE /api/v1/cart/{id}   → removeFromCart
+PUT /api/v1/cart/{id}      → updateCartQuantity
 ```
 
 ### 3.2 Alur Pembuatan Pesanan
 
 ```
-1. POST /api/orders                           创建订单
+1. POST /api/v1/orders                           创建订单
      → 校验库存、计算价格、应用优惠券
      ← {order_id, order_no, items, total}
 
-2. POST /api/coupons/validate                 应用优惠券
+2. POST /api/v1/coupons/validate                 应用优惠券
      → {code: "SAVE10"}
      ← {coupon_id, discount, type: percent/fixed}
 
-3. GET /api/orders/{id}/payment-methods       获取可用支付通道
+3. GET /api/v1/orders/{id}/payment-methods       获取可用支付通道
      → PaymentRouter::getAvailableChannels(order)
      ← [{channel_id, name, code, amount, fee, total_amount}]
 
-4. POST /api/orders/{id}/pay                  发起支付
+4. POST /api/v1/orders/{id}/pay                  发起支付
      → 密码二次确认 (ConfirmationMiddleware)
      → StripeChannel::createPaymentIntent()
      ← {client_secret, transaction_id}
@@ -379,19 +379,19 @@ ProvisionWorker (Redis Queue 消费)
 ### 6.1 Alur Pendaftaran
 
 ```
-POST /api/supplier/apply (需用户登录)
+POST /api/v1/supplier/apply (需用户登录)
   → {company_name, contact_name, contact_phone, contact_email, settlement_method}
   → status = 'pending'
   → 管理员审核
 
 管理员审批:
-  POST /admin/api/suppliers/{id}/approve (密码确认)
+  POST /admin/api/v1/suppliers/{id}/approve (密码确认)
     → Supplier::status = 'active'
     → User::role = 'supplier'
     → 用户获得供应商权限
 
 商品上架:
-  POST /api/supplier/products
+  POST /api/v1/supplier/products
     → {product_id, commission_rate}
     → 关联供应商商品
 
@@ -402,7 +402,7 @@ POST /api/supplier/apply (需用户登录)
     → 创建 SupplierSettlement
 
 提现:
-  POST /api/supplier/withdraw (密码确认)
+  POST /api/v1/supplier/withdraw (密码确认)
     → 检查可提现余额
     → 创建 SupplierWithdraw (status=pending)
     → 管理员审批打款
@@ -411,13 +411,13 @@ POST /api/supplier/apply (需用户登录)
 ### 6.2 API Eksternal
 
 ```
-POST /admin/api/suppliers/{id}/api-keys
+POST /admin/api/v1/suppliers/{id}/api-keys
   → sk_ . bin2hex(random_bytes(24))
   → hash('sha256', rawKey) 存储
   ← {api_key: "sk_xxx..."} (仅显示一次)
 
 供应商使用:
-  GET /api/supplier/external/orders
+  GET /api/v1/supplier/external/orders
     Authorization: Bearer sk_xxx...
     → SupplierApiKeyMiddleware 验签
     → 按 supplierId 筛选数据
@@ -428,11 +428,11 @@ POST /admin/api/suppliers/{id}/api-keys
 ## 7. Domain dan DNS
 
 ```
-GET /api/domain/check/{domain}/{tld}    # 域名可用性
-GET /api/domain/tlds                     # 可注册 TLD 列表 (缓存 1h)
-GET /api/dns/{domain}                    # DNS 记录列表
-POST /api/dns/{domain}/records           # 添加 DNS 记录
-DELETE /api/dns/{domain}/records/{id}    # 删除 DNS 记录 (密码确认)
+GET /api/v1/domain/check/{domain}/{tld}    # 域名可用性
+GET /api/v1/domain/tlds                     # 可注册 TLD 列表 (缓存 1h)
+GET /api/v1/dns/{domain}                    # DNS 记录列表
+POST /api/v1/dns/{domain}/records           # 添加 DNS 记录
+DELETE /api/v1/dns/{domain}/records/{id}    # 删除 DNS 记录 (密码确认)
 ```
 
 ---
@@ -440,15 +440,15 @@ DELETE /api/dns/{domain}/records/{id}    # 删除 DNS 记录 (密码确认)
 ## 8. Sistem Tiket
 
 ```
-POST /api/tickets                    # 创建工单
-GET /api/tickets                     # 我的工单
-GET /api/tickets/{id}                # 工单详情
-POST /api/tickets/{id}/reply         # 回复工单
+POST /api/v1/tickets                    # 创建工单
+GET /api/v1/tickets                     # 我的工单
+GET /api/v1/tickets/{id}                # 工单详情
+POST /api/v1/tickets/{id}/reply         # 回复工单
 
 管理员:
-  GET /admin/api/tickets              # 工单队列
-  POST /admin/api/tickets/{id}/assign # 分配客服
-  POST /admin/api/tickets/{id}/close  # 关闭工单
+  GET /admin/api/v1/tickets              # 工单队列
+  POST /admin/api/v1/tickets/{id}/assign # 分配客服
+  POST /admin/api/v1/tickets/{id}/close  # 关闭工单
 
 事件驱动:
   TicketCreated 事件
@@ -498,9 +498,9 @@ Cron: CollectMetrics (每 5 分钟)
   → 指标存储到 Redis hash (TTL 1h)
 
 管理员:
-  GET /admin/api/monitor/dashboard
+  GET /admin/api/v1/monitor/dashboard
     → 概览统计 + 最近告警
-  GET /admin/api/monitor/resources/{id}
+  GET /admin/api/v1/monitor/resources/{id}
     → 实时指标 (从 Redis 读取)
 ```
 
@@ -564,8 +564,8 @@ config/features.php (默认值)
 Redis feature:{name} (TTL 1h, 通过管理 API 动态调整)
 
 管理 API:
-  GET /admin/api/features → 列出所有 Flag 及状态/来源
-  PUT /admin/api/features/{name} → enable/disable/toggle/reset
+  GET /admin/api/v1/features → 列出所有 Flag 及状态/来源
+  PUT /admin/api/v1/features/{name} → enable/disable/toggle/reset
 
 当前 Flags:
   supplier_external_api, websocket_push, maintenance_redirect,
@@ -610,7 +610,7 @@ Produk CDN mendukung empat penyedia (Cloudflare / AWS CloudFront / Aliyun CDN / 
 
 **Ikatan snapshot ketat:** `provider_account_id` ditentukan saat pembuatan domain, penghapusan/pembersihan cache berikutnya hanya menggunakan akun terikat tersebut; akun hilang atau dinonaktifkan mengembalikan 4003, tanpa peralihan akun diam-diam. Domain Aliyun/Tencent harus menyelesaikan ICP pendaftaran, yang belum terdaftar mengembalikan 4002 (termasuk petunjuk `requires_icp_registration`).
 
-**Pembersihan cache:** `POST /api/cdn/domains/{id}/purge`, URL otomatis dideduplikasi dan dihilangkan spasi (maksimal 100), hanya mengizinkan domain ini atau subdomain, menolak wildcard dan URL eksternal, idempoten.
+**Pembersihan cache:** `POST /api/v1/cdn/domains/{id}/purge`, URL otomatis dideduplikasi dan dihilangkan spasi (maksimal 100), hanya mengizinkan domain ini atau subdomain, menolak wildcard dan URL eksternal, idempoten.
 
 **Antarmuka:** CdnAdapterInterface + CdnProvider (menggunakan saluran upgrade ProvisionProvider, mendukung upgrade plan)
 
@@ -643,7 +643,7 @@ Pengguna membuat tautan rekomendasi (?ref=CODE), pengguna baru terikat affiliate
 
 ## 20. API GraphQL
 
-Menyediakan dua endpoint: POST /graphql (kueri publik) dan POST /api/graphql (kueri terautentikasi). Berbasis webonyx/graphql-php, batas kedalaman kueri 5 lapis, batas kompleksitas 100.
+Menyediakan dua endpoint: POST /graphql (kueri publik) dan POST /api/v1/graphql (kueri terautentikasi). Berbasis webonyx/graphql-php, batas kedalaman kueri 5 lapis, batas kompleksitas 100.
 
 **Operasi sensitif tetap REST-only:** pembayaran, penarikan, refund, tinjauan KYC.
 

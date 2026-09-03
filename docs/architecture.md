@@ -136,7 +136,7 @@ common/
 ├── security/            # CORS / WAF / RateLimit / GeoBlock / Maintenance / AuditLogger / LogSanitizer
 ├── snowflake/           # 雪花 ID 服务 + Eloquent Trait
 ├── metrics/             # Prometheus 指标采集器 + 渲染器 + HTTP 请求计数中间件
-├── version/             # VersionMiddleware（X-Api-Version 头）
+├── version/             # VersionMiddleware（从 URL 路径解析版本）
 └── webhook/             # Webhook 事件分发器
 ```
 
@@ -189,15 +189,15 @@ ReportController (admin 面板实例, /app/admin/report/*)
 HTTP 请求
   │
   ▼
-1. VersionMiddleware         ← X-Api-Version 头校验，缺失默认 v1，无效返回 400
-  │                            仅对 /api/ 和 /admin/api/ 生效
+1. VersionMiddleware         ← 校验 URL 路径版本段，无效版本返回 400
+  │                            仅对 /api/v1/ 和 /admin/api/v1/ 生效
   ▼
 2. CorsMiddleware            ← OPTIONS 预检返回 CORS 头，Origin 反射
   ▼
 3. SecurityHeadersMiddleware ← HSTS / X-Frame-Options / CSP / Referrer-Policy 安全响应头
   ▼
 4. ClientPlatformMiddleware  ← X-Client-Platform 头识别（8 平台），注入 properties
-  │                            仅对 /api/ 和 /admin/api/ 生效
+  │                            仅对 /api/v1/ 和 /admin/api/v1/ 生效
   ▼
 5. GeoBlockMiddleware        ← GEO_BLOCKED_COUNTRIES 国家封锁（MaxMind GeoIP2）
   ▼
@@ -223,7 +223,7 @@ HTTP 请求
   ├─ /health (内部监控) ────────────
   │   InternalTokenMiddleware      ← 内部令牌校验 /health/live|ready|deps
   │
-  ├─ /api/auth ─────────────────────
+  ├─ /api/v1/auth ─────────────────────
   │   EncryptionMiddleware          ← AES-256-GCM 请求/响应体加解密
   │
   ├─ /api (用户认证) ───────────────
@@ -235,7 +235,7 @@ HTTP 请求
   │   AuthMiddleware
   │   ConfirmationMiddleware        ← 密码二次确认，Redis 计数器，5 次锁 15min
   │
-  ├─ /api/supplier/external ────────
+  ├─ /api/v1/supplier/external ────────
   │   VersionMiddleware
   │   SupplierApiKeyMiddleware      ← sk_xxx SHA256 验证 → $request->supplierId
   │
@@ -258,7 +258,7 @@ HTTP 请求
 
 | 中间件 | 位置 | 注册方式 | 职责 |
 |--------|------|---------|------|
-| `VersionMiddleware` | common/Version | 全局 | 校验 `X-Api-Version`，缺失默认 v1 |
+| `VersionMiddleware` | common/Version | 全局 | 校验 URL 路径版本段，无效返回 400 |
 | `CorsMiddleware` | common/Security | 全局 | OPTIONS 预检，Origin 反射 |
 | `SecurityHeadersMiddleware` | common/Security | 全局 | HSTS / X-Frame-Options / CSP / Referrer-Policy 安全响应头 |
 | `ClientPlatformMiddleware` | common/ClientPlatform | 全局 | `X-Client-Platform` 8 平台识别 |
@@ -299,7 +299,7 @@ HTTP 请求
 
 ```
 请求流程:
-  Client: GET /api/products/aB3xK7mQ9w
+  Client: GET /api/v1/products/aB3xK7mQ9w
     → HashidRequestMiddleware 解码 → int(1234567890)
       → Controller/Service 使用整数 ID 操作
         → Response::success() / Response::paginated()

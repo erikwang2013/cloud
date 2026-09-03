@@ -215,7 +215,7 @@ MAIL_FROM_ADDRESS=noreply@yourdomain.com
 # Google OAuth
 GOOGLE_OAUTH_CLIENT_ID=xxx.apps.googleusercontent.com
 GOOGLE_OAUTH_CLIENT_SECRET=GOCSPX-xxx
-GOOGLE_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/google/callback
+GOOGLE_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/v1/auth/google/callback
 
 # Apple Sign In
 APPLE_OAUTH_CLIENT_ID=com.yourdomain.service
@@ -226,27 +226,27 @@ APPLE_PRIVATE_KEY_PATH=/home/wwwroot/cloud-php/service/storage/apple/AuthKey_xxx
 # Facebook OAuth
 FACEBOOK_OAUTH_CLIENT_ID=xxx
 FACEBOOK_OAUTH_CLIENT_SECRET=xxx
-FACEBOOK_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/facebook/callback
+FACEBOOK_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/v1/auth/facebook/callback
 
 # X (Twitter) OAuth
 X_OAUTH_CLIENT_ID=xxx
 X_OAUTH_CLIENT_SECRET=xxx
-X_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/x/callback
+X_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/v1/auth/x/callback
 
 # Microsoft OAuth
 MICROSOFT_OAUTH_CLIENT_ID=xxx
 MICROSOFT_OAUTH_CLIENT_SECRET=xxx
-MICROSOFT_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/microsoft/callback
+MICROSOFT_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/v1/auth/microsoft/callback
 
 # LinkedIn OAuth
 LINKEDIN_OAUTH_CLIENT_ID=xxx
 LINKEDIN_OAUTH_CLIENT_SECRET=xxx
-LINKEDIN_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/linkedin/callback
+LINKEDIN_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/v1/auth/linkedin/callback
 
 # GitHub OAuth
 GITHUB_OAUTH_CLIENT_ID=xxx
 GITHUB_OAUTH_CLIENT_SECRET=xxx
-GITHUB_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/auth/github/callback
+GITHUB_OAUTH_REDIRECT_URI=https://api.yourdomain.com/api/v1/auth/github/callback
 
 # AWS (वैकल्पिक — क्लाउड विक्रेता संपर्क)
 AWS_ACCESS_KEY_ID=AKIAxxx
@@ -424,7 +424,7 @@ server {
 #     listen 80;
 #     server_name status.yourdomain.com;
 #     location / {
-#         proxy_pass http://127.0.0.1:8787/api/status;
+#         proxy_pass http://127.0.0.1:8787/api/v1/status;
 #     }
 # }
 ```
@@ -656,11 +656,11 @@ php start.php status
 - [ ] HTTPS प्रमाणपत्र मान्य: `curl -I https://api.yourdomain.com/health`
 
 ### API एंडपॉइंट नमूना जाँच
-- [ ] `GET /api/status` → 200
-- [ ] `GET /api/products` → 200 (मान्य JSON)
-- [ ] `POST /api/auth/login` (बिना body) → 422 (पैरामीटर सत्यापन)
-- [ ] `GET /api/user/profile` (बिना token) → 401 (प्रमाणीकरण)
-- [ ] संस्करण हेडर: `curl -H 'X-Api-Version: v99' /api/products` → 400
+- [ ] `GET /api/v1/status` → 200
+- [ ] `GET /api/v1/products` → 200 (मान्य JSON)
+- [ ] `POST /api/v1/auth/login` (बिना body) → 422 (पैरामीटर सत्यापन)
+- [ ] `GET /api/v1/user/profile` (बिना token) → 401 (प्रमाणीकरण)
+- [ ] अमान्य संस्करण: `curl /api/v99/products` → 400
 
 ### शेड्यूल्ड टास्क
 - [ ] crontab कॉन्फ़िगर किया गया

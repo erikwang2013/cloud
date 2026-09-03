@@ -4,7 +4,7 @@
 
 **Base URL:** `https://api.example.com`
 
-**التحكم بالإصدار:** عبر رأس طلب HTTP `X-Api-Version: v1`. الافتراضي `v1` عند الغياب، وتُرجع الإصدارات غير المدعومة `400`. الإصدار غير موجود في مسار URL.
+**التحكم بالإصدار:** عبر مسار الـ URL، مثل `/api/v1/...`. تُرجع الإصدارات غير المدعومة `400`.
 
 **طرق المصادقة:**
 
@@ -66,14 +66,14 @@
 
 | مجموعة المسارات | الوسائط | البادئة |
 |--------|--------|------|
-| عامة | سلسلة الوسائط العامة | `/health`, `/api/*` |
+| عامة | سلسلة الوسائط العامة | `/health`, `/api/v1/*` |
 | `/health` (داخلي) | العامة + InternalToken | `/health/live`, `/health/ready`, `/health/deps` |
-| `/api/auth` | العامة + Encryption | `/api/auth/*` |
-| `/api` (المستخدم) | العامة + Encryption + Auth | `/api/user/*`, `/api/cart`, `/api/orders` |
-| `/api` (حساس) | العامة + Encryption + Auth + Confirmation | `/api/orders/{id}/pay` |
-| `/api/supplier/external` | Version + SupplierApiKey | واجهة الموردين الخارجية |
-| `/admin/api` | العامة + Encryption + Auth + AdminRole | واجهات لوحة الإدارة |
-| `/admin/api` (حساس) | العامة + Encryption + Auth + AdminRole + Confirmation | عمليات الإدارة الحساسة |
+| `/api/v1/auth` | العامة + Encryption | `/api/v1/auth/*` |
+| `/api/v1` (المستخدم) | العامة + Encryption + Auth | `/api/v1/user/*`, `/api/v1/cart`, `/api/v1/orders` |
+| `/api/v1` (حساس) | العامة + Encryption + Auth + Confirmation | `/api/v1/orders/{id}/pay` |
+| `/api/v1/supplier/external` | Version + SupplierApiKey | واجهة الموردين الخارجية |
+| `/admin/api/v1` | العامة + Encryption + Auth + AdminRole | واجهات لوحة الإدارة |
+| `/admin/api/v1` (حساس) | العامة + Encryption + Auth + AdminRole + Confirmation | عمليات الإدارة الحساسة |
 
 ---
 
@@ -88,7 +88,7 @@ GET /health
 ### حالة الخدمة
 
 ```
-GET /api/status
+GET /api/v1/status
 → {
   "overall": "operational",
   "components": {
@@ -104,18 +104,18 @@ GET /api/status
 ### المنتجات
 
 ```
-GET /api/products
+GET /api/v1/products
   المعاملات: category_id, region_id, keyword, supplier_id, page (الافتراضي 1), page_size (الافتراضي 20, الأقصى 50)
   → قائمة منتجات بترقيم صفحات (تتضمن category, skus.regionPrices)
 
-GET /api/products/search
+GET /api/v1/products/search
   المعاملات: q (إلزامي), page
   → بحث نصي كامل عبر Elasticsearch
 
-GET /api/products/{id}
+GET /api/v1/products/{id}
   → تفاصيل المنتج (تتضمن category, skus, images, reviews)
 
-GET /api/products/{productId}/reviews
+GET /api/v1/products/{productId}/reviews
   → قائمة التقييمات + avg_rating + total + distribution
   تعداد الحالة: pending(قيد المراجعة)/approved(معتمد)/rejected(مرفوض)، يُرجع approved فقط
 ```
@@ -123,25 +123,25 @@ GET /api/products/{productId}/reviews
 ### النطاقات
 
 ```
-GET /api/domain/check/{domain}/{tld}
+GET /api/v1/domain/check/{domain}/{tld}
   → { domain, tld, available: true, price: { register, renew, transfer } }
 
-GET /api/domain/tlds
+GET /api/v1/domain/tlds
   → قائمة نطاقات المستوى الأعلى المتاحة (ذاكرة Redis مؤقتة لمدة 1 ساعة)
 ```
 
 ### مركز المساعدة
 
 ```
-GET /api/help
+GET /api/v1/help
   المعاملات: category, page
   الرأس: Accept-Language (en-US / zh-CN)
   → مقالات مساعدة بترقيم صفحات
 
-GET /api/help/categories
+GET /api/v1/help/categories
   → قائمة تصنيفات المقالات
 
-GET /api/help/{slug}
+GET /api/v1/help/{slug}
   → تفاصيل مقالة واحدة
 ```
 
@@ -151,7 +151,7 @@ GET /api/help/{slug}
 ### كابتشا التحقق
 
 ```
-POST /api/captcha/create
+POST /api/v1/captcha/create
   الرأس: X-Encrypted: 1
   → { key, image (base64), target_count, expires_in }
 ```
@@ -159,7 +159,7 @@ POST /api/captcha/create
 ### التسجيل
 
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
   الرأس: X-Encrypted: 1
   الجسم (مشفّر): { email?, phone?, password, language?, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -173,7 +173,7 @@ POST /api/auth/register
 ### تسجيل الدخول
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
   الرأس: X-Encrypted: 1
   الجسم (مشفّر): { login (email/phone), password, captcha_key, captcha_points, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -186,7 +186,7 @@ POST /api/auth/login
 ### تجديد Token
 
 ```
-POST /api/auth/refresh
+POST /api/v1/auth/refresh
   الرأس: X-Encrypted: 1
   الجسم (مشفّر): { refresh_token, deviceFingerprint? }
   → { access_token, refresh_token, expires_in, token_type }
@@ -200,9 +200,9 @@ POST /api/auth/refresh
 (يُحدد التفعيل من إعدادات مثل `{PROVIDER}_OAUTH_CLIENT_ID` في .env)
 
 ```
-GET /api/auth/{provider}            → { url }        # انتقال إلى صفحة التفويض (PKCE/nonce ضد إعادة الإرسال)
-GET /api/auth/{provider}/callback?code=xxx&state=yyy
-POST /api/auth/{provider}/callback  الجسم: { code, state }
+GET /api/v1/auth/{provider}            → { url }        # انتقال إلى صفحة التفويض (PKCE/nonce ضد إعادة الإرسال)
+GET /api/v1/auth/{provider}/callback?code=xxx&state=yyy
+POST /api/v1/auth/{provider}/callback  الجسم: { code, state }
 ```
 
 - يُرجع Apple/Microsoft id_token، ويتحقق الخادم من التوقيع عبر JWKS ومن iss/aud/exp/nonce
@@ -213,11 +213,11 @@ POST /api/auth/{provider}/callback  الجسم: { code, state }
 ### إعادة تعيين كلمة المرور
 
 ```
-POST /api/auth/forgot-password
+POST /api/v1/auth/forgot-password
   الجسم: { email }
   → إرسال بريد بكود التحقق
 
-POST /api/auth/reset-password
+POST /api/v1/auth/reset-password
   الجسم: { email, code, password }
   → نجاح إعادة التعيين
   → تراكم 5 أخطاء ← 429 تقييد 10 دقائق
@@ -226,14 +226,14 @@ POST /api/auth/reset-password
 ### التحقق من البريد الإلكتروني
 
 ```
-GET /api/auth/verify-email?token=xxx
+GET /api/v1/auth/verify-email?token=xxx
   → نجاح التحقق
 ```
 
 ### التحقق بالرسائل القصيرة
 
 ```
-POST /api/auth/send-sms
+POST /api/v1/auth/send-sms
   الجسم: { phone }
   → إرسال رمز تحقق عبر الرسائل القصيرة (فترة تبريد 60 ثانية)
 ```
@@ -241,11 +241,11 @@ POST /api/auth/send-sms
 ### التحقق الثنائي TOTP
 
 ```
-POST /api/user/totp/setup        → { secret, qr_url }        # لا يُخزَّن، يجب تفعيله عبر verify خلال 10 دقائق
-POST /api/user/totp/verify       الجسم: { code } → { verified: true }   # عند أول تفعيل يُرجع رسالة نجاح التفعيل
-POST /api/user/totp/disable      الجسم: { password }             # يتطلب تأكيد كلمة المرور، وإلا 403
-GET /api/user/totp/recovery-codes → { recovery_codes }        # يولّد 8 رموز لمرة واحدة في كل مرة، يتطلب تأكيد كلمة المرور، وإلا 403
-POST /api/auth/login/recovery    الجسم: { login, password, recovery_code }
+POST /api/v1/user/totp/setup        → { secret, qr_url }        # لا يُخزَّن، يجب تفعيله عبر verify خلال 10 دقائق
+POST /api/v1/user/totp/verify       الجسم: { code } → { verified: true }   # عند أول تفعيل يُرجع رسالة نجاح التفعيل
+POST /api/v1/user/totp/disable      الجسم: { password }             # يتطلب تأكيد كلمة المرور، وإلا 403
+GET /api/v1/user/totp/recovery-codes → { recovery_codes }        # يولّد 8 رموز لمرة واحدة في كل مرة، يتطلب تأكيد كلمة المرور، وإلا 403
+POST /api/v1/auth/login/recovery    الجسم: { login, password, recovery_code }
 ```
 
 - بعد تفعيل المستخدم TOTP، يجب أن يحمل تسجيل الدخول `totp_code`، وإلا 401
@@ -257,25 +257,25 @@ POST /api/auth/login/recovery    الجسم: { login, password, recovery_code }
 ### الملف الشخصي
 
 ```
-GET /api/user/profile
-PUT /api/user/profile
+GET /api/v1/user/profile
+PUT /api/v1/user/profile
   الجسم: { nickname?, avatar?, country?, language?, timezone? }
 ```
 
 ### تحقق الهوية KYC
 
 ```
-POST /api/user/kyc
+POST /api/v1/user/kyc
   الجسم: { id_type, id_number, real_name, front_image, back_image }
 ```
 
 ### الرصيد
 
 ```
-GET /api/user/balance
+GET /api/v1/user/balance
   → { balances: [{currency, balance, frozen}] }
 
-GET /api/user/balance/transactions
+GET /api/v1/user/balance/transactions
   المعاملات: page
   → سجل تغييرات الرصيد
 ```
@@ -283,23 +283,23 @@ GET /api/user/balance/transactions
 ### إدارة العناوين
 
 ```
-GET /api/user/addresses
-POST /api/user/addresses
+GET /api/v1/user/addresses
+POST /api/v1/user/addresses
   الجسم: { type: billing/shipping, name, phone, country, state, city, address, postcode, is_default }
-PUT /api/user/addresses/{id}
-DELETE /api/user/addresses/{id}
+PUT /api/v1/user/addresses/{id}
+DELETE /api/v1/user/addresses/{id}
 ```
 
 ### إدارة الجلسات
 
 ```
-GET /api/user/sessions
+GET /api/v1/user/sessions
   → [{ id, fingerprint, client_platform, created_at, expires_at }]
 
-DELETE /api/user/sessions/{id}
+DELETE /api/v1/user/sessions/{id}
   → إلغاء الجلسة المحددة
 
-DELETE /api/user/account
+DELETE /api/v1/user/account
   الجسم: { confirm_password }
   → حذف الحساب وفقاً لـ GDPR
 ```
@@ -307,29 +307,29 @@ DELETE /api/user/account
 ### الإشعارات
 
 ```
-GET /api/user/notifications
+GET /api/v1/user/notifications
   المعاملات: page
   → قائمة إشعارات بترقيم صفحات
 
-POST /api/user/notifications/{id}/read
+POST /api/v1/user/notifications/{id}/read
   → تعليم كمقروء
 
-GET /api/user/notification-prefs
-PUT /api/user/notification-prefs
+GET /api/v1/user/notification-prefs
+PUT /api/v1/user/notification-prefs
   الجسم: { email: {order_paid: true, ...}, push: {...} }
 ```
 
 ### البريد الإلكتروني
 
 ```
-POST /api/user/resend-verify-email
+POST /api/v1/user/resend-verify-email
   → إعادة إرسال بريد التحقق
 ```
 
 ### رفع الملفات
 
 ```
-POST /api/upload
+POST /api/v1/upload
   الجسم: multipart/form-data { file, type: avatar/kyc/attach }
   الحدود: avatar 2MB, kyc 5MB, attach 10MB
   المسموح: jpg, jpeg, png, gif, pdf
@@ -342,11 +342,11 @@ POST /api/upload
 ### سلة التسوق
 
 ```
-POST /api/cart
+POST /api/v1/cart
   الجسم: { sku_id, region_id, quantity, cycle }
-GET /api/cart
-DELETE /api/cart/{id}
-PUT /api/cart/{id}
+GET /api/v1/cart
+DELETE /api/v1/cart/{id}
+PUT /api/v1/cart/{id}
   الجسم: { quantity }
 ```
 
@@ -356,21 +356,21 @@ PUT /api/cart/{id}
 ### الطلبات
 
 ```
-POST /api/orders
+POST /api/v1/orders
   → إنشاء طلب من سلة التسوق
   ← { order, order_no, items, subtotal, discount, tax, total }   # subtotal/discount/tax/total: string 4dp
 
-GET /api/orders
+GET /api/v1/orders
   المعاملات: page, status (pending/paid/provisioning/completed/refunded، القيمة غير القانونية ترجع 400)
   → قائمة طلباتي
 
-GET /api/orders/{id}
+GET /api/v1/orders/{id}
   → تفاصيل الطلب (تتضمن items, timeline)
 
-GET /api/orders/{id}/payment-methods
+GET /api/v1/orders/{id}/payment-methods
   → قنوات الدفع المتاحة + المبلغ الفعلي لكل قناة
 
-POST /api/orders/{id}/pay    🔒 تأكيد كلمة المرور
+POST /api/v1/orders/{id}/pay    🔒 تأكيد كلمة المرور
   الجسم: { channel_id, confirm_password }
   → { client_secret, transaction_id }
 ```
@@ -378,7 +378,7 @@ POST /api/orders/{id}/pay    🔒 تأكيد كلمة المرور
 ### القسائم
 
 ```
-POST /api/coupons/validate
+POST /api/v1/coupons/validate
   الجسم: { code, order_total }
   → { coupon_id, discount, type }   # discount: string 4dp (مثل "2.0000")
 
@@ -388,10 +388,10 @@ POST /api/coupons/validate
 ### الفواتير
 
 ```
-GET /api/invoices
+GET /api/v1/invoices
   المعاملات: page
-GET /api/invoices/{id}
-GET /api/invoices/{id}/download
+GET /api/v1/invoices/{id}
+GET /api/v1/invoices/{id}/download
   → تنزيل PDF
 ```
 
@@ -399,20 +399,20 @@ GET /api/invoices/{id}/download
 
 ## 5. إدارة الموارد
 ```
-GET /api/resources
+GET /api/v1/resources
   المعاملات: page, status
   → قائمة مواردي
 
-GET /api/resources/{id}
+GET /api/v1/resources/{id}
   → تفاصيل المورد
 
-GET /api/resources/{id}/status
+GET /api/v1/resources/{id}/status
   → الحالة الحالية للمورد + المقاييس
 
-GET /api/resources/{id}/console
+GET /api/v1/resources/{id}/console
   → رابط VNC/وحدة التحكم
 
-POST /api/resources/batch
+POST /api/v1/resources/batch
   الجسم: { action: start/stop/restart, resource_ids: [...] }
 ```
 
@@ -420,28 +420,28 @@ POST /api/resources/batch
 
 ## 6. إدارة DNS
 ```
-GET /api/dns/{domain}
+GET /api/v1/dns/{domain}
   → قائمة سجلات DNS
 
-POST /api/dns/{domain}/records
+POST /api/v1/dns/{domain}/records
   الجسم: { type, name, value, ttl?, priority? }
 
-DELETE /api/dns/{domain}/records/{id}   🔒 تأكيد كلمة المرور
+DELETE /api/v1/dns/{domain}/records/{id}   🔒 تأكيد كلمة المرور
 ```
 
 ---
 
 ## 7. التذاكر
 ```
-POST /api/tickets
+POST /api/v1/tickets
   الجسم: { resource_id?, category, priority?, title, content }
 
-GET /api/tickets
+GET /api/v1/tickets
   المعاملات: page, status
 
-GET /api/tickets/{id}
+GET /api/v1/tickets/{id}
 
-POST /api/tickets/{id}/reply
+POST /api/v1/tickets/{id}/reply
   الجسم: { content }
 ```
 
@@ -449,19 +449,19 @@ POST /api/tickets/{id}/reply
 
 ## 8. الموردون (واجهة داخلية)
 ```
-POST /api/supplier/apply
+POST /api/v1/supplier/apply
   الجسم: { company_name, contact_name, contact_phone, contact_email, settlement_method }
 
-GET /api/supplier/settlements
+GET /api/v1/supplier/settlements
   → قائمة مستندات التسوية
 
-POST /api/supplier/withdraw    🔒 تأكيد كلمة المرور
+POST /api/v1/supplier/withdraw    🔒 تأكيد كلمة المرور
   الجسم: { amount, confirm_password, account_info: { method, bank_name, account_number } }
 
-GET /api/supplier/products
-POST /api/supplier/products
+GET /api/v1/supplier/products
+POST /api/v1/supplier/products
   الجسم: { product_id, commission_rate }
-DELETE /api/supplier/products/{id}
+DELETE /api/v1/supplier/products/{id}
 ```
 
 ---
@@ -472,27 +472,27 @@ DELETE /api/supplier/products/{id}
 **الحد من التردد:** 120 req/min (السحب 10 req/min)
 
 ```
-GET /api/supplier/external/orders
+GET /api/v1/supplier/external/orders
   المعاملات: page, page_size, status, from, to
 
-GET /api/supplier/external/orders/{id}
+GET /api/v1/supplier/external/orders/{id}
   → تفاصيل الطلب (المرتبطة بهذا المورد فقط)
 
-GET /api/supplier/external/resources
+GET /api/v1/supplier/external/resources
   المعاملات: page, status, type
 
-GET /api/supplier/external/resources/{id}/status
+GET /api/v1/supplier/external/resources/{id}/status
   → { id, type, status, provisioned_at, expired_at }
 
-GET /api/supplier/external/settlements
+GET /api/v1/supplier/external/settlements
   المعاملات: page, status
 
-GET /api/supplier/external/settlements/{id}
+GET /api/v1/supplier/external/settlements/{id}
 
-POST /api/supplier/external/withdraw
+POST /api/v1/supplier/external/withdraw
   الجسم: { amount, account_info: { method, ... } }
 
-GET /api/supplier/external/withdraws
+GET /api/v1/supplier/external/withdraws
   المعاملات: page
 ```
 
@@ -504,227 +504,227 @@ GET /api/supplier/external/withdraws
 ### لوحة المعلومات
 
 ```
-GET /admin/api/dashboard
+GET /admin/api/v1/dashboard
   → { today_stats, revenue_trend_30d, region_distribution, pending_orders, pending_kyc, open_tickets }
 ```
 
 ### إدارة المستخدمين
 
 ```
-GET /admin/api/users              المعاملات: page, status, keyword
-GET /admin/api/users/export       → تنزيل Excel
-GET /admin/api/users/{id}
-PUT /admin/api/users/{id}/status  الجسم: { status }
+GET /admin/api/v1/users              المعاملات: page, status, keyword
+GET /admin/api/v1/users/export       → تنزيل Excel
+GET /admin/api/v1/users/{id}
+PUT /admin/api/v1/users/{id}/status  الجسم: { status }
 ```
 
 ### مراجعة KYC
 
 ```
-GET /admin/api/kyc                المعاملات: page, status
+GET /admin/api/v1/kyc                المعاملات: page, status
 
-POST /admin/api/kyc/{id}/approve   🔒 تأكيد كلمة المرور
+POST /admin/api/v1/kyc/{id}/approve   🔒 تأكيد كلمة المرور
   الجسم: { confirm_password }
 
-POST /admin/api/kyc/{id}/reject    🔒 تأكيد كلمة المرور
+POST /admin/api/v1/kyc/{id}/reject    🔒 تأكيد كلمة المرور
   الجسم: { confirm_password, reason }
 ```
 
 ### إدارة المنتجات
 
 ```
-POST /admin/api/products
-PUT /admin/api/products/{id}
-DELETE /admin/api/products/{id}         🔒 تأكيد كلمة المرور
-POST /admin/api/products/{productId}/skus
-PUT /admin/api/skus/{id}
-POST /admin/api/skus/{skuId}/region-price
-GET /admin/api/products/export         → تنزيل CSV
-POST /admin/api/products/import        → رفع CSV upsert
+POST /admin/api/v1/products
+PUT /admin/api/v1/products/{id}
+DELETE /admin/api/v1/products/{id}         🔒 تأكيد كلمة المرور
+POST /admin/api/v1/products/{productId}/skus
+PUT /admin/api/v1/skus/{id}
+POST /admin/api/v1/skus/{skuId}/region-price
+GET /admin/api/v1/products/export         → تنزيل CSV
+POST /admin/api/v1/products/import        → رفع CSV upsert
 ```
 
 ### إدارة الطلبات
 
 ```
-GET /admin/api/orders              المعاملات: page, status, keyword
-GET /admin/api/orders/export       → تنزيل Excel
-GET /admin/api/orders/{id}
+GET /admin/api/v1/orders              المعاملات: page, status, keyword
+GET /admin/api/v1/orders/export       → تنزيل Excel
+GET /admin/api/v1/orders/{id}
 
-POST /admin/api/orders/{id}/refund  🔒 تأكيد كلمة المرور
+POST /admin/api/v1/orders/{id}/refund  🔒 تأكيد كلمة المرور
   الجسم: { confirm_password, amount?, reason }
 ```
 
 ### إدارة الدفع
 
 ```
-GET /admin/api/payments/channels
-PUT /admin/api/payments/channels/{id}
-GET /admin/api/payments/transactions  المعاملات: page, channel, status
-GET /admin/api/payments/reconcile     المعاملات: date; records.status: verified/mismatch/unverified
-POST /admin/api/payments/reconcile/run  المعاملات: date; تشغيل المطابقة اليومية
+GET /admin/api/v1/payments/channels
+PUT /admin/api/v1/payments/channels/{id}
+GET /admin/api/v1/payments/transactions  المعاملات: page, channel, status
+GET /admin/api/v1/payments/reconcile     المعاملات: date; records.status: verified/mismatch/unverified
+POST /admin/api/v1/payments/reconcile/run  المعاملات: date; تشغيل المطابقة اليومية
 ```
 
 ### الموارد والتسليم
 
 ```
-GET /admin/api/provisioning/tasks              المعاملات: page, status
-POST /admin/api/provisioning/tasks/{id}/retry
-POST /admin/api/provisioning/resources/{id}/upgrade
+GET /admin/api/v1/provisioning/tasks              المعاملات: page, status
+POST /admin/api/v1/provisioning/tasks/{id}/retry
+POST /admin/api/v1/provisioning/resources/{id}/upgrade
   الجسم: { cpu?, ram?, disk? }
-POST /admin/api/provisioning/resources/{id}/destroy   🔒 تأكيد كلمة المرور
-GET /admin/api/provisioning/hosts
+POST /admin/api/v1/provisioning/resources/{id}/destroy   🔒 تأكيد كلمة المرور
+GET /admin/api/v1/provisioning/hosts
 ```
 
 ### إدارة الموردين
 
 ```
-GET /admin/api/suppliers                 المعاملات: page, status
-GET /admin/api/suppliers/export          → تنزيل Excel
+GET /admin/api/v1/suppliers                 المعاملات: page, status
+GET /admin/api/v1/suppliers/export          → تنزيل Excel
 
-POST /admin/api/suppliers/{id}/approve    🔒 تأكيد كلمة المرور
-POST /admin/api/suppliers/{id}/settle     🔒 تأكيد كلمة المرور
+POST /admin/api/v1/suppliers/{id}/approve    🔒 تأكيد كلمة المرور
+POST /admin/api/v1/suppliers/{id}/settle     🔒 تأكيد كلمة المرور
   الجسم: { period_start, period_end, confirm_password }
 
-POST /admin/api/suppliers/withdraws/{id}/approve  🔒 تأكيد كلمة المرور
+POST /admin/api/v1/suppliers/withdraws/{id}/approve  🔒 تأكيد كلمة المرور
 ```
 
 ### مفاتيح API للموردين
 
 ```
-GET /admin/api/suppliers/{id}/api-keys
-POST /admin/api/suppliers/{id}/api-keys
+GET /admin/api/v1/suppliers/{id}/api-keys
+POST /admin/api/v1/suppliers/{id}/api-keys
   الجسم: { name }
   ← { api_key: "sk_xxx...", prefix } (يُعرض مرة واحدة فقط)
 
-DELETE /admin/api/suppliers/api-keys/{id}
+DELETE /admin/api/v1/suppliers/api-keys/{id}
 ```
 
 ### إدارة التذاكر
 
 ```
-GET /admin/api/tickets                  المعاملات: page, status, priority, assigned_to
-POST /admin/api/tickets/{id}/assign     الجسم: { user_id }
-POST /admin/api/tickets/{id}/close
+GET /admin/api/v1/tickets                  المعاملات: page, status, priority, assigned_to
+POST /admin/api/v1/tickets/{id}/assign     الجسم: { user_id }
+POST /admin/api/v1/tickets/{id}/close
 ```
 
 ### إدارة النطاقات
 
 ```
-GET /admin/api/domains/tlds
-POST /admin/api/domains/tlds
+GET /admin/api/v1/domains/tlds
+POST /admin/api/v1/domains/tlds
   الجسم: { tld, wholesale_price, retail_price, registrar, promo_price?, promo_end_at? }
-PUT /admin/api/domains/tlds/{id}
-DELETE /admin/api/domains/tlds/{id}
-GET /admin/api/domains/zones             المعاملات: page
-GET /admin/api/domains/transfers         المعاملات: page
-POST /admin/api/domains/transfers/{id}/approve
+PUT /admin/api/v1/domains/tlds/{id}
+DELETE /admin/api/v1/domains/tlds/{id}
+GET /admin/api/v1/domains/zones             المعاملات: page
+GET /admin/api/v1/domains/transfers         المعاملات: page
+POST /admin/api/v1/domains/transfers/{id}/approve
 ```
 
 ### إدارة الإشعارات
 
 ```
-GET /admin/api/notifications/templates
-PUT /admin/api/notifications/templates/{id}
+GET /admin/api/v1/notifications/templates
+PUT /admin/api/v1/notifications/templates/{id}
   الجسم: { name?, channels?, title_template?, body_template?, variables? }
-GET /admin/api/notifications/log         المعاملات: page
+GET /admin/api/v1/notifications/log         المعاملات: page
 ```
 
 ### القسائم
 
 ```
-GET /admin/api/coupons
-POST /admin/api/coupons
+GET /admin/api/v1/coupons
+POST /admin/api/v1/coupons
   الجسم: { code, type, value, min_amount?, max_discount?, max_uses?, starts_at?, expires_at? }
-DELETE /admin/api/coupons/{id}
+DELETE /admin/api/v1/coupons/{id}
 ```
 
 ### مقالات المساعدة
 
 ```
-GET /admin/api/help
-POST /admin/api/help
+GET /admin/api/v1/help
+POST /admin/api/v1/help
   الجسم: { category, title, slug, content, locale, sort?, status? }
-PUT /admin/api/help/{id}
-DELETE /admin/api/help/{id}              → حذف ناعم (status=archived)
+PUT /admin/api/v1/help/{id}
+DELETE /admin/api/v1/help/{id}              → حذف ناعم (status=archived)
 ```
 
 ### واجهات مزودي السحابة
 
 ```
-GET /admin/api/providers
-POST /admin/api/providers
+GET /admin/api/v1/providers
+POST /admin/api/v1/providers
   الجسم: { name, code, api_key?, api_secret?, webhook_secret? }
-PUT /admin/api/providers/{id}
-DELETE /admin/api/providers/{id}         → تعطيل (status=disabled)
+PUT /admin/api/v1/providers/{id}
+DELETE /admin/api/v1/providers/{id}         → تعطيل (status=disabled)
 ```
 
 ### إدارة Webhook
 
 ```
-GET /admin/api/webhooks
-POST /admin/api/webhooks
+GET /admin/api/v1/webhooks
+POST /admin/api/v1/webhooks
   الجسم: { url }
-DELETE /admin/api/webhooks               الجسم: { id }
-POST /admin/api/webhooks/test            الجسم: { url }
+DELETE /admin/api/v1/webhooks               الجسم: { id }
+POST /admin/api/v1/webhooks/test            الجسم: { url }
 ```
 
 ### التقارير
 
 ```
-GET /admin/api/reports/revenue            المعاملات: from, to, granularity
+GET /admin/api/v1/reports/revenue            المعاملات: from, to, granularity
   → { daily: [{date, currency, revenue, orders}], total_revenue, total_orders, by_category }
   # revenue/total_revenue: string 4dp (متوافق مع تجميع SUM(DECIMAL) عبر bcmath)
-GET /admin/api/reports/supplier           المعاملات: from, to
+GET /admin/api/v1/reports/supplier           المعاملات: from, to
   → { settlements, total_payable, total_paid }   # payable/total_payable/total_paid: string 4dp
-GET /admin/api/reports/region             المعاملات: from, to
+GET /admin/api/v1/reports/region             المعاملات: from, to
   → [{region, orders, revenue}]                  # revenue: string 4dp
 ```
 
 ### المراقبة
 
 ```
-GET /admin/api/monitor/dashboard
+GET /admin/api/v1/monitor/dashboard
   → { active_resources, alerts_today, resource_distribution, recent_alerts }
 
-GET /admin/api/monitor/resources/{id}
+GET /admin/api/v1/monitor/resources/{id}
   → { cpu_percent, mem_percent, disk_percent, bandwidth_usage, uptime }
 ```
 
 ### سجلات التدقيق
 
 ```
-GET /admin/api/audit-logs                المعاملات: page, user_id, action, from, to
+GET /admin/api/v1/audit-logs                المعاملات: page, user_id, action, from, to
   → سجلات تدقيق بترقيم صفحات (تتضمن client_platform)
 ```
 
 ### مفاتيح الميزات
 
 ```
-GET /admin/api/features
+GET /admin/api/v1/features
   → [{ name, enabled, default, source }]
 
-PUT /admin/api/features/{name}
+PUT /admin/api/v1/features/{name}
   الجسم: { action: enable/disable/toggle/reset }
 ```
 
 ### إعدادات النظام
 
 ```
-PUT /admin/api/system/config              🔒 تأكيد كلمة المرور
+PUT /admin/api/v1/system/config              🔒 تأكيد كلمة المرور
 ```
 
 ### استيراد وتصدير المنتجات
 
 ```
-GET /admin/api/products/export           → تنزيل CSV
-POST /admin/api/products/import          → رفع CSV upsert
+GET /admin/api/v1/products/export           → تنزيل CSV
+POST /admin/api/v1/products/import          → رفع CSV upsert
 ```
 
 ### تصدير الموردين والمستخدمين
 
 ```
-GET /admin/api/suppliers/export          → تنزيل Excel
-GET /admin/api/users/export              → تنزيل Excel
-GET /admin/api/orders/export             → تنزيل Excel
+GET /admin/api/v1/suppliers/export          → تنزيل Excel
+GET /admin/api/v1/users/export              → تنزيل Excel
+GET /admin/api/v1/orders/export             → تنزيل Excel
 ```
 
 ---
@@ -733,19 +733,19 @@ GET /admin/api/orders/export             → تنزيل Excel
 ### طرف المستخدم
 
 ```
-GET /api/ssl/plans
+GET /api/v1/ssl/plans
   → قائمة باقات SSL (DV/OV/EV، السعر يتضمن register/renew/transfer)
 
-GET /api/ssl-certs
+GET /api/v1/ssl-certs
   → قائمة شهاداتي (تتضمن status: pending/active/expired/revoked)
 
-GET /api/ssl-certs/{id}
+GET /api/v1/ssl-certs/{id}
   → تفاصيل الشهادة (النطاق، جهة الإصدار، فترة الصلاحية، حالة التجديد)
 
-GET /api/ssl-certs/{id}/download
+GET /api/v1/ssl-certs/{id}/download
   → تنزيل ملفات الشهادة (سلسلة الشهادة + المفتاح الخاص)
 
-POST /api/ssl-certs/{id}/auto-renew
+POST /api/v1/ssl-certs/{id}/auto-renew
   الجسم: { auto_renew: true/false }
   → تبديل التجديد التلقائي
 ```
@@ -753,12 +753,12 @@ POST /api/ssl-certs/{id}/auto-renew
 ### طرف الإدارة
 
 ```
-GET /admin/api/ssl/plans              → قائمة الباقات
-POST /admin/api/ssl/plans             → إنشاء باقة
-PUT /admin/api/ssl/plans/{id}         → تحديث باقة
-DELETE /admin/api/ssl/plans/{id}      → حذف باقة
-GET /admin/api/ssl/certs              → جميع الشهادات
-POST /admin/api/ssl/certs/{id}/revoke → إبطال شهادة
+GET /admin/api/v1/ssl/plans              → قائمة الباقات
+POST /admin/api/v1/ssl/plans             → إنشاء باقة
+PUT /admin/api/v1/ssl/plans/{id}         → تحديث باقة
+DELETE /admin/api/v1/ssl/plans/{id}      → حذف باقة
+GET /admin/api/v1/ssl/certs              → جميع الشهادات
+POST /admin/api/v1/ssl/certs/{id}/revoke → إبطال شهادة
 ```
 
 ---
@@ -767,21 +767,21 @@ POST /admin/api/ssl/certs/{id}/revoke → إبطال شهادة
 تخزين كائني متوافق مع S3، الرفع/التنزيل عبر روابط موقعة مسبقاً، والمفاتيح لا تُشارك خارجياً.
 
 ```
-GET /api/storage/buckets
+GET /api/v1/storage/buckets
   → قائمة حاوياتي (الاستخدام، الحالة)
 
-GET /api/storage/buckets/{id}
+GET /api/v1/storage/buckets/{id}
   → تفاصيل الحاوية
 
-POST /api/storage/buckets/{id}/presign-upload
+POST /api/v1/storage/buckets/{id}/presign-upload
   الجسم: { filename, content_type, size }
   → { upload_url, object_key } رابط رفع موقّع مسبقاً (محدود المدة)
 
-POST /api/storage/buckets/{id}/presign-download
+POST /api/v1/storage/buckets/{id}/presign-download
   الجسم: { object_key }
   → رابط تنزيل موقّع مسبقاً (محدود المدة)
 
-GET /api/storage/buckets/{id}/credentials
+GET /api/v1/storage/buckets/{id}/credentials
   → اعتماد وصول مؤقت (قصير الصلاحية، للرفع المباشر عبر SDK)
 ```
 
@@ -791,10 +791,10 @@ GET /api/storage/buckets/{id}/credentials
 ### طرف المستخدم
 
 ```
-GET /api/cdn/domains
+GET /api/v1/cdn/domains
   → قائمة نطاقات CDN الخاصة بي (الخادم الأصلي، الحالة، الباقة)
 
-POST /api/cdn/domains
+POST /api/v1/cdn/domains
   الجسم: { resource_id, domain, provider_type (cloudflare|cloudfront|aliyun|tencent),
            origin_type (server|storage), origin_value, cert_config? }
   → إنشاء نطاق CDN (إنشاء عند المزود وربط الخادم الأصلي)
@@ -803,28 +803,28 @@ POST /api/cdn/domains
   → تحليل الاعتمادات: الحساب المربوط للنطاق أولاً (provider_account_id)، وإلا حساب provider_apis
     نشط حسب code=cdn-{provider_type}، وفي غيابهما الرجوع إلى إعداد env
 
-GET /api/cdn/domains/{id}
+GET /api/v1/cdn/domains/{id}
   → تفاصيل نطاق CDN
 
-DELETE /api/cdn/domains/{id}
+DELETE /api/v1/cdn/domains/{id}
   → حذف نطاق CDN (تعطيل النطاق عند المزود، العملية idempotent)
 
-POST /api/cdn/domains/{id}/purge
+POST /api/v1/cdn/domains/{id}/purge
   الجسم: { urls: ["https://cdn.example.com/path"] }
   → مسح التخزين المؤقت (إزالة تكرار عناوين URL تلقائياً، idempotent؛ بحد أقصى 100)
 
-GET /api/cdn/domains/{id}/stats
+GET /api/v1/cdn/domains/{id}/stats
   → نظرة عامة على النطاق (cdn_domain / provider_type / plan / status / purged_at)
 ```
 
 ### طرف الإدارة
 
 ```
-GET /admin/api/cdn/domains            → جميع نطاقات CDN (بما فيها المستخدم المالك)
-PUT /admin/api/cdn/domains/{id}       → تحديث باقة النطاق (قائمة بيضاء للـ plan: standard | pro | enterprise)
+GET /admin/api/v1/cdn/domains            → جميع نطاقات CDN (بما فيها المستخدم المالك)
+PUT /admin/api/v1/cdn/domains/{id}       → تحديث باقة النطاق (قائمة بيضاء للـ plan: standard | pro | enterprise)
 ```
 
-مسارات CDN في الإدارة مسبوقة بـ `RbacMiddleware('cdn.manage')`، وتُكتب تغييرات الباقة في سجل التدقيق (`admin_cdn_update_plan`). تُدار اعتمادات حسابات المزودين عبر CRUD `/admin/api/providers` (RbacMiddleware `provider.config`، `code` بميثاق `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`، الاعتمادات مشفّرة عبر Encryptable عند التخزين).
+مسارات CDN في الإدارة مسبوقة بـ `RbacMiddleware('cdn.manage')`، وتُكتب تغييرات الباقة في سجل التدقيق (`admin_cdn_update_plan`). تُدار اعتمادات حسابات المزودين عبر CRUD `/admin/api/v1/providers` (RbacMiddleware `provider.config`، `code` بميثاق `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`، الاعتمادات مشفّرة عبر Encryptable عند التخزين).
 
 ### أكواد أخطاء CDN
 
@@ -842,11 +842,11 @@ PUT /admin/api/cdn/domains/{id}       → تحديث باقة النطاق (قا
 
 ## 14. الفوترة حسب الاستخدام
 ```
-GET /admin/api/billing/rates          → قائمة أسعار الفوترة (حسب نوع المورد/المواصفات)
-POST /admin/api/billing/rates         → إنشاء سعر
-PUT /admin/api/billing/rates/{id}     → تحديث سعر
-DELETE /admin/api/billing/rates/{id}  → حذف سعر
-GET /admin/api/billing/usage          → ملخص الاستخدام (مجمّع حسب المستخدم/المورد)
+GET /admin/api/v1/billing/rates          → قائمة أسعار الفوترة (حسب نوع المورد/المواصفات)
+POST /admin/api/v1/billing/rates         → إنشاء سعر
+PUT /admin/api/v1/billing/rates/{id}     → تحديث سعر
+DELETE /admin/api/v1/billing/rates/{id}  → حذف سعر
+GET /admin/api/v1/billing/usage          → ملخص الاستخدام (مجمّع حسب المستخدم/المورد)
 ```
 
 خط أنابيب الفوترة: ResourceMonitor يجمع كل 5 دقائق ← UsageAggregator يجمّع كل ساعة ← BillingEngine يخصم يومياً، وعند عدم كفاية الرصيد تُعلَّق الموارد.
@@ -857,18 +857,18 @@ GET /admin/api/billing/usage          → ملخص الاستخدام (مجمّ�
 ### طرف المستخدم
 
 ```
-GET /api/affiliate/summary
+GET /api/v1/affiliate/summary
   → نظرة عامة على العمولات (المتراكمة/قيد التسوية/القابلة للسحب، عدد الروابط، معدل التحويل)
 
-POST /api/affiliate/links
+POST /api/v1/affiliate/links
   الجسم: { source? }
   → توليد رابط ترويجي (?ref=CODE)
 
-GET /api/affiliate/earnings
+GET /api/v1/affiliate/earnings
   المعاملات: status, page
   → تفاصيل العمولات (إسناد الطلب، النسبة، الحالة: pending/approved/paid)
 
-POST /api/affiliate/payout
+POST /api/v1/affiliate/payout
   الجسم: { amount, method }
   → تقديم طلب سحب
 ```
@@ -876,12 +876,12 @@ POST /api/affiliate/payout
 ### طرف الإدارة
 
 ```
-GET /admin/api/affiliate/plans                → قائمة خطط العمولات
-POST /admin/api/affiliate/plans               → إنشاء خطة عمولات
-GET /admin/api/affiliate/earnings             → جميع سجلات العمولات
-POST /admin/api/affiliate/earnings/{id}/approve → مراجعة العمولة
-GET /admin/api/affiliate/payouts              → قائمة طلبات السحب
-POST /admin/api/affiliate/payouts/{id}/approve → مراجعة/صرف السحب
+GET /admin/api/v1/affiliate/plans                → قائمة خطط العمولات
+POST /admin/api/v1/affiliate/plans               → إنشاء خطة عمولات
+GET /admin/api/v1/affiliate/earnings             → جميع سجلات العمولات
+POST /admin/api/v1/affiliate/earnings/{id}/approve → مراجعة العمولة
+GET /admin/api/v1/affiliate/payouts              → قائمة طلبات السحب
+POST /admin/api/v1/affiliate/payouts/{id}/approve → مراجعة/صرف السحب
 ```
 
 ---
@@ -892,7 +892,7 @@ POST /graphql
   → استعلامات عامة (المنتجات والنطاقات والمساعدة وغيرها من البيانات للقراءة فقط)
   الحدود: عمق الاستعلام 5 مستويات، التعقيد 100
 
-POST /api/graphql                          🔒 يتطلب المصادقة
+POST /api/v1/graphql                          🔒 يتطلب المصادقة
   → استعلامات كاملة (تتضمن بيانات المستخدم)
 ```
 
@@ -904,41 +904,41 @@ POST /api/graphql                          🔒 يتطلب المصادقة
 ### عام
 
 ```
-GET /api/regions
+GET /api/v1/regions
   → قائمة المناطق المتاحة (تتضمن العملة/المنطقة الزمنية)
 
-GET /api/suppliers/{supplierId}/ratings
+GET /api/v1/suppliers/{supplierId}/ratings
   → قائمة تقييمات الموردين (أربعة أبعاد: الجودة/الدعم/سرعة التسليم/القيمة، يُرجع approved فقط)
 ```
 
 ### طرف المستخدم (يتطلب المصادقة)
 
 ```
-POST /api/products/{productId}/reviews
+POST /api/v1/products/{productId}/reviews
   الجسم: { rating, content, images? }
   → إرسال تقييم منتج (مرة واحدة لكل طلب، يُعرض بعد المراجعة)
 
-POST /api/supplier/ratings
+POST /api/v1/supplier/ratings
   الجسم: { supplier_id, quality, support, delivery_speed, value, comment? }
   → إرسال تقييم المورد (مرة واحدة لكل طلب)
 
-GET /api/supplier/ratings/me
+GET /api/v1/supplier/ratings/me
   → سجل تقييماتي
 ```
 
 ### طرف الإدارة
 
 ```
-GET /admin/api/suppliers/{id}/ratings          → جميع التقييمات (تتضمن pending)
-POST /admin/api/suppliers/ratings/{id}/approve → الموافقة على التقييم
-POST /admin/api/suppliers/ratings/{id}/hide    → إخفاء
+GET /admin/api/v1/suppliers/{id}/ratings          → جميع التقييمات (تتضمن pending)
+POST /admin/api/v1/suppliers/ratings/{id}/approve → الموافقة على التقييم
+POST /admin/api/v1/suppliers/ratings/{id}/hide    → إخفاء
 ```
 
 ---
 
 ## 18. Webhook الدفع
 ```
-POST /api/payments/webhook/stripe
+POST /api/v1/payments/webhook/stripe
   الرأس: Stripe-Signature: ...
   → رد Stripe (نجاح الدفع/الاسترداد/الاعتراض)، فشل التحقق من التوقيع يرجع 400
 ```
@@ -994,18 +994,18 @@ POST /api/payments/webhook/stripe
 
 | الرسالة | نقطة النهاية |
 |------|------|
-| `Email or phone required` | /api/auth/register |
-| `Email already registered` | /api/auth/register |
-| `Invalid credentials` | /api/auth/login |
-| `Account temporarily locked` | /api/auth/login |
-| `You already have a supplier application` | /api/supplier/apply |
-| `Insufficient withdrawable balance` | /api/supplier/withdraw |
-| `Product already assigned to this supplier` | /api/supplier/products |
-| `Invalid or revoked API key` | /api/supplier/external/* |
-| `Captcha verification failed` | /api/auth/login, /api/auth/register |
-| `Email already verified` | /api/user/resend-verify-email |
-| `Password too short` | /api/auth/register |
-| `Unknown feature: xxx` | /admin/api/features/{name} |
-| `Refund window expired: server orders are refundable within 72 hours of payment` | /admin/api/orders/{id}/refund |
-| `Refund window expired: domain orders are refundable within 5 days of payment` | /admin/api/orders/{id}/refund |
-| `This product type (IP) is not refundable` | /admin/api/orders/{id}/refund |
+| `Email or phone required` | /api/v1/auth/register |
+| `Email already registered` | /api/v1/auth/register |
+| `Invalid credentials` | /api/v1/auth/login |
+| `Account temporarily locked` | /api/v1/auth/login |
+| `You already have a supplier application` | /api/v1/supplier/apply |
+| `Insufficient withdrawable balance` | /api/v1/supplier/withdraw |
+| `Product already assigned to this supplier` | /api/v1/supplier/products |
+| `Invalid or revoked API key` | /api/v1/supplier/external/* |
+| `Captcha verification failed` | /api/v1/auth/login, /api/v1/auth/register |
+| `Email already verified` | /api/v1/user/resend-verify-email |
+| `Password too short` | /api/v1/auth/register |
+| `Unknown feature: xxx` | /admin/api/v1/features/{name} |
+| `Refund window expired: server orders are refundable within 72 hours of payment` | /admin/api/v1/orders/{id}/refund |
+| `Refund window expired: domain orders are refundable within 5 days of payment` | /admin/api/v1/orders/{id}/refund |
+| `This product type (IP) is not refundable` | /admin/api/v1/orders/{id}/refund |
