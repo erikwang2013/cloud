@@ -11,6 +11,7 @@
 - NEVER add a `Co-Authored-By` trailer to user commits unless this project's `.claude/settings.json` has `attribution.commit` set (#2078). The Claude Code Bash tool may suggest one in its default commit-message template — ignore it. `Co-Authored-By` is semantic authorship attribution under git/GitHub convention; the tool is the facilitator, not a co-author.
 - Keep files under 500 lines
 - Validate input at system boundaries
+- 所有金额/价格/汇率/百分比等数值计算一律用 PHP bcmath 扩展（`bcadd`/`bcsub`/`bcmul`/`bcdiv`/`bccomp`）；舍入只用 `Common\money\Money::bcround`（HALF_UP 单点，设计 D4）。计算链中禁止 `(float)` 强转与 `round()`（展示层格式化除外）。纯整数计数/ID 可用 int
 
 ## Agent Comms (SendMessage-First Coordination)
 
