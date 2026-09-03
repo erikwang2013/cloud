@@ -124,14 +124,13 @@ return [
         ],
         'auto_url' => [
             'letter_rule' => "lcfirst",
-            'prefix'=>"/api",
+            'prefix'=>"/api/v1",
         ],
         'auto_register_routes'=>false,
         'cache'              => ['enable' => false],
         'auth'               => ['enable' => false],
         'params'=>[
             'header'=>[
-                ['name'=>'X-Api-Version','type'=>'string','require'=>true,'default'=>'v1','desc'=>'API版本'],
                 ['name'=>'Accept-Language','type'=>'string','require'=>false,'default'=>'en-US','desc'=>'多语言'],
                 ['name'=>'X-Client-Platform','type'=>'string','require'=>false,'desc'=>'客户端平台'],
             ],

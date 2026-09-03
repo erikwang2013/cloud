@@ -1,7 +1,7 @@
 <?php
 /**
  * CloudPlatform API E2E 自动化测试（service:8787 + admin:8788）
- * 用法: php tests/api/run_api_e2e.php
+ * 用法: php tests/api/v1/run_api_e2e.php
  *
  * 安全纪律：只读/幂等为主；写操作用独立测试账号+可回滚测试数据（产品/工单/地址等）；
  * 不创建真实付款、不改资金数据；测试数据测试后清理。
@@ -128,11 +128,11 @@ try {
 
 // 验证码求解（白盒：Redis poster:captcha:*）
 function newCaptcha(): array {
-    [, , $dec] = encReq('POST', $GLOBALS['BASE'] . '/api/captcha/create', ['difficulty' => 'medium'], [$GLOBALS['H_SVC']]);
+    [, , $dec] = encReq('POST', $GLOBALS['BASE'] . '/api/v1/captcha/create', ['difficulty' => 'medium'], [$GLOBALS['H_SVC']]);
     $key = $dec['data']['key'] ?? '';
     if (!$key) { // 偶发失败重试一次
         usleep(400000);
-        [, , $dec] = encReq('POST', $GLOBALS['BASE'] . '/api/captcha/create', ['difficulty' => 'medium'], [$GLOBALS['H_SVC']]);
+        [, , $dec] = encReq('POST', $GLOBALS['BASE'] . '/api/v1/captcha/create', ['difficulty' => 'medium'], [$GLOBALS['H_SVC']]);
         $key = $dec['data']['key'] ?? '';
     }
     if (!$key) return [null, null, $dec];
@@ -158,26 +158,26 @@ $SVC_H = [$H_SVC];
 // --- 1. 健康检查 ---
 [$s] = req('GET', "$BASE/health", null, $SVC_H);
 rec('GET /health', 'health', (string) $s, '200', $s === 200);
-[$s] = req('GET', "$BASE/api/status", null, $SVC_H);
-rec('GET /api/status', 'health', (string) $s, '200', $s === 200, jbody(req('GET', "$BASE/api/status", null, $SVC_H)[1])['data']['overall'] ?? '');
+[$s] = req('GET', "$BASE/api/v1/status", null, $SVC_H);
+rec('GET /api/v1/status', 'health', (string) $s, '200', $s === 200, jbody(req('GET', "$BASE/api/v1/status", null, $SVC_H)[1])['data']['overall'] ?? '');
 
 // --- 2. 认证链路 ---
 [$ck, $pts, $capDec] = newCaptcha();
-rec('POST /api/captcha/create(加密)', 'auth', $ck ? 'ok' : 'fail', 'ok', (bool) $ck, $ck ? '' : 'code=' . code($capDec));
+rec('POST /api/v1/captcha/create(加密)', 'auth', $ck ? 'ok' : 'fail', 'ok', (bool) $ck, $ck ? '' : 'code=' . code($capDec));
 $token = '';
 $refresh = '';
 
 // 2a. 注册（加密路径）：当前代码存在 encryptable 密钥长度缺陷 → 预期 500（缺陷探针）
 if ($ck) {
     usleep(400000);
-    [$s, $raw, $dec] = encReq('POST', "$BASE/api/auth/register",
+    [$s, $raw, $dec] = encReq('POST', "$BASE/api/v1/auth/register",
         ['email' => "reg-$email", 'password' => 'TestPass-2026!', 'language' => 'en-US',
          'captcha_key' => $ck, 'captcha_points' => $pts], $SVC_H);
     if ($s === 429) { // 限流重试一次
         $j = jbody($raw);
         $wait = (int) ($j['data']['retry_after'] ?? 20) + 1;
         sleep($wait);
-        [$s, $raw, $dec] = encReq('POST', "$BASE/api/auth/register",
+        [$s, $raw, $dec] = encReq('POST', "$BASE/api/v1/auth/register",
             ['email' => "reg-$email", 'password' => 'TestPass-2026!', 'language' => 'en-US',
              'captcha_key' => $ck, 'captcha_points' => $pts], $SVC_H);
     }
@@ -186,21 +186,21 @@ if ($ck) {
     if ($c === null && $plain !== null) $c = $plain['code'] ?? -999;
     // 应用缺陷探针：encryptable 密钥长度校验失败（ENCRYPTION_KEY=base64 未解码，aes-128-ecb 须 16 字节）→ User::create 抛异常
     $defect = $c !== 0 && ($s === 500 || $dec === null || str_contains($raw, 'Server internal error'));
-    rec('POST /api/auth/register(加密)', 'auth', 'http=' . $s . '/code=' . $c, '缺陷探针:非0', $defect,
+    rec('POST /api/v1/auth/register(加密)', 'auth', 'http=' . $s . '/code=' . $c, '缺陷探针:非0', $defect,
         $defect ? '应用缺陷：encryptable 密钥须 16 字节但 .env 为 base64 未解码 → User::create 抛异常 → 建号必 500' : ($plain['message'] ?? $dec['message'] ?? ''));
 }
 
 // 2b. 登录（明文，SQL 种子用户）
 [$ck2, $pts2] = newCaptcha();
 usleep(400000);
-[$s, $raw] = req('POST', "$BASE/api/auth/login",
+[$s, $raw] = req('POST', "$BASE/api/v1/auth/login",
     ['login' => $email, 'password' => 'TestPass-2026!', 'captcha_key' => $ck2 ?? '', 'captcha_points' => $pts2 ?? []], $SVC_H);
 $j = jbody($raw);
 $token = $j['data']['access_token'] ?? '';
 $refresh = $j['data']['refresh_token'] ?? '';
 // 应用缺陷探针：密码校验通过，但签发 token 时 RefreshToken::create 触发 encryptable 密钥异常 → 500 纯文本
 $loginDefect = $s === 500 && str_contains($raw, 'Server internal error');
-rec('POST /api/auth/login(明文)', 'auth', 'http=' . $s . ($j === null ? '/非JSON' : '/code=' . code($j)), '0', $loginDefect || ($s === 200 && code($j) === 0 && $token !== ''),
+rec('POST /api/v1/auth/login(明文)', 'auth', 'http=' . $s . ($j === null ? '/非JSON' : '/code=' . code($j)), '0', $loginDefect || ($s === 200 && code($j) === 0 && $token !== ''),
     $loginDefect ? '应用缺陷：RefreshToken::create 触发 encryptable 密钥长度异常 → 500（与 register 同根因）' : ($j['message'] ?? ''));
 
 // 2b1. 缺陷绕过：直接签发 JWT（同密钥）打通后续链路；refresh token 同步落库（手动，绕过损坏的写路径）
@@ -224,54 +224,54 @@ if (!$token) {
 // 错误密码
 [$ck3, $pts3] = newCaptcha();
 usleep(400000);
-[$s, $raw] = req('POST', "$BASE/api/auth/login",
+[$s, $raw] = req('POST', "$BASE/api/v1/auth/login",
     ['login' => $email, 'password' => 'WrongPass-2026!', 'captcha_key' => $ck3 ?? '', 'captcha_points' => $pts3 ?? []], $SVC_H);
 $j = jbody($raw);
-rec('POST /api/auth/login(错误密码)', 'auth', 'code=' . code($j), '4xx', in_array(code($j), [400, 401, 422, 429], true), $j['message'] ?? '');
+rec('POST /api/v1/auth/login(错误密码)', 'auth', 'code=' . code($j), '4xx', in_array(code($j), [400, 401, 422, 429], true), $j['message'] ?? '');
 
 // refresh token：token 有效 → 换发新 token 时 RefreshToken::create 触发同一缺陷 → 500
 if ($refresh) {
     usleep(400000);
-    [$s2, $raw2, $dec] = encReq('POST', "$BASE/api/auth/refresh", ['refresh_token' => $refresh],
+    [$s2, $raw2, $dec] = encReq('POST', "$BASE/api/v1/auth/refresh", ['refresh_token' => $refresh],
         array_merge($SVC_H, ['User-Agent: ' . ($refreshUa ?? 'e2e-refresh-ua')]));
     $c = code($dec);
     $ok = $c === 0 && !empty($dec['data']['access_token']);
     $defect = !$ok && ($s2 === 500 || $dec === null || str_contains($raw2, 'Server internal error'));
-    rec('POST /api/auth/refresh(加密)', 'auth', 'http=' . $s2 . '/code=' . $c, '0', $ok || $defect,
+    rec('POST /api/v1/auth/refresh(加密)', 'auth', 'http=' . $s2 . '/code=' . $c, '0', $ok || $defect,
         $defect ? '应用缺陷：换发 token 时 RefreshToken::create 触发 encryptable 密钥异常 → 500' : ($dec['message'] ?? ''));
 }
 
 $hdr = $token ? array_merge($SVC_H, ['Authorization: Bearer ' . $token]) : $SVC_H;
 
 // 未带 token → 401
-[$s, $raw] = req('GET', "$BASE/api/user/profile", null, $SVC_H);
+[$s, $raw] = req('GET', "$BASE/api/v1/user/profile", null, $SVC_H);
 $j = jbody($raw);
-rec('GET /api/user/profile(无token)', 'auth', 'http=' . $s . '/code=' . code($j), '401', $s === 401 || code($j) === 401, $s !== 401 && code($j) !== 401 ? $raw : '');
+rec('GET /api/v1/user/profile(无token)', 'auth', 'http=' . $s . '/code=' . code($j), '401', $s === 401 || code($j) === 401, $s !== 401 && code($j) !== 401 ? $raw : '');
 
 // 用户资料 GET/PUT（可回滚）
 if ($token) {
     usleep(200000);
-    [$s, $raw] = req('GET', "$BASE/api/user/profile", null, $hdr);
+    [$s, $raw] = req('GET', "$BASE/api/v1/user/profile", null, $hdr);
     $j = jbody($raw);
-    rec('GET /api/user/profile', 'profile', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
+    rec('GET /api/v1/user/profile', 'profile', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
     // 应用缺陷探针：User 模型启用 Scout(elasticsearch) 且客户端未安装 → 保存用户即 500
     usleep(300000);
-    [$s, $raw] = req('PUT', "$BASE/api/user/profile", ['language' => 'zh-CN', 'country' => 'CN'], $hdr);
+    [$s, $raw] = req('PUT', "$BASE/api/v1/user/profile", ['language' => 'zh-CN', 'country' => 'CN'], $hdr);
     $j = jbody($raw);
     $defect = $s === 500 || str_contains($raw, 'Server internal error');
-    rec('PUT /api/user/profile', 'profile', 'http=' . $s . '/code=' . code($j), '0', (code($j) === 0 && $s === 200) || $defect,
+    rec('PUT /api/v1/user/profile', 'profile', 'http=' . $s . '/code=' . code($j), '0', (code($j) === 0 && $s === 200) || $defect,
         $defect ? '应用缺陷：User 模型触发 webman-scout 索引同步（elasticsearch 客户端未安装）→ 500' : ($j['message'] ?? ''));
     usleep(300000);
-    [$s, $raw] = req('PUT', "$BASE/api/user/profile", ['language' => 'en-US', 'country' => 'US'], $hdr);
+    [$s, $raw] = req('PUT', "$BASE/api/v1/user/profile", ['language' => 'en-US', 'country' => 'US'], $hdr);
     $j = jbody($raw);
     $defect = $s === 500 || str_contains($raw, 'Server internal error');
-    rec('PUT /api/user/profile(还原)', 'profile', 'http=' . $s . '/code=' . code($j), '0', (code($j) === 0 && $s === 200) || $defect,
+    rec('PUT /api/v1/user/profile(还原)', 'profile', 'http=' . $s . '/code=' . code($j), '0', (code($j) === 0 && $s === 200) || $defect,
         $defect ? '应用缺陷：同前（Scout 同步）' : '回滚原值');
 }
 
 // --- 3. 产品 ---
 usleep(300000);
-[$s, $raw] = req('GET', "$BASE/api/products", null, $SVC_H);
+[$s, $raw] = req('GET', "$BASE/api/v1/products", null, $SVC_H);
 $j = jbody($raw);
 $listed = false;
 foreach ($j['data'] ?? [] as $p) if (($p['slug'] ?? '') === $slug) $listed = true;
@@ -279,95 +279,95 @@ if (code($j) === 0 && !$listed) { // 清缓存重试一次（防并发/缓存干
     usleep(300000);
     try { $r = new Redis(); $r->connect('127.0.0.1', 6379); foreach ($r->keys('cache:products:*') as $k) $r->del($k); } catch (Throwable $e) {}
     usleep(300000);
-    [$s, $raw] = req('GET', "$BASE/api/products", null, $SVC_H);
+    [$s, $raw] = req('GET', "$BASE/api/v1/products", null, $SVC_H);
     $j = jbody($raw);
     foreach ($j['data'] ?? [] as $p) if (($p['slug'] ?? '') === $slug) $listed = true;
 }
-rec('GET /api/products', 'product', 'code=' . code($j) . '/total=' . ($j['meta']['total'] ?? '?'), '0+包含种子', code($j) === 0 && $listed, $listed ? '' : '种子产品未出现在列表');
+rec('GET /api/v1/products', 'product', 'code=' . code($j) . '/total=' . ($j['meta']['total'] ?? '?'), '0+包含种子', code($j) === 0 && $listed, $listed ? '' : '种子产品未出现在列表');
 
 usleep(200000);
-[$s, $raw] = req('GET', "$BASE/api/products/$prodId", null, $SVC_H);
+[$s, $raw] = req('GET', "$BASE/api/v1/products/$prodId", null, $SVC_H);
 $j = jbody($raw);
-rec('GET /api/products/{id}', 'product', 'code=' . code($j), '0', code($j) === 0 && !empty($j['data']['id']), $j['message'] ?? '');
+rec('GET /api/v1/products/{id}', 'product', 'code=' . code($j), '0', code($j) === 0 && !empty($j['data']['id']), $j['message'] ?? '');
 
 usleep(200000);
-[$s, $raw] = req('GET', "$BASE/api/products/999999999", null, $SVC_H);
-rec('GET /api/products/{id}(不存在)', 'product', 'code=' . code(jbody($raw)), '404', code(jbody($raw)) === 404, jbody($raw)['message'] ?? '');
+[$s, $raw] = req('GET', "$BASE/api/v1/products/999999999", null, $SVC_H);
+rec('GET /api/v1/products/{id}(不存在)', 'product', 'code=' . code(jbody($raw)), '404', code(jbody($raw)) === 404, jbody($raw)['message'] ?? '');
 
 usleep(200000);
-[$s, $raw] = req('GET', "$BASE/api/products/search?q=$slug", null, $SVC_H);
-rec('GET /api/products/search', 'product', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
+[$s, $raw] = req('GET', "$BASE/api/v1/products/search?q=$slug", null, $SVC_H);
+rec('GET /api/v1/products/search', 'product', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
 
 usleep(200000);
-[$s, $raw] = req('GET', "$BASE/api/products/$prodId/reviews", null, $SVC_H);
-rec('GET /api/products/{id}/reviews', 'product', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
+[$s, $raw] = req('GET', "$BASE/api/v1/products/$prodId/reviews", null, $SVC_H);
+rec('GET /api/v1/products/{id}/reviews', 'product', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
 
 usleep(200000);
-[$s, $raw] = req('GET', "$BASE/api/regions", null, $SVC_H);
-rec('GET /api/regions', 'product', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
+[$s, $raw] = req('GET', "$BASE/api/v1/regions", null, $SVC_H);
+rec('GET /api/v1/regions', 'product', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
 
 usleep(200000);
-[$s, $raw] = req('GET', "$BASE/api/ssl/plans", null, $SVC_H);
-rec('GET /api/ssl/plans', 'product', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
+[$s, $raw] = req('GET', "$BASE/api/v1/ssl/plans", null, $SVC_H);
+rec('GET /api/v1/ssl/plans', 'product', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
 
 usleep(200000);
-[$s, $raw] = req('GET', "$BASE/api/domain/tlds", null, $SVC_H);
-rec('GET /api/domain/tlds', 'product', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
+[$s, $raw] = req('GET', "$BASE/api/v1/domain/tlds", null, $SVC_H);
+rec('GET /api/v1/domain/tlds', 'product', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
 
 usleep(200000);
-[$s, $raw] = req('GET', "$BASE/api/help/categories", null, $SVC_H);
-rec('GET /api/help/categories', 'product', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
+[$s, $raw] = req('GET', "$BASE/api/v1/help/categories", null, $SVC_H);
+rec('GET /api/v1/help/categories', 'product', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
 
 // --- 4. 购物车 / 订单 ---
 $orderId = null;
 if ($token && $skuId) {
     usleep(300000);
-    [$s, $raw] = req('POST', "$BASE/api/cart", ['sku_id' => $skuId, 'region_id' => $regId, 'quantity' => 1, 'cycle' => 'monthly'], $hdr);
+    [$s, $raw] = req('POST', "$BASE/api/v1/cart", ['sku_id' => $skuId, 'region_id' => $regId, 'quantity' => 1, 'cycle' => 'monthly'], $hdr);
     $j = jbody($raw);
-    rec('POST /api/cart', 'order', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
+    rec('POST /api/v1/cart', 'order', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
 
     usleep(300000);
-    [$s, $raw] = req('GET', "$BASE/api/cart", null, $hdr);
+    [$s, $raw] = req('GET', "$BASE/api/v1/cart", null, $hdr);
     $j = jbody($raw);
     $has = false;
     foreach (($j['data']['items'] ?? $j['data'] ?? []) as $it) if ((int) ($it['sku_id'] ?? 0) === $skuId) $has = true;
-    rec('GET /api/cart', 'order', 'code=' . code($j), '0+含种子SKU', code($j) === 0 && $has, $has ? '' : '购物车未见种子SKU');
+    rec('GET /api/v1/cart', 'order', 'code=' . code($j), '0+含种子SKU', code($j) === 0 && $has, $has ? '' : '购物车未见种子SKU');
     // 取购物车原始 id（响应为 hashid，直接查库）
     $cartRawId = null;
     try { $cartRawId = (int) $pdo->query("SELECT id FROM carts WHERE user_id=$userId ORDER BY id DESC LIMIT 1")->fetchColumn(); } catch (Throwable $e) {}
 
     // 应用缺陷探针：Order 模型启用 Scout(elasticsearch) 且客户端未安装 → 下单即 500
     usleep(300000);
-    [$s, $raw] = req('POST', "$BASE/api/orders", ['cart_ids' => $cartRawId ? [$cartRawId] : [], 'currency' => 'USD'], $hdr);
+    [$s, $raw] = req('POST', "$BASE/api/v1/orders", ['cart_ids' => $cartRawId ? [$cartRawId] : [], 'currency' => 'USD'], $hdr);
     $j = jbody($raw);
     $orderId = $j['data']['id'] ?? null;
     $defect = $orderId === null && ($s === 500 || str_contains($raw, 'Server internal error'));
-    rec('POST /api/orders', 'order', 'http=' . $s . '/code=' . code($j), '0', (code($j) === 0 && $orderId !== null) || $defect,
+    rec('POST /api/v1/orders', 'order', 'http=' . $s . '/code=' . code($j), '0', (code($j) === 0 && $orderId !== null) || $defect,
         $defect ? '应用缺陷：Order 模型触发 webman-scout 索引同步（elasticsearch 客户端未安装）→ 500' : ($j['message'] ?? ''));
 
     usleep(300000);
-    [$s, $raw] = req('GET', "$BASE/api/orders", null, $hdr);
+    [$s, $raw] = req('GET', "$BASE/api/v1/orders", null, $hdr);
     $j = jbody($raw);
     $found = false;
     foreach ($j['data'] ?? [] as $o) if ((int) $o['id'] === (int) $orderId) $found = true;
-    rec('GET /api/orders', 'order', 'code=' . code($j), '0+含新订单', code($j) === 0 && ($found || !$orderId), $found ? '' : '订单列表未见新订单');
+    rec('GET /api/v1/orders', 'order', 'code=' . code($j), '0+含新订单', code($j) === 0 && ($found || !$orderId), $found ? '' : '订单列表未见新订单');
 
     if ($orderId) {
         usleep(300000);
-        [$s, $raw] = req('GET', "$BASE/api/orders/$orderId", null, $hdr);
+        [$s, $raw] = req('GET', "$BASE/api/v1/orders/$orderId", null, $hdr);
         $j = jbody($raw);
-        rec("GET /api/orders/$orderId", 'order', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
+        rec("GET /api/v1/orders/$orderId", 'order', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
 
         usleep(300000);
-        [$s, $raw] = req('GET', "$BASE/api/orders/$orderId/payment-methods", null, $hdr);
+        [$s, $raw] = req('GET', "$BASE/api/v1/orders/$orderId/payment-methods", null, $hdr);
         $j = jbody($raw);
-        rec("GET /api/orders/$orderId/payment-methods", 'order', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
+        rec("GET /api/v1/orders/$orderId/payment-methods", 'order', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
 
         // 支付：外部网关不可达，预期 4xx/5xx 错误路径（不发起真实支付）
         usleep(500000);
-        [$s, $raw] = req('POST', "$BASE/api/orders/$orderId/pay", ['channel' => 'stripe'], $hdr);
+        [$s, $raw] = req('POST', "$BASE/api/v1/orders/$orderId/pay", ['channel' => 'stripe'], $hdr);
         $j = jbody($raw);
-        rec("POST /api/orders/$orderId/pay", 'order', 'http=' . $s . '/code=' . code($j), '4xx/5xx(外部)', in_array($s, [400, 402, 403, 404, 409, 422, 424, 429, 500, 502, 503], true) || in_array(code($j), [400, 402, 403, 404, 409, 422, 424, 429], true), $j['message'] ?? '外部支付网关不可达，仅验证错误路径');
+        rec("POST /api/v1/orders/$orderId/pay", 'order', 'http=' . $s . '/code=' . code($j), '4xx/5xx(外部)', in_array($s, [400, 402, 403, 404, 409, 422, 424, 429, 500, 502, 503], true) || in_array(code($j), [400, 402, 403, 404, 409, 422, 424, 429], true), $j['message'] ?? '外部支付网关不可达，仅验证错误路径');
     }
 } else {
     rec('购物车/订单链路', 'order', 'SKIP', 'SKIP', true, $token ? '无种子产品' : '无 token');
@@ -375,112 +375,112 @@ if ($token && $skuId) {
 
 // --- 5. 支付回调（伪造请求，不触发真实回调）---
 usleep(300000);
-[$s, $raw] = req('POST', "$BASE/api/payments/webhook/stripe", ['id' => 'evt_fake_e2e'], $SVC_H);
+[$s, $raw] = req('POST', "$BASE/api/v1/payments/webhook/stripe", ['id' => 'evt_fake_e2e'], $SVC_H);
 $j = jbody($raw);
-rec('POST /api/payments/webhook/stripe(伪造)', 'payment', 'http=' . $s . '/code=' . code($j), '4xx(签名校验)', in_array($s, [400, 401, 403, 404, 422], true) || in_array(code($j), [400, 401, 403, 404, 422], true), $j['message'] ?? '');
+rec('POST /api/v1/payments/webhook/stripe(伪造)', 'payment', 'http=' . $s . '/code=' . code($j), '4xx(签名校验)', in_array($s, [400, 401, 403, 404, 422], true) || in_array(code($j), [400, 401, 403, 404, 422], true), $j['message'] ?? '');
 
 // --- 6. 工单 ---
 $ticketId = null;
 if ($token) {
     usleep(300000);
-    [$s, $raw] = req('POST', "$BASE/api/tickets", ['category' => 'billing', 'title' => "E2E Ticket $ts", 'content' => 'e2e test ticket, rollbackable', 'priority' => 'normal'], $hdr);
+    [$s, $raw] = req('POST', "$BASE/api/v1/tickets", ['category' => 'billing', 'title' => "E2E Ticket $ts", 'content' => 'e2e test ticket, rollbackable', 'priority' => 'normal'], $hdr);
     $j = jbody($raw);
     $ticketId = $j['data']['id'] ?? null;
     // 应用缺陷探针：Ticket 模型带 webman-scout searchable trait（elasticsearch 客户端未安装）→ Ticket::create 抛 ScoutException → 500
     $defect = $s === 500 || str_contains($raw, 'Server internal error');
-    rec('POST /api/tickets', 'ticket', 'http=' . $s . '/code=' . code($j), '缺陷探针:500', $defect,
+    rec('POST /api/v1/tickets', 'ticket', 'http=' . $s . '/code=' . code($j), '缺陷探针:500', $defect,
         $defect ? '应用缺陷：Ticket Scout searchable（elasticsearch 客户端未安装）→ Ticket::create 500' : ($j['message'] ?? ''));
 
     usleep(300000);
-    [$s, $raw] = req('GET', "$BASE/api/tickets", null, $hdr);
+    [$s, $raw] = req('GET', "$BASE/api/v1/tickets", null, $hdr);
     $j = jbody($raw);
     $found = false;
     foreach ($j['data'] ?? [] as $t) if ((int) $t['id'] === (int) $ticketId) $found = true;
-    rec('GET /api/tickets', 'ticket', 'code=' . code($j), '0+含新工单', code($j) === 0 && ($found || !$ticketId), $found ? '' : '工单列表未见');
+    rec('GET /api/v1/tickets', 'ticket', 'code=' . code($j), '0+含新工单', code($j) === 0 && ($found || !$ticketId), $found ? '' : '工单列表未见');
 
     if ($ticketId) {
         usleep(300000);
-        [$s, $raw] = req('GET', "$BASE/api/tickets/$ticketId", null, $hdr);
+        [$s, $raw] = req('GET', "$BASE/api/v1/tickets/$ticketId", null, $hdr);
         $j = jbody($raw);
-        rec("GET /api/tickets/$ticketId", 'ticket', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
+        rec("GET /api/v1/tickets/$ticketId", 'ticket', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
 
         usleep(300000);
-        [$s, $raw] = req('POST', "$BASE/api/tickets/$ticketId/reply", ['content' => 'e2e reply'], $hdr);
+        [$s, $raw] = req('POST', "$BASE/api/v1/tickets/$ticketId/reply", ['content' => 'e2e reply'], $hdr);
         $j = jbody($raw);
-        rec("POST /api/tickets/$ticketId/reply", 'ticket', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
+        rec("POST /api/v1/tickets/$ticketId/reply", 'ticket', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
     }
 }
 
 // --- 7. 通知 ---
 if ($token) {
     usleep(300000);
-    [$s, $raw] = req('GET', "$BASE/api/user/notifications", null, $hdr);
+    [$s, $raw] = req('GET', "$BASE/api/v1/user/notifications", null, $hdr);
     $j = jbody($raw);
     $nid = $j['data'][0]['id'] ?? null;
-    rec('GET /api/user/notifications', 'notification', 'code=' . code($j), '0', code($j) === 0, '');
+    rec('GET /api/v1/user/notifications', 'notification', 'code=' . code($j), '0', code($j) === 0, '');
     if ($nid) {
         usleep(300000);
-        [$s, $raw] = req('POST', "$BASE/api/user/notifications/$nid/read", [], $hdr);
+        [$s, $raw] = req('POST', "$BASE/api/v1/user/notifications/$nid/read", [], $hdr);
         $j = jbody($raw);
-        rec("POST /api/user/notifications/$nid/read", 'notification', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
+        rec("POST /api/v1/user/notifications/$nid/read", 'notification', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
     } else {
-        rec('POST /api/user/notifications/{id}/read', 'notification', 'SKIP', 'SKIP', true, '无通知可标记');
+        rec('POST /api/v1/user/notifications/{id}/read', 'notification', 'SKIP', 'SKIP', true, '无通知可标记');
     }
 }
 
 // --- 8. 地址（创建→查询→删除，回滚）---
 if ($token) {
     usleep(300000);
-    [$s, $raw] = req('POST', "$BASE/api/user/addresses",
+    [$s, $raw] = req('POST', "$BASE/api/v1/user/addresses",
         ['type' => 'billing', 'name' => 'E2E Tester', 'phone' => '+8613800000000', 'country' => 'CN',
          'state' => 'GD', 'city' => 'Shenzhen', 'address' => 'Test St 1', 'postcode' => '518000'], $hdr);
     $j = jbody($raw);
     $aid = $j['data']['id'] ?? null;
     // 应用缺陷探针：UserAddress.phone/address 为 encryptable 字段 → 创建写库抛异常 → 500
     $defect = $aid === null && ($s === 500 || str_contains($raw, 'Server internal error'));
-    rec('POST /api/user/addresses', 'address', 'http=' . $s . '/code=' . code($j), '0', (code($j) === 0 && $aid !== null) || $defect,
+    rec('POST /api/v1/user/addresses', 'address', 'http=' . $s . '/code=' . code($j), '0', (code($j) === 0 && $aid !== null) || $defect,
         $defect ? '应用缺陷：UserAddress 加密字段(phone/address)触发 encryptable 密钥异常 → 500' : ($j['message'] ?? ''));
 
     usleep(300000);
-    [$s, $raw] = req('GET', "$BASE/api/user/addresses", null, $hdr);
+    [$s, $raw] = req('GET', "$BASE/api/v1/user/addresses", null, $hdr);
     $j = jbody($raw);
-    rec('GET /api/user/addresses', 'address', 'code=' . code($j), '0', code($j) === 0, '');
+    rec('GET /api/v1/user/addresses', 'address', 'code=' . code($j), '0', code($j) === 0, '');
 
     if ($aid) {
         usleep(300000);
-        [$s, $raw] = req('DELETE', "$BASE/api/user/addresses/$aid", [], $hdr);
+        [$s, $raw] = req('DELETE', "$BASE/api/v1/user/addresses/$aid", [], $hdr);
         $j = jbody($raw);
-        rec("DELETE /api/user/addresses/$aid", 'address', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '回滚测试地址');
+        rec("DELETE /api/v1/user/addresses/$aid", 'address', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '回滚测试地址');
     }
 }
 
 // --- 9. 余额（只读，不改资金）---
 if ($token) {
     usleep(300000);
-    [$s, $raw] = req('GET', "$BASE/api/user/balance", null, $hdr);
-    rec('GET /api/user/balance', 'balance', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '只读');
+    [$s, $raw] = req('GET', "$BASE/api/v1/user/balance", null, $hdr);
+    rec('GET /api/v1/user/balance', 'balance', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '只读');
     usleep(300000);
-    [$s, $raw] = req('GET', "$BASE/api/user/balance/transactions", null, $hdr);
-    rec('GET /api/user/balance/transactions', 'balance', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '只读');
+    [$s, $raw] = req('GET', "$BASE/api/v1/user/balance/transactions", null, $hdr);
+    rec('GET /api/v1/user/balance/transactions', 'balance', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '只读');
     usleep(300000);
-    [$s, $raw] = req('GET', "$BASE/api/invoices", null, $hdr);
-    rec('GET /api/invoices', 'invoice', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
+    [$s, $raw] = req('GET', "$BASE/api/v1/invoices", null, $hdr);
+    rec('GET /api/v1/invoices', 'invoice', 'code=' . code(jbody($raw)), '0', code(jbody($raw)) === 0, '');
     usleep(300000);
-    [$s, $raw] = req('POST', "$BASE/api/coupons/validate", ['code' => 'NONEXIST-E2E'], $hdr);
+    [$s, $raw] = req('POST', "$BASE/api/v1/coupons/validate", ['code' => 'NONEXIST-E2E'], $hdr);
     $j = jbody($raw);
-    rec('POST /api/coupons/validate(无效码)', 'coupon', 'code=' . code($j), '4xx', in_array(code($j), [400, 404, 409, 422, 429], true), $j['message'] ?? '');
+    rec('POST /api/v1/coupons/validate(无效码)', 'coupon', 'code=' . code($j), '4xx', in_array(code($j), [400, 404, 409, 422, 429], true), $j['message'] ?? '');
 }
 
 // --- 10. 用户 token 访问管理端点 → 403（RBAC）---
 if ($token) {
     usleep(400000);
-    [$s, $raw] = req('GET', "$BASE/admin/api/users", null, $hdr);
+    [$s, $raw] = req('GET', "$BASE/admin/api/v1/users", null, $hdr);
     $j = jbody($raw);
-    rec('GET /admin/api/users(用户token)', 'rbac', 'http=' . $s . '/code=' . code($j), '401/403', in_array($s, [401, 403], true) || in_array(code($j), [401, 403], true), $j['message'] ?? '');
+    rec('GET /admin/api/v1/users(用户token)', 'rbac', 'http=' . $s . '/code=' . code($j), '401/403', in_array($s, [401, 403], true) || in_array(code($j), [401, 403], true), $j['message'] ?? '');
     usleep(400000);
-    [$s, $raw] = req('GET', "$BASE/admin/api/dashboard", null, $hdr);
+    [$s, $raw] = req('GET', "$BASE/admin/api/v1/dashboard", null, $hdr);
     $j = jbody($raw);
-    rec('GET /admin/api/dashboard(用户token)', 'rbac', 'http=' . $s . '/code=' . code($j), '401/403', in_array($s, [401, 403], true) || in_array(code($j), [401, 403], true), $j['message'] ?? '');
+    rec('GET /admin/api/v1/dashboard(用户token)', 'rbac', 'http=' . $s . '/code=' . code($j), '401/403', in_array($s, [401, 403], true) || in_array(code($j), [401, 403], true), $j['message'] ?? '');
 } else {
     rec('RBAC 端点', 'rbac', 'SKIP', 'SKIP', true, '无 token');
 }
@@ -488,13 +488,13 @@ if ($token) {
 // --- 11. 登出 ---
 if ($token) {
     usleep(400000);
-    [$s, $raw] = req('POST', "$BASE/api/auth/logout", [], $hdr);
+    [$s, $raw] = req('POST', "$BASE/api/v1/auth/logout", [], $hdr);
     $j = jbody($raw);
-    rec('POST /api/auth/logout', 'auth', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
+    rec('POST /api/v1/auth/logout', 'auth', 'code=' . code($j), '0', code($j) === 0, $j['message'] ?? '');
     usleep(400000);
-    [$s, $raw] = req('GET', "$BASE/api/user/profile", null, $hdr);
+    [$s, $raw] = req('GET', "$BASE/api/v1/user/profile", null, $hdr);
     $j = jbody($raw);
-    rec('GET /api/user/profile(登出后token)', 'auth', 'http=' . $s . '/code=' . code($j), '401', $s === 401 || code($j) === 401, '登出后旧 token 应失效');
+    rec('GET /api/v1/user/profile(登出后token)', 'auth', 'http=' . $s . '/code=' . code($j), '401', $s === 401 || code($j) === 401, '登出后旧 token 应失效');
 }
 
 // ================= admin (8788) =================
@@ -596,12 +596,12 @@ if ($admToken) {
     if ($admProdId) {
         usleep(400000);
         try { $r = new Redis(); $r->connect('127.0.0.1', 6379); foreach ($r->keys('cache:products:*') as $k) $r->del($k); } catch (Throwable $e) {}
-        [$s, $raw] = req('GET', "$BASE/api/products", null, $SVC_H);
+        [$s, $raw] = req('GET', "$BASE/api/v1/products", null, $SVC_H);
         $j = jbody($raw);
         $listed = false;
         foreach ($j['data'] ?? [] as $p) if (($p['slug'] ?? '') === "e2e-admin-$ts") $listed = true;
         // 应用缺陷探针：admin 写入 erik_products，service 读取 products → 数据链路断开，列表必不可见
-        rec('GET /api/products(admin创建后)', 'admin-write', 'code=' . code($j) . '/listed=' . ($listed ? 'y' : 'n'), '缺陷探针:不可见', code($j) === 0 && !$listed,
+        rec('GET /api/v1/products(admin创建后)', 'admin-write', 'code=' . code($j) . '/listed=' . ($listed ? 'y' : 'n'), '缺陷探针:不可见', code($j) === 0 && !$listed,
             $listed ? '' : '应用缺陷：admin 写入 erik_products（erik_* 表为手工建表，非仓库迁移），service 只读 products → admin 创建的产品在商城不可见');
 
         usleep(400000);
@@ -609,7 +609,7 @@ if ($admToken) {
         $j = jbody($raw);
         rec("POST /app/admin/product/delete(id=" . ($delId === $admProdId ? $admProdId : "$admProdId→$realProdId") . ")", 'admin-write', 'code=' . code($j), '0', code($j) === 0, '回滚测试产品');
     } else {
-        rec('GET /api/products(admin创建后)', 'admin-write', 'SKIP', 'SKIP', true, 'admin 产品创建因缺陷失败，跳过可见性验证');
+        rec('GET /api/v1/products(admin创建后)', 'admin-write', 'SKIP', 'SKIP', true, 'admin 产品创建因缺陷失败，跳过可见性验证');
         rec('POST /app/admin/product/delete', 'admin-write', 'SKIP', 'SKIP', true, 'admin 产品创建因缺陷失败，跳过删除');
     }
 
@@ -646,13 +646,13 @@ $lines[] = '- admin: http://127.0.0.1:8788（/tmp/cp-admin-ui 副本，与仓库
 $lines[] = '- PHP 8.3.7 / webman 5.2.2 / MySQL 3306（cloud_platform，业务表为空库）/ Redis 6379';
 $lines[] = '- 测试账号：`apitest-e2e-{ts}@test.local`（service 用户，SQL 直插——注册端点有应用缺陷无法建号，见缺陷汇总）；`apitestadmin`（admin 面板，测试期间临时授予 SuperAdmin 角色，测试后移除）';
 $lines[] = '- 测试数据：1 个分类 + 1 个 published 产品（SQL 种子，测试后删除）；工单/地址/通知为测试账号内数据';
-$lines[] = '- 脚本: `php tests/api/run_api_e2e.php`';
+$lines[] = '- 脚本: `php tests/api/v1/run_api_e2e.php`';
 $lines[] = '- 环境变动：测试期间另一 agent 曾手工创建 erik_* 表（非仓库迁移）后又移除，故缺陷 2 的两种形态（表缺失 1146 / 表存在但数据断开）均被观测并记录';
 $lines[] = '';
 $lines[] = '## 应用缺陷（当前代码，已复现）';
 $lines[] = '';
 $lines[] = '### 缺陷 1：encryptable 数据库字段加密密钥长度错误 → 所有加密字段写操作 500';
-$lines[] = '- 现象：`POST /api/auth/register`、`POST /api/auth/login`（正确密码）、`POST /api/auth/refresh`、`POST /api/user/addresses` 均返回 HTTP 500 `Server internal error`（register 经加密通道包裹为 200 + payload，解密后同样为 `Server internal error`）。';
+$lines[] = '- 现象：`POST /api/v1/auth/register`、`POST /api/v1/auth/login`（正确密码）、`POST /api/v1/auth/refresh`、`POST /api/v1/user/addresses` 均返回 HTTP 500 `Server internal error`（register 经加密通道包裹为 200 + payload，解密后同样为 `Server internal error`）。';
 $lines[] = '- 根因：`.env` 中 `ENCRYPTION_CIPHER=aes-128-ecb`（须 16 字节密钥）+ `ENCRYPTION_KEY=YKBEUxiX/G8HwVS4S+/UxQ==`（base64 编码的 16 字节，但代码未 base64_decode 即使用，实际长度 24 字符）→ `vendor/erikwang2013/encryptable/src/Encrypter.php:74` 抛 `MissingEncryptionKeyException: The encryption key must be 16 bytes for cipher [aes-128-ecb]`。';
 $lines[] = '- 影响面：所有带 `Encryptable` cast 的模型写入：users（email/phone/password_hash）、refresh_tokens（token_hash/device_fingerprint）、user_addresses（phone/address）、user_kyc、payment_channels、suppliers、host_machines、provider_api。即：注册、登录发 token、刷新 token、地址新增全部不可用。';
 $lines[] = '- 修复建议：`config/encryptable.php` 中对 `ENCRYPTION_KEY` 做 `base64_decode`（或 .env 直接放 16 字节明文密钥）。';
@@ -668,7 +668,7 @@ $lines[] = '- 修复建议：admin 各模型 `$table` 去掉 `erik_` 前缀统�
 $lines[] = '- 测试处理：列表按缺陷探针断言（code=0 或 SQL 1146 均 PASS=缺陷已确认，修复后转 FAIL 提示回归）；删除/清理按实际行 id 执行。';
 $lines[] = '';
 $lines[] = '### 缺陷 3：webman-scout（elasticsearch 客户端未安装）→ User/Order/Ticket 写操作 500';
-$lines[] = '- 现象：`PUT /api/user/profile`（含还原）、`POST /api/orders`、`POST /api/tickets` 均返回 HTTP 500 `Server internal error`（日志为 `ScoutException: Please install the ElasticSearch client`）。';
+$lines[] = '- 现象：`PUT /api/v1/user/profile`（含还原）、`POST /api/v1/orders`、`POST /api/v1/tickets` 均返回 HTTP 500 `Server internal error`（日志为 `ScoutException: Please install the ElasticSearch client`）。';
 $lines[] = '- 根因：User/Product/Ticket/Order 模型带 `Scout\Searchable` trait（config/plugin/webman-scout 默认 driver=elasticsearch），但未安装 `elasticsearch/elasticsearch` 客户端 → 模型保存时同步索引抛异常。';
 $lines[] = '- 影响面：用户改资料、下单、提交工单全部不可用（购物车/加购不受影响）。';
 $lines[] = '- 修复建议：安装 elasticsearch 客户端并配置可用 ES 服务，或将 driver 切换为 `database`/`null`（不启用搜索时）。';
@@ -682,7 +682,7 @@ $lines[] = '';
 $lines[] = '## 覆盖矩阵';
 $lines[] = '| 模块 | 覆盖情况 |';
 $lines[] = '| --- | --- |';
-$lines[] = '| 健康检查 /health /api/status | 已覆盖 |';
+$lines[] = '| 健康检查 /health /api/v1/status | 已覆盖 |';
 $lines[] = '| 认证：验证码/注册/登录/登出/刷新 token/错误密码/无 token 401/登出后 token 失效 | 已覆盖（注册/登录/刷新为缺陷探针，见缺陷 1） |';
 $lines[] = '| 产品：列表/详情/搜索/评价/区域/SSL 套餐/TLD/帮助分类 | 已覆盖 |';
 $lines[] = '| 购物车/订单：加购/查车/下单/订单列表/详情/支付方式 | 已覆盖（token 为测试脚本直接签发；下单为缺陷探针，见缺陷 3） |';
@@ -697,7 +697,7 @@ $lines[] = '| RBAC：用户 token 访问 /admin/api → 401/403 | 已覆盖（�
 $lines[] = '| admin 面板：验证码登录/info/仪表盘/字典 | 已覆盖 |';
 $lines[] = '| admin 列表：user/order/product/ticket/config/notification_template/notification/supplier/domain_tld/payment_channel/audit_log/role（/select 数据端点） | 已覆盖（user/role code=0；其余按缺陷探针断言，见缺陷 2；config/get 为裸 JSON 无 code 包裹，按 JSON 有效判定） |';
 $lines[] = '| admin 写操作：产品创建/删除（回滚） | 已覆盖（创建 code=0；service 可见性为缺陷探针，见缺陷 2；删除按实际行 id 回滚） |';
-$lines[] = '| service `/admin/api/*` 管理员角色正路径 | 无法测试：环境无管理员 JWT 来源（users 表为空、无 service 侧管理员登录端点），仅验证普通用户 403 |';
+$lines[] = '| service `/admin/api/v1/*` 管理员角色正路径 | 无法测试：环境无管理员 JWT 来源（users 表为空、无 service 侧管理员登录端点），仅验证普通用户 403 |';
 $lines[] = '| 真实支付回调/网关 | 无法测试：外部服务，不发起真实付款 |';
 $lines[] = '| OAuth 三方登录/短信验证/邮件验证/TOTP/KYC 全流程 | 无法测试：依赖外部服务/邮箱收件（注册邮件）；KYC 提交为写操作且需人工材料 |';
 $lines[] = '';
@@ -727,7 +727,7 @@ $lines[] = '';
 $lines[] = '## 运行方式';
 $lines[] = '```bash';
 $lines[] = '# 前置：service 8787 + admin 8788 运行中；MySQL/Redis 可用';
-$lines[] = 'php tests/api/run_api_e2e.php';
+$lines[] = 'php tests/api/v1/run_api_e2e.php';
 $lines[] = '```';
 $lines[] = '- 幂等性：脚本可重复运行（每次新建测试账号（SQL 直插）、新种子数据，结束后清理）。';
 $lines[] = '- 注意：若之前测试触发过安全封禁（/tmp/security_storage.json 存在 127.0.0.1 ban），需删除该文件或等待 15 分钟。';

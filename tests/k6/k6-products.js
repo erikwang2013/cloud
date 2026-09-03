@@ -13,7 +13,6 @@ export const options = {
 };
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8787';
-const VERSION = 'v1';
 
 // Simulated query parameters for cache-hit diversity
 const CATEGORIES = ['1', '2', '3', '', ''];
@@ -32,8 +31,7 @@ export default function () {
   if (category) params.category_id = category;
   if (region) params.region_id = region;
 
-  const resp = http.get(`${BASE_URL}/api/products`, {
-    headers: { 'X-Api-Version': VERSION },
+  const resp = http.get(`${BASE_URL}/api/v1/products`, {
     tags: { name: 'product_list' },
     ...(Object.keys(params).length ? { query: params } : {}),
   });

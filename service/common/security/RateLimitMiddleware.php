@@ -29,13 +29,21 @@ class RateLimitMiddleware
         '/api/payments/webhook/stripe',
     ];
 
+    // 版本段在 URL 路径(/api/v1/...、/admin/api/v1/...)——按版本无关路径匹配限流规则与豁免表
+    private function stripVersion(string $path): string
+    {
+        return preg_replace('#^/(admin/api|api)/v\d+/#', '/$1/', $path) ?? $path;
+    }
+
     public function process($request, callable $next)
     {
-        if (in_array($request->path(), self::EXEMPT_PATHS, true)) {
+        $path = $this->stripVersion($request->path());
+
+        if (in_array($path, self::EXEMPT_PATHS, true)) {
             return $next($request);
         }
 
-        $rule = $this->routeName($request->path());
+        $rule = $this->routeName($path);
         $limits = $this->limits();
         $limit = $limits[$rule] ?? $limits['default'];
 

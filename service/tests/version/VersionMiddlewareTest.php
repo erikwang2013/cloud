@@ -15,20 +15,15 @@ final class VersionMiddlewareTest extends TestCase
         $this->middleware = new VersionMiddleware();
     }
 
-    private function createRequest(string $path, string $version = 'v1')
+    private function createRequest(string $path)
     {
-        return new class($path, $version) {
+        return new class($path) {
             public array $properties = [];
             private string $path;
-            private string $version;
-            public function __construct(string $path, string $version) {
-                $this->path    = $path;
-                $this->version = $version;
+            public function __construct(string $path) {
+                $this->path = $path;
             }
             public function path(): string { return $this->path; }
-            public function header(string $name, $default = null) {
-                return $this->version ?: $default;
-            }
         };
     }
 
@@ -41,7 +36,7 @@ final class VersionMiddlewareTest extends TestCase
 
     public function testValidVersionPassesThrough(): void
     {
-        $req       = $this->createRequest('/api/v1/auth/login', 'v1');
+        $req       = $this->createRequest('/api/v1/auth/login');
         $nextCalled = false;
 
         $result = $this->middleware->process($req, function ($r) use (&$nextCalled) {
@@ -51,24 +46,11 @@ final class VersionMiddlewareTest extends TestCase
 
         $this->assertTrue($nextCalled);
         $this->assertSame('v1', $req->properties['api_version'] ?? null);
-        $this->assertSame('v1', $result->getHeader('X-Api-Version'));
-    }
-
-    public function testMissingVersionDefaultsToV1(): void
-    {
-        $req = new class {
-            public array $properties = [];
-            public function path(): string { return '/api/v1/auth/login'; }
-            public function header(string $name, $default = null) { return $default; }
-        };
-
-        $this->middleware->process($req, fn($r) => response('ok'));
-        $this->assertSame('v1', $req->properties['api_version'] ?? null);
     }
 
     public function testUnsupportedVersionReturns400(): void
     {
-        $req      = $this->createRequest('/api/v1/auth/login', 'v5');
+        $req        = $this->createRequest('/api/v5/auth/login');
         $nextCalled = false;
 
         $result = $this->middleware->process($req, function ($r) use (&$nextCalled) {
@@ -80,15 +62,26 @@ final class VersionMiddlewareTest extends TestCase
         $body = $this->decodeResponse($result);
         $this->assertEquals(400, $body['code'] ?? 0);
         $this->assertStringContainsString('Unsupported', $body['message'] ?? '');
+        $this->assertEquals(400, $result->getStatusCode());
     }
 
     public function testNonApiRouteSkipsValidation(): void
     {
-        $req = new class {
-            public array $properties = [];
-            public function path(): string { return '/health'; }
-            public function header(string $name, $default = null) { return 'v5'; }
-        };
+        $req = $this->createRequest('/health');
+        $nextCalled = false;
+
+        $this->middleware->process($req, function ($r) use (&$nextCalled) {
+            $nextCalled = true;
+            return response('ok');
+        });
+
+        $this->assertTrue($nextCalled);
+        $this->assertArrayNotHasKey('api_version', $req->properties);
+    }
+
+    public function testGraphqlWithoutApiPrefixSkipsValidation(): void
+    {
+        $req = $this->createRequest('/graphql');
         $nextCalled = false;
 
         $this->middleware->process($req, function ($r) use (&$nextCalled) {
@@ -102,17 +95,8 @@ final class VersionMiddlewareTest extends TestCase
 
     public function testAdminApiRouteIsValidated(): void
     {
-        $req = $this->createRequest('/admin/api/v1/dashboard', 'v1');
+        $req = $this->createRequest('/admin/api/v1/dashboard');
         $this->middleware->process($req, fn($r) => response('ok'));
         $this->assertSame('v1', $req->properties['api_version'] ?? null);
-    }
-
-    public function testErrorResponseIncludesVersionHeader(): void
-    {
-        $req    = $this->createRequest('/api/v1/auth/login', 'v99');
-        $result = $this->middleware->process($req, fn($r) => response('ok'));
-
-        $this->assertSame('v99', $result->getHeader('X-Api-Version'));
-        $this->assertSame(400, $result->getStatusCode());
     }
 }

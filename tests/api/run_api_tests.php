@@ -1,7 +1,7 @@
 <?php
 /**
  * CloudPlatform API 自动化测试（service:8787 + admin:8789 测试副本）
- * 用法: php tests/api/run_api_tests.php
+ * 用法: php tests/api/v1/run_api_tests.php
  * 只读验证为主：不修改业务代码/配置；测试数据 = 临时测试账号（apitest* / apitestadmin*）。
  */
 
@@ -152,7 +152,7 @@ function solveCaptcha(string $key): array {
 }
 
 function newCaptcha(): array {
-    [, , $dec] = encReq('POST', $GLOBALS['BASE'] . '/api/captcha/create', ['difficulty' => 'medium']);
+    [, , $dec] = encReq('POST', $GLOBALS['BASE'] . '/api/v1/captcha/create', ['difficulty' => 'medium']);
     $key = $dec['data']['key'] ?? '';
     if (!$key) return [null, null];
     $pts = solveCaptcha($key);
@@ -223,14 +223,14 @@ foreach ($eps as $ep) {
 // ---------- 6. 阶段 D：注册/登录（两条路径均验证） ----------
 $email = 'apitest' . time() . '@test.local';
 [$ck, $pts] = newCaptcha();
-record('POST /api/captcha/create(加密)', 'auth-flow', $ck ? 0 : -1, '0', (bool) $ck, $ck ? '验证码生成+解密 OK' : '验证码不可用');
+record('POST /api/v1/captcha/create(加密)', 'auth-flow', $ck ? 0 : -1, '0', (bool) $ck, $ck ? '验证码生成+解密 OK' : '验证码不可用');
 $token = '';
 
 // 6a. 加密注册（文档路径）: 字段经 X-Encrypted 提交
 if ($ck) {
     $regBody = ['email' => $email, 'password' => 'TestPass-2026!', 'language' => 'en',
         'captcha_key' => $ck, 'captcha_points' => $pts];
-    [, $regRaw, $regDec] = encReq('POST', "$BASE/api/auth/register", $regBody);
+    [, $regRaw, $regDec] = encReq('POST', "$BASE/api/v1/auth/register", $regBody);
     $regCode = $regDec['code'] ?? -1;
     $regMsg = $regDec['message'] ?? '';
     $regInner = '';
@@ -238,32 +238,32 @@ if ($ck) {
         try { $regInner = \Common\encryption\EncryptionService::decrypt(base64_decode($j2['payload'])); } catch (\Throwable $e) {}
     }
     $token = $regDec['data']['access_token'] ?? '';
-    record('POST /api/auth/register(加密)', 'auth-flow', $regCode, '0', $regCode === 0 && $token,
+    record('POST /api/v1/auth/register(加密)', 'auth-flow', $regCode, '0', $regCode === 0 && $token,
         "code=$regCode msg=$regMsg" . ($regInner ? " 信封内=$regInner" : '') . ' —— User 模型 Encryptable cast 缺 16 字节密钥(aes-128-ecb)，创建用户即 500（应用缺陷）');
 }
 // 6b. 明文注册: 绕过加密头直接提交（验证码单次有效，需新验证码）
 if (!$token) {
     [$ck2, $pts2] = newCaptcha();
-    [$s500, $raw500] = req('POST', "$BASE/api/auth/register",
+    [$s500, $raw500] = req('POST', "$BASE/api/v1/auth/register",
         ['email' => $email, 'password' => 'TestPass-2026!', 'captcha_key' => $ck2, 'captcha_points' => $pts2]);
     $b500 = json_decode($raw500, true);
-    record('POST /api/auth/register(明文)', 'auth-flow', $s500, '200',
+    record('POST /api/v1/auth/register(明文)', 'auth-flow', $s500, '200',
         $s500 === 200 && (($b500['code'] ?? -1) === 0),
         'HTTP ' . $s500 . ' body=' . substr($raw500, 0, 60) . ' —— Encryptable 密钥缺失（应用缺陷）');
 }
 // 6c. 登录（明文，新验证码）
 [$ck3, $pts3] = newCaptcha();
-[$sL, $rawL] = req('POST', "$BASE/api/auth/login",
+[$sL, $rawL] = req('POST', "$BASE/api/v1/auth/login",
     ['login' => $email, 'password' => 'TestPass-2026!', 'captcha_key' => $ck3, 'captcha_points' => $pts3]);
 $lDec = json_decode($rawL, true);
-record('POST /api/auth/login', 'auth-flow', $sL, '200',
+record('POST /api/v1/auth/login', 'auth-flow', $sL, '200',
     $sL === 200 && (($lDec['code'] ?? -1) === 0),
     ($lDec['code'] ?? 0) === 0 ? '登录成功' : 'code=' . ($lDec['code'] ?? '?') . ' msg=' . ($lDec['message'] ?? '') . ' —— 注册缺陷阻断完整登录链（验证码单次有效，复用报 422）');
 
 // 6d. 无效参数校验（错误码 4xx）
-[$sE, $rawE] = req('POST', "$BASE/api/auth/register", ['email' => 'not-an-email']);
+[$sE, $rawE] = req('POST', "$BASE/api/v1/auth/register", ['email' => 'not-an-email']);
 $e422 = json_decode($rawE, true);
-record('POST /api/auth/register(非法参数)', 'auth-flow', $e422['code'] ?? -1, '422',
+record('POST /api/v1/auth/register(非法参数)', 'auth-flow', $e422['code'] ?? -1, '422',
     ($e422['code'] ?? 0) === 422, 'msg=' . ($e422['message'] ?? ''));
 
 $hdr = $token ? ['Authorization: Bearer ' . $token] : [];
@@ -316,25 +316,25 @@ if (!$token) {
 }
 
 // ---------- 7. 阶段 G：业务主链路（尽力而为） ----------
-[$status, $raw] = req('GET', "$BASE/api/products");
+[$status, $raw] = req('GET', "$BASE/api/v1/products");
 $products = json_decode($raw, true);
-record('GET /api/products', 'chain', $status, '200', $status === 200, '产品列表');
+record('GET /api/v1/products', 'chain', $status, '200', $status === 200, '产品列表');
 $pid = $products['data'][0]['id'] ?? null;
 if ($pid && $token) {
-    [$s1] = req('POST', "$BASE/api/cart", ['product_id' => $pid, 'quantity' => 1], $hdr);
-    record('POST /api/cart', 'chain', $s1, '2xx/4xx', in_array($s1, [200, 201, 409, 422, 404], true), '加购产品#' . $pid);
-    [$s2, $raw2] = req('POST', "$BASE/api/orders", ['product_id' => $pid, 'quantity' => 1], $hdr);
+    [$s1] = req('POST', "$BASE/api/v1/cart", ['product_id' => $pid, 'quantity' => 1], $hdr);
+    record('POST /api/v1/cart', 'chain', $s1, '2xx/4xx', in_array($s1, [200, 201, 409, 422, 404], true), '加购产品#' . $pid);
+    [$s2, $raw2] = req('POST', "$BASE/api/v1/orders", ['product_id' => $pid, 'quantity' => 1], $hdr);
     $od = json_decode($raw2, true);
-    record('POST /api/orders', 'chain', $s2, '2xx/4xx', in_array($s2, [200, 201, 409, 422, 404], true),
+    record('POST /api/v1/orders', 'chain', $s2, '2xx/4xx', in_array($s2, [200, 201, 409, 422, 404], true),
         '下单: ' . ($od['message'] ?? ''));
     $orderId = $od['data']['id'] ?? null;
     if ($orderId) {
-        [$s3, $raw3] = req('POST', "$BASE/api/orders/$orderId/pay", ['channel' => 'stripe'], $hdr);
-        record("POST /api/orders/$orderId/pay", 'chain', $s3, '4xx/5xx(外部)', in_array($s3, [400, 402, 404, 409, 422, 424, 500, 503], true),
+        [$s3, $raw3] = req('POST', "$BASE/api/v1/orders/$orderId/pay", ['channel' => 'stripe'], $hdr);
+        record("POST /api/v1/orders/$orderId/pay", 'chain', $s3, '4xx/5xx(外部)', in_array($s3, [400, 402, 404, 409, 422, 424, 500, 503], true),
             '支付走 Stripe 外部，环境无法完成 → ' . substr($raw3, 0, 120));
     }
 } else {
-    record('POST /api/cart + /api/orders', 'chain', -1, 'SKIP', true, $token ? '无产品数据' : '无 token');
+    record('POST /api/v1/cart + /api/v1/orders', 'chain', -1, 'SKIP', true, $token ? '无产品数据' : '无 token');
 }
 
 // ---------- 8. 阶段 H：Admin 面板（8789 测试副本） ----------
@@ -421,8 +421,8 @@ if (!$fails) {
 }
 $lines[] = '';
 $lines[] = "## 限制说明";
-$lines[] = '- Stripe 支付为外部服务：`POST /api/orders/{id}/pay` 仅验证错误处理路径（4xx/5xx），无法完成真实支付';
-$lines[] = '- service 的 `/admin/api/*` 端点：普通用户 token 应 401/403（AdminRole/RBAC），管理员 token 需 service 侧管理员账号（本环境未配置）';
+$lines[] = '- Stripe 支付为外部服务：`POST /api/v1/orders/{id}/pay` 仅验证错误处理路径（4xx/5xx），无法完成真实支付';
+$lines[] = '- service 的 `/admin/api/v1/*` 端点：普通用户 token 应 401/403（AdminRole/RBAC），管理员 token 需 service 侧管理员账号（本环境未配置）';
 $lines[] = (strpos($ADMIN, '8789') !== false)
     ? '- admin 原服务 8788 因上述加密主密钥问题无法启动（环境限制），admin 面板测试在 8789 副本完成'
     : '- admin 主密钥问题（B1）已修复并复测：8788 正常启动，captcha/dashboard/dict/export/login/CRUD 全路由可用（副本已更新为完整路由文件）';

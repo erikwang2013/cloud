@@ -10,7 +10,7 @@ return [
     // 全局中间件（空字符串 key = 对所有路由生效）
     // 执行顺序：从上到下依次执行
     '' => [
-        // API 版本中间件：从 X-Api-Version 头读取版本，校验并注入
+        // API 版本中间件：从 URL 路径读取版本段（/api/v1/...），校验并注入
         Common\version\middleware\VersionMiddleware::class,
 
         // CORS 跨域中间件：添加 Access-Control-* 响应头

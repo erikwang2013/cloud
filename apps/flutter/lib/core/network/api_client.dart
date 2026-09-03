@@ -6,9 +6,8 @@ class ApiClient {
   late final Dio dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
-  // Version in header, not in URL path
-  static const String baseUrl = 'https://api.example.com/api';
-  static const String apiVersion = 'v1';
+  // API version lives in the URL path (/api/v1/...)
+  static const String baseUrl = 'https://api.example.com/api/v1';
 
   ApiClient() {
     dio = Dio(BaseOptions(
@@ -17,7 +16,6 @@ class ApiClient {
       receiveTimeout: const Duration(seconds: 10),
       headers: {
         'Content-Type': 'application/json',
-        'X-Api-Version': apiVersion,
         'X-Client-Platform': getClientPlatform(),
       },
     ));
@@ -64,7 +62,7 @@ class AuthInterceptor extends Interceptor {
     try {
       final response = await Dio().post('${ApiClient.baseUrl}/auth/refresh', data: {
         'refresh_token': refreshToken,
-      }, options: Options(headers: {'X-Api-Version': ApiClient.apiVersion, 'X-Client-Platform': getClientPlatform()}));
+      }, options: Options(headers: {'X-Client-Platform': getClientPlatform()}));
       final respData = response.data['data'];
       if (respData != null) {
         await _storage.write(key: 'access_token', value: respData['access_token']);

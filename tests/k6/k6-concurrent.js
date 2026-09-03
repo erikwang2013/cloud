@@ -18,25 +18,23 @@ export const options = {
 };
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8787';
-const VERSION = 'v1';
 
 export default function () {
   // Mix of read-heavy endpoints (simulating real traffic)
   const reqs = [
     { method: 'GET', path: '/health', tag: 'health' },
-    { method: 'GET', path: '/api/products', tag: 'products' },
-    { method: 'GET', path: '/api/regions', tag: 'regions' },
-    { method: 'GET', path: '/api/domain/tlds', tag: 'tlds' },
-    { method: 'GET', path: '/api/help', tag: 'help' },
-    { method: 'GET', path: '/api/status', tag: 'status' },
-    { method: 'GET', path: '/api/products?page=1', tag: 'products_p1' },
-    { method: 'GET', path: '/api/products?page=1&category_id=1', tag: 'products_filtered' },
+    { method: 'GET', path: '/api/v1/products', tag: 'products' },
+    { method: 'GET', path: '/api/v1/regions', tag: 'regions' },
+    { method: 'GET', path: '/api/v1/domain/tlds', tag: 'tlds' },
+    { method: 'GET', path: '/api/v1/help', tag: 'help' },
+    { method: 'GET', path: '/api/v1/status', tag: 'status' },
+    { method: 'GET', path: '/api/v1/products?page=1', tag: 'products_p1' },
+    { method: 'GET', path: '/api/v1/products?page=1&category_id=1', tag: 'products_filtered' },
   ];
 
   const req = reqs[Math.floor(Math.random() * reqs.length)];
 
   const resp = http.request(req.method, `${BASE_URL}${req.path}`, undefined, {
-    headers: { 'X-Api-Version': VERSION },
     tags: { name: req.tag },
   });
 

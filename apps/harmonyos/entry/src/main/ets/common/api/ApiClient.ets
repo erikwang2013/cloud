@@ -33,7 +33,6 @@ export class ApiClient {
 
     const header: Record<string, string> = {
       'Content-Type': 'application/json',
-      'X-Api-Version': 'v1',
       'Authorization': token ? `Bearer ${token}` : '',
       'Accept-Language': 'zh-CN',
     };

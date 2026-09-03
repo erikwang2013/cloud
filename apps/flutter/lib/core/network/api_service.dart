@@ -14,7 +14,6 @@ class ApiService {
           connectTimeout: const Duration(seconds: 10),
           headers: {
             'Content-Type': 'application/json',
-            'X-Api-Version': ApiClient.apiVersion,
             'X-Client-Platform': getClientPlatform(),
           },
         )) {
