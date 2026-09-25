@@ -12,6 +12,18 @@ use Common\version\middleware\VersionMiddleware;
 // Health check (no version check, public)
 Route::get('/health', [App\controller\HealthController::class, 'index']);
 
+// 站点落地页。webman 的静态文件处理只认精确文件（App::findFile 对 "/" 得到目录、
+// is_file 为 false），没有目录索引逻辑，因此 "/" 必须由路由回吐 public/index.html。
+Route::get('/', function () {
+    $page = base_path() . '/public/index.html';
+    if (!is_file($page)) {
+        return response('', 404);
+    }
+    return response(file_get_contents($page), 200, [
+        'Content-Type' => 'text/html; charset=utf-8',
+    ]);
+});
+
 // Health check (internal monitoring, token-protected)
 Route::group('/health', function () {
     Route::get('/live', [App\controller\HealthController::class, 'live']);

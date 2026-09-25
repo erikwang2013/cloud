@@ -71,6 +71,36 @@ CloudPlatform 是一个面向全球的云资源交易平台，支持自营物理
     └─────────────────────────────┘
 ```
 
+上图对应的完整分层视图（客户端层 / 边缘层 / 业务服务层 / 数据层 / 交付层 / 外部服务）：
+
+![系统架构图](diagrams/system-architecture-zh.svg)
+
+### 1.3 项目结构
+
+```
+cloud-php/
+├── service/                  # 用户侧 webman 实例（:8787）
+│   ├── app/                  # 23 个业务模块，每个模块含 controller/service/model/event/listener/provider/queue/cron
+│   ├── common/               # 公共库：中间件、雪花 ID、Hashids、加密、i18n、安全、Metrics、Webhook
+│   ├── config/               # 17 个配置文件 + 插件配置
+│   ├── database/migrations/  # 37 个迁移
+│   ├── support/              # Bootstrap 引导（Eloquent / Redis / Event / 加密 / Scout / Migration）
+│   └── tests/                # PHPUnit 10（672 tests / 1632 assertions）
+├── admin/                    # 管理后台 webman 实例（:8788，webman-admin + Layui）
+│   ├── app/                  # 插件源码：54 控制器、46 模型、bootstrap、command、middleware、view
+│   └── tests/                # PHPUnit 11（286 tests / 962 assertions）
+├── apps/                     # 客户端：Flutter（6 平台）+ HarmonyOS ArkTS
+├── infrastructure/           # Rust e-cat workspace：kvm-server（gRPC :50051）+ ecat-* 基础 crate
+├── docs/                     # 文档与 docs/diagrams/ 下的 SVG 图
+├── docker/                   # Dockerfile + docker-compose + nginx + supervisor
+├── install.php / install/    # 一键安装向导（单文件，无框架依赖）
+├── install.sql               # 统一 DDL（46 张表）
+└── tests/k6/                 # k6 负载测试脚本
+```
+
+完整目录树（逐文件说明）见 [README 目录结构](../README.md#目录结构)。
+
+
 ---
 
 ## 2. 组件架构

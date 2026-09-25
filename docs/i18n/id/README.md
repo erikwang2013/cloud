@@ -20,7 +20,11 @@
 | 日本語 | [ja docs](../../ja/README.md) |
 
 <p align="center">
-  <img src="docs/diagrams/c.svg" alt="CloudPlatform 项目宠物" width="220">
+  <p align="center">
+  <img src="docs/diagrams/c.svg" alt="Yundou, maskot proyek CloudPlatform" width="260">
+</p>
+
+<p align="center">**Yundou** — maskot proyek</p>
 </p>
 
 Platform perdagangan sumber daya cloud untuk pengguna global, mendukung pembelian online dan pengiriman otomatis untuk server (VM), alamat IP, disk cloud, domain, sertifikat SSL, penyimpanan objek (S3), akselerasi CDN, dan produk lainnya. Mesin fisik milik sendiri dikirim melalui virtualisasi Proxmox VE, sekaligus mendukung vendor pihak ketiga untuk bergabung dan berjualan. Menyediakan penagihan berbasis pemakaian (pay-as-you-go), distribusi rekomendasi, GraphQL API, dan observabilitas Prometheus/Grafana.

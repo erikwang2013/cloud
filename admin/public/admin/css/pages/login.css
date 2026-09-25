@@ -38,7 +38,8 @@
 }
 
 .logo {
-	width: 40px !important;
+	/* 登录页 logo 默认使用项目宠物「云豆」插画（480x400），40px 下不可辨识，放大到 96px */
+	width: 96px !important;
 	margin-top: 10px !important;
 	margin-bottom: 10px !important;
 	margin-left: 20px !important;

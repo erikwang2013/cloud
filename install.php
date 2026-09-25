@@ -28,12 +28,30 @@ $addr = "$host:$port";
 $url = str_starts_with($addr, '0.0.0.0') ? "http://localhost:$port" : "http://$addr";
 
 echo "\n";
-echo "  ┌──────────────────────────────────────────────────┐\n";
-echo "  │     CloudPlatform — Installation Wizard         │\n";
-echo "  ├──────────────────────────────────────────────────┤\n";
-echo "  │  Open $url in your browser                      │\n";
-echo "  │  Press Ctrl+C to stop.                          │\n";
-echo "  └──────────────────────────────────────────────────┘\n";
+echo <<<'MASCOT'
+                    ___
+                  .'   '.
+                 /  _   _  \        z Z
+                |  (o) (o)  |
+                 \    ^    /
+              .-'''''''''''-.
+            .'               '.
+           (   ~~~~~~~~~~~~~   )
+            '-._____________.-'
+
+MASCOT;
+// 边框宽度固定，内容行按显示宽度补齐 —— URL 端口位数变化时右侧 │ 仍对齐
+$boxInner = 50;
+$boxLine = static function (string $text) use ($boxInner): string {
+    return '  │' . $text . str_repeat(' ', max(0, $boxInner - mb_strwidth($text))) . "│\n";
+};
+
+echo '  ┌' . str_repeat('─', $boxInner) . "┐\n";
+echo $boxLine('     CloudPlatform — Installation Wizard');
+echo '  ├' . str_repeat('─', $boxInner) . "┤\n";
+echo $boxLine("  Open $url in your browser");
+echo $boxLine('  Press Ctrl+C to stop.');
+echo '  └' . str_repeat('─', $boxInner) . "┘\n";
 echo "\n";
 
 $docroot = __DIR__ . '/install';

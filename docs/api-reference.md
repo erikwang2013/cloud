@@ -67,6 +67,7 @@
 | 路由组 | 中间件 | 前缀 |
 |--------|--------|------|
 | 公开 | 全局中间件链 | `/health`, `/api/v1/*` |
+| 站点落地页 | 全局中间件链 | `/`（回吐 `public/index.html`，非 JSON API） |
 | `/health` (内部) | 全局 + InternalToken | `/health/live`, `/health/ready`, `/health/deps` |
 | `/api/v1/auth` | 全局 + Encryption | `/api/v1/auth/*` |
 | `/api` (用户) | 全局 + Encryption + Auth | `/api/v1/user/*`, `/api/v1/cart`, `/api/v1/orders` |
@@ -78,6 +79,16 @@
 ---
 
 ## 一、公开端点
+
+### 站点落地页
+
+```
+GET /
+→ 200 text/html   # 回吐 service/public/index.html
+→ 404             # 该文件不存在时
+```
+
+不是 JSON 接口，仅用于浏览器访问站点根路径；同源的 `/favicon.svg`、`/favicon.ico`、`/mascot.svg` 由 webman 静态文件服务提供。
 
 ### 健康检查
 

@@ -20,7 +20,11 @@
 | 日本語 | [ja docs](../../ja/README.md) |
 
 <p align="center">
-  <img src="docs/diagrams/c.svg" alt="CloudPlatform 项目宠物" width="220">
+  <p align="center">
+  <img src="docs/diagrams/c.svg" alt="CloudPlatform 프로젝트 마스코트 윈다우" width="260">
+</p>
+
+<p align="center">**윈다우** — 프로젝트 마스코트</p>
 </p>
 
 전 세계 사용자를 대상으로 하는 클라우드 리소스 거래 플랫폼으로, 서버(VM), IP 주소, 클라우드 디스크, 도메인, SSL 인증서, 객체 스토리지(S3), CDN 가속 등의 제품을 온라인으로 구매하고 자동으로 인도받을 수 있습니다. 자체 운영 물리 머신은 Proxmox VE 가상화로 인도되며, 제3자 공급업체의 입점 판매도 지원합니다. 종량제 과금, 추천 제휴 마케팅, GraphQL API 및 Prometheus/Grafana 관측성을 제공합니다.

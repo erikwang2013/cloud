@@ -1,5 +1,11 @@
 # CloudPlatform 功能设计文档
 
+本文档描述 23 个业务模块的详细功能设计。所有模块共用同一套设计骨架：**同步请求链路**（Controller → Service → Model）、**异步事件驱动链路**（Event → Listener → Queue → Provider）、**横切关注点**（由公共库统一提供）与**模块标准分层**（`app/{Module}/` 统一目录约定）。
+
+![功能设计图](diagrams/feature-design-zh.svg)
+
+模块间的解耦只通过领域事件发生——业务模块之间不互相引用，订阅关系集中在 `config/event.php` 注册。资源交付相关的状态流转见 [资源生命周期图](diagrams/resource-lifecycle-zh.svg)（6 个状态 / 8 个生命周期事件）。
+
 ## 1. 用户认证与授权
 
 ### 1.1 注册
@@ -286,6 +292,10 @@ Cron: PaymentReconcile (每日 02:37)
 ---
 
 ## 5. 资源开通引擎
+
+资源从下单到销毁共经历 6 个状态，由 8 个生命周期事件驱动；交付失败按 1min → 5min → 15min → 1h → 6h → 24h 指数退避重试（最多 6 次）。
+
+![资源生命周期图](diagrams/resource-lifecycle-zh.svg)
 
 ### 5.1 Provider 插件架构
 

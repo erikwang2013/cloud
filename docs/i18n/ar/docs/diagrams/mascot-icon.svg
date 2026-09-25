@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="iconTitle iconDesc">
+  <title id="iconTitle">CloudPlatform 应用图标「云豆」</title>
+  <desc id="iconDesc">项目宠物云豆的方形标识：深蓝底上的小狗头像与云朵，用于 favicon 与客户端应用图标。</desc>
+
+  <defs>
+    <linearGradient id="icBg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="512" y2="512">
+      <stop offset="0%" stop-color="#4f8ef7"/>
+      <stop offset="55%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#173a9e"/>
+    </linearGradient>
+    <linearGradient id="icFur" gradientUnits="userSpaceOnUse" x1="170" y1="110" x2="290" y2="215">
+      <stop offset="0%" stop-color="#fdf3e3"/>
+      <stop offset="55%" stop-color="#f3dab5"/>
+      <stop offset="100%" stop-color="#dfbb8b"/>
+    </linearGradient>
+    <linearGradient id="icMuzzleFill" gradientUnits="userSpaceOnUse" x1="116" y1="176" x2="198" y2="228">
+      <stop offset="0%" stop-color="#fffdf8"/>
+      <stop offset="100%" stop-color="#faeddb"/>
+    </linearGradient>
+    <linearGradient id="icEar" gradientUnits="userSpaceOnUse" x1="126" y1="116" x2="174" y2="178">
+      <stop offset="0%" stop-color="#d8a870"/>
+      <stop offset="100%" stop-color="#bd8a49"/>
+    </linearGradient>
+    <linearGradient id="icFarEar" gradientUnits="userSpaceOnUse" x1="230" y1="112" x2="290" y2="200">
+      <stop offset="0%" stop-color="#cf9c60"/>
+      <stop offset="100%" stop-color="#af7e40"/>
+    </linearGradient>
+    <linearGradient id="icCloud" gradientUnits="userSpaceOnUse" x1="40" y1="330" x2="470" y2="512">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d7e7fc"/>
+    </linearGradient>
+    <clipPath id="icClip"><rect width="512" height="512" rx="112"/></clipPath>
+
+    <!-- 与 c.svg 完全一致的小狗头部几何，整体缩放到图标尺寸 -->
+    <g id="icHead"><circle cx="196" cy="158" r="50"/></g>
+    <g id="icFarEarShape">
+      <path d="M230,120 C266,112 288,134 284,168 C281,192 262,200 250,192 C238,184 232,148 230,120 Z"/>
+    </g>
+    <g id="icNearEarShape">
+      <path d="M168,116 C136,118 126,140 132,158 C138,175 154,177 162,166 C172,153 173,134 168,116 Z"/>
+    </g>
+    <g id="icMuzzleShape"><ellipse cx="156" cy="200" rx="42" ry="27"/></g>
+  </defs>
+
+  <g clip-path="url(#icClip)">
+    <rect width="512" height="512" fill="url(#icBg)"/>
+
+    <!-- 底纹云资源节点 -->
+    <g stroke="#ffffff" stroke-width="2.4" stroke-dasharray="7,8" opacity="0.2" fill="none">
+      <path d="M44,142 L110,88 L196,66"/>
+      <path d="M110,88 L122,140"/>
+      <path d="M196,66 L300,92"/>
+    </g>
+    <g fill="#ffffff" opacity="0.3">
+      <circle cx="44" cy="142" r="9"/>
+      <circle cx="110" cy="88" r="11"/>
+      <circle cx="196" cy="66" r="13"/>
+      <circle cx="300" cy="92" r="8"/>
+    </g>
+
+    <!-- 小狗头像（缩放到 512 画布） -->
+    <g transform="translate(256,274) scale(2.08) translate(-207,-169)">
+      <g stroke="#bf8d59" stroke-opacity="0.45" stroke-width="2.4" stroke-linejoin="round" fill="#bf8d59" fill-opacity="0.45">
+        <use href="#icHead"/><use href="#icFarEarShape"/><use href="#icMuzzleShape"/><use href="#icNearEarShape"/>
+      </g>
+      <g fill="url(#icFur)"><use href="#icHead"/></g>
+      <g fill="url(#icFarEar)"><use href="#icFarEarShape"/></g>
+      <g fill="url(#icMuzzleFill)"><use href="#icMuzzleShape"/></g>
+      <path d="M126,180 C146,174 172,178 190,192" fill="none" stroke="#d2a26c" stroke-width="1.5" stroke-opacity="0.35" stroke-linecap="round"/>
+      <g fill="url(#icEar)"><use href="#icNearEarShape"/></g>
+      <g fill="none" stroke="#5b4531" stroke-width="1.7" stroke-linecap="round">
+        <path d="M166,152 C174,162 188,162 196,153"/>
+        <path d="M210,147 C218,157 231,157 238,147"/>
+      </g>
+      <ellipse cx="132" cy="190" rx="13.5" ry="10.5" fill="#4a3a2c"/>
+      <ellipse cx="127" cy="186" rx="4" ry="3" fill="#ffffff" opacity="0.3"/>
+      <g fill="none" stroke="#4a3a2c" stroke-width="1.2" stroke-linecap="round">
+        <path d="M132,201 L132,205"/>
+        <path d="M132,205 C128,209 122,208 120,204"/>
+        <path d="M132,205 C136,209 142,208 144,204"/>
+      </g>
+    </g>
+
+    <!-- 前景云朵 -->
+    <g fill="url(#icCloud)">
+      <circle cx="104" cy="428" r="78"/>
+      <circle cx="252" cy="454" r="92"/>
+      <circle cx="404" cy="430" r="80"/>
+      <rect x="34" y="422" width="444" height="80" rx="40"/>
+    </g>
+    <g fill="#ffffff" opacity="0.6">
+      <ellipse cx="206" cy="400" rx="92" ry="19"/>
+      <ellipse cx="392" cy="406" rx="62" ry="15"/>
+    </g>
+  </g>
+
+  <rect x="0.5" y="0.5" width="511" height="511" rx="112" fill="none" stroke="#173a9e" stroke-opacity="0.3"/>
+</svg>

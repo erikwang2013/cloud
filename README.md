@@ -20,10 +20,15 @@
 | 日本語 | [ja docs](docs/i18n/ja/README.md) |
 
 <p align="center">
-  <img src="docs/diagrams/c.svg" alt="CloudPlatform 项目宠物" width="220">
+  <img src="docs/diagrams/c.svg" alt="CloudPlatform 项目宠物「云豆」" width="260">
 </p>
 
+<p align="center"><b>云豆</b> — 项目宠物。一只睡在云朵上的小狗，头顶是虚线相连的云资源节点：<br>
+用户买下的服务器、IP、磁盘、域名，都由它在云上自动交付、安静托管。</p>
+
 面向全球用户的云资源交易平台，支持服务器（VM）、IP 地址、云磁盘、域名、SSL 证书、对象存储（S3）、CDN 加速等产品的在线购买与自动交付。自营物理机通过 Proxmox VE 虚拟化交付，同时支持第三方供应商入驻售卖。提供按量计费、推荐分销、GraphQL API 及 Prometheus/Grafana 可观测性。
+
+项目按 **四层架构** 组织——客户端层（6 平台接入）、API 网关层（12 项全局中间件）、业务服务层（23 个功能模块）、基础设施层；管理后台为独立 webman 实例，与用户流量故障域隔离。完整设计见 [架构设计文档](docs/architecture.md) 与 [功能设计文档](docs/features.md)。
 
 ## 技术栈
 
@@ -58,7 +63,11 @@
 
 ## 系统架构
 
+客户端经 Cloudflare 与 Nginx 进入业务服务层，业务服务层由 **两个独立的 webman 实例**组成（service `:8787` 承载用户与供应商 API、队列、定时任务和 WebSocket；admin `:8788` 承载管理面板），二者共享同一 MySQL，故障域相互隔离。自营物理机资源经 kvm-server（Rust gRPC）调用 Proxmox VE 完成交付。
+
 ![系统架构](docs/diagrams/system-architecture-zh.svg)
+
+分层细节、中间件管线与部署拓扑见 [架构设计文档](docs/architecture.md)。
 
 ## 核心业务流程
 
@@ -97,6 +106,10 @@
 系统按四层架构组织：客户端层（6 平台接入）、API 网关层（12 项中间件）、业务服务层（23 个功能模块）、基础设施层（8 个核心组件）。
 
 ![功能模块总览](docs/diagrams/module-overview-zh.svg)
+
+功能内部如何设计——同步请求链路、异步事件驱动链路、横切关注点与模块标准分层——见下图：
+
+![功能设计](docs/diagrams/feature-design-zh.svg)
 
 ## 资源生命周期
 
@@ -252,6 +265,10 @@ cloud-php/
 │   │   ├── support/            # RequestMock
 │   │   ├── bootstrap.php       # 测试引导
 │   │   └── TestCase.php        # 测试基类
+│   ├── public/                 # 站点根目录（webman static.enable=true 直接托管）
+│   │   ├── index.html          # 落地页（由 config/route.php 的 GET / 路由回吐）
+│   │   ├── mascot.svg          # 项目宠物「云豆」
+│   │   └── favicon.svg / .ico  # 站点图标（图标源：docs/diagrams/mascot-icon.svg）
 │   ├── runtime/                # 运行时文件（日志 / 缓存）
 │   ├── vendor/                 # Composer 依赖
 │   ├── .env.example            # 环境变量模板
@@ -290,7 +307,13 @@ cloud-php/
 │   ├── api-test.sh             # API 冒烟测试脚本
 │   ├── database.sql            # 数据库 DDL
 │   ├── alipay.png / weixinpay.png  # 打赏二维码
-│   ├── diagrams/               # 18 个 SVG 架构图（系统架构 / 安全管道 / ER 图 / 业务流程 / 多币种结算等）
+│   ├── diagrams/               # 23 个 SVG 图（项目宠物 / 系统架构 / 功能设计 / 资源生命周期 / 安全管道 / ER 图 / 业务流程 / 多币种结算等）
+│   │   ├── c.svg               # 项目宠物「云豆」（纯矢量 8KB，纯路径无位图）
+│   │   ├── mascot-icon.svg     # 方块标识版，用于 favicon 与客户端应用图标
+│   │   ├── c-original.svg      # 初版宠物图备份（内嵌位图，仅存档用）
+│   │   ├── system-architecture-{zh,en}.svg  # 系统架构图
+│   │   ├── feature-design-{zh,en}.svg       # 功能设计图
+│   │   └── resource-lifecycle-{zh,en}.svg   # 资源生命周期图
 │   ├── test-reports/           # 测试报告（PHPUnit / Rust / API / UI + 页面截图）
 │   └── superpowers/            # 设计规格与实施计划
 │       ├── specs/              # 系统设计规格文档
@@ -400,6 +423,10 @@ php start.php stop              # 停止
 ```
 
 ## 使用说明
+
+### 访问入口
+
+启动后 `http://localhost:8787` 即为站点落地页（项目宠物「云豆」+ API 文档 / 健康检查入口），图标为 `/favicon.svg`。落地页由 `service/config/route.php` 的 `GET /` 路由回吐，静态资源由 `service/config/static.php` 托管 —— 部署到 nginx 后同样由 webman 提供，见 [部署清单 §7.2](docs/deployment.md)。
 
 ### 登录
 

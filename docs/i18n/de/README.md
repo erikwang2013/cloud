@@ -20,7 +20,11 @@
 | 日本語 | [ja docs](../../ja/README.md) |
 
 <p align="center">
-  <img src="docs/diagrams/c.svg" alt="CloudPlatform 项目宠物" width="220">
+  <p align="center">
+  <img src="docs/diagrams/c.svg" alt="Yundou, das Projektmaskottchen von CloudPlatform" width="260">
+</p>
+
+<p align="center">**Yundou** — das Projektmaskottchen</p>
 </p>
 
 Eine Cloud-Ressourcen-Handelsplattform für globale Nutzer, die den Online-Kauf und die automatische Bereitstellung von Servern (VM), IP-Adressen, Cloud-Datenträgern, Domains, SSL-Zertifikaten, Objektspeicher (S3), CDN-Beschleunigung und weiteren Produkten unterstützt. Selbst betriebene physische Server werden über Proxmox VE virtualisiert und bereitgestellt; zusätzlich können Drittanbieter einsteigen und Produkte anbieten. Die Plattform bietet nutzungsbasierte Abrechnung, Empfehlungsprogramme, eine GraphQL-API sowie Prometheus/Grafana-Observability.

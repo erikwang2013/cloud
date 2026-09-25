@@ -7,6 +7,7 @@
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
+| GET | `/` | 站点落地页（HTML，非 JSON 接口） |
 | GET | `/health` | 健康检查 |
 | POST | `/api/v1/auth/register` | 用户注册（请求体需 AES-256-GCM 加密） |
 | POST | `/api/v1/auth/login` | 用户登录（请求体需 AES-256-GCM 加密） |

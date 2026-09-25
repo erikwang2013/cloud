@@ -504,6 +504,18 @@ Route::any('/app/admin/dashboard/data', [DashboardController::class, 'index']);
 
 除显式注册的路由外，`admin/config/route.php` 会为 `app/controller/` 下每个控制器的公开方法自动注册 `/app/admin/{snake_case_controller}/{action}` 路由（如 `/app/admin/order_item/index`），URL 与菜单使用的 snake_case 控制器名一致；`/app/admin` 与 `/app/admin/index` 为后台主页/登录页入口（未登录时渲染登录视图）；未匹配请求统一返回 404。
 
+### 站点图标与登录页标识
+
+`/app/admin/` 前缀经 `admin/config/plugin/admin/app.php` 的 `public_path` 映射到 `admin/public/`（webman `App::findFile()` 的插件静态分支），配合 `admin/config/static.php` 的 `static.enable => true` 提供：
+
+| 资源 | URL | 文件 |
+|------|-----|------|
+| SVG 图标 | `/app/admin/favicon.svg` | `admin/public/favicon.svg` |
+| ICO 兜底 | `/app/admin/favicon.ico` | `admin/public/favicon.ico`（多尺寸 16/32/48） |
+| 登录页插画 | `/app/admin/mascot.svg` | `admin/public/mascot.svg` |
+
+图标与插画同源，均由 `scripts/gen-icons.sh` 从 `docs/diagrams/mascot-icon.svg` 生成。`account/login.html` 与 `index/index.html` 的 `<head>` 已加 SVG 优先 + ICO 兜底的 `rel="icon"`；登录页 logo 默认值在 `app/controller/IndexController.php` 中指向该插画，`system_config` 里 `logo.image` 若已配置则仍然优先生效。
+
 ## PDF Export
 
 Client-side PDF generation on the dashboard page:

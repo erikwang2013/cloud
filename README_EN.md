@@ -20,10 +20,15 @@
 | 日本語 | [ja docs](docs/i18n/ja/README.md) |
 
 <p align="center">
-  <img src="docs/diagrams/c.svg" alt="CloudPlatform Project Pet" width="220">
+  <img src="docs/diagrams/c.svg" alt="CloudPlatform project pet “Yundou”" width="260">
 </p>
 
-A cloud resource trading platform serving global users. Supports purchasing servers (VM), IP addresses, cloud disks, domains, SSL certificates, object storage (S3), and CDN acceleration with automatic provisioning. Self-operated bare-metal servers are virtualized via Proxmox VE, while third-party suppliers can onboard and sell through the marketplace.
+<p align="center"><b>Yundou</b> — the project pet. A puppy asleep on a cloud, with cloud-resource nodes joined by dotted links overhead:<br>
+every server, IP, disk, and domain a user buys is provisioned and quietly hosted up there by this one.</p>
+
+A cloud resource trading platform serving global users. Supports purchasing servers (VM), IP addresses, cloud disks, domains, SSL certificates, object storage (S3), and CDN acceleration with automatic provisioning. Self-operated bare-metal servers are virtualized via Proxmox VE, while third-party suppliers can onboard and sell through the marketplace. Billing by usage, affiliate distribution, a GraphQL API, and Prometheus/Grafana observability are included.
+
+The system is organized into **four layers** — Client Layer (6 platforms), API Gateway Layer (12 global middleware), Business Service Layer (23 modules), and Infrastructure Layer. The admin panel runs as a separate webman instance with an isolated failure domain from user traffic. Full design: [Architecture Design](docs/architecture.md) and [Feature Design](docs/features.md).
 
 ## Tech Stack
 
@@ -54,7 +59,11 @@ A cloud resource trading platform serving global users. Supports purchasing serv
 
 ## System Architecture
 
+Clients enter through Cloudflare and Nginx into the business service layer, which runs as **two independent webman instances** (service `:8787` carries user and supplier APIs, queues, cron and WebSocket; admin `:8788` carries the management panel). They share one MySQL while keeping separate failure domains. First-party bare-metal resources are provisioned through kvm-server (Rust gRPC) into Proxmox VE.
+
 ![System Architecture](docs/diagrams/system-architecture-en.svg)
+
+Layer details, middleware pipeline, and deployment topology live in the [Architecture Design](docs/architecture.md) document.
 
 ## Core Business Flow
 
@@ -93,6 +102,10 @@ Payment transactions (`payment_transactions`), supplier settlements (`supplier_s
 The system is organized into four layers: Client Layer (6 platform access points), API Gateway Layer (12 middleware components), Business Service Layer (23 core modules), and Infrastructure Layer (8 core components).
 
 ![Module Overview](docs/diagrams/module-overview-en.svg)
+
+How those features are designed internally — the synchronous request path, the asynchronous event path, cross-cutting concerns, and the standard module layout:
+
+![Feature Design](docs/diagrams/feature-design-en.svg)
 
 ## Resource Lifecycle
 
@@ -247,6 +260,10 @@ cloud-php/
 │   │   ├── support/            # RequestMock
 │   │   ├── bootstrap.php       # Test bootstrap
 │   │   └── TestCase.php        # Base test case
+│   ├── public/                 # Site root (served directly, webman static.enable=true)
+│   │   ├── index.html          # Landing page (returned by the GET / route in config/route.php)
+│   │   ├── mascot.svg          # Project pet "Yundou"
+│   │   └── favicon.svg / .ico  # Site icons (source: docs/diagrams/mascot-icon.svg)
 │   ├── runtime/                # Runtime files (logs / cache)
 │   ├── vendor/                 # Composer dependencies
 │   ├── .env.example            # Environment template
@@ -285,7 +302,13 @@ cloud-php/
 │   ├── api-test.sh             # API smoke test script
 │   ├── database.sql            # Database DDL
 │   ├── alipay.png / weixinpay.png  # Sponsor QR codes
-│   ├── diagrams/               # 18 SVG architecture diagrams (system / security / ER / business flows)
+│   ├── diagrams/               # 23 SVG diagrams (project pet / system architecture / feature design / resource lifecycle / security / ER / business flows)
+│   │   ├── c.svg               # Project pet "Yundou" (pure vector, 8KB, no embedded bitmap)
+│   │   ├── mascot-icon.svg     # Square mark used for favicons and client app icons
+│   │   ├── c-original.svg      # Backup of the first pet illustration (embedded bitmap, archive only)
+│   │   ├── system-architecture-{zh,en}.svg  # System architecture
+│   │   ├── feature-design-{zh,en}.svg       # Feature design
+│   │   └── resource-lifecycle-{zh,en}.svg   # Resource lifecycle
 │   ├── test-reports/           # Test reports (PHPUnit / Rust / API / UI + page screenshots)
 │   └── superpowers/            # Design specs & implementation plans
 │       ├── specs/              # System design specification
@@ -395,6 +418,10 @@ php start.php stop              # Stop
 ```
 
 ## Usage Guide
+
+### Entry Points
+
+Once running, `http://localhost:8787` serves the site landing page (project pet “Yundou” plus links to the API docs and health check), with the icon at `/favicon.svg`. The landing page is returned by the `GET /` route in `service/config/route.php`; static assets are served by `service/config/static.php` — the same applies behind nginx, see [Deployment §7.2](docs/deployment.md).
 
 ### Sign In
 

@@ -1,0 +1,228 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 860" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif">
+  <defs>
+    <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1e40af"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/></filter>
+    <marker id="arrB" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#3b82f6"/></marker>
+    <marker id="arrO" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#ea580c"/></marker>
+  </defs>
+
+  <rect width="1180" height="860" fill="#f8fafc" rx="12"/>
+  <rect x="0" y="0" width="1180" height="50" fill="url(#hdr)" rx="12"/>
+  <rect x="0" y="12" width="1180" height="38" fill="url(#hdr)"/>
+  <text x="590" y="34" text-anchor="middle" fill="#fff" font-size="18" font-weight="bold">Cloud Platform — Feature Design</text>
+
+  <!-- ═══ 同步请求链路 ═══ -->
+  <g filter="url(#sh)">
+    <rect x="30" y="66" width="1120" height="176" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+    <text x="50" y="88" fill="#1e40af" font-size="13" font-weight="bold">Synchronous Request Path — Read &amp; Write (Controller → Service → Model)</text>
+
+    <rect x="41" y="102" width="168" height="122" rx="7" fill="#ede9fe" stroke="#a78bfa"/>
+    <text x="125" y="126" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">Clients</text>
+    <text x="125" y="148" text-anchor="middle" fill="#7c3aed" font-size="9.5">Flutter · HarmonyOS</text>
+    <text x="125" y="164" text-anchor="middle" fill="#7c3aed" font-size="9.5">Admin panel · supplier systems</text>
+    <text x="125" y="186" text-anchor="middle" fill="#8b5cf6" font-size="9.5">HTTPS + JWT</text>
+    <text x="125" y="202" text-anchor="middle" fill="#8b5cf6" font-size="9.5">X-Client-Platform</text>
+
+    <rect x="227" y="102" width="168" height="122" rx="7" fill="#cffafe" stroke="#22d3ee"/>
+    <text x="311" y="126" text-anchor="middle" fill="#0e7490" font-size="12" font-weight="bold">API Gateway</text>
+    <text x="311" y="148" text-anchor="middle" fill="#0891b2" font-size="9.5">12 global middleware</text>
+    <text x="311" y="164" text-anchor="middle" fill="#0891b2" font-size="9.5">Version / WAF / Rate limit</text>
+    <text x="311" y="186" text-anchor="middle" fill="#0891b2" font-size="9.5">AES-256-GCM transport crypto</text>
+    <text x="311" y="202" text-anchor="middle" fill="#0891b2" font-size="9.5">Geo blocking · maintenance</text>
+
+    <rect x="413" y="102" width="168" height="122" rx="7" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="497" y="126" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Controller</text>
+    <text x="497" y="148" text-anchor="middle" fill="#2563eb" font-size="9.5">Input validation</text>
+    <text x="497" y="164" text-anchor="middle" fill="#2563eb" font-size="9.5">Hashid → real ID decode</text>
+    <text x="497" y="186" text-anchor="middle" fill="#2563eb" font-size="9.5">RBAC / ACL checks</text>
+    <text x="497" y="202" text-anchor="middle" fill="#2563eb" font-size="9.5">Unified Response wrapper</text>
+
+    <rect x="599" y="102" width="168" height="122" rx="7" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="683" y="126" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Service</text>
+    <text x="683" y="148" text-anchor="middle" fill="#2563eb" font-size="9.5">Orchestration · tx boundary</text>
+    <text x="683" y="164" text-anchor="middle" fill="#2563eb" font-size="9.5">Money via bcmath only</text>
+    <text x="683" y="186" text-anchor="middle" fill="#2563eb" font-size="9.5">Rounding: Money::bcround</text>
+    <text x="683" y="202" text-anchor="middle" fill="#2563eb" font-size="9.5">No HTTP coupling; reusable</text>
+
+    <rect x="785" y="102" width="168" height="122" rx="7" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="869" y="126" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Model</text>
+    <text x="869" y="148" text-anchor="middle" fill="#2563eb" font-size="9.5">Eloquent ORM</text>
+    <text x="869" y="164" text-anchor="middle" fill="#2563eb" font-size="9.5">Snowflake primary keys</text>
+    <text x="869" y="186" text-anchor="middle" fill="#2563eb" font-size="9.5">Encrypted field Casts</text>
+    <text x="869" y="202" text-anchor="middle" fill="#2563eb" font-size="9.5">Relations · query scopes</text>
+
+    <rect x="971" y="102" width="168" height="122" rx="7" fill="#d1fae5" stroke="#34d399"/>
+    <text x="1055" y="126" text-anchor="middle" fill="#047857" font-size="12" font-weight="bold">Storage &amp; Search</text>
+    <text x="1055" y="148" text-anchor="middle" fill="#059669" font-size="9.5">MySQL primary + audit DB</text>
+    <text x="1055" y="164" text-anchor="middle" fill="#059669" font-size="9.5">Redis cache · queue · locks</text>
+    <text x="1055" y="186" text-anchor="middle" fill="#059669" font-size="9.5">Elasticsearch full-text</text>
+    <text x="1055" y="202" text-anchor="middle" fill="#059669" font-size="9.5">Audit log stored separately</text>
+
+    <g stroke="#3b82f6" stroke-width="2" marker-end="url(#arrB)">
+      <path d="M209,163 L221,163"/>
+      <path d="M395,163 L407,163"/>
+      <path d="M581,163 L593,163"/>
+      <path d="M767,163 L779,163"/>
+      <path d="M953,163 L965,163"/>
+    </g>
+  </g>
+
+  <!-- ═══ 异步事件驱动链路 ═══ -->
+  <g filter="url(#sh)">
+    <rect x="30" y="258" width="1120" height="176" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+    <text x="50" y="280" fill="#9a3412" font-size="13" font-weight="bold">Asynchronous Event Path — provisioning / notification / settlement (the only cross-module coupling)</text>
+
+    <rect x="34" y="294" width="146" height="122" rx="7" fill="#ffedd5" stroke="#fb923c"/>
+    <text x="107" y="318" text-anchor="middle" fill="#9a3412" font-size="11.5" font-weight="bold">Domain Events</text>
+    <text x="107" y="340" text-anchor="middle" fill="#c2410c" font-size="9">OrderPaid</text>
+    <text x="107" y="356" text-anchor="middle" fill="#c2410c" font-size="9">TicketCreated</text>
+    <text x="107" y="372" text-anchor="middle" fill="#c2410c" font-size="9">ProvisionFailed</text>
+    <text x="107" y="394" text-anchor="middle" fill="#ea580c" font-size="9">app/{Module}/event/</text>
+
+    <rect x="195" y="294" width="146" height="122" rx="7" fill="#ffedd5" stroke="#fb923c"/>
+    <text x="268" y="318" text-anchor="middle" fill="#9a3412" font-size="11.5" font-weight="bold">Listeners</text>
+    <text x="268" y="340" text-anchor="middle" fill="#c2410c" font-size="9">Modules never import each</text>
+    <text x="268" y="356" text-anchor="middle" fill="#c2410c" font-size="9">other; the wiring lives</text>
+    <text x="268" y="372" text-anchor="middle" fill="#c2410c" font-size="9">in config/event</text>
+    <text x="268" y="394" text-anchor="middle" fill="#ea580c" font-size="9">app/{Module}/listener/</text>
+
+    <rect x="356" y="294" width="146" height="122" rx="7" fill="#ffedd5" stroke="#fb923c"/>
+    <text x="429" y="318" text-anchor="middle" fill="#9a3412" font-size="11.5" font-weight="bold">Queues</text>
+    <text x="429" y="340" text-anchor="middle" fill="#c2410c" font-size="9">webman redis-queue</text>
+    <text x="429" y="356" text-anchor="middle" fill="#c2410c" font-size="9">provisioning ×2</text>
+    <text x="429" y="372" text-anchor="middle" fill="#c2410c" font-size="9">email ×5 · sms ×10</text>
+    <text x="429" y="394" text-anchor="middle" fill="#ea580c" font-size="9">push ×20</text>
+
+    <rect x="517" y="294" width="146" height="122" rx="7" fill="#ffedd5" stroke="#fb923c"/>
+    <text x="590" y="318" text-anchor="middle" fill="#9a3412" font-size="11.5" font-weight="bold">Workers</text>
+    <text x="590" y="340" text-anchor="middle" fill="#c2410c" font-size="9">Exponential backoff</text>
+    <text x="590" y="356" text-anchor="middle" fill="#c2410c" font-size="9">1m→5m→15m→1h</text>
+    <text x="590" y="372" text-anchor="middle" fill="#c2410c" font-size="9">→6h→24h (max 6 tries)</text>
+    <text x="590" y="394" text-anchor="middle" fill="#ea580c" font-size="9">app/{Module}/queue/</text>
+
+    <rect x="678" y="294" width="146" height="122" rx="7" fill="#ffedd5" stroke="#fb923c"/>
+    <text x="751" y="318" text-anchor="middle" fill="#9a3412" font-size="11.5" font-weight="bold">Provider Adapters</text>
+    <text x="751" y="340" text-anchor="middle" fill="#c2410c" font-size="9">Resolved by ProviderFactory</text>
+    <text x="751" y="356" text-anchor="middle" fill="#c2410c" font-size="9">Proxmox VE (first-party)</text>
+    <text x="751" y="372" text-anchor="middle" fill="#c2410c" font-size="9">Aliyun / AWS (planned)</text>
+    <text x="751" y="394" text-anchor="middle" fill="#ea580c" font-size="9">app/{Module}/provider/</text>
+
+    <rect x="839" y="294" width="146" height="122" rx="7" fill="#ffedd5" stroke="#fb923c"/>
+    <text x="912" y="318" text-anchor="middle" fill="#9a3412" font-size="11.5" font-weight="bold">Result Persisted</text>
+    <text x="912" y="340" text-anchor="middle" fill="#c2410c" font-size="9">Resource / Disk / IP</text>
+    <text x="912" y="356" text-anchor="middle" fill="#c2410c" font-size="9">Order item status written back</text>
+    <text x="912" y="372" text-anchor="middle" fill="#c2410c" font-size="9">Lifecycle state advanced</text>
+    <text x="912" y="394" text-anchor="middle" fill="#ea580c" font-size="9">Audit record</text>
+
+    <rect x="1000" y="294" width="146" height="122" rx="7" fill="#ffedd5" stroke="#fb923c"/>
+    <text x="1073" y="318" text-anchor="middle" fill="#9a3412" font-size="11.5" font-weight="bold">Outbound Notify</text>
+    <text x="1073" y="340" text-anchor="middle" fill="#c2410c" font-size="9">WebSocket push</text>
+    <text x="1073" y="356" text-anchor="middle" fill="#c2410c" font-size="9">Webhook callbacks</text>
+    <text x="1073" y="372" text-anchor="middle" fill="#c2410c" font-size="9">Email / SMS / push</text>
+    <text x="1073" y="394" text-anchor="middle" fill="#ea580c" font-size="9">In-app messages</text>
+
+    <g stroke="#ea580c" stroke-width="2" marker-end="url(#arrO)">
+      <path d="M180,355 L189,355"/>
+      <path d="M341,355 L350,355"/>
+      <path d="M502,355 L511,355"/>
+      <path d="M663,355 L672,355"/>
+      <path d="M824,355 L833,355"/>
+      <path d="M985,355 L994,355"/>
+    </g>
+  </g>
+
+  <!-- ═══ 横切关注点 ═══ -->
+  <g filter="url(#sh)">
+    <rect x="30" y="450" width="1120" height="122" rx="8" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.5"/>
+    <text x="50" y="472" fill="#5b21b6" font-size="13" font-weight="bold">Cross-Cutting Concerns — provided once by the common library, never re-implemented per module</text>
+    <g font-size="9.5" fill="#5b21b6" text-anchor="middle">
+      <rect x="34" y="484" width="172" height="34" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="120" y="500">Auth &amp; Authorization</text><text x="120" y="512" font-size="8.5" fill="#7c3aed">JWT HS256 · RBAC · ACL</text>
+      <rect x="222" y="484" width="172" height="34" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="308" y="500">Three-layer Crypto</text><text x="308" y="512" font-size="8.5" fill="#7c3aed">transport GCM · field Casts · master key</text>
+      <rect x="410" y="484" width="172" height="34" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="496" y="500">ID System</text><text x="496" y="512" font-size="8.5" fill="#7c3aed">Snowflake keys · Hashid obfuscation</text>
+      <rect x="598" y="484" width="172" height="34" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="684" y="500">i18n</text><text x="684" y="512" font-size="8.5" fill="#7c3aed">7 locales · Locale middleware</text>
+      <rect x="786" y="484" width="172" height="34" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="872" y="500">Observability</text><text x="872" y="512" font-size="8.5" fill="#7c3aed">Prometheus · Grafana · audit log</text>
+      <rect x="974" y="484" width="172" height="34" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="1060" y="500">Hardening</text><text x="1060" y="512" font-size="8.5" fill="#7c3aed">WAF · 31 checks · re-confirmation</text>
+      <rect x="34" y="526" width="172" height="34" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="120" y="542">Feature Flags</text><text x="120" y="554" font-size="8.5" fill="#7c3aed">gradual rollout</text>
+      <rect x="222" y="526" width="172" height="34" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="308" y="542">Human Check</text><text x="308" y="554" font-size="8.5" fill="#7c3aed">click CAPTCHA · TOTP 2FA</text>
+      <rect x="410" y="526" width="172" height="34" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="496" y="542">Rate Limit &amp; Geo</text><text x="496" y="554" font-size="8.5" fill="#7c3aed">per-IP / per-token dual buckets · GeoIP2</text>
+      <rect x="598" y="526" width="172" height="34" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="684" y="542">Response Contract</text><text x="684" y="554" font-size="8.5" fill="#7c3aed">unified envelope · auto hashid encode</text>
+      <rect x="786" y="526" width="172" height="34" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="872" y="542">Log Sanitizing</text><text x="872" y="554" font-size="8.5" fill="#7c3aed">LogSanitizer strips secrets</text>
+      <rect x="974" y="526" width="172" height="34" rx="6" fill="#ede9fe" stroke="#a78bfa"/><text x="1060" y="542">Client Detection</text><text x="1060" y="554" font-size="8.5" fill="#7c3aed">X-Client-Platform, 8 platforms</text>
+    </g>
+  </g>
+
+  <!-- ═══ 模块标准分层 ═══ -->
+  <g filter="url(#sh)">
+    <rect x="30" y="594" width="1120" height="176" rx="8" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.5"/>
+    <text x="50" y="616" fill="#047857" font-size="13" font-weight="bold">Standard Module Layout — every business module follows the same convention (app/{Module}/)</text>
+    <g text-anchor="middle">
+      <rect x="36" y="630" width="128" height="126" rx="6" fill="#d1fae5" stroke="#34d399"/>
+      <text x="100" y="652" fill="#047857" font-size="10.5" font-weight="bold">controller/</text>
+      <text x="100" y="674" fill="#059669" font-size="8.5">HTTP layer</text>
+      <text x="100" y="690" fill="#059669" font-size="8.5">Input validation</text>
+      <text x="100" y="706" fill="#059669" font-size="8.5">calls Service</text>
+      <text x="100" y="722" fill="#059669" font-size="8.5">returns Response</text>
+      <text x="100" y="744" fill="#10b981" font-size="8">external/ subdir</text>
+
+      <rect x="176" y="630" width="128" height="126" rx="6" fill="#d1fae5" stroke="#34d399"/>
+      <text x="240" y="652" fill="#047857" font-size="10.5" font-weight="bold">service/</text>
+      <text x="240" y="674" fill="#059669" font-size="8.5">Business logic</text>
+      <text x="240" y="690" fill="#059669" font-size="8.5">No HTTP coupling</text>
+      <text x="240" y="706" fill="#059669" font-size="8.5">shared by Controller</text>
+      <text x="240" y="722" fill="#059669" font-size="8.5">and Queue Workers</text>
+      <text x="240" y="744" fill="#10b981" font-size="8">bcmath money math</text>
+
+      <rect x="316" y="630" width="128" height="126" rx="6" fill="#d1fae5" stroke="#34d399"/>
+      <text x="380" y="652" fill="#047857" font-size="10.5" font-weight="bold">model/</text>
+      <text x="380" y="674" fill="#059669" font-size="8.5">Eloquent models</text>
+      <text x="380" y="690" fill="#059669" font-size="8.5">relations</text>
+      <text x="380" y="706" fill="#059669" font-size="8.5">query scopes</text>
+      <text x="380" y="722" fill="#059669" font-size="8.5">encrypting Casts</text>
+      <text x="380" y="744" fill="#10b981" font-size="8">Snowflake ID trait</text>
+
+      <rect x="456" y="630" width="128" height="126" rx="6" fill="#d1fae5" stroke="#34d399"/>
+      <text x="520" y="652" fill="#047857" font-size="10.5" font-weight="bold">event/</text>
+      <text x="520" y="674" fill="#059669" font-size="8.5">domain event classes</text>
+      <text x="520" y="690" fill="#059669" font-size="8.5">OrderPaid</text>
+      <text x="520" y="706" fill="#059669" font-size="8.5">TicketCreated</text>
+      <text x="520" y="722" fill="#059669" font-size="8.5">ProvisionFailed</text>
+      <text x="520" y="744" fill="#10b981" font-size="8">decoupling entry point</text>
+
+      <rect x="596" y="630" width="128" height="126" rx="6" fill="#d1fae5" stroke="#34d399"/>
+      <text x="660" y="652" fill="#047857" font-size="10.5" font-weight="bold">listener/</text>
+      <text x="660" y="674" fill="#059669" font-size="8.5">event listeners</text>
+      <text x="660" y="690" fill="#059669" font-size="8.5">trigger provisioning</text>
+      <text x="660" y="706" fill="#059669" font-size="8.5">WebSocket push</text>
+      <text x="660" y="722" fill="#059669" font-size="8.5">affiliate credit</text>
+      <text x="660" y="744" fill="#10b981" font-size="8">config/event.php</text>
+
+      <rect x="736" y="630" width="128" height="126" rx="6" fill="#d1fae5" stroke="#34d399"/>
+      <text x="800" y="652" fill="#047857" font-size="10.5" font-weight="bold">provider/</text>
+      <text x="800" y="674" fill="#059669" font-size="8.5">cloud vendor adapters</text>
+      <text x="800" y="690" fill="#059669" font-size="8.5">ProviderFactory</text>
+      <text x="800" y="706" fill="#059669" font-size="8.5">keyed by provider</text>
+      <text x="800" y="722" fill="#059669" font-size="8.5">one provisioning API</text>
+      <text x="800" y="744" fill="#10b981" font-size="8">new vendor = one class</text>
+
+      <rect x="876" y="630" width="128" height="126" rx="6" fill="#d1fae5" stroke="#34d399"/>
+      <text x="940" y="652" fill="#047857" font-size="10.5" font-weight="bold">queue/</text>
+      <text x="940" y="674" fill="#059669" font-size="8.5">queue consumers</text>
+      <text x="940" y="690" fill="#059669" font-size="8.5">ProvisionWorker</text>
+      <text x="940" y="706" fill="#059669" font-size="8.5">EmailSender</text>
+      <text x="940" y="722" fill="#059669" font-size="8.5">SmsSender / PushSender</text>
+      <text x="940" y="744" fill="#10b981" font-size="8">retries &amp; failure alerts</text>
+
+      <rect x="1016" y="630" width="128" height="126" rx="6" fill="#d1fae5" stroke="#34d399"/>
+      <text x="1080" y="652" fill="#047857" font-size="10.5" font-weight="bold">cron/</text>
+      <text x="1080" y="674" fill="#059669" font-size="8.5">scheduled jobs</text>
+      <text x="1080" y="690" fill="#059669" font-size="8.5">ExpirationCheck</text>
+      <text x="1080" y="706" fill="#059669" font-size="8.5">ExchangeRateSync</text>
+      <text x="1080" y="722" fill="#059669" font-size="8.5">SupplierSettlement</text>
+      <text x="1080" y="744" fill="#10b981" font-size="8">CronRunner dispatch</text>
+    </g>
+  </g>
+
+  <g opacity="0.5">
+    <text x="1164" y="848" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="rgba(0,0,0,0.18)">https://erik.xyz</text>
+  </g>
+</svg>

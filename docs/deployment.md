@@ -429,7 +429,21 @@ server {
 # }
 ```
 
-### 7.2 启用站点
+### 7.2 站点静态资源与落地页
+
+上面的两个 `location /` 都是全量反代，nginx 自身**不直接托管** `service/public/`、`admin/public/`（`root` 指令虽写了，但被 `location /` 的 proxy 抢先匹配）。因此站点图标与落地页必须由 webman 自己回吐：
+
+| 资源 | URL | 由谁提供 |
+|------|-----|---------|
+| service 落地页 | `/` | `service/config/route.php` 的 `GET /` 路由回吐 `public/index.html`（webman 无目录索引逻辑，`public/index.html` 不会自动生效） |
+| service 图标 | `/favicon.svg`、`/favicon.ico`、`/mascot.svg` | `service/config/static.php`（`static.enable => true`） |
+| admin 图标 | `/app/admin/favicon.svg`、`/app/admin/mascot.svg` | `admin/config/static.php` + `admin/config/plugin/admin/app.php` 的 `public_path`（`/app/admin/` 前缀映射到 `admin/public/`） |
+
+> **注意**：`static.enable => true` 会让 `service/public/` 与 `admin/public/` 下的**所有**文件可被直接访问。该目录只应放公开静态资源。`service/storage/` 下的 `backups` / `apple` / `firebase` 等敏感目录不在 `public/` 内，不受影响；nginx 也只额外 alias 暴露了 `storage/uploads/`。
+>
+> 若希望改由 nginx 直接托管静态资源，可将 `static.php` 的 `enable` 置 `false`，并在两个 server 块中加 `location ~* \.(svg|ico|png|jpg|css|js)$ { root ...; }`；但 `/` 落地页路由仍需保留。
+
+### 7.3 启用站点
 
 ```bash
 sudo ln -sf /etc/nginx/sites-available/cloud-platform /etc/nginx/sites-enabled/
