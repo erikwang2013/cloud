@@ -579,184 +579,122 @@ body { font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-ser
 <div class="container">
 <div class="header">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 400" class="mascot" width="140" height="117" aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id="cpmcSky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#f7fbff"/>
-          <stop offset="100%" stop-color="#e1ecfb"/>
-        </linearGradient>
-        <linearGradient id="cpmcCloud" gradientUnits="userSpaceOnUse" x1="60" y1="210" x2="400" y2="360">
-          <stop offset="0%" stop-color="#ffffff"/>
-          <stop offset="100%" stop-color="#d2e4fa"/>
-        </linearGradient>
-        <linearGradient id="cpmcCloudFront" gradientUnits="userSpaceOnUse" x1="100" y1="270" x2="400" y2="365">
-          <stop offset="0%" stop-color="#ffffff"/>
-          <stop offset="100%" stop-color="#e6f0fd"/>
-        </linearGradient>
-        <linearGradient id="cpmcFur" gradientUnits="userSpaceOnUse" x1="180" y1="110" x2="400" y2="270">
-          <stop offset="0%" stop-color="#fdf3e3"/>
-          <stop offset="50%" stop-color="#f3dab5"/>
-          <stop offset="100%" stop-color="#e0bd8e"/>
-        </linearGradient>
-        <linearGradient id="cpmcMuzzleFill" gradientUnits="userSpaceOnUse" x1="118" y1="178" x2="198" y2="226">
-          <stop offset="0%" stop-color="#fffdf8"/>
-          <stop offset="100%" stop-color="#faeddb"/>
-        </linearGradient>
-        <linearGradient id="cpmcEar" gradientUnits="userSpaceOnUse" x1="120" y1="118" x2="170" y2="180">
-          <stop offset="0%" stop-color="#d8a870"/>
-          <stop offset="100%" stop-color="#bd8a49"/>
-        </linearGradient>
-        <linearGradient id="cpmcFarEar" gradientUnits="userSpaceOnUse" x1="230" y1="120" x2="280" y2="190">
-          <stop offset="0%" stop-color="#cf9c60"/>
-          <stop offset="100%" stop-color="#b07f41"/>
-        </linearGradient>
-        <filter id="cpmcSoft" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#1e40af" flood-opacity="0.10"/>
-        </filter>
-        <clipPath id="cpmcSkyClip"><rect width="480" height="400" rx="26"/></clipPath>
 
-        <!-- 小狗轮廓部件：先描边铺底，再用渐变填一次，内部接缝被覆盖 => 干净的并集外轮廓 -->
-        <g id="cppupBody">
-          <ellipse cx="310" cy="196" rx="96" ry="60"/>
-          <circle cx="376" cy="202" r="52"/>
-          <ellipse cx="240" cy="204" rx="56" ry="52"/>
-          <circle cx="196" cy="158" r="50"/>
-        </g>
-        <g id="cppupFarEar">
-          <path d="M230,120 C266,112 288,134 284,168 C281,192 262,200 250,192 C238,184 232,148 230,120 Z"/>
-        </g>
-        <g id="cppupNearEar">
-          <path d="M168,116 C136,118 126,140 132,158 C138,175 154,177 162,166 C172,153 173,134 168,116 Z"/>
-        </g>
-        <g id="cppupMuzzle">
-          <ellipse cx="156" cy="200" rx="42" ry="27"/>
-        </g>
-        <g id="cppupPaws">
-          <ellipse cx="164" cy="244" rx="32" ry="17"/>
-          <ellipse cx="206" cy="248" rx="30" ry="16"/>
-        </g>
-        <g id="cppupHindPaw">
-          <ellipse cx="364" cy="244" rx="32" ry="16"/>
-        </g>
-      </defs>
+  <defs>
+    <linearGradient id="cpmcSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7fbff"/>
+      <stop offset="100%" stop-color="#e1ecfb"/>
+    </linearGradient>
+    <linearGradient id="cpmcCloud" gradientUnits="userSpaceOnUse" x1="140" y1="110" x2="350" y2="270">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#e8f1fd"/>
+      <stop offset="100%" stop-color="#c9dffa"/>
+    </linearGradient>
+    <linearGradient id="cpmcServerFill" gradientUnits="userSpaceOnUse" x1="180" y1="238" x2="300" y2="316">
+      <stop offset="0%" stop-color="#3f4e63"/>
+      <stop offset="100%" stop-color="#1c2735"/>
+    </linearGradient>
+    <linearGradient id="cpmcCoin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fcd34d"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <filter id="cpmcSoft" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#1e40af" flood-opacity="0.12"/>
+    </filter>
+    <clipPath id="cpmcClip"><rect width="480" height="400" rx="26"/></clipPath>
 
-      <g clip-path="url(#cpmcSkyClip)">
-        <rect width="480" height="400" rx="26" fill="url(#cpmcSky)"/>
+    <g id="cpmcBody">
+      <circle cx="165" cy="205" r="54"/>
+      <circle cx="240" cy="172" r="68"/>
+      <circle cx="315" cy="205" r="54"/>
+      <rect x="114" y="200" width="252" height="60" rx="30"/>
+    </g>
+    <g id="cpmcArmL"><path d="M144,220 C144,268 166,300 196,300" fill="none" stroke-linecap="round"/></g>
+    <g id="cpmcArmR"><path d="M336,220 C336,268 314,300 284,300" fill="none" stroke-linecap="round"/></g>
+    <g id="cpmcServer">
+      <rect x="178" y="238" width="124" height="76" rx="12"/>
+    </g>
+  </defs>
 
-        <!-- 背景星点 -->
-        <g fill="#93c5fd" opacity="0.4">
-          <circle cx="60" cy="212" r="2.5"/>
-          <circle cx="122" cy="48" r="2"/>
-          <circle cx="432" cy="66" r="2.5"/>
-          <circle cx="404" cy="122" r="2"/>
-          <circle cx="42" cy="98" r="2"/>
-        </g>
+  <g clip-path="url(#cpmcClip)">
+    <rect width="480" height="400" rx="26" fill="url(#cpmcSky)"/>
 
-        <!-- 云资源节点：虚线相连的浮空节点 -->
-        <g stroke="#9dc4f6" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.8" fill="none">
-          <path d="M106,124 L162,90 L234,78"/>
-          <path d="M162,90 L178,138"/>
-          <path d="M234,78 L302,94 L342,72"/>
-          <path d="M302,94 L308,138"/>
-        </g>
-        <g stroke="#60a5fa" stroke-width="1.6" fill="#ffffff">
-          <circle cx="106" cy="124" r="9"/>
-          <circle cx="234" cy="78" r="11"/>
-          <circle cx="342" cy="72" r="8"/>
-        </g>
-        <g stroke="#60a5fa" stroke-width="1.6" fill="#dbeafe">
-          <circle cx="162" cy="90" r="8"/>
-          <circle cx="302" cy="94" r="7"/>
-        </g>
-        <g fill="#2563eb" opacity="0.85">
-          <circle cx="234" cy="78" r="3.4"/>
-          <circle cx="162" cy="90" r="2.6"/>
-          <circle cx="302" cy="94" r="2.4"/>
-          <circle cx="106" cy="124" r="3"/>
-          <circle cx="342" cy="72" r="2.6"/>
-        </g>
+    <!-- 背景星点 -->
+    <g fill="#93c5fd" opacity="0.38">
+      <circle cx="52" cy="96" r="2.5"/>
+      <circle cx="112" cy="52" r="2"/>
+      <circle cx="430" cy="92" r="2.5"/>
+      <circle cx="404" cy="330" r="2"/>
+      <circle cx="66" cy="332" r="2"/>
+    </g>
 
-        <!-- 云朵（后层） -->
-        <g fill="#b6d1f3">
-          <circle cx="118" cy="291" r="54"/>
-          <circle cx="187" cy="276" r="62"/>
-          <circle cx="258" cy="268" r="66"/>
-          <circle cx="331" cy="276" r="62"/>
-          <circle cx="394" cy="291" r="54"/>
-          <rect x="62" y="284" width="356" height="74" rx="37"/>
-        </g>
-        <g fill="url(#cpmcCloud)" filter="url(#cpmcSoft)">
-          <circle cx="120" cy="289" r="50"/>
-          <circle cx="188" cy="274" r="58"/>
-          <circle cx="258" cy="266" r="62"/>
-          <circle cx="332" cy="274" r="58"/>
-          <circle cx="392" cy="289" r="50"/>
-          <rect x="66" y="288" width="348" height="66" rx="33"/>
-        </g>
-        <g fill="#ffffff" opacity="0.5">
-          <ellipse cx="212" cy="242" rx="74" ry="20"/>
-          <ellipse cx="342" cy="254" rx="52" ry="15"/>
-        </g>
+    <!-- 轨道环：全球 + 计费 两个节点 -->
+    <g transform="rotate(-14 240 235)">
+      <ellipse cx="240" cy="235" rx="200" ry="58" fill="none" stroke="#9dc4f6" stroke-width="2" stroke-dasharray="7,7" opacity="0.85"/>
+    </g>
+    <g transform="translate(46,283)">
+      <circle r="18" fill="#ffffff" stroke="#3b82f6" stroke-width="2.5"/>
+      <ellipse rx="9" ry="18" fill="none" stroke="#60a5fa" stroke-width="1.6"/>
+      <path d="M-17,0 h34 M-14.5,-8 h29 M-14.5,8 h29" stroke="#60a5fa" stroke-width="1.6" fill="none"/>
+    </g>
+    <g transform="translate(434,187)">
+      <circle r="18" fill="url(#cpmcCoin)" stroke="#d97706" stroke-width="2"/>
+      <path d="M-9,6 L-2.5,-0.5 L2,-2.5 L9,-9" fill="none" stroke="#92400e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3,-9 H9 V-3" fill="none" stroke="#92400e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
 
-        <!-- 小狗：并集轮廓 + 填充 -->
-        <g stroke="#bf8d59" stroke-opacity="0.45" stroke-width="5" stroke-linejoin="round" fill="#bf8d59" fill-opacity="0.45">
-          <use href="#cppupBody"/><use href="#cppupFarEar"/><use href="#cppupHindPaw"/>
-          <use href="#cppupMuzzle"/><use href="#cppupNearEar"/><use href="#cppupPaws"/>
-          <path d="M404,212 C452,214 468,178 446,156" fill="none" stroke-width="26" stroke-linecap="round"/>
-        </g>
-        <g fill="url(#cpmcFur)">
-          <use href="#cppupBody"/><use href="#cppupHindPaw"/><use href="#cppupPaws"/>
-        </g>
-        <path d="M404,212 C452,214 468,178 446,156" fill="none" stroke="#bf8d59" stroke-opacity="0.45" stroke-width="24" stroke-linecap="round"/>
-        <path d="M404,212 C452,214 468,178 446,156" fill="none" stroke="url(#cpmcFur)" stroke-width="17" stroke-linecap="round"/>
+    <!-- 云朵身体（并集轮廓 + 填充） -->
+    <g stroke="#b6d1f3" stroke-width="6" stroke-linejoin="round" fill="#b6d1f3">
+      <use href="#cpmcBody"/>
+    </g>
+    <g fill="url(#cpmcCloud)" filter="url(#cpmcSoft)">
+      <use href="#cpmcBody"/>
+    </g>
+    <g fill="#ffffff" opacity="0.6">
+      <ellipse cx="216" cy="140" rx="46" ry="16"/>
+      <ellipse cx="168" cy="180" rx="24" ry="10"/>
+    </g>
 
-        <!-- 耳朵、口鼻分层着色 -->
-        <g fill="url(#cpmcFarEar)"><use href="#cppupFarEar"/></g>
-        <g fill="url(#cpmcMuzzleFill)"><use href="#cppupMuzzle"/></g>
-        <path d="M126,180 C146,174 172,178 190,192" fill="none" stroke="#d2a26c" stroke-width="3" stroke-opacity="0.35" stroke-linecap="round"/>
-        <g fill="#fdf3e3"><use href="#cppupHindPaw"/><use href="#cppupPaws"/></g>
-        <g fill="url(#cpmcEar)"><use href="#cppupNearEar"/></g>
+    <!-- 表情 -->
+    <g fill="#1e3a8a">
+      <ellipse cx="212" cy="170" rx="9" ry="10.5"/>
+      <ellipse cx="268" cy="170" rx="9" ry="10.5"/>
+    </g>
+    <g fill="#ffffff" opacity="0.9">
+      <circle cx="209" cy="166" r="3.2"/>
+      <circle cx="265" cy="166" r="3.2"/>
+    </g>
+    <g fill="#93c5fd" opacity="0.5">
+      <ellipse cx="186" cy="190" rx="14" ry="8"/>
+      <ellipse cx="294" cy="190" rx="14" ry="8"/>
+    </g>
+    <path d="M226,190 Q240,204 254,190" fill="none" stroke="#1e3a8a" stroke-width="4" stroke-linecap="round"/>
 
-        <!-- 颈部柔和转折阴影 -->
-        <path d="M238,126 C258,160 256,200 234,230" stroke="#d2a26c" stroke-width="14" opacity="0.22" fill="none" stroke-linecap="round"/>
+    <!-- 服务器 -->
+    <g stroke="#0f172a" stroke-width="3" fill="url(#cpmcServerFill)"><use href="#cpmcServer"/></g>
+    <rect x="189" y="248" width="102" height="20" rx="5" fill="#0f172a" opacity="0.45"/>
+    <g>
+      <circle cx="200" cy="258" r="4.5" fill="#22c55e"/>
+      <circle cx="215" cy="258" r="4.5" fill="#38bdf8"/>
+      <circle cx="230" cy="258" r="4.5" fill="#38bdf8"/>
+    </g>
+    <rect x="243" y="252" width="42" height="12" rx="3" fill="#0ea5e9" opacity="0.32"/>
+    <g stroke="#64748b" stroke-width="3" stroke-linecap="round" opacity="0.85">
+      <path d="M214,284 H286"/>
+      <path d="M214,296 H286"/>
+      <path d="M214,306 H266"/>
+    </g>
+    <g stroke="#38bdf8" stroke-width="3" stroke-linecap="round" opacity="0.7">
+      <path d="M274,306 H286"/>
+    </g>
 
-        <!-- 趾缝 -->
-        <g stroke="#d3a874" stroke-width="1.8" stroke-linecap="round" opacity="0.7" fill="none">
-          <path d="M140,230 L137,246"/><path d="M152,228 L151,247"/><path d="M164,230 L166,247"/>
-          <path d="M182,234 L180,251"/><path d="M194,233 L196,251"/><path d="M206,235 L209,250"/>
-          <path d="M354,236 L352,252"/><path d="M366,235 L366,252"/><path d="M378,237 L382,252"/>
-        </g>
+    <!-- 手臂：压在服务器前方，读作「抱住」 -->
+    <g stroke="#b6d1f3" stroke-width="26" fill="none" stroke-linecap="round"><use href="#cpmcArmL"/><use href="#cpmcArmR"/></g>
+    <g stroke="url(#cpmcCloud)" stroke-width="19" fill="none" stroke-linecap="round"><use href="#cpmcArmL"/><use href="#cpmcArmR"/></g>
+  </g>
 
-        <!-- 闭眼、鼻、嘴、胡须点 -->
-        <g fill="none" stroke="#5b4531" stroke-width="3.4" stroke-linecap="round">
-          <path d="M166,152 C174,162 188,162 196,153"/>
-          <path d="M210,147 C218,157 231,157 238,147"/>
-        </g>
-        <ellipse cx="132" cy="190" rx="13.5" ry="10.5" fill="#4a3a2c"/>
-        <ellipse cx="127" cy="186" rx="4" ry="3" fill="#ffffff" opacity="0.3"/>
-        <g fill="none" stroke="#4a3a2c" stroke-width="2.4" stroke-linecap="round">
-          <path d="M132,201 L132,205"/>
-          <path d="M132,205 C128,209 122,208 120,204"/>
-          <path d="M132,205 C136,209 142,208 144,204"/>
-        </g>
-        <g fill="#c9a97e" opacity="0.75">
-          <circle cx="156" cy="212" r="1.7"/><circle cx="167" cy="216" r="1.7"/><circle cx="178" cy="211" r="1.7"/>
-        </g>
-
-        <!-- 前景云朵：把小狗下半身埋进云里 -->
-        <g fill="url(#cpmcCloudFront)">
-          <circle cx="156" cy="314" r="52"/>
-          <circle cx="244" cy="324" r="58"/>
-          <circle cx="332" cy="316" r="52"/>
-          <rect x="108" y="308" width="282" height="50" rx="25"/>
-        </g>
-        <g fill="#ffffff" opacity="0.55">
-          <ellipse cx="204" cy="298" rx="58" ry="13"/>
-          <ellipse cx="332" cy="302" rx="42" ry="11"/>
-        </g>
-      </g>
-
-      <rect x="0.5" y="0.5" width="479" height="399" rx="26" fill="none" stroke="#c7ddf7"/>
-    </svg>
+  <rect x="0.5" y="0.5" width="479" height="399" rx="26" fill="none" stroke="#c7ddf7"/>
+</svg>
     <h1>CloudPlatform Installation</h1>
     <p>One-click setup wizard</p>
 </div>

@@ -21,10 +21,10 @@
 
 <p align="center">
   <p align="center">
-  <img src="docs/diagrams/c.svg" alt="Yundou, the CloudPlatform project mascot" width="260">
+  <img src="docs/diagrams/c.svg" alt="Yuntuan, the CloudPlatform project mascot" width="260">
 </p>
 
-<p align="center">**Yundou** — the project mascot</p>
+<p align="center">**Yuntuan** — the project mascot</p>
 </p>
 
 A cloud resource trading platform for global users, supporting online purchase and automatic delivery of servers (VM), IP addresses, cloud disks, domains, SSL certificates, object storage (S3), CDN acceleration and other products. Self-operated physical machines are delivered through Proxmox VE virtualization, while third-party suppliers can also onboard and sell. It provides usage-based billing, referral distribution, a GraphQL API, and Prometheus/Grafana observability.

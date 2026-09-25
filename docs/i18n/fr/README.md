@@ -21,10 +21,10 @@
 
 <p align="center">
   <p align="center">
-  <img src="docs/diagrams/c.svg" alt="Yundou, la mascotte du projet CloudPlatform" width="260">
+  <img src="docs/diagrams/c.svg" alt="Yuntuan, la mascotte du projet CloudPlatform" width="260">
 </p>
 
-<p align="center">**Yundou** — la mascotte du projet</p>
+<p align="center">**Yuntuan** — la mascotte du projet</p>
 </p>
 
 Plateforme de commerce de ressources cloud destinée à un public mondial : achat en ligne et livraison automatique de serveurs (VM), adresses IP, disques cloud, domaines, certificats SSL, stockage d'objets (S3), accélération CDN, etc. Les machines physiques détenues en propre sont virtualisées et livrées via Proxmox VE, tout en prenant en charge l'installation de fournisseurs tiers. La plateforme propose la facturation à l'usage, un programme de distribution par recommandation, une API GraphQL ainsi qu'une observabilité Prometheus/Grafana.

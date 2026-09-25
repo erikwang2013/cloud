@@ -20,11 +20,11 @@
 | 日本語 | [ja docs](docs/i18n/ja/README.md) |
 
 <p align="center">
-  <img src="docs/diagrams/c.svg" alt="CloudPlatform 项目宠物「云豆」" width="260">
+  <img src="docs/diagrams/c.svg" alt="CloudPlatform 项目宠物「云团」" width="260">
 </p>
 
-<p align="center"><b>云豆</b> — 项目宠物。一只睡在云朵上的小狗，头顶是虚线相连的云资源节点：<br>
-用户买下的服务器、IP、磁盘、域名，都由它在云上自动交付、安静托管。</p>
+<p align="center"><b>云团</b> — 项目宠物。一朵抱着服务器的云朵精灵：云是平台，服务器是资源，<br>
+双臂环抱就是「自动交付与托管」；外围轨道环串起地球与增长箭头，对应全球交易与按量计费。</p>
 
 面向全球用户的云资源交易平台，支持服务器（VM）、IP 地址、云磁盘、域名、SSL 证书、对象存储（S3）、CDN 加速等产品的在线购买与自动交付。自营物理机通过 Proxmox VE 虚拟化交付，同时支持第三方供应商入驻售卖。提供按量计费、推荐分销、GraphQL API 及 Prometheus/Grafana 可观测性。
 
@@ -267,7 +267,7 @@ cloud-php/
 │   │   └── TestCase.php        # 测试基类
 │   ├── public/                 # 站点根目录（webman static.enable=true 直接托管）
 │   │   ├── index.html          # 落地页（由 config/route.php 的 GET / 路由回吐）
-│   │   ├── mascot.svg          # 项目宠物「云豆」
+│   │   ├── mascot.svg          # 项目宠物「云团」
 │   │   └── favicon.svg / .ico  # 站点图标（图标源：docs/diagrams/mascot-icon.svg）
 │   ├── runtime/                # 运行时文件（日志 / 缓存）
 │   ├── vendor/                 # Composer 依赖
@@ -307,10 +307,11 @@ cloud-php/
 │   ├── api-test.sh             # API 冒烟测试脚本
 │   ├── database.sql            # 数据库 DDL
 │   ├── alipay.png / weixinpay.png  # 打赏二维码
-│   ├── diagrams/               # 23 个 SVG 图（项目宠物 / 系统架构 / 功能设计 / 资源生命周期 / 安全管道 / ER 图 / 业务流程 / 多币种结算等）
-│   │   ├── c.svg               # 项目宠物「云豆」（纯矢量 8KB，纯路径无位图）
+│   ├── diagrams/               # 24 个 SVG 图（项目宠物 / 系统架构 / 功能设计 / 资源生命周期 / 安全管道 / ER 图 / 业务流程 / 多币种结算等）
+│   │   ├── c.svg               # 项目宠物「云团」（纯矢量 5.4KB，纯路径无位图）
 │   │   ├── mascot-icon.svg     # 方块标识版，用于 favicon 与客户端应用图标
-│   │   ├── c-original.svg      # 初版宠物图备份（内嵌位图，仅存档用）
+│   │   ├── c-original-v1.svg   # 上一版宠物（矢量小狗）存档
+│   │   ├── c-original.svg      # 最初版宠物图存档（内嵌位图）
 │   │   ├── system-architecture-{zh,en}.svg  # 系统架构图
 │   │   ├── feature-design-{zh,en}.svg       # 功能设计图
 │   │   └── resource-lifecycle-{zh,en}.svg   # 资源生命周期图
@@ -426,7 +427,7 @@ php start.php stop              # 停止
 
 ### 访问入口
 
-启动后 `http://localhost:8787` 即为站点落地页（项目宠物「云豆」+ API 文档 / 健康检查入口），图标为 `/favicon.svg`。落地页由 `service/config/route.php` 的 `GET /` 路由回吐，静态资源由 `service/config/static.php` 托管 —— 部署到 nginx 后同样由 webman 提供，见 [部署清单 §7.2](docs/deployment.md)。
+启动后 `http://localhost:8787` 即为站点落地页（项目宠物「云团」+ API 文档 / 健康检查入口），图标为 `/favicon.svg`。落地页由 `service/config/route.php` 的 `GET /` 路由回吐，静态资源由 `service/config/static.php` 托管 —— 部署到 nginx 后同样由 webman 提供，见 [部署清单 §7.2](docs/deployment.md)。
 
 ### 登录
 

@@ -21,10 +21,10 @@
 
 <p align="center">
   <p align="center">
-  <img src="docs/diagrams/c.svg" alt="CloudPlatform のプロジェクトマスコット「ユンドウ」" width="260">
+  <img src="docs/diagrams/c.svg" alt="CloudPlatform のプロジェクトマスコット「ユントゥアン」" width="260">
 </p>
 
-<p align="center">**ユンドウ** — プロジェクトのマスコット</p>
+<p align="center">**ユントゥアン** — プロジェクトのマスコット</p>
 </p>
 
 世界中のユーザー向けのクラウドリソース取引プラットフォームです。サーバー（VM）、IP アドレス、クラウドディスク、ドメイン、SSL 証明書、オブジェクトストレージ（S3）、CDN アクセラレーションなどの製品のオンライン購入と自動デリバリーをサポートします。自社運営の物理マシンは Proxmox VE 仮想化でデリバリーし、サードパーティのサプライヤーが入居して販売することも可能です。従量課金、リファラル販売、GraphQL API、Prometheus/Grafana による可観測性を提供します。

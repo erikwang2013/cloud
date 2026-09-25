@@ -20,11 +20,11 @@
 | 日本語 | [ja docs](docs/i18n/ja/README.md) |
 
 <p align="center">
-  <img src="docs/diagrams/c.svg" alt="CloudPlatform project pet “Yundou”" width="260">
+  <img src="docs/diagrams/c.svg" alt="CloudPlatform project pet “Yuntuan”" width="260">
 </p>
 
-<p align="center"><b>Yundou</b> — the project pet. A puppy asleep on a cloud, with cloud-resource nodes joined by dotted links overhead:<br>
-every server, IP, disk, and domain a user buys is provisioned and quietly hosted up there by this one.</p>
+<p align="center"><b>Yuntuan</b> — the project pet. A cloud sprite cradling a server: the cloud is the platform, the server is the resource,<br>
+and the embrace is automatic provisioning; an orbit ring carries a globe and a growth arrow for global trade and metered billing.</p>
 
 A cloud resource trading platform serving global users. Supports purchasing servers (VM), IP addresses, cloud disks, domains, SSL certificates, object storage (S3), and CDN acceleration with automatic provisioning. Self-operated bare-metal servers are virtualized via Proxmox VE, while third-party suppliers can onboard and sell through the marketplace. Billing by usage, affiliate distribution, a GraphQL API, and Prometheus/Grafana observability are included.
 
@@ -262,7 +262,7 @@ cloud-php/
 │   │   └── TestCase.php        # Base test case
 │   ├── public/                 # Site root (served directly, webman static.enable=true)
 │   │   ├── index.html          # Landing page (returned by the GET / route in config/route.php)
-│   │   ├── mascot.svg          # Project pet "Yundou"
+│   │   ├── mascot.svg          # Project pet "Yuntuan"
 │   │   └── favicon.svg / .ico  # Site icons (source: docs/diagrams/mascot-icon.svg)
 │   ├── runtime/                # Runtime files (logs / cache)
 │   ├── vendor/                 # Composer dependencies
@@ -302,10 +302,11 @@ cloud-php/
 │   ├── api-test.sh             # API smoke test script
 │   ├── database.sql            # Database DDL
 │   ├── alipay.png / weixinpay.png  # Sponsor QR codes
-│   ├── diagrams/               # 23 SVG diagrams (project pet / system architecture / feature design / resource lifecycle / security / ER / business flows)
-│   │   ├── c.svg               # Project pet "Yundou" (pure vector, 8KB, no embedded bitmap)
+│   ├── diagrams/               # 24 SVG diagrams (project pet / system architecture / feature design / resource lifecycle / security / ER / business flows)
+│   │   ├── c.svg               # Project pet "Yuntuan" (pure vector, 5.4KB, no embedded bitmap)
 │   │   ├── mascot-icon.svg     # Square mark used for favicons and client app icons
-│   │   ├── c-original.svg      # Backup of the first pet illustration (embedded bitmap, archive only)
+│   │   ├── c-original-v1.svg   # Previous pet (vector puppy), archived
+│   │   ├── c-original.svg      # First pet illustration, archived (embedded bitmap)
 │   │   ├── system-architecture-{zh,en}.svg  # System architecture
 │   │   ├── feature-design-{zh,en}.svg       # Feature design
 │   │   └── resource-lifecycle-{zh,en}.svg   # Resource lifecycle
@@ -421,7 +422,7 @@ php start.php stop              # Stop
 
 ### Entry Points
 
-Once running, `http://localhost:8787` serves the site landing page (project pet “Yundou” plus links to the API docs and health check), with the icon at `/favicon.svg`. The landing page is returned by the `GET /` route in `service/config/route.php`; static assets are served by `service/config/static.php` — the same applies behind nginx, see [Deployment §7.2](docs/deployment.md).
+Once running, `http://localhost:8787` serves the site landing page (project pet “Yuntuan” plus links to the API docs and health check), with the icon at `/favicon.svg`. The landing page is returned by the `GET /` route in `service/config/route.php`; static assets are served by `service/config/static.php` — the same applies behind nginx, see [Deployment §7.2](docs/deployment.md).
 
 ### Sign In
 
