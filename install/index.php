@@ -581,10 +581,6 @@ body { font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-ser
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 400" class="mascot" width="140" height="117" aria-hidden="true" focusable="false">
 
   <defs>
-    <linearGradient id="cpmcSky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f7fbff"/>
-      <stop offset="100%" stop-color="#e1ecfb"/>
-    </linearGradient>
     <linearGradient id="cpmcCloud" gradientUnits="userSpaceOnUse" x1="140" y1="110" x2="350" y2="270">
       <stop offset="0%" stop-color="#ffffff"/>
       <stop offset="60%" stop-color="#e8f1fd"/>
@@ -601,7 +597,6 @@ body { font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-ser
     <filter id="cpmcSoft" x="-25%" y="-25%" width="150%" height="150%">
       <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#1e40af" flood-opacity="0.12"/>
     </filter>
-    <clipPath id="cpmcClip"><rect width="480" height="400" rx="26"/></clipPath>
 
     <g id="cpmcBody">
       <circle cx="165" cy="205" r="54"/>
@@ -616,18 +611,7 @@ body { font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-ser
     </g>
   </defs>
 
-  <g clip-path="url(#cpmcClip)">
-    <rect width="480" height="400" rx="26" fill="url(#cpmcSky)"/>
-
-    <!-- 背景星点 -->
-    <g fill="#93c5fd" opacity="0.38">
-      <circle cx="52" cy="96" r="2.5"/>
-      <circle cx="112" cy="52" r="2"/>
-      <circle cx="430" cy="92" r="2.5"/>
-      <circle cx="404" cy="330" r="2"/>
-      <circle cx="66" cy="332" r="2"/>
-    </g>
-
+  <g>
     <!-- 轨道环：全球 + 计费 两个节点 -->
     <g transform="rotate(-14 240 235)">
       <ellipse cx="240" cy="235" rx="200" ry="58" fill="none" stroke="#9dc4f6" stroke-width="2" stroke-dasharray="7,7" opacity="0.85"/>
@@ -693,7 +677,6 @@ body { font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-ser
     <g stroke="url(#cpmcCloud)" stroke-width="19" fill="none" stroke-linecap="round"><use href="#cpmcArmL"/><use href="#cpmcArmR"/></g>
   </g>
 
-  <rect x="0.5" y="0.5" width="479" height="399" rx="26" fill="none" stroke="#c7ddf7"/>
 </svg>
     <h1>CloudPlatform Installation</h1>
     <p>One-click setup wizard</p>

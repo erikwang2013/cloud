@@ -32,10 +32,6 @@
   .ex-motion, [class*="ex-anim-"] { animation: none !important; }
 }
 </style><g class="ex-motion ex-joy"><g class="ex-base"><defs>
-    <linearGradient id="mcSky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f7fbff"/>
-      <stop offset="100%" stop-color="#e1ecfb"/>
-    </linearGradient>
     <linearGradient id="mcCloud" gradientUnits="userSpaceOnUse" x1="140" y1="110" x2="350" y2="270">
       <stop offset="0%" stop-color="#ffffff"/>
       <stop offset="60%" stop-color="#e8f1fd"/>
@@ -52,7 +48,6 @@
     <filter id="mcSoft" x="-25%" y="-25%" width="150%" height="150%">
       <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#1e40af" flood-opacity="0.12"/>
     </filter>
-    <clipPath id="mcClip"><rect width="480" height="400" rx="26"/></clipPath>
 
     <g id="mcBody">
       <circle cx="165" cy="205" r="54"/>
@@ -67,18 +62,7 @@
     </g>
   </defs>
 
-  <g clip-path="url(#mcClip)">
-    <rect width="480" height="400" rx="26" fill="url(#mcSky)"/>
-
-    
-    <g fill="#93c5fd" opacity="0.38">
-      <circle cx="52" cy="96" r="2.5"/>
-      <circle cx="112" cy="52" r="2"/>
-      <circle cx="430" cy="92" r="2.5"/>
-      <circle cx="404" cy="330" r="2"/>
-      <circle cx="66" cy="332" r="2"/>
-    </g>
-
+  <g>
     
     <g transform="rotate(-14 240 235)">
       <ellipse cx="240" cy="235" rx="200" ry="58" fill="none" stroke="#9dc4f6" stroke-width="2" stroke-dasharray="7,7" opacity="0.85"/>
@@ -142,6 +126,4 @@
     
     <g stroke="#b6d1f3" stroke-width="26" fill="none" stroke-linecap="round"><use href="#mcArmL"/><use href="#mcArmR"/></g>
     <g stroke="url(#mcCloud)" stroke-width="19" fill="none" stroke-linecap="round"><use href="#mcArmL"/><use href="#mcArmR"/></g>
-  </g>
-
-  <rect x="0.5" y="0.5" width="479" height="399" rx="26" fill="none" stroke="#c7ddf7"/></g><g class="ex-face"><ellipse cx="240" cy="192" rx="62" ry="46" fill="#E8F1FD"/><path d="M 199.65,173.64 Q 212,155.05 224.35,173.64" fill="none" stroke="#1E3A8A" stroke-width="2.6" stroke-linecap="round"/><path d="M 255.65,173.64 Q 268,155.05 280.35,173.64" fill="none" stroke="#1E3A8A" stroke-width="2.6" stroke-linecap="round"/><path d="M 225.05,196.26 Q 240,220.13 254.95,196.26 Z" fill="#4A1D2E" stroke="#1E3A8A" stroke-width="1.66"/><ellipse cx="240" cy="203.75" rx="6.58" ry="5.15" fill="#FF6B8A"/><ellipse class="ex-anim-pulse" cx="202.25" cy="187.55" rx="10.14" ry="5.46" fill="#FF8FB3" opacity="0.6"/><ellipse class="ex-anim-pulse" cx="277.75" cy="187.55" rx="10.14" ry="5.46" fill="#FF8FB3" opacity="0.6"/><g transform="translate(280.11 171.17)"><circle class="ex-anim-confetti" style="animation-delay:0.0s" r="2.67" fill="#FF6B9D"/></g><g transform="translate(269.73 188.52)"><rect class="ex-anim-confetti" style="animation-delay:0.16s" x="-1.91" y="-3.82" width="3.82" height="7.63" rx="1.14" fill="#FFD166"/></g><g transform="translate(240.81 195.37)"><circle class="ex-anim-confetti" style="animation-delay:0.32s" r="2.67" fill="#4FA3FF"/></g><g transform="translate(215.81 189.09)"><rect class="ex-anim-confetti" style="animation-delay:0.48s" x="-1.91" y="-3.82" width="3.82" height="7.63" rx="1.14" fill="#5FBF9F"/></g><g transform="translate(193.04 172.1)"><circle class="ex-anim-confetti" style="animation-delay:0.64s" r="2.67" fill="#9B7BFF"/></g><g transform="translate(185.31 150.87)"><rect class="ex-anim-confetti" style="animation-delay:0.8s" x="-1.91" y="-3.82" width="3.82" height="7.63" rx="1.14" fill="#F97316"/></g><g transform="translate(214.85 133.52)"><circle class="ex-anim-confetti" style="animation-delay:0.96s" r="2.67" fill="#FF6B9D"/></g><g transform="translate(239.3 126.67)"><rect class="ex-anim-confetti" style="animation-delay:1.12s" x="-1.91" y="-3.82" width="3.82" height="7.63" rx="1.14" fill="#FFD166"/></g><g transform="translate(272.99 132.95)"><circle class="ex-anim-confetti" style="animation-delay:1.28s" r="2.67" fill="#4FA3FF"/></g><g transform="translate(279.74 149.94)"><rect class="ex-anim-confetti" style="animation-delay:1.44s" x="-1.91" y="-3.82" width="3.82" height="7.63" rx="1.14" fill="#5FBF9F"/></g></g></g></svg>
+  </g></g><g class="ex-face"><ellipse cx="240" cy="192" rx="62" ry="46" fill="#E8F1FD"/><path d="M 199.65,173.64 Q 212,155.05 224.35,173.64" fill="none" stroke="#1E3A8A" stroke-width="2.6" stroke-linecap="round"/><path d="M 255.65,173.64 Q 268,155.05 280.35,173.64" fill="none" stroke="#1E3A8A" stroke-width="2.6" stroke-linecap="round"/><path d="M 225.05,196.26 Q 240,220.13 254.95,196.26 Z" fill="#4A1D2E" stroke="#1E3A8A" stroke-width="1.66"/><ellipse cx="240" cy="203.75" rx="6.58" ry="5.15" fill="#FF6B8A"/><ellipse class="ex-anim-pulse" cx="202.25" cy="187.55" rx="10.14" ry="5.46" fill="#FF8FB3" opacity="0.6"/><ellipse class="ex-anim-pulse" cx="277.75" cy="187.55" rx="10.14" ry="5.46" fill="#FF8FB3" opacity="0.6"/><g transform="translate(280.11 171.17)"><circle class="ex-anim-confetti" style="animation-delay:0.0s" r="2.67" fill="#FF6B9D"/></g><g transform="translate(269.73 188.52)"><rect class="ex-anim-confetti" style="animation-delay:0.16s" x="-1.91" y="-3.82" width="3.82" height="7.63" rx="1.14" fill="#FFD166"/></g><g transform="translate(240.81 195.37)"><circle class="ex-anim-confetti" style="animation-delay:0.32s" r="2.67" fill="#4FA3FF"/></g><g transform="translate(215.81 189.09)"><rect class="ex-anim-confetti" style="animation-delay:0.48s" x="-1.91" y="-3.82" width="3.82" height="7.63" rx="1.14" fill="#5FBF9F"/></g><g transform="translate(193.04 172.1)"><circle class="ex-anim-confetti" style="animation-delay:0.64s" r="2.67" fill="#9B7BFF"/></g><g transform="translate(185.31 150.87)"><rect class="ex-anim-confetti" style="animation-delay:0.8s" x="-1.91" y="-3.82" width="3.82" height="7.63" rx="1.14" fill="#F97316"/></g><g transform="translate(214.85 133.52)"><circle class="ex-anim-confetti" style="animation-delay:0.96s" r="2.67" fill="#FF6B9D"/></g><g transform="translate(239.3 126.67)"><rect class="ex-anim-confetti" style="animation-delay:1.12s" x="-1.91" y="-3.82" width="3.82" height="7.63" rx="1.14" fill="#FFD166"/></g><g transform="translate(272.99 132.95)"><circle class="ex-anim-confetti" style="animation-delay:1.28s" r="2.67" fill="#4FA3FF"/></g><g transform="translate(279.74 149.94)"><rect class="ex-anim-confetti" style="animation-delay:1.44s" x="-1.91" y="-3.82" width="3.82" height="7.63" rx="1.14" fill="#5FBF9F"/></g></g></g></svg>

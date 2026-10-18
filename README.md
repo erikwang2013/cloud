@@ -308,7 +308,7 @@ cloud-php/
 │   ├── database.sql            # 数据库 DDL
 │   ├── alipay.png / weixinpay.png  # 打赏二维码
 │   ├── diagrams/               # 24 个 SVG 图（项目宠物 / 系统架构 / 功能设计 / 资源生命周期 / 安全管道 / ER 图 / 业务流程 / 多币种结算等）
-│   │   ├── c.svg               # 项目宠物「云团」（纯矢量 5.4KB，纯路径无位图）
+│   │   ├── c.svg               # 项目宠物「云团」（纯矢量 4.7KB，透明底，纯路径无位图）
 │   │   ├── mascot-icon.svg     # 方块标识版，用于 favicon 与客户端应用图标
 │   │   ├── c-original-v1.svg   # 上一版宠物（矢量小狗）存档
 │   │   ├── c-original.svg      # 最初版宠物图存档（内嵌位图）

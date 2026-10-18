@@ -32,10 +32,6 @@
   .ex-motion, [class*="ex-anim-"] { animation: none !important; }
 }
 </style><g class="ex-motion ex-pleasing"><g class="ex-base"><defs>
-    <linearGradient id="mcSky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f7fbff"/>
-      <stop offset="100%" stop-color="#e1ecfb"/>
-    </linearGradient>
     <linearGradient id="mcCloud" gradientUnits="userSpaceOnUse" x1="140" y1="110" x2="350" y2="270">
       <stop offset="0%" stop-color="#ffffff"/>
       <stop offset="60%" stop-color="#e8f1fd"/>
@@ -52,7 +48,6 @@
     <filter id="mcSoft" x="-25%" y="-25%" width="150%" height="150%">
       <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#1e40af" flood-opacity="0.12"/>
     </filter>
-    <clipPath id="mcClip"><rect width="480" height="400" rx="26"/></clipPath>
 
     <g id="mcBody">
       <circle cx="165" cy="205" r="54"/>
@@ -67,18 +62,7 @@
     </g>
   </defs>
 
-  <g clip-path="url(#mcClip)">
-    <rect width="480" height="400" rx="26" fill="url(#mcSky)"/>
-
-    
-    <g fill="#93c5fd" opacity="0.38">
-      <circle cx="52" cy="96" r="2.5"/>
-      <circle cx="112" cy="52" r="2"/>
-      <circle cx="430" cy="92" r="2.5"/>
-      <circle cx="404" cy="330" r="2"/>
-      <circle cx="66" cy="332" r="2"/>
-    </g>
-
+  <g>
     
     <g transform="rotate(-14 240 235)">
       <ellipse cx="240" cy="235" rx="200" ry="58" fill="none" stroke="#9dc4f6" stroke-width="2" stroke-dasharray="7,7" opacity="0.85"/>
@@ -142,6 +126,4 @@
     
     <g stroke="#b6d1f3" stroke-width="26" fill="none" stroke-linecap="round"><use href="#mcArmL"/><use href="#mcArmR"/></g>
     <g stroke="url(#mcCloud)" stroke-width="19" fill="none" stroke-linecap="round"><use href="#mcArmL"/><use href="#mcArmR"/></g>
-  </g>
-
-  <rect x="0.5" y="0.5" width="479" height="399" rx="26" fill="none" stroke="#c7ddf7"/></g><g class="ex-face"><ellipse cx="240" cy="192" rx="62" ry="46" fill="#E8F1FD"/><path d="M 199.65,157 L 219.15,149.2" stroke="#1E3A8A" stroke-width="1.82" stroke-linecap="round"/><path d="M 280.35,157 L 260.85,149.2" stroke="#1E3A8A" stroke-width="1.82" stroke-linecap="round"/><ellipse cx="212" cy="170" rx="13" ry="14.82" fill="#FFFFFF" stroke="#1E3A8A" stroke-width="2.08"/><ellipse cx="212" cy="167.14" rx="7.54" ry="9.48" fill="#1E3A8A"/><circle cx="209.14" cy="162.99" r="2.6" fill="#FFFFFF"/><circle cx="215.12" cy="171.59" r="1.3" fill="#FFFFFF" opacity=".9"/><ellipse cx="268" cy="170" rx="13" ry="14.82" fill="#FFFFFF" stroke="#1E3A8A" stroke-width="2.08"/><ellipse cx="268" cy="167.14" rx="7.54" ry="9.48" fill="#1E3A8A"/><circle cx="265.14" cy="162.99" r="2.6" fill="#FFFFFF"/><circle cx="271.12" cy="171.59" r="1.3" fill="#FFFFFF" opacity=".9"/><path d="M 231.03,198.6 Q 240,208.9 248.97,198.6" fill="none" stroke="#1E3A8A" stroke-width="2.08" stroke-linecap="round"/><ellipse cx="202.25" cy="187.55" rx="10.14" ry="5.46" fill="#FF8FB3" opacity="0.55"/><ellipse cx="277.75" cy="187.55" rx="10.14" ry="5.46" fill="#FF8FB3" opacity="0.55"/><g transform="translate(0 0)"><path class="ex-anim-sweat" style="animation-delay:0.2s" d="M 286.2,149.72 C 290.49,156.58 290.49,162.88 286.2,162.88 C 281.91,162.88 281.91,156.58 286.2,149.72 Z" fill="#6FB2F0"/><circle cx="286.2" cy="156.3" r="1.26" fill="#FFFFFF" opacity=".8"/></g><path class="ex-anim-spark" style="animation-delay:0.3s" d="M 195.1,131.33 L 196.37,134.6 L 199.65,135.88 L 196.37,137.15 L 195.1,140.43 L 193.83,137.15 L 190.55,135.88 L 193.83,134.6 Z" fill="#5FBF9F"/><path class="ex-anim-spark" style="animation-delay:0.8s" d="M 286.7,139.16 L 287.79,141.97 L 290.6,143.06 L 287.79,144.15 L 286.7,146.96 L 285.6,144.15 L 282.8,143.06 L 285.6,141.97 Z" fill="#5FBF9F"/><g transform="translate(234.64 212.25) rotate(18)"><g class="ex-anim-please"><ellipse rx="4.09" ry="6.04" fill="#FFFFFF" stroke="#1E3A8A" stroke-width="1.1"/><path d="M 0,-3.41 L 0,2.92" stroke="#1E3A8A" stroke-width="1" stroke-linecap="round" opacity=".5"/></g></g><g transform="translate(245.36 212.25) rotate(-18)"><g class="ex-anim-please"><ellipse rx="4.09" ry="6.04" fill="#FFFFFF" stroke="#1E3A8A" stroke-width="1.1"/><path d="M 0,-3.41 L 0,2.92" stroke="#1E3A8A" stroke-width="1" stroke-linecap="round" opacity=".5"/></g></g></g></g></svg>
+  </g></g><g class="ex-face"><ellipse cx="240" cy="192" rx="62" ry="46" fill="#E8F1FD"/><path d="M 199.65,157 L 219.15,149.2" stroke="#1E3A8A" stroke-width="1.82" stroke-linecap="round"/><path d="M 280.35,157 L 260.85,149.2" stroke="#1E3A8A" stroke-width="1.82" stroke-linecap="round"/><ellipse cx="212" cy="170" rx="13" ry="14.82" fill="#FFFFFF" stroke="#1E3A8A" stroke-width="2.08"/><ellipse cx="212" cy="167.14" rx="7.54" ry="9.48" fill="#1E3A8A"/><circle cx="209.14" cy="162.99" r="2.6" fill="#FFFFFF"/><circle cx="215.12" cy="171.59" r="1.3" fill="#FFFFFF" opacity=".9"/><ellipse cx="268" cy="170" rx="13" ry="14.82" fill="#FFFFFF" stroke="#1E3A8A" stroke-width="2.08"/><ellipse cx="268" cy="167.14" rx="7.54" ry="9.48" fill="#1E3A8A"/><circle cx="265.14" cy="162.99" r="2.6" fill="#FFFFFF"/><circle cx="271.12" cy="171.59" r="1.3" fill="#FFFFFF" opacity=".9"/><path d="M 231.03,198.6 Q 240,208.9 248.97,198.6" fill="none" stroke="#1E3A8A" stroke-width="2.08" stroke-linecap="round"/><ellipse cx="202.25" cy="187.55" rx="10.14" ry="5.46" fill="#FF8FB3" opacity="0.55"/><ellipse cx="277.75" cy="187.55" rx="10.14" ry="5.46" fill="#FF8FB3" opacity="0.55"/><g transform="translate(0 0)"><path class="ex-anim-sweat" style="animation-delay:0.2s" d="M 286.2,149.72 C 290.49,156.58 290.49,162.88 286.2,162.88 C 281.91,162.88 281.91,156.58 286.2,149.72 Z" fill="#6FB2F0"/><circle cx="286.2" cy="156.3" r="1.26" fill="#FFFFFF" opacity=".8"/></g><path class="ex-anim-spark" style="animation-delay:0.3s" d="M 195.1,131.33 L 196.37,134.6 L 199.65,135.88 L 196.37,137.15 L 195.1,140.43 L 193.83,137.15 L 190.55,135.88 L 193.83,134.6 Z" fill="#5FBF9F"/><path class="ex-anim-spark" style="animation-delay:0.8s" d="M 286.7,139.16 L 287.79,141.97 L 290.6,143.06 L 287.79,144.15 L 286.7,146.96 L 285.6,144.15 L 282.8,143.06 L 285.6,141.97 Z" fill="#5FBF9F"/><g transform="translate(234.64 212.25) rotate(18)"><g class="ex-anim-please"><ellipse rx="4.09" ry="6.04" fill="#FFFFFF" stroke="#1E3A8A" stroke-width="1.1"/><path d="M 0,-3.41 L 0,2.92" stroke="#1E3A8A" stroke-width="1" stroke-linecap="round" opacity=".5"/></g></g><g transform="translate(245.36 212.25) rotate(-18)"><g class="ex-anim-please"><ellipse rx="4.09" ry="6.04" fill="#FFFFFF" stroke="#1E3A8A" stroke-width="1.1"/><path d="M 0,-3.41 L 0,2.92" stroke="#1E3A8A" stroke-width="1" stroke-linecap="round" opacity=".5"/></g></g></g></g></svg>

@@ -303,7 +303,7 @@ cloud-php/
 │   ├── database.sql            # Database DDL
 │   ├── alipay.png / weixinpay.png  # Sponsor QR codes
 │   ├── diagrams/               # 24 SVG diagrams (project pet / system architecture / feature design / resource lifecycle / security / ER / business flows)
-│   │   ├── c.svg               # Project pet "Yuntuan" (pure vector, 5.4KB, no embedded bitmap)
+│   │   ├── c.svg               # Project pet "Yuntuan" (pure vector, 4.7KB, transparent, no embedded bitmap)
 │   │   ├── mascot-icon.svg     # Square mark used for favicons and client app icons
 │   │   ├── c-original-v1.svg   # Previous pet (vector puppy), archived
 │   │   ├── c-original.svg      # First pet illustration, archived (embedded bitmap)
