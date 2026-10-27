@@ -93,10 +93,4 @@ final class VersionMiddlewareTest extends TestCase
         $this->assertArrayNotHasKey('api_version', $req->properties);
     }
 
-    public function testAdminApiRouteIsValidated(): void
-    {
-        $req = $this->createRequest('/admin/api/v1/dashboard');
-        $this->middleware->process($req, fn($r) => response('ok'));
-        $this->assertSame('v1', $req->properties['api_version'] ?? null);
-    }
 }

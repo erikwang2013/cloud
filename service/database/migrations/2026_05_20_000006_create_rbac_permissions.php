@@ -4,7 +4,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use support\Migration;
 
 /**
- * RBAC 表结构（种子数据见 2026_08_17_000001_seed_rbac_permissions.php）。
+ * RBAC 表结构（服务端后台 API 已移除，保留表以兼容已部署实例）。
  * 与 install.sql roles/permissions/role_permission DDL 对齐。
  */
 return new class extends Migration {

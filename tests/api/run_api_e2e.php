@@ -471,20 +471,6 @@ if ($token) {
     rec('POST /api/v1/coupons/validate(无效码)', 'coupon', 'code=' . code($j), '4xx', in_array(code($j), [400, 404, 409, 422, 429], true), $j['message'] ?? '');
 }
 
-// --- 10. 用户 token 访问管理端点 → 403（RBAC）---
-if ($token) {
-    usleep(400000);
-    [$s, $raw] = req('GET', "$BASE/admin/api/v1/users", null, $hdr);
-    $j = jbody($raw);
-    rec('GET /admin/api/v1/users(用户token)', 'rbac', 'http=' . $s . '/code=' . code($j), '401/403', in_array($s, [401, 403], true) || in_array(code($j), [401, 403], true), $j['message'] ?? '');
-    usleep(400000);
-    [$s, $raw] = req('GET', "$BASE/admin/api/v1/dashboard", null, $hdr);
-    $j = jbody($raw);
-    rec('GET /admin/api/v1/dashboard(用户token)', 'rbac', 'http=' . $s . '/code=' . code($j), '401/403', in_array($s, [401, 403], true) || in_array(code($j), [401, 403], true), $j['message'] ?? '');
-} else {
-    rec('RBAC 端点', 'rbac', 'SKIP', 'SKIP', true, '无 token');
-}
-
 // --- 11. 登出 ---
 if ($token) {
     usleep(400000);
@@ -693,11 +679,9 @@ $lines[] = '| 用户资料 GET/PUT（还原） | 已覆盖（PUT 为缺陷探针
 $lines[] = '| 地址：创建/列表/删除（回滚） | 已覆盖（创建为缺陷探针，见缺陷 1） |';
 $lines[] = '| 余额/流水/发票：只读 | 已覆盖（不改资金） |';
 $lines[] = '| 优惠券校验（无效码） | 已覆盖（负路径） |';
-$lines[] = '| RBAC：用户 token 访问 /admin/api → 401/403 | 已覆盖（负路径） |';
 $lines[] = '| admin 面板：验证码登录/info/仪表盘/字典 | 已覆盖 |';
 $lines[] = '| admin 列表：user/order/product/ticket/config/notification_template/notification/supplier/domain_tld/payment_channel/audit_log/role（/select 数据端点） | 已覆盖（user/role code=0；其余按缺陷探针断言，见缺陷 2；config/get 为裸 JSON 无 code 包裹，按 JSON 有效判定） |';
 $lines[] = '| admin 写操作：产品创建/删除（回滚） | 已覆盖（创建 code=0；service 可见性为缺陷探针，见缺陷 2；删除按实际行 id 回滚） |';
-$lines[] = '| service `/admin/api/v1/*` 管理员角色正路径 | 无法测试：环境无管理员 JWT 来源（users 表为空、无 service 侧管理员登录端点），仅验证普通用户 403 |';
 $lines[] = '| 真实支付回调/网关 | 无法测试：外部服务，不发起真实付款 |';
 $lines[] = '| OAuth 三方登录/短信验证/邮件验证/TOTP/KYC 全流程 | 无法测试：依赖外部服务/邮箱收件（注册邮件）；KYC 提交为写操作且需人工材料 |';
 $lines[] = '';

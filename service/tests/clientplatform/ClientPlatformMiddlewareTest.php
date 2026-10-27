@@ -158,27 +158,6 @@ final class ClientPlatformMiddlewareTest extends TestCase
 
     // ── Admin API route tests ──
 
-    public function testAdminApiRouteIsValidated(): void
-    {
-        $req = $this->createRequest('/admin/api/dashboard', 'windows');
-        $this->middleware->process($req, fn($r) => response('ok'));
-        $this->assertSame('windows', $req->properties['client_platform'] ?? null);
-    }
-
-    public function testAdminApiRouteRejectsInvalidPlatform(): void
-    {
-        $req        = $this->createRequest('/admin/api/users', 'xbox');
-        $nextCalled = false;
-
-        $result = $this->middleware->process($req, function ($r) use (&$nextCalled) {
-            $nextCalled = true;
-            return response('ok');
-        });
-
-        $this->assertFalse($nextCalled);
-        $this->assertSame(400, $result->getStatusCode());
-    }
-
     // ── Platform propagated to next handler ──
 
     public function testPlatformAvailableToNextHandler(): void

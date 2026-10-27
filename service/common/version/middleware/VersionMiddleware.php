@@ -18,10 +18,10 @@ class VersionMiddleware
     protected const SUPPORTED = ['v1'];
 
     /**
-     * API 版本段位于 URL 路径：/api/{version}/... 与 /admin/api/{version}/...
+     * API 版本段位于 URL 路径：/api/{version}/...
      * (不再通过 X-Api-Version 请求头传递)
      */
-    private const PATH_PATTERN = '#^/(?:admin/api|api)/([^/]+)#';
+    private const PATH_PATTERN = '#^/api/([^/]+)#';
 
     /**
      * Read version from URL path, validate, and store for downstream controllers.
@@ -30,7 +30,7 @@ class VersionMiddleware
     {
         $path = $request->path();
 
-        // 非 /api、/admin/api 路径（/health 等）不校验版本
+        // 非 /api 路径（/health 等）不校验版本
         if (!preg_match(self::PATH_PATTERN, $path, $m)) {
             return $next($request);
         }

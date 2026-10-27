@@ -11,7 +11,7 @@ class WafMiddleware
 
         // Request size limits (only for API routes)
         $baseType = '';
-        if (str_starts_with($path, '/api/') || str_starts_with($path, '/admin/api/')) {
+        if (str_starts_with($path, '/api/')) {
             // Content-Type validation
             $contentType = strtolower(trim($request->header('Content-Type', '')));
             $allowedTypes = config('security.request_limits.allowed_content_types', ['application/json']);

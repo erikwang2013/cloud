@@ -1064,8 +1064,6 @@ CREATE TABLE IF NOT EXISTS `role_permission` (
     INDEX idx_permission (permission_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 权限模型唯一事实源为 service/common/Auth/Rbac.php；
--- 种子数据由迁移系统维护（service/database/migrations/2026_08_17_000001_seed_rbac_permissions.php），
--- 本文件仅含表结构
+-- RBAC 表结构（服务端后台 API 已移除，保留表以兼容已部署实例）
 
 SET FOREIGN_KEY_CHECKS = 1;

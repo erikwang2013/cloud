@@ -127,15 +127,6 @@ function mwTag(array $mw, string $needle): bool {
     }
     return false;
 }
-function mwRbac(array $mw): string {
-    foreach ($mw as $m) {
-        if (str_contains($m, 'RbacMiddleware')) {
-            if (preg_match("/'([^']+)'/", $m, $mm)) return $mm[1];
-            return 'rbac';
-        }
-    }
-    return '';
-}
 
 // ---------- 2. 工具：captcha 求解（白盒：Redis 存了 targets 坐标） ----------
 $redis = null;
@@ -274,21 +265,6 @@ foreach ($eps as $ep) {
     if (!$token) continue;
     usleep(1000000); // 限流: 60 req/60s per IP
     $url = $GLOBALS['BASE'] . placeholder($ep['p']);
-    $rbac = mwRbac($ep['mw']);
-    if ($rbac || mwTag($ep['mw'], 'AdminRoleMiddleware')) {
-        // 普通用户 token 访问管理端点 → 401/403
-        if (mwTag($ep['mw'], 'EncryptionMiddleware')) {
-            [, , $dec] = encReq($ep['m'], $url, ['x' => 1]);
-            $code = $dec['code'] ?? -1;
-            $pass = in_array($code, [401, 403], true);
-            record($ep['m'] . ' ' . $ep['p'], 'user-token-admin-api', 'c' . $code, '401/403', $pass, "rbac=$rbac");
-        } else {
-            [$status] = req($ep['m'], $url, $ep['m'] === 'GET' ? null : ['x' => 1], $hdr);
-            record($ep['m'] . ' ' . $ep['p'], 'user-token-admin-api', $status, '401/403',
-                in_array($status, [401, 403], true), "rbac=$rbac");
-        }
-        continue;
-    }
     if (mwTag($ep['mw'], 'EncryptionMiddleware')) {
         [, , $dec] = encReq($ep['m'], $url, ['x' => 1]);
         $code = $dec['code'] ?? -1;
@@ -422,7 +398,6 @@ if (!$fails) {
 $lines[] = '';
 $lines[] = "## 限制说明";
 $lines[] = '- Stripe 支付为外部服务：`POST /api/v1/orders/{id}/pay` 仅验证错误处理路径（4xx/5xx），无法完成真实支付';
-$lines[] = '- service 的 `/admin/api/v1/*` 端点：普通用户 token 应 401/403（AdminRole/RBAC），管理员 token 需 service 侧管理员账号（本环境未配置）';
 $lines[] = (strpos($ADMIN, '8789') !== false)
     ? '- admin 原服务 8788 因上述加密主密钥问题无法启动（环境限制），admin 面板测试在 8789 副本完成'
     : '- admin 主密钥问题（B1）已修复并复测：8788 正常启动，captcha/dashboard/dict/export/login/CRUD 全路由可用（副本已更新为完整路由文件）';

@@ -21,7 +21,7 @@ class ClientPlatformMiddleware
     {
         $path = $request->path();
 
-        if (!str_starts_with($path, '/api/') && !str_starts_with($path, '/admin/api/')) {
+        if (!str_starts_with($path, '/api/')) {
             return $next($request);
         }
 

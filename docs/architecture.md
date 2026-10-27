@@ -220,14 +220,14 @@ HTTP 请求
   │
   ▼
 1. VersionMiddleware         ← 校验 URL 路径版本段，无效版本返回 400
-  │                            仅对 /api/v1/ 和 /admin/api/v1/ 生效
+  │                            仅对 /api/v1/ 生效
   ▼
 2. CorsMiddleware            ← OPTIONS 预检返回 CORS 头，Origin 反射
   ▼
 3. SecurityHeadersMiddleware ← HSTS / X-Frame-Options / CSP / Referrer-Policy 安全响应头
   ▼
 4. ClientPlatformMiddleware  ← X-Client-Platform 头识别（8 平台），注入 properties
-  │                            仅对 /api/v1/ 和 /admin/api/v1/ 生效
+  │                            仅对 /api/v1/ 生效
   ▼
 5. GeoBlockMiddleware        ← GEO_BLOCKED_COUNTRIES 国家封锁（MaxMind GeoIP2）
   ▼
