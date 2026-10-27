@@ -1138,58 +1138,6 @@ CREATE TABLE IF NOT EXISTS `resource_storage_buckets` (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ======================== Usage Billing ========================
-
-CREATE TABLE IF NOT EXISTS `resource_metrics` (
-    id              BIGINT          NOT NULL PRIMARY KEY,
-    resource_id     BIGINT          NOT NULL,
-    metric          VARCHAR(32)     NOT NULL,
-    value           DECIMAL(20,4)   NOT NULL,
-    sample_at       DATETIME        NOT NULL,
-    INDEX idx_resource_metric_time (resource_id, metric, sample_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS `usage_events` (
-    id              BIGINT          NOT NULL PRIMARY KEY,
-    resource_id     BIGINT          NOT NULL,
-    order_item_id   BIGINT          DEFAULT NULL,
-    meter           VARCHAR(32)     NOT NULL,
-    quantity        DECIMAL(20,6)   NOT NULL,
-    period_start    DATETIME        NOT NULL,
-    period_end      DATETIME        NOT NULL,
-    status          VARCHAR(16)     NOT NULL DEFAULT 'open',
-    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE INDEX uk_event (resource_id, meter, period_start),
-    INDEX idx_status_period (status, period_end)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS `usage_rates` (
-    id              BIGINT          NOT NULL PRIMARY KEY,
-    sku_id          BIGINT          NOT NULL,
-    region_id       BIGINT          DEFAULT NULL,
-    meter           VARCHAR(32)     NOT NULL,
-    unit_price      DECIMAL(16,8)   NOT NULL,
-    currency        VARCHAR(3)      NOT NULL DEFAULT 'USD',
-    unit            VARCHAR(16)     NOT NULL DEFAULT 'GB',
-    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE INDEX uk_rate (sku_id, region_id, meter)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS `usage_invoice_items` (
-    id              BIGINT          NOT NULL PRIMARY KEY,
-    order_id        BIGINT          DEFAULT NULL,
-    resource_id     BIGINT          NOT NULL,
-    meter           VARCHAR(32)     NOT NULL,
-    quantity        DECIMAL(20,6)   NOT NULL,
-    amount          DECIMAL(16,4)   NOT NULL,
-    currency        VARCHAR(3)      NOT NULL DEFAULT 'USD',
-    period_start    DATETIME        NOT NULL,
-    period_end      DATETIME        NOT NULL,
-    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_resource (resource_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- ======================== CDN ========================
 
 CREATE TABLE IF NOT EXISTS `resource_cdn` (

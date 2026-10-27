@@ -626,17 +626,6 @@ CDN 产品支持四家服务商（Cloudflare / AWS CloudFront / 阿里云 CDN / 
 
 **数据模型：** `resource_cdn`（provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config；cert_config 落库前剔除私钥，仅存非敏感证书信息）
 
-## 17. 按量计费
-
-资源使用量采集 → 聚合 → 计费 → 扣款的完整管线：
-
-    ResourceMonitor 每 5 分钟采集指标 → resource_metrics
-      → UsageAggregator 每小时聚合 → usage_events
-      → BillingEngine 每日扣减余额 → 余额不足 → 挂起资源
-      → SuspendCheck 每 30 分钟检查 → 余额恢复 → 解挂
-
-**数据模型：** `resource_metrics`、`usage_events`、`usage_rates`、`usage_invoice_items`
-
 ## 18. 供应商评分
 
 已购用户可对供应商进行四维度评分（质量/支持/交付速度/性价比），每订单一次。管理端可审核（approve/hide）。

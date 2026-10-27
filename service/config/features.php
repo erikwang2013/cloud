@@ -28,7 +28,6 @@ return [
     'github_oauth'            => $env('FEATURE_GITHUB_OAUTH', true),
     'ssl_product'             => $env('FEATURE_SSL_PRODUCT', true),
     'object_storage_product'  => $env('FEATURE_OBJECT_STORAGE', true),
-    'usage_billing'           => $env('FEATURE_USAGE_BILLING', true),
     'prometheus_metrics'      => $env('FEATURE_PROMETHEUS', true),
     'cdn_product'             => $env('FEATURE_CDN_PRODUCT', true),
     'supplier_rating'         => $env('FEATURE_SUPPLIER_RATING', true),

@@ -882,20 +882,6 @@ PUT /admin/api/v1/cdn/domains/{id}       → 更新域名套餐（plan 白名单
 
 ---
 
-## 十四、按量计费
-
-```
-GET /admin/api/v1/billing/rates          → 计费费率列表（按资源类型/规格）
-POST /admin/api/v1/billing/rates         → 创建费率
-PUT /admin/api/v1/billing/rates/{id}     → 更新费率
-DELETE /admin/api/v1/billing/rates/{id}  → 删除费率
-GET /admin/api/v1/billing/usage          → 用量汇总（按用户/资源聚合）
-```
-
-计费管线：ResourceMonitor 每 5 分钟采集 → UsageAggregator 每小时聚合 → BillingEngine 每日扣款，余额不足挂起资源。
-
----
-
 ## 十五、联盟佣金（Affiliate）
 
 ### 用户端

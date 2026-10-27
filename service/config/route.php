@@ -351,13 +351,6 @@ Route::group('/admin/api/v1', function () {
     Route::get('/ssl/certs', [App\admin\controller\SslController::class, 'certs'])->middleware([new Common\auth\middleware\RbacMiddleware('ssl.plan')]);
     Route::post('/ssl/certs/{id}/revoke', [App\admin\controller\SslController::class, 'revokeCert'])->middleware([new Common\auth\middleware\RbacMiddleware('ssl.plan')]);
 
-    // Usage billing management
-    Route::get('/billing/rates', [App\admin\controller\BillingController::class, 'rates'])->middleware([new Common\auth\middleware\RbacMiddleware('billing.rate')]);
-    Route::post('/billing/rates', [App\admin\controller\BillingController::class, 'storeRate'])->middleware([new Common\auth\middleware\RbacMiddleware('billing.rate')]);
-    Route::put('/billing/rates/{id}', [App\admin\controller\BillingController::class, 'updateRate'])->middleware([new Common\auth\middleware\RbacMiddleware('billing.rate')]);
-    Route::delete('/billing/rates/{id}', [App\admin\controller\BillingController::class, 'destroyRate'])->middleware([new Common\auth\middleware\RbacMiddleware('billing.rate')]);
-    Route::get('/billing/usage', [App\admin\controller\BillingController::class, 'usage'])->middleware([new Common\auth\middleware\RbacMiddleware('billing.rate')]);
-
     // CDN management
     Route::get('/cdn/domains', [App\admin\controller\CdnController::class, 'index'])->middleware([new Common\auth\middleware\RbacMiddleware('cdn.manage')]);
     Route::put('/cdn/domains/{id}', [App\admin\controller\CdnController::class, 'updatePlan'])->middleware([new Common\auth\middleware\RbacMiddleware('cdn.manage')]);

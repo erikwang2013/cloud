@@ -39,12 +39,4 @@ return [
     // (expiration notifications covered by ExpirationCheck + SslCertificateCheck)
     '*/30 * * * *' => [App\monitor\service\ResourceMonitor::class, 'checkSslCertificates'],
 
-    // Usage aggregation — hourly at :07
-    '7 * * * *'    => [App\billing\service\UsageAggregator::class, 'aggregate'],
-
-    // Usage billing — daily at 03:41
-    '41 3 * * *'   => [App\billing\service\BillingEngine::class, 'runDaily'],
-
-    // Suspend check — every 30 minutes at :11 and :41
-    '11,41 * * * *' => [App\billing\cron\SuspendCheck::class, 'run'],
 ];

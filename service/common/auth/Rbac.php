@@ -16,7 +16,7 @@ class Rbac
             'notification.template', 'notification.send',
             'report.view', 'report.export',
             'system.config',
-            'help.manage', 'ssl.plan', 'billing.rate', 'cdn.manage',
+            'help.manage', 'ssl.plan', 'cdn.manage',
             'affiliate.approve', 'domain.tld', 'domain.transfer_approve', 'webhook.manage',
             'coupon.manage',
         ],
