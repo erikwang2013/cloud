@@ -930,21 +930,6 @@ POST /admin/api/v1/affiliate/payouts/{id}/approve → 审核/打款提现
 
 ---
 
-## 十六、GraphQL
-
-```
-POST /graphql
-  → 公开查询（商品、域名、帮助等只读数据）
-  限制: 查询深度 5 层，复杂度 100
-
-POST /api/v1/graphql                          🔒 需认证
-  → 完整查询（含用户数据）
-```
-
-**敏感操作保持 REST-only：** 支付、提现、退款、KYC 审核不走 GraphQL。
-
----
-
 ## 十七、供应商评分与商品评价
 
 ### 公开

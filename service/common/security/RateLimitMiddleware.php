@@ -16,7 +16,6 @@ class RateLimitMiddleware
         '/api/auth/reset-password'  => 'password_reset',
         '/api/auth/send-sms'        => 'sms',
         '/api/captcha/create'       => 'captcha',
-        '/graphql'                  => 'graphql',
     ];
 
     // 豁免路径：不计数、不限流（nginx 层 100r/s 仍兜底）。

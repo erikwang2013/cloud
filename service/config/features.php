@@ -33,5 +33,4 @@ return [
     'cdn_product'             => $env('FEATURE_CDN_PRODUCT', true),
     'supplier_rating'         => $env('FEATURE_SUPPLIER_RATING', true),
     'affiliate_program'       => $env('FEATURE_AFFILIATE', true),
-    'graphql_api'             => $env('FEATURE_GRAPHQL', true),
 ];

@@ -82,9 +82,6 @@ Route::get('/api/v1/ssl/plans', [App\ssl\controller\SslController::class, 'plans
 // Supplier ratings (public)
 Route::get('/api/v1/suppliers/{supplierId}/ratings', [App\supplier\controller\SupplierRatingController::class, 'supplierRatings']);
 
-// GraphQL (public, limited queries)
-Route::post('/graphql', [App\graphql\GraphqlController::class, 'publicHandle']);
-
 // Payment webhooks (no auth, signature verified)
 Route::post('/api/v1/payments/webhook/stripe', [App\payment\controller\PaymentController::class, 'stripeWebhook']);
 
@@ -210,9 +207,6 @@ Route::group('/api/v1', function () {
     Route::post('/affiliate/links', [App\affiliate\controller\AffiliateController::class, 'generateLink']);
     Route::get('/affiliate/earnings', [App\affiliate\controller\AffiliateController::class, 'earnings']);
     Route::post('/affiliate/payout', [App\affiliate\controller\AffiliateController::class, 'requestPayout']);
-
-    // GraphQL (authenticated, full queries)
-    Route::post('/graphql', [App\graphql\GraphqlController::class, 'handle']);
 })->middleware([VersionMiddleware::class, Common\encryption\middleware\EncryptionMiddleware::class, Common\auth\middleware\AuthMiddleware::class]);
 
 // === User sensitive operations (requires password confirmation) ===

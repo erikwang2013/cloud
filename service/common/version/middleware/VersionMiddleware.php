@@ -30,7 +30,7 @@ class VersionMiddleware
     {
         $path = $request->path();
 
-        // 非 /api、/admin/api 路径（/health、/graphql 等）不校验版本
+        // 非 /api、/admin/api 路径（/health 等）不校验版本
         if (!preg_match(self::PATH_PATTERN, $path, $m)) {
             return $next($request);
         }

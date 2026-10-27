@@ -651,12 +651,6 @@ CDN 产品支持四家服务商（Cloudflare / AWS CloudFront / 阿里云 CDN / 
 
 **数据模型：** `affiliate_plans`、`affiliate_links`、`affiliate_earnings`、`affiliate_payouts`
 
-## 20. GraphQL API
-
-提供 POST /graphql（公开查询）和 POST /api/v1/graphql（认证查询）两个端点。基于 webonyx/graphql-php，查询深度限制 5 层，复杂度限制 100。
-
-**敏感操作保持 REST-only：** 支付、提现、退款、KYC 审核。
-
 ## 21. 可观测性
 
 Prometheus 指标端点独立进程 127.0.0.1:9100，不受 WAF/限流影响。MetricsMiddleware 记录 HTTP 请求计数和延迟。Docker Compose 预置 Prometheus + Grafana + 告警规则 + 仪表盘。

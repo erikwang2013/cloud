@@ -67,11 +67,10 @@ final class RateLimitMiddlewareTest extends TestCase
 
     private function limits(): array
     {
-        // default: rate 3 + burst 2 = 容量 5；login/graphql 独立规则
+        // default: rate 3 + burst 2 = 容量 5；login 独立规则
         return [
             'default' => ['rate' => 3,  'burst' => 2, 'per' => 60],
             'login'   => ['rate' => 5,  'burst' => 0, 'per' => 60],
-            'graphql' => ['rate' => 30, 'burst' => 5, 'per' => 60],
         ];
     }
 
@@ -151,28 +150,6 @@ final class RateLimitMiddlewareTest extends TestCase
         $keys = implode(',', array_keys($state->counters));
         $this->assertStringContainsString(hash('sha256', 'plain-secret-token'), $keys);
         $this->assertStringNotContainsString('plain-secret-token', $keys);
-    }
-
-    public function testGraphqlRouteUsesGraphqlRule(): void
-    {
-        $mw = $this->makeMiddleware(new \stdClass(), $this->limits());
-        for ($i = 0; $i < 35; $i++) {
-            [$result, $nextCalled] = $this->runProcess($mw, $this->request('/graphql'));
-            $this->assertSame('next-result', $result, "graphql request #{$i} should pass");
-            $this->assertTrue($nextCalled);
-        }
-        [$result] = $this->runProcess($mw, $this->request('/graphql'));
-        $this->assertSame(429, $result->getStatusCode());
-        $this->assertSame('60', $result->getHeader('Retry-After'));
-    }
-
-    public function testGraphqlRuleKeyUsesGraphqlRuleName(): void
-    {
-        $state = new \stdClass();
-        $mw = $this->makeMiddleware($state, $this->limits());
-        $this->runProcess($mw, $this->request('/graphql'));
-        $keys = implode(',', array_keys($state->counters));
-        $this->assertStringContainsString(':graphql', $keys);
     }
 
     public function testLoginUsesStricterLoginRule(): void

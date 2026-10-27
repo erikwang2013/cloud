@@ -29,7 +29,6 @@ final class FeatureFlagsTest extends TestCase
             'microsoft_oauth', 'linkedin_oauth', 'github_oauth',
             'affiliate_program',
             'websocket_push',
-            'graphql_api',
             'prometheus_metrics',
         ];
 

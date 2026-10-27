@@ -79,9 +79,9 @@ final class VersionMiddlewareTest extends TestCase
         $this->assertArrayNotHasKey('api_version', $req->properties);
     }
 
-    public function testGraphqlWithoutApiPrefixSkipsValidation(): void
+    public function testNonApiPathSkipsValidation(): void
     {
-        $req = $this->createRequest('/graphql');
+        $req = $this->createRequest('/health');
         $nextCalled = false;
 
         $this->middleware->process($req, function ($r) use (&$nextCalled) {
