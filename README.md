@@ -54,7 +54,7 @@
 | 数据库 | MySQL 8.0（主库 + 审计库双连接） |
 | 搜索引擎 | Elasticsearch 8.x |
 | 虚拟化 | Proxmox VE（Rust kvm-server gRPC 通道，e-cat/etcd 注册） |
-| 客户端 | Flutter (iOS/Android/Web/Linux/macOS/Windows) + HarmonyOS ArkTS |
+| 客户端 | Flutter (iOS/Android/Web/Linux/macOS/Windows) |
 | GraphQL | webonyx/graphql-php ^15.0 |
 | 对象存储 | AWS S3 SDK PHP ^3.300 |
 | 可观测性 | Prometheus + Grafana（预置仪表盘） |
@@ -287,8 +287,6 @@ cloud-php/
 │   │   ├── test/               # Flutter 测试
 │   │   ├── pubspec.yaml        # 依赖声明
 │   │   └── analysis_options.yaml # Dart 静态分析配置
-│   └── harmonyos/              # HarmonyOS 客户端骨架
-│       └── entry/src/          # ArkTS 源码
 ├── docker/                     # Docker 部署
 │   ├── Dockerfile              # PHP 8.2 镜像
 │   ├── docker-compose.yml      # 服务编排
@@ -444,7 +442,6 @@ php start.php stop              # 停止
 ### 客户端构建
 
 - **Flutter 客户端**（`apps/flutter/`）：覆盖 iOS / Android / Web / Linux / macOS / Windows 六平台。`flutter pub get` 安装依赖，`flutter run` 调试，`flutter build apk` / `flutter build ios` / `flutter build web` 打包
-- **HarmonyOS 客户端**（`apps/harmonyos/`）：ArkTS 原生应用，使用 DevEco Studio 打开 `entry` 工程构建运行
 
 ## API 概览
 

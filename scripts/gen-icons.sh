@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # 从 docs/diagrams/mascot-icon.svg 重新生成所有客户端应用图标
-# （Flutter iOS / macOS / Web / Windows + HarmonyOS）。
+# （Flutter iOS / macOS / Web / Windows）。
 #
 # 用法：bash scripts/gen-icons.sh
 # 依赖：rsvg-convert（SVG 光栅化）、python3（合成多尺寸 .ico，仅用标准库）
@@ -98,8 +98,6 @@ done <<'EOF'
 512  apps/flutter/web/icons/Icon-512.png
 192  apps/flutter/web/icons/Icon-maskable-192.png
 512  apps/flutter/web/icons/Icon-maskable-512.png
-216  apps/harmonyos/AppScope/resources/base/media/app_icon.png
-216  apps/harmonyos/entry/src/main/resources/base/media/icon.png
 EOF
 
 echo "ICO 图标:"
@@ -110,7 +108,5 @@ gen_ico "$ROOT/service/public/favicon.ico" 16 32 48
 
 # 有意跳过：
 #   apps/flutter/ios/Runner/Assets.xcassets/LaunchImage.imageset/*.png
-#     —— 启动图占位（当前 1x1），不是应用图标；
-#   apps/harmonyos/**/app_icon.png、icon.png 原本为 1x1 占位，
-#     已按 HarmonyOS 应用图标规范（216x216）生成，不再是占位尺寸。
+#     —— 启动图占位（当前 1x1），不是应用图标。
 echo "完成。"

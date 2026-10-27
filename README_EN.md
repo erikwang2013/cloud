@@ -54,7 +54,7 @@ The system is organized into **four layers** — Client Layer (6 platforms), API
 | Database | MySQL 8.0 (main + audit dual connection) |
 | Search Engine | Elasticsearch 8.x |
 | Virtualization | Proxmox VE (Rust kvm-server gRPC channel, e-cat/etcd registry) |
-| Clients | Flutter (iOS/Android/Web/Linux/macOS/Windows) + HarmonyOS ArkTS |
+| Clients | Flutter (iOS/Android/Web/Linux/macOS/Windows) |
 | Deployment | Docker Compose |
 
 ## System Architecture
@@ -282,8 +282,6 @@ cloud-php/
 │   │   ├── test/               # Flutter tests
 │   │   ├── pubspec.yaml        # Dependency manifest
 │   │   └── analysis_options.yaml # Dart static analysis config
-│   └── harmonyos/              # HarmonyOS client skeleton
-│       └── entry/src/          # ArkTS source
 ├── docker/                     # Docker deployment
 │   ├── Dockerfile              # PHP 8.2 image
 │   ├── docker-compose.yml      # Service orchestration
@@ -439,7 +437,6 @@ Once running, `http://localhost:8787` serves the site landing page (project pet 
 ### Building Clients
 
 - **Flutter client** (`apps/flutter/`): iOS / Android / Web / Linux / macOS / Windows. Run `flutter pub get` to install dependencies, `flutter run` to debug, `flutter build apk` / `flutter build ios` / `flutter build web` to package
-- **HarmonyOS client** (`apps/harmonyos/`): native ArkTS app — open the `entry` project with DevEco Studio to build and run
 
 ## API Overview
 

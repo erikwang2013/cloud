@@ -20,14 +20,14 @@ CloudPlatform 是一个面向全球的云资源交易平台，支持自营物理
 | 消息队列 | Redis Queue | 异步处理支付回调、通知分发、资源开通 |
 | 搜索引擎 | database（默认）/ Elasticsearch 8.x | webman-scout 默认 database 驱动（SQL LIKE 降级）；配置 ES 后启用 IK 分词索引 |
 | 虚拟化 | Proxmox VE + kvm-server | 自营 VM 由 Rust kvm-server（gRPC :50051，e-cat/etcd 注册发现）供应；驱动层当前为模拟驱动，libvirt 真实驱动 Phase 2 |
-| 客户端 | Flutter | 单代码库 iOS/macOS/Windows/Linux/Web 五端 + HarmonyOS |
+| 客户端 | Flutter | 单代码库 iOS/macOS/Windows/Linux/Web 五端 |
 
 ### 1.2 系统边界
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                         用户端                                    │
-│  Flutter (iOS/macOS/Windows/Linux/Web) + HarmonyOS (ArkTS)      │
+│  Flutter (iOS/macOS/Windows/Linux/Web)                          │
 └─────────────────────────┬────────────────────────────────────────┘
                           │ HTTPS + JWT
 ┌─────────────────────────┼────────────────────────────────────────┐
@@ -89,7 +89,7 @@ cloud-php/
 ├── admin/                    # 管理后台 webman 实例（:8788，webman-admin + Layui）
 │   ├── app/                  # 插件源码：54 控制器、46 模型、bootstrap、command、middleware、view
 │   └── tests/                # PHPUnit 11（286 tests / 962 assertions）
-├── apps/                     # 客户端：Flutter（6 平台）+ HarmonyOS ArkTS
+├── apps/                     # 客户端：Flutter（6 平台）
 ├── infrastructure/           # Rust e-cat workspace：kvm-server（gRPC :50051）+ ecat-* 基础 crate
 ├── docs/                     # 文档与 docs/diagrams/ 下的 SVG 图
 ├── docker/                   # Dockerfile + docker-compose + nginx + supervisor

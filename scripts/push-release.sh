@@ -16,10 +16,9 @@ echo "==> 最新版本 v$latest -> 新版本 v$new"
 
 sed -i "s/^version = \"[0-9.]*\"/version = \"$new\"/" infrastructure/Cargo.toml
 sed -i "s/^version: .*/version: ${new}+1/" apps/flutter/pubspec.yaml
-sed -i "s/\"version\": \".*\"/\"version\": \"$new\"/" apps/harmonyos/entry/oh-package.json5
 
-git add infrastructure/Cargo.toml apps/flutter/pubspec.yaml apps/harmonyos/entry/oh-package.json5
-git commit -m "chore: release v$new 版本号同步（Cargo/Flutter/HarmonyOS）"
+git add infrastructure/Cargo.toml apps/flutter/pubspec.yaml
+git commit -m "chore: release v$new 版本号同步（Cargo/Flutter）"
 
 git push origin main
 git tag "v$new"
