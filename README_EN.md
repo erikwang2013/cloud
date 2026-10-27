@@ -614,6 +614,41 @@ Unicode flag emoji support via `erikwang2013/season`:
 |:---:|:---:|
 | ![WeChat](./docs/weixinpay.png "WeChat") | ![Alipay](./docs/alipay.png "Alipay") |
 
+## Open Source vs Commercial
+
+The open-source edition keeps the core cloud-resource trading loop: users, products, orders, payments, domains, suppliers, tickets, Proxmox VE provisioning, notifications, reports, monitoring, and WebSocket push. It is intended for personal study, research, and small self-hosted deployments.
+
+The commercial edition adds the modules needed for operations and scale, plus commercial licensing and delivery support. Both editions share the same core data model and API style, so upgrading is straightforward.
+
+| Dimension | Open Source | Commercial |
+|---|---|---|
+| License | Personal study/research; commercial use requires written authorization | Commercial license (contact erik@erik.xyz) |
+| Business modules | Core trading/provisioning (users/orders/payments/products/domains/suppliers/tickets/notifications/reports/monitoring/WebSocket) | Everything in open source + admin API, affiliate, usage billing, CDN, SSL, object storage, GraphQL, KVM/gRPC |
+| Controllers | 86 | 111 |
+| Models | 58 | 65 |
+| Tables | 67 | 79 |
+| Service API routes | 102 | 225 |
+| Clients | Flutter | Flutter + HarmonyOS |
+| Admin | Layui admin | Layui + `/admin/api/v1` admin API + RBAC |
+| Provisioning | Proxmox VE | Proxmox VE + KVM/gRPC (etcd registry) |
+| Billing | Orders/payments | Adds usage billing (metrics/usage/statements/suspension) |
+| Growth | — | Affiliate commissions, referral links, earnings and payout approval |
+| Product types | Servers/IPs/disks/domains | Adds SSL certificates, S3 object storage, CDN |
+
+**Commercial-only capabilities**
+
+- Billing & growth: usage-based billing, affiliate/referral commissions.
+- Products & provisioning: SSL certificates, S3 object storage, CDN acceleration, KVM/gRPC provisioning.
+- APIs & admin: GraphQL API, `/admin/api/v1` admin API with RBAC.
+- Client: native HarmonyOS client.
+
+**Open-source scope**
+
+- Users, products, orders, payments, domains, suppliers, tickets, Proxmox VE provisioning, notifications, reports, monitoring, WebSocket, Flutter client.
+- Same core data model and API style as the commercial edition for a smooth upgrade.
+
+> For commercial licensing and delivery terms, contact **erik@erik.xyz**.
+
 ## 项目授权 / Project License
 
 Copyright (c) 2026 erik <erik@erik.xyz> — https://erik.xyz

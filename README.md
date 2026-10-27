@@ -627,6 +627,41 @@ ProviderInterface
 |:---:|:---:|
 | ![微信](./docs/weixinpay.png "微信") | ![支付宝](./docs/alipay.png "支付宝") |
 
+## 开源版 vs 商业版
+
+开源版保留云资源交易的核心闭环：用户、商品、订单、支付、域名、供应商、工单、Proxmox VE 交付、通知、报表、监控与 WebSocket 推送，适合个人学习、研究和小规模自建。
+
+商业版在开源版基础上补齐面向运营与规模化交付的模块，并提供商业授权与交付支持。两版核心数据模型与 API 风格一致，便于从开源版升级。
+
+| 维度 | 开源版 | 商业版 |
+|---|---|---|
+| 授权 | 个人学习/研究；商业使用需书面授权 | 商业授权（联系 erik@erik.xyz） |
+| 业务模块 | 核心交易与交付（用户/订单/支付/商品/域名/供应商/工单/通知/报表/监控/WebSocket） | 开源版全部 + 管理 API、联盟分销、按量计费、CDN、SSL、对象存储、GraphQL、KVM/gRPC |
+| 控制器 | 86 | 111 |
+| 数据模型 | 58 | 65 |
+| 数据表 | 67 | 79 |
+| service API 路由 | 102 | 225 |
+| 客户端 | Flutter | Flutter + HarmonyOS |
+| 管理端 | Layui 管理后台 | Layui + `/admin/api/v1` 管理 API + RBAC |
+| 资源交付 | Proxmox VE | Proxmox VE + KVM/gRPC（etcd 注册） |
+| 计费 | 订单/支付 | 增加按量计费（指标采集/用量聚合/账单/欠费挂起） |
+| 增长 | 无 | 联盟佣金、推广链接、收益与提现审批 |
+| 产品类型 | 服务器/IP/磁盘/域名 | 增加 SSL 证书、S3 对象存储、CDN 加速 |
+
+**商业版独有能力**
+
+- 计费与增长：按量计费、联盟分销/佣金结算。
+- 产品与交付：SSL 证书、S3 对象存储、CDN 加速、KVM/gRPC 交付通道。
+- 接口与后台：GraphQL API、`/admin/api/v1` 管理 API 与 RBAC。
+- 客户端：HarmonyOS 原生客户端。
+
+**开源版保留**
+
+- 用户、商品、订单、支付、域名、供应商、工单、Proxmox VE 交付、通知、报表、监控、WebSocket、Flutter 客户端。
+- 数据模型与 API 风格与商业版一致，可平滑升级。
+
+> 商业版授权与交付条款请联系 **erik@erik.xyz**。
+
 ## 项目授权 / Project License
 
 Copyright (c) 2026 erik <erik@erik.xyz> — https://erik.xyz
