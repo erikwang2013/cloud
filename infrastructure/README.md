@@ -503,6 +503,10 @@ prost 是 Rust 社区最广泛使用的 protobuf 实现，编译期生成类型�
 |:---:|:---:|
 | <img src="docs/weixinpay.png" width="130" height="130" alt="微信支付"> | <img src="docs/alipay.png" width="130" height="130" alt="支付宝"> |
 
-## 许可证
+## 许可证 / License
 
 Apache-2.0
+
+> 本目录为 e-cat 框架代码副本，遵循 e-cat 的 Apache-2.0 许可；本仓库其余代码适用根目录 [LICENSE](../LICENSE) 的项目授权条款。
+
+The code in this directory is a copy of the e-cat framework and remains licensed under Apache-2.0; the rest of this repository is governed by the Project License in the root LICENSE.
