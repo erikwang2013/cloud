@@ -36,11 +36,4 @@ return [
         'count'       => 1,
         'constructor' => [],
     ],
-
-    // etcd registry: lease keepalive + peer liveness polling (gRPC discovery)
-    'grpc_registry' => [
-        'handler'     => App\grpc\RegistryProcess::class,
-        'count'       => 1,
-        'constructor' => [],
-    ],
 ];

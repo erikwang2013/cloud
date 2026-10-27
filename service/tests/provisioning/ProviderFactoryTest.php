@@ -123,20 +123,6 @@ final class ProviderFactoryTest extends TestCase
         $this->assertSame('v2', $provider->version);
     }
 
-    public function testRegisterDefaultsResolvesKvmProvider(): void
-    {
-        ProviderFactory::clear();
-        ProviderFactory::registerDefaults();
-
-        foreach (['server', 'disk', 'ip'] as $type) {
-            $task = new ProvisionTask(['product_type' => $type, 'provider' => 'kvm']);
-            $this->assertInstanceOf(
-                \App\provisioning\provider\kvm\KvmProvider::class,
-                $this->factory->create($task)
-            );
-        }
-    }
-
     #[DataProvider('providerKeyProvider')]
     public function testFactoryKeysCombineTypeAndProvider(string $type, string $provider, string $expectedKey): void
     {

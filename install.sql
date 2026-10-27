@@ -493,7 +493,6 @@ CREATE TABLE IF NOT EXISTS `cloud_host_machines` (
     storage_pool        VARCHAR(128)    NOT NULL DEFAULT 'local-lvm',
     api_token_encrypted VARCHAR(1024)   NOT NULL,
     hypervisor          VARCHAR(16)     NOT NULL DEFAULT 'proxmox',
-    kvm_connection      VARCHAR(255)    DEFAULT NULL,
     specs               JSON            NOT NULL,
     status              VARCHAR(32)     NOT NULL DEFAULT 'active',
     created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
