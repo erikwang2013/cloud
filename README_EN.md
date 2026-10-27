@@ -7,12 +7,9 @@
 | 简体中文 | [README.md](README.md) |
 | English | [README_EN.md](README_EN.md) · [English docs](docs/i18n/en/README.md) |
 
-<p align="center">
-  <img src="docs/diagrams/c.svg" alt="CloudPlatform project pet “Yuntuan”" width="260">
-</p>
+![CloudPlatform project pet “Yuntuan”](docs/diagrams/c.svg)
 
-<p align="center"><b>Yuntuan</b> — the project pet. A cloud sprite cradling a server: the cloud is the platform, the server is the resource,<br>
-and the embrace is automatic provisioning; an orbit ring carries a globe and a growth arrow for global trade.</p>
+**Yuntuan** — the project pet. A cloud sprite cradling a server: the cloud is the platform, the server is the resource, and the embrace is automatic provisioning; an orbit ring carries a globe and a growth arrow for global trade.
 
 A cloud resource trading platform serving global users. Supports purchasing servers (VM), IP addresses, cloud disks, and domains with automatic provisioning. Self-operated bare-metal servers are virtualized via Proxmox VE, while third-party suppliers can onboard and sell through the marketplace. Multi-currency settlement and Prometheus/Grafana observability are included.
 
@@ -666,7 +663,7 @@ The commercial edition adds the modules needed for operations and scale, plus co
 
 ## 项目授权 / Project License
 
-Copyright (c) 2026 erik <erik@erik.xyz> — https://erik.xyz
+Copyright (c) 2026 erik (erik@erik.xyz) — https://erik.xyz
 
 - 本项目仅供个人学习、研究使用。
 - 未经作者书面授权，禁止任何形式的商业使用（包括但不限于商业部署、付费服务、二次销售、SaaS 运营及以本项目为基础提供商业服务）。
