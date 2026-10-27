@@ -23,12 +23,6 @@
     <rect x="380" y="100" width="150" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
     <text x="455" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">Flutter Web</text>
     <text x="455" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">PWA / Browser</text>
-    <rect x="545" y="100" width="150" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
-    <text x="620" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">Flutter Desktop</text>
-    <text x="620" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">Win / Mac / Linux</text>
-    <rect x="710" y="100" width="150" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
-    <text x="785" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">HarmonyOS</text>
-    <text x="785" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">ArkTS Native</text>
     <rect x="875" y="100" width="170" height="50" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
     <text x="960" y="122" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="bold">管理后台 Web</text>
     <text x="960" y="138" text-anchor="middle" fill="#8b5cf6" font-size="10">Layui · webman-admin</text>
@@ -71,7 +65,7 @@
   <!-- Layer 3: Service Modules -->
   <g filter="url(#sh)">
     <rect x="30" y="312" width="1040" height="458" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-    <text x="50" y="336" fill="#1e40af" font-size="13" font-weight="bold">业务服务层 — 23 个功能模块</text>
+    <text x="50" y="336" fill="#1e40af" font-size="13" font-weight="bold">业务服务层 — 业务功能模块</text>
 
     <rect x="50" y="350" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
     <text x="140" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">User 用户</text>
@@ -93,10 +87,6 @@
     <text x="734" y="392" text-anchor="middle" fill="#3b82f6" font-size="10">Stripe集成·路由</text>
     <text x="734" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">Webhook·对账</text>
 
-    <rect x="842" y="350" width="200" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
-    <text x="942" y="374" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Provisioning 交付</text>
-    <text x="942" y="392" text-anchor="middle" fill="#3b82f6" font-size="10">Provider插件·队列·重试</text>
-    <text x="942" y="408" text-anchor="middle" fill="#3b82f6" font-size="10">kvm-server gRPC·主机选择</text>
 
     <rect x="50" y="438" width="180" height="72" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
     <text x="140" y="462" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">Supplier 供应商</text>
@@ -125,59 +115,19 @@
 
     <!-- New modules row -->
 
-    <rect x="50" y="526" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
-    <text x="140" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">SSL 证书</text>
-    <text x="140" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">DV/OV/EV·ACME</text>
-    <text x="140" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">自动签发·续期</text>
 
-    <rect x="248" y="526" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
-    <text x="338" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Storage 存储</text>
-    <text x="338" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">S3兼容·MinIO</text>
-    <text x="338" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">预签名·配额</text>
 
-    <rect x="446" y="526" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
-    <text x="536" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">CDN 加速</text>
-    <text x="536" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">Cloudflare</text>
-    <text x="536" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">缓存清除·统计</text>
 
-    <rect x="644" y="526" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
-    <text x="734" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Billing 计费</text>
-    <text x="734" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">按量采集·聚合</text>
-    <text x="734" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">余额扣款·挂起</text>
 
-    <rect x="842" y="526" width="200" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
-    <text x="942" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Affiliate 分销</text>
-    <text x="942" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">推荐链接·归因</text>
-    <text x="942" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">佣金·提现</text>
-    <rect x="50" y="604" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
-    <text x="140" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">SSL 证书</text>
-    <text x="140" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">DV/OV/EV·ACME</text>
-    <text x="140" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">自动签发·续期</text>
 
-    <rect x="248" y="604" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
-    <text x="338" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Storage 存储</text>
-    <text x="338" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">S3兼容·MinIO</text>
-    <text x="338" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">预签名·配额</text>
 
-    <rect x="446" y="604" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
-    <text x="536" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">CDN 加速</text>
-    <text x="536" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">Cloudflare</text>
-    <text x="536" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">缓存清除</text>
 
-    <rect x="644" y="604" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
-    <text x="734" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Billing 计费</text>
-    <text x="734" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">按量采集·聚合</text>
-    <text x="734" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">余额扣款·挂起</text>
 
-    <rect x="842" y="604" width="200" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
-    <text x="942" y="548" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">Affiliate 分销</text>
-    <text x="942" y="566" text-anchor="middle" fill="#3b82f6" font-size="10">推荐链接·归因</text>
-    <text x="942" y="580" text-anchor="middle" fill="#3b82f6" font-size="10">佣金·提现</text>
 
     <rect x="50" y="600" width="180" height="62" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
     <text x="140" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Admin 后台</text>
     <text x="140" y="646" text-anchor="middle" fill="#b45309" font-size="10">Dashboard·CRUD</text>
-    <text x="140" y="662" text-anchor="middle" fill="#b45309" font-size="10">53控制器·ACL</text>
+    <text x="140" y="662" text-anchor="middle" fill="#b45309" font-size="10">管理面板·ACL</text>
 
     <rect x="248" y="600" width="180" height="62" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
     <text x="338" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Report 报表</text>
@@ -194,10 +144,6 @@
     <text x="734" y="646" text-anchor="middle" fill="#b45309" font-size="10">点击验证·300s</text>
     <text x="734" y="662" text-anchor="middle" fill="#b45309" font-size="10">GD绘图·Redis</text>
 
-    <rect x="842" y="604" width="200" height="72" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
-    <text x="942" y="628" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">Cron 定时任务</text>
-    <text x="942" y="646" text-anchor="middle" fill="#b45309" font-size="10">汇率·对账·结算</text>
-    <text x="942" y="662" text-anchor="middle" fill="#b45309" font-size="10">到期检测·SSL检查</text>
 
     <rect x="50" y="690" width="350" height="76" rx="6" fill="#e0e7ff" stroke="#818cf8"/>
     <text x="225" y="714" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="bold">Common 公共库</text>

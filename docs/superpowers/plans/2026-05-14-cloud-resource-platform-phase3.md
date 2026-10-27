@@ -1,5 +1,8 @@
 # Phase 3: 运营完善 — Implementation Plan
 
+
+> 历史文档：本文记录当时状态；其中 GraphQL、KVM/gRPC、CDN/SSL/对象存储、按量计费、分销、HarmonyOS 与 `/admin/api` 等模块已移除，当前实现以 README 与 `docs/` 主文档为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** 工单系统、消息通知、监控告警、管理后台页面、客户端 App 骨架、部署配置。平台达到可正式运营状态。

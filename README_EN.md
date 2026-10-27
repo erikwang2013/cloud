@@ -5,30 +5,18 @@
 | Language | Docs |
 |----------|------|
 | 简体中文 | [README.md](README.md) |
-| English | [README_EN.md](README_EN.md) |
-| English | [en docs](docs/i18n/en/README.md) |
-| 한국어 | [ko docs](docs/i18n/ko/README.md) |
-| Русский | [ru docs](docs/i18n/ru/README.md) |
-| Deutsch | [de docs](docs/i18n/de/README.md) |
-| Français | [fr docs](docs/i18n/fr/README.md) |
-| Español | [es docs](docs/i18n/es/README.md) |
-| Português | [pt docs](docs/i18n/pt/README.md) |
-| हिन्दी | [hi docs](docs/i18n/hi/README.md) |
-| العربية | [ar docs](docs/i18n/ar/README.md) |
-| বাংলা | [bn docs](docs/i18n/bn/README.md) |
-| Bahasa Indonesia | [id docs](docs/i18n/id/README.md) |
-| 日本語 | [ja docs](docs/i18n/ja/README.md) |
+| English | [README_EN.md](README_EN.md) · [English docs](docs/i18n/en/README.md) |
 
 <p align="center">
   <img src="docs/diagrams/c.svg" alt="CloudPlatform project pet “Yuntuan”" width="260">
 </p>
 
 <p align="center"><b>Yuntuan</b> — the project pet. A cloud sprite cradling a server: the cloud is the platform, the server is the resource,<br>
-and the embrace is automatic provisioning; an orbit ring carries a globe and a growth arrow for global trade and metered billing.</p>
+and the embrace is automatic provisioning; an orbit ring carries a globe and a growth arrow for global trade.</p>
 
-A cloud resource trading platform serving global users. Supports purchasing servers (VM), IP addresses, cloud disks, domains, SSL certificates, object storage (S3), and CDN acceleration with automatic provisioning. Self-operated bare-metal servers are virtualized via Proxmox VE, while third-party suppliers can onboard and sell through the marketplace. Billing by usage, affiliate distribution, a GraphQL API, and Prometheus/Grafana observability are included.
+A cloud resource trading platform serving global users. Supports purchasing servers (VM), IP addresses, cloud disks, and domains with automatic provisioning. Self-operated bare-metal servers are virtualized via Proxmox VE, while third-party suppliers can onboard and sell through the marketplace. Multi-currency settlement and Prometheus/Grafana observability are included.
 
-The system is organized into **four layers** — Client Layer (6 platforms), API Gateway Layer (12 global middleware), Business Service Layer (23 modules), and Infrastructure Layer. The admin panel runs as a separate webman instance with an isolated failure domain from user traffic. Full design: [Architecture Design](docs/architecture.md) and [Feature Design](docs/features.md).
+The system is organized into **four layers** — Client Layer (Flutter multi-platform), API Gateway Layer (global middleware), Business Service Layer (vertically split by domain), and Infrastructure Layer. The admin panel runs as a separate webman instance with an isolated failure domain from user traffic. Full design: [Architecture Design](docs/architecture.md) and [Feature Design](docs/features.md).
 
 ## Tech Stack
 
@@ -53,13 +41,13 @@ The system is organized into **four layers** — Client Layer (6 platforms), API
 | Queue | webman redis-queue |
 | Database | MySQL 8.0 (main + audit dual connection) |
 | Search Engine | Elasticsearch 8.x |
-| Virtualization | Proxmox VE (Rust kvm-server gRPC channel, e-cat/etcd registry) |
+| Virtualization | Proxmox VE |
 | Clients | Flutter (iOS/Android/Web/Linux/macOS/Windows) |
 | Deployment | Docker Compose |
 
 ## System Architecture
 
-Clients enter through Cloudflare and Nginx into the business service layer, which runs as **two independent webman instances** (service `:8787` carries user and supplier APIs, queues, cron and WebSocket; admin `:8788` carries the management panel). They share one MySQL while keeping separate failure domains. First-party bare-metal resources are provisioned through kvm-server (Rust gRPC) into Proxmox VE.
+Clients enter through Cloudflare and Nginx into the business service layer, which runs as **two independent webman instances** (service `:8787` carries user and supplier APIs, queues, cron and WebSocket; admin `:8788` carries the management panel). They share one MySQL while keeping separate failure domains. First-party bare-metal resources are provisioned directly through the Proxmox VE API.
 
 ![System Architecture](docs/diagrams/system-architecture-en.svg)
 
@@ -99,7 +87,7 @@ Payment transactions (`payment_transactions`), supplier settlements (`supplier_s
 
 ## Module Overview
 
-The system is organized into four layers: Client Layer (6 platform access points), API Gateway Layer (12 middleware components), Business Service Layer (23 core modules), and Infrastructure Layer (8 core components).
+The system is organized into four layers: Client Layer (Flutter multi-platform), API Gateway Layer (global middleware), Business Service Layer (vertically split by domain), and Infrastructure Layer.
 
 ![Module Overview](docs/diagrams/module-overview-en.svg)
 
@@ -118,10 +106,9 @@ Resources progress through 6 states driven by 8 lifecycle events, supporting aut
 | Document | Description |
 |----------|-------------|
 | [Architecture Design](docs/architecture.md) | System architecture, component relationships, middleware pipeline, security layers, data architecture, deployment topology |
-| [Feature Design](docs/features.md) | 23 modules detailed feature design with flow diagrams, data models, interaction descriptions |
-| [API Reference](docs/api-reference.md) | 200+ endpoints complete reference, grouped by module, with request/response examples, error codes |
+| [Feature Design](docs/features.md) | Feature modules design with flow diagrams, data models, interaction descriptions |
+| [API Reference](docs/api-reference.md) | API endpoint reference, grouped by module, with request/response examples, error codes |
 | [API Docs Live (service)](http://localhost:8787/apidoc) | Auto-generated by hg/apidoc, grouped by function, online debugging |
-| [API Docs Live (admin)](http://localhost:8788/apidoc) | hg/apidoc auto-generated, 54 controllers in 13 function groups |
 | [Admin Panel Design](docs/admin-design.md) | Admin panel architecture, package integration, ACL, test suite |
 | [Supplier API Docs](docs/supplier-api.md) | Supplier API reference (internal + external), SDK examples |
 | [Deployment Checklist](docs/deployment.md) | Server setup, environment config, Nginx, HTTPS, cron jobs |
@@ -179,17 +166,11 @@ cloud-php/
 │   └── install.sql             # Initial DDL
 ├── service/                    # Backend service (standalone webman instance)
 │   ├── app/                    # Business modules (PSR-4: App\), each with Controller/Model/Service layers
-│   │   ├── admin/controller/   # Admin API (15 controllers: Dashboard / User / Product / Order / Payment / Supplier / Coupon / Invoice / Domain / Webhook etc.)
-│   │   ├── affiliate/          # Affiliate commissions / referral payouts (Controller / Listener / Model / Service)
-│   │   ├── billing/            # Usage metering / billing (Cron / Service)
 │   │   ├── captcha/controller/ # Click CAPTCHA
-│   │   ├── cdn/                # CDN resource hosting (Controller / Model / Provider / Service)
 │   │   ├── command/            # Console commands (Migrate / Rollback / Status / DbBackup)
 │   │   ├── controller/         # Public controllers (Health / Status / Help / Upload)
-│   │   ├── cron/               # Scheduled tasks (CronRunner scheduler + ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck)
+│   │   ├── cron/               # Scheduled tasks (CronRunner scheduler + ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck)
 │   │   ├── domain/             # Domain registration / DNS (Controller / Model / Service)
-│   │   ├── graphql/            # GraphQL API (Mutation / Query / Schema)
-│   │   ├── grpc/               # kvm-server gRPC client + etcd registry (KvmClient / EtcdRegistry)
 │   │   ├── model/              # Shared models (HelpArticle / Role / Permission)
 │   │   ├── monitor/            # Resource monitoring / alerts (Controller / Cron / Model / Service)
 │   │   ├── notification/       # Notifications (Controller / Model / Queue / Service)
@@ -198,8 +179,6 @@ cloud-php/
 │   │   ├── product/            # Products / SKUs / pricing / reviews (Controller / Model / Service)
 │   │   ├── provisioning/       # Resource delivery engine (Controller / Event / Listener / Model / Provider / Queue / Service)
 │   │   ├── report/             # Revenue / supplier / regional reports (Controller / Service)
-│   │   ├── ssl/                # SSL certificate issuance / management (Controller / Model / Service)
-│   │   ├── storage/            # Object storage resources (Controller / Model / Provider / Service)
 │   │   ├── supplier/           # Supplier onboarding / settlement / withdrawal + external API (Controller / Model / Service)
 │   │   ├── ticket/             # Support tickets (Controller / Event / Listener / Model / Service)
 │   │   ├── user/               # Users / auth / KYC / balances / addresses (Controller / Model / Service)
@@ -229,18 +208,13 @@ cloud-php/
 │   ├── support/                # Bootstrap (Eloquent / Redis / Event / encryption / snowflake / hashids / scout / MigrationRunner)
 │   ├── tests/                  # Unit tests (PHPUnit 10, 672 tests / 1632 assertions)
 │   │   ├── admin/              # ImportExport / SupplierWithdrawApprove
-│   │   ├── affiliate/          # AffiliateService
 │   │   ├── auth/               # JwtAuth / RbacSeed / Rbac
-│   │   ├── billing/            # MeterCollector / UsageAggregator / SuspendCheck
 │   │   ├── captcha/            # CaptchaService
-│   │   ├── cdn/                # ResourceCdn
 │   │   ├── clientplatform/     # ClientPlatformMiddleware
 │   │   ├── common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
 │   │   ├── confirmation/       # ConfirmationMiddleware
 │   │   ├── cron/               # SupplierSettlement
 │   │   ├── domain/             # DomainService / DomainTransfer
-│   │   ├── graphql/            # Schema
-│   │   ├── grpc/               # KvmClient / EtcdRegistry
 │   │   ├── monitor/            # AlertEngine
 │   │   ├── notification/       # NotificationDispatcher
 │   │   ├── order/              # Coupon / Invoice
@@ -249,8 +223,6 @@ cloud-php/
 │   │   ├── provisioning/       # ProviderFactory / RetryLogic
 │   │   ├── report/             # ReportService
 │   │   ├── security/           # RateLimit / Maintenance / UploadSecurity
-│   │   ├── ssl/                # SslCertificate
-│   │   ├── storage/            # StorageBucket
 │   │   ├── supplier/           # SupplierService / Settlement / Rating / Webhook
 │   │   ├── ticket/             # TicketUpdatedWiring
 │   │   ├── user/               # AddressController
@@ -287,12 +259,6 @@ cloud-php/
 │   ├── docker-compose.yml      # Service orchestration
 │   ├── nginx.conf              # Nginx config
 │   └── supervisor.conf         # Supervisor process manager
-├── infrastructure/             # Rust infrastructure (e-cat workspace)
-│   ├── kvm-server/             # Self-operated cloud: VM provisioning gRPC service (:50051, etcd registry)
-│   │   ├── src/                # main / grpc / driver (mock driver, libvirt = Phase 2)
-│   │   ├── tests/              # Integration tests
-│   │   └── Cargo.toml          # e-cat workspace member
-│   └── ecat-*/                 # e-cat crates (transport-grpc / registry-etcd / protos / config / data etc.)
 ├── docs/                       # Documentation
 │   ├── admin-design.md         # Admin panel design doc
 │   ├── supplier-api.md         # Supplier API reference
@@ -431,8 +397,8 @@ Once running, `http://localhost:8787` serves the site landing page (project pet 
 
 - **Dashboard**: today's orders / revenue / new users / active resources, 30-day revenue trend chart, PDF export
 - **Report Center**: order daily reports, product rankings, payment channel statistics, user growth, Excel export
-- **Day-to-day management**: users / products / orders / suppliers / tickets / domains / CDN, KYC review, refunds, settlement & withdrawal approval
-- **System configuration**: payment channels, CDN accounts, webhooks, notification templates, help articles, audit logs
+- **Day-to-day management**: users / products / orders / suppliers / tickets / domains, KYC review, refunds, settlement & withdrawal approval
+- **System configuration**: payment channels, webhooks, notification templates, help articles, audit logs
 
 ### Building Clients
 
@@ -440,7 +406,7 @@ Once running, `http://localhost:8787` serves the site landing page (project pet 
 
 ## API Overview
 
-Endpoints grouped by module, with request/response examples and error codes: [API Overview](docs/api-overview-en.md) (curated) · [API Reference](docs/api-reference.md) (200+ endpoints, full reference) · [Online debugging](http://localhost:8787/apidoc)
+Endpoints grouped by module, with request/response examples and error codes: [API Overview](docs/api-overview-en.md) (curated) · [API Reference](docs/api-reference.md) (full reference) · [Online debugging](http://localhost:8787/apidoc)
 
 ## Admin Panel Architecture
 
@@ -515,8 +481,6 @@ User places order → Payment succeeds → OrderPaid event
       → ProxmoxProvider.create()
         → HostSelector picks least-loaded physical host
         → ProxmoxApi creates VM / attaches disk / allocates IP
-          (Rust kvm-server gRPC provisioning service landed: e-cat/etcd registry
-           discovery, PHP-side KvmClient wired; mock driver, real libvirt = Phase 2)
         → Creates Resource / Disk records
       → Updates Order status to completed
 ```
@@ -551,11 +515,11 @@ Global middleware pipeline: `Version → CORS → SecurityHeaders → ClientPlat
 - **SecurityHeaders** — Security response headers (HSTS / X-Frame-Options / X-Content-Type-Options / Referrer-Policy / Permissions-Policy)
 - **GeoBlock** — Geographic blocking (blocks access from GEO_BLOCKED_COUNTRIES, GeoIP2-based)
 - **WAF** — 8 categories 45+ rules (SQLi/XSS/command injection/file inclusion/header injection/SSRF/NoSQL injection/open redirect) + request size limits + Content-Type validation
-- **Security Plugin** — 31 attack detectors (XSS/SQLi/CMDi/SSRF/deserialization/JWT attack/host header/request smuggling/GraphQL injection/data leak etc.), IP whitelist + IP blacklist auto-ban
+- **Security Plugin** — 31 attack detectors (XSS/SQLi/CMDi/SSRF/deserialization/JWT attack/host header/request smuggling/data leak etc.), IP whitelist + IP blacklist auto-ban
 - **Locale** — Parses Accept-Language, sets locale
 - **HashidRequest** — Auto-decodes hashid strings in requests to real integer IDs
 - **Version** — Validates the version segment in the URL path (e.g. `/api/v1/`), returns `400` for unsupported versions
-- **ClientPlatform** — Validates `X-Client-Platform` header, identifies client OS platform (iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web)
+- **ClientPlatform** — Validates `X-Client-Platform` header, identifies client OS platform (iPadOS/macOS/Windows/Linux/iOS/Android/Web)
 - **Encryption** — AES-256-GCM transport encryption (auth + admin routes), prevents MITM eavesdropping and tampering
 - **Captcha** — Click CAPTCHA verified before login/register (GD rendering + Redis storage, one-time keys, 300s TTL, 3 attempts)
 - **Auth** — JWT HS256, Access Token 15 min, Refresh Token 30 days, Redis blacklist
@@ -650,55 +614,14 @@ Unicode flag emoji support via `erikwang2013/season`:
 |:---:|:---:|
 | ![WeChat](./docs/weixinpay.png "WeChat") | ![Alipay](./docs/alipay.png "Alipay") |
 
-### Global Transfer (Bank Wire)
+## 项目授权 / Project License
 
-**Payee Information**
+Copyright (c) 2026 erik <erik@erik.xyz> — https://erik.xyz
 
-- Payee Name: WANG KEXUN
-- Account Number: 881015918251
+- 本项目仅供个人学习、研究使用。
+- 未经作者书面授权，禁止任何形式的商业使用（包括但不限于商业部署、付费服务、二次销售、SaaS 运营及以本项目为基础提供商业服务）。
+- 商业授权请联系 **erik@erik.xyz**。
+- 未经授权的商业使用，作者将在全球范围内依法追究法律责任，并保留终身追责的权利。
+- 第三方组件仍遵循其各自原有的许可证；视觉资产适用仓库内的 ASSETS-LICENSE.md（如适用）。
 
-**Receiving Bank (ZA Bank)**
-
-- SWIFT Code: AABLHKHHXXX
-- Bank Name: ZA Bank Limited
-- Bank Code: 387
-- Bank Address: Core F, Cyberport 3, 100 Cyberport Road, Hong Kong
-
-**Correspondent Bank (if required)**
-
-> Please note: this is the correspondent (intermediary) bank information, not the receiving bank. Check with your remitting bank whether correspondent bank information is required.
-
-- For HKD, CNY and USD remittances, the correspondent bank is **Citibank**:
-  - Bank Name: Citibank N.A. Hong Kong
-  - SWIFT Code: CITIHKHXXXX
-  - Bank Code: 006
-  - Branch Name: Hong Kong Branch
-  - Branch Code: 391
-  - Bank Address: Citibank Tower, Citibank Plaza, 3 Garden Road, Central, Hong Kong
-- For remittances in other currencies, the correspondent bank is **BNY Mellon**:
-  - Bank Name: THE BANK OF NEW YORK MELLON
-  - SWIFT Code: IRVTUS3NXXX
-  - Bank Address: THE BANK OF NEW YORK MELLON, 240 GREENWICH STREET, NEW YORK, United States
-
-### Crypto Donation
-
-If this project helps you, donations are welcome. Thank you!
-
-| Network | QR Code | Wallet Address |
-|---|---|---|
-| BNB Smart Chain (BEP20) | [<img src="docs/coin/1.jpg" width="150" alt="BNB Smart Chain (BEP20)">](docs/coin/1.jpg) | `0x355d429f97511897ccb4e271ec888205f9ab6629` |
-| Tron (TRC20) | [<img src="docs/coin/2.jpg" width="150" alt="Tron (TRC20)">](docs/coin/2.jpg) | `TEdDHWLajt1XvqtPDWmQctdrJaC3pzZZzz` |
-| Ethereum (ERC20) | [<img src="docs/coin/3.jpg" width="150" alt="Ethereum (ERC20)">](docs/coin/3.jpg) | `0x355d429f97511897ccb4e271ec888205f9ab6629` |
-| Aptos | [<img src="docs/coin/4.jpg" width="150" alt="Aptos">](docs/coin/4.jpg) | `0x836e3780edfc3f7b2372b39e2a1a3a5d7adfaccd96c726f21cfde1b50dd68030` |
-| Plasma | [<img src="docs/coin/5.jpg" width="150" alt="Plasma">](docs/coin/5.jpg) | `0x355d429f97511897ccb4e271ec888205f9ab6629` |
-| Polygon POS | [<img src="docs/coin/6.jpg" width="150" alt="Polygon POS">](docs/coin/6.jpg) | `0x355d429f97511897ccb4e271ec888205f9ab6629` |
-| Solana | [<img src="docs/coin/7.jpg" width="150" alt="Solana">](docs/coin/7.jpg) | `2hfhboHdmdrYsY25XfQSsEWxq5ip4EQsR7f4AzSRMUyr` |
-| The Open Network (TON) | [<img src="docs/coin/8.jpg" width="150" alt="The Open Network (TON)">](docs/coin/8.jpg) | `UQB9kFQohzmXUir9QSSZq01iwl9aQZIDdBpNmDklljRtCoGK` |
-| Arbitrum One | [<img src="docs/coin/9.jpg" width="150" alt="Arbitrum One">](docs/coin/9.jpg) | `0x355d429f97511897ccb4e271ec888205f9ab6629` |
-| AVAX C-Chain | [<img src="docs/coin/10.jpg" width="150" alt="AVAX C-Chain">](docs/coin/10.jpg) | `0x355d429f97511897ccb4e271ec888205f9ab6629` |
-
----
-
-## License
-
-Proprietary — All rights reserved.
+**English:** This project is provided for personal study and research only. Commercial use of any kind requires prior written authorization from the author (erik@erik.xyz). Unauthorized commercial use will be pursued for legal liability worldwide, and the author reserves the right to pursue such liability for life. Third-party components remain under their original licenses; visual assets are governed by ASSETS-LICENSE.md where applicable.

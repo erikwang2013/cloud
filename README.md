@@ -5,30 +5,18 @@
 | Language | Docs |
 |----------|------|
 | 简体中文 | [README.md](README.md) |
-| English | [README_EN.md](README_EN.md) |
-| English | [en docs](docs/i18n/en/README.md) |
-| 한국어 | [ko docs](docs/i18n/ko/README.md) |
-| Русский | [ru docs](docs/i18n/ru/README.md) |
-| Deutsch | [de docs](docs/i18n/de/README.md) |
-| Français | [fr docs](docs/i18n/fr/README.md) |
-| Español | [es docs](docs/i18n/es/README.md) |
-| Português | [pt docs](docs/i18n/pt/README.md) |
-| हिन्दी | [hi docs](docs/i18n/hi/README.md) |
-| العربية | [ar docs](docs/i18n/ar/README.md) |
-| বাংলা | [bn docs](docs/i18n/bn/README.md) |
-| Bahasa Indonesia | [id docs](docs/i18n/id/README.md) |
-| 日本語 | [ja docs](docs/i18n/ja/README.md) |
+| English | [README_EN.md](README_EN.md) · [English docs](docs/i18n/en/README.md) |
 
 <p align="center">
   <img src="docs/diagrams/c.svg" alt="CloudPlatform 项目宠物「云团」" width="260">
 </p>
 
 <p align="center"><b>云团</b> — 项目宠物。一朵抱着服务器的云朵精灵：云是平台，服务器是资源，<br>
-双臂环抱就是「自动交付与托管」；外围轨道环串起地球与增长箭头，对应全球交易与按量计费。</p>
+双臂环抱就是「自动交付与托管」；外围轨道环串起地球与增长箭头，对应全球交易。</p>
 
-面向全球用户的云资源交易平台，支持服务器（VM）、IP 地址、云磁盘、域名、SSL 证书、对象存储（S3）、CDN 加速等产品的在线购买与自动交付。自营物理机通过 Proxmox VE 虚拟化交付，同时支持第三方供应商入驻售卖。提供按量计费、推荐分销、GraphQL API 及 Prometheus/Grafana 可观测性。
+面向全球用户的云资源交易平台，支持服务器（VM）、IP 地址、云磁盘、域名等产品的在线购买与自动交付。自营物理机通过 Proxmox VE 虚拟化交付，同时支持第三方供应商入驻售卖。提供多币种结算及 Prometheus/Grafana 可观测性。
 
-项目按 **四层架构** 组织——客户端层（6 平台接入）、API 网关层（12 项全局中间件）、业务服务层（23 个功能模块）、基础设施层；管理后台为独立 webman 实例，与用户流量故障域隔离。完整设计见 [架构设计文档](docs/architecture.md) 与 [功能设计文档](docs/features.md)。
+项目按 **四层架构** 组织——客户端层（Flutter 多端接入）、API 网关层（全局中间件）、业务服务层（按领域垂直切分）、基础设施层；管理后台为独立 webman 实例，与用户流量故障域隔离。完整设计见 [架构设计文档](docs/architecture.md) 与 [功能设计文档](docs/features.md)。
 
 ## 技术栈
 
@@ -53,17 +41,15 @@
 | 队列 | webman redis-queue |
 | 数据库 | MySQL 8.0（主库 + 审计库双连接） |
 | 搜索引擎 | Elasticsearch 8.x |
-| 虚拟化 | Proxmox VE（Rust kvm-server gRPC 通道，e-cat/etcd 注册） |
+| 虚拟化 | Proxmox VE |
 | 客户端 | Flutter (iOS/Android/Web/Linux/macOS/Windows) |
-| GraphQL | webonyx/graphql-php ^15.0 |
-| 对象存储 | AWS S3 SDK PHP ^3.300 |
 | 可观测性 | Prometheus + Grafana（预置仪表盘） |
 | 多语言 | i18n 7 语言（中/英/日/韩/德/法/西） |
 | 部署 | Docker Compose 一键启动 |
 
 ## 系统架构
 
-客户端经 Cloudflare 与 Nginx 进入业务服务层，业务服务层由 **两个独立的 webman 实例**组成（service `:8787` 承载用户与供应商 API、队列、定时任务和 WebSocket；admin `:8788` 承载管理面板），二者共享同一 MySQL，故障域相互隔离。自营物理机资源经 kvm-server（Rust gRPC）调用 Proxmox VE 完成交付。
+客户端经 Cloudflare 与 Nginx 进入业务服务层，业务服务层由 **两个独立的 webman 实例**组成（service `:8787` 承载用户与供应商 API、队列、定时任务和 WebSocket；admin `:8788` 承载管理面板），二者共享同一 MySQL，故障域相互隔离。自营物理机资源经 Proxmox VE API 完成交付。
 
 ![系统架构](docs/diagrams/system-architecture-zh.svg)
 
@@ -103,7 +89,7 @@
 
 ## 功能模块总览
 
-系统按四层架构组织：客户端层（6 平台接入）、API 网关层（12 项中间件）、业务服务层（23 个功能模块）、基础设施层（8 个核心组件）。
+系统按四层架构组织：客户端层（Flutter 多端）、API 网关层（全局中间件）、业务服务层（按领域垂直切分）、基础设施层。
 
 ![功能模块总览](docs/diagrams/module-overview-zh.svg)
 
@@ -122,10 +108,9 @@
 | 文档 | 说明 |
 |------|------|
 | [架构设计文档](docs/architecture.md) | 系统架构、组件关系、中间件管线、安全分层、数据架构、部署拓扑 |
-| [功能设计文档](docs/features.md) | 23 模块详细功能设计，含流程图、数据模型、交互说明 |
-| [API 接口文档](docs/api-reference.md) | 200+ 端点完整参考，按模块分组，含请求/响应示例、错误码 |
+| [功能设计文档](docs/features.md) | 功能模块详细设计，含流程图、数据模型、交互说明 |
+| [API 接口文档](docs/api-reference.md) | API 端点参考，按模块分组，含请求/响应示例、错误码 |
 | [API 在线文档 (service)](http://localhost:8787/apidoc) | hg/apidoc 自动生成，按功能分组，支持在线调试 |
-| [API 在线文档 (admin)](http://localhost:8788/apidoc) | hg/apidoc 自动生成，54 个控制器 13 组功能分组 |
 | [管理后台设计](docs/admin-design.md) | Admin 面板架构、包集成、ACL 权限、测试套件 |
 | [供应商 API 文档](docs/supplier-api.md) | 供应商 API 参考（内部 + 外部），SDK 示例 |
 | [部署清单](docs/deployment.md) | 服务器配置、环境变量、Nginx、HTTPS、定时任务 |
@@ -184,17 +169,11 @@ cloud-php/
 │   └── start.php               # 启动入口
 ├── service/                    # 后端服务（独立 webman 实例）
 │   ├── app/                    # 业务模块 (PSR-4: App\)，每个模块含 Controller / Model / Service 等分层
-│   │   ├── admin/controller/   # 管理后台 API（15 个控制器：Dashboard / User / Product / Order / Payment / Supplier / Coupon / Invoice / Domain / Webhook 等）
-│   │   ├── affiliate/          # 联盟佣金 / 推广分佣（Controller / Listener / Model / Service）
-│   │   ├── billing/            # 用量计费 / 账单（Cron / Service）
 │   │   ├── captcha/controller/ # 点击验证码
-│   │   ├── cdn/                # CDN 资源托管（Controller / Model / Provider / Service）
 │   │   ├── command/            # 控制台命令（Migrate / Rollback / Status / DbBackup）
 │   │   ├── controller/         # 公共控制器（Health / Status / Help / Upload）
-│   │   ├── cron/               # 定时任务（CronRunner 调度器 + ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck / SslCertificateCheck）
+│   │   ├── cron/               # 定时任务（CronRunner 调度器 + ExchangeRateSync / PaymentReconcile / SupplierSettlement / ExpirationCheck）
 │   │   ├── domain/             # 域名注册 / DNS 管理（Controller / Model / Service）
-│   │   ├── graphql/            # GraphQL API（Mutation / Query / Schema）
-│   │   ├── grpc/               # kvm-server gRPC 客户端 + etcd 注册（KvmClient / EtcdRegistry）
 │   │   ├── model/              # 公共模型（HelpArticle / Role / Permission）
 │   │   ├── monitor/            # 资源监控 / 告警（Controller / Cron / Model / Service）
 │   │   ├── notification/       # 消息通知（Controller / Model / Queue / Service）
@@ -203,8 +182,6 @@ cloud-php/
 │   │   ├── product/            # 产品 / SKU / 区域定价 / 评价（Controller / Model / Service）
 │   │   ├── provisioning/       # 资源交付引擎（Controller / Event / Listener / Model / Provider / Queue / Service）
 │   │   ├── report/             # 营收 / 供应商 / 区域报表（Controller / Service）
-│   │   ├── ssl/                # SSL 证书签发 / 管理（Controller / Model / Service）
-│   │   ├── storage/            # 对象存储资源（Controller / Model / Provider / Service）
 │   │   ├── supplier/           # 供应商入驻 / 结算 / 提现 + 外部 API（Controller / Model / Service）
 │   │   ├── ticket/             # 工单系统（Controller / Event / Listener / Model / Service）
 │   │   ├── user/               # 用户 / 认证 / KYC / 余额 / 地址（Controller / Model / Service）
@@ -234,18 +211,13 @@ cloud-php/
 │   ├── support/                # Bootstrap 引导（Eloquent / Redis / Event / 加密 / 雪花ID / Hashids / Scout / MigrationRunner）
 │   ├── tests/                  # 单元测试（PHPUnit 10, 672 tests / 1632 assertions）
 │   │   ├── admin/              # ImportExport / SupplierWithdrawApprove
-│   │   ├── affiliate/          # AffiliateService
 │   │   ├── auth/               # JwtAuth / RbacSeed / Rbac
-│   │   ├── billing/            # MeterCollector / UsageAggregator / SuspendCheck
 │   │   ├── captcha/            # CaptchaService
-│   │   ├── cdn/                # ResourceCdn
 │   │   ├── clientplatform/     # ClientPlatformMiddleware
 │   │   ├── common/             # Response / Hashid / Snowflake / Validator / LogSanitizer / Totp / ApiRequest
 │   │   ├── confirmation/       # ConfirmationMiddleware
 │   │   ├── cron/               # SupplierSettlement
 │   │   ├── domain/             # DomainService / DomainTransfer
-│   │   ├── graphql/            # Schema
-│   │   ├── grpc/               # KvmClient / EtcdRegistry
 │   │   ├── monitor/            # AlertEngine
 │   │   ├── notification/       # NotificationDispatcher
 │   │   ├── order/              # Coupon / Invoice
@@ -254,8 +226,6 @@ cloud-php/
 │   │   ├── provisioning/       # ProviderFactory / RetryLogic
 │   │   ├── report/             # ReportService
 │   │   ├── security/           # RateLimit / Maintenance / UploadSecurity
-│   │   ├── ssl/                # SslCertificate
-│   │   ├── storage/            # StorageBucket
 │   │   ├── supplier/           # SupplierService / Settlement / Rating / Webhook
 │   │   ├── ticket/             # TicketUpdatedWiring
 │   │   ├── user/               # AddressController
@@ -292,12 +262,6 @@ cloud-php/
 │   ├── docker-compose.yml      # 服务编排
 │   ├── nginx.conf              # Nginx 配置
 │   └── supervisor.conf         # Supervisor 进程守护
-├── infrastructure/             # Rust 基础设施（e-cat workspace）
-│   ├── kvm-server/             # 自有云服务：VM 供应 gRPC 服务（:50051，etcd 注册）
-│   │   ├── src/                # main / grpc / driver（模拟驱动，libvirt 为 Phase 2）
-│   │   ├── tests/              # 集成测试
-│   │   └── Cargo.toml          # e-cat workspace 成员声明
-│   └── ecat-*/                 # e-cat 基础设施 crate（transport-grpc / registry-etcd / protos / config / data 等）
 ├── docs/                       # 文档
 │   ├── admin-design.md         # 管理后台设计文档
 │   ├── supplier-api.md         # 供应商 API 文档
@@ -436,8 +400,8 @@ php start.php stop              # 停止
 
 - **仪表盘**：今日订单 / 营收 / 新增用户 / 活跃资源统计，30 天营收趋势图，支持 PDF 导出
 - **报表中心**：订单日报、商品销量排行、支付渠道统计、用户增长，支持 Excel 导出
-- **日常管理**：用户 / 商品 / 订单 / 供应商 / 工单 / 域名 / CDN 等模块的管理，KYC 审核、退款处理、结算提现审批
-- **系统配置**：支付通道、CDN 账号、Webhook、通知模板、帮助文章、审计日志
+- **日常管理**：用户 / 商品 / 订单 / 供应商 / 工单 / 域名等模块的管理，KYC 审核、退款处理、结算提现审批
+- **系统配置**：支付通道、Webhook、通知模板、帮助文章、审计日志
 
 ### 客户端构建
 
@@ -445,7 +409,7 @@ php start.php stop              # 停止
 
 ## API 概览
 
-接口按模块分组，含请求/响应示例与错误码：[API 概览](docs/api-overview.md)（精选） · [API 接口文档](docs/api-reference.md)（200+ 端点完整参考） · [在线调试](http://localhost:8787/apidoc)
+接口按模块分组，含请求/响应示例与错误码：[API 概览](docs/api-overview.md)（精选） · [API 接口文档](docs/api-reference.md)（完整参考） · [在线调试](http://localhost:8787/apidoc)
 
 ## 管理后台架构
 
@@ -520,8 +484,6 @@ phpunit.xml (PHPUnit 11, 286 tests / 962 assertions)
       → ProxmoxProvider.create()
         → HostSelector 选最空闲物理机
         → ProxmoxApi 创建 VM / 挂载磁盘 / 分配 IP
-          （Rust kvm-server gRPC 供应服务已入库：e-cat/etcd 注册发现，
-           PHP 侧 KvmClient 接线；模拟驱动，libvirt 真实驱动为 Phase 2）
         → 创建 Resource / Disk 记录
       → 更新 Order 状态为 completed
 ```
@@ -556,11 +518,11 @@ ProviderInterface
 - **SecurityHeaders** — 安全响应头（HSTS / X-Frame-Options / X-Content-Type-Options / Referrer-Policy / Permissions-Policy）
 - **GeoBlock** — 地理封禁（根据 GEO_BLOCKED_COUNTRIES 阻止指定国家访问，基于 GeoIP2）
 - **WAF** — 8 类 45+ 规则（SQL注入/XSS/命令注入/文件包含/头注入/SSRF/NoSQL注入/开放重定向）+ 请求大小限制 + Content-Type 校验（值注入扫 query/body/UA，path 仅查路径穿越）
-- **Security Plugin** — 31 种攻击检测（XSS/SQL注入/命令注入/SSRF/反序列化/JWT攻击/Host头攻击/请求走私/GraphQL注入/敏感数据泄露等），IP 白名单 + IP 黑名单自动封禁
+- **Security Plugin** — 31 种攻击检测（XSS/SQL注入/命令注入/SSRF/反序列化/JWT攻击/Host头攻击/请求走私/敏感数据泄露等），IP 白名单 + IP 黑名单自动封禁
 - **Locale** — 解析 Accept-Language，设置多语言
 - **HashidRequest** — 自动解码请求中的 hashid 字符串为真实整数 ID
 - **Version** — 校验 URL 路径中的版本段（如 `/api/v1/`），不支持的版本返回 `400`
-- **ClientPlatform** — 校验 `X-Client-Platform` 请求头，识别客户端操作系统平台（iPadOS/macOS/Windows/Linux/iOS/Android/HarmonyOS/Web）
+- **ClientPlatform** — 校验 `X-Client-Platform` 请求头，识别客户端操作系统平台（iPadOS/macOS/Windows/Linux/iOS/Android/Web）
 - **Encryption** — AES-256-GCM 传输加密（认证接口和管理后台），防中间人窃听和篡改
 - **Captcha** — 点击验证码，登录/注册前验证（GD 绘图 + Redis 存储，一次性密钥，300s 有效期，3 次尝试限制）
 - **Auth** — JWT HS256 认证，Access Token 15 分钟，Refresh Token 30 天，Redis 黑名单
@@ -665,60 +627,18 @@ ProviderInterface
 |:---:|:---:|
 | ![微信](./docs/weixinpay.png "微信") | ![支付宝](./docs/alipay.png "支付宝") |
 
-### 全球转账（银行汇款）
+## 项目授权 / Project License
 
-**收款人信息**
+Copyright (c) 2026 erik <erik@erik.xyz> — https://erik.xyz
 
-- 收款人姓名：WANG KEXUN
-- 收款账户号码：881015918251
+- 本项目仅供个人学习、研究使用。
+- 未经作者书面授权，禁止任何形式的商业使用（包括但不限于商业部署、付费服务、二次销售、SaaS 运营及以本项目为基础提供商业服务）。
+- 商业授权请联系 **erik@erik.xyz**。
+- 未经授权的商业使用，作者将在全球范围内依法追究法律责任，并保留终身追责的权利。
+- 第三方组件仍遵循其各自原有的许可证；视觉资产适用仓库内的 ASSETS-LICENSE.md（如适用）。
 
-**收款银行（ZA Bank）**
+**English:** This project is provided for personal study and research only. Commercial use of any kind requires prior written authorization from the author (erik@erik.xyz). Unauthorized commercial use will be pursued for legal liability worldwide, and the author reserves the right to pursue such liability for life. Third-party components remain under their original licenses; visual assets are governed by ASSETS-LICENSE.md where applicable.
 
-- SWIFT Code：AABLHKHHXXX
-- 银行名称：ZA Bank Limited
-- 银行编号：387
-- 银行地址：Core F, Cyberport 3, 100 Cyberport Road, Hong Kong
-
-**跨境汇款代理银行（如需）**
-
-> 请留意，此为跨境汇款代理银行（中转银行）信息，非收款银行信息。请向汇款银行查询是否需要提供跨境汇款代理银行信息。
-
-- 汇入港元、人民币及美元的代理银行为 **Citibank**：
-  - 银行名称：Citibank N.A. Hong Kong
-  - SWIFT Code：CITIHKHXXXX
-  - 银行编号：006
-  - 分行名称：Hong Kong Branch
-  - 分行编号：391
-  - 银行地址：Citibank Tower, Citibank Plaza, 3 Garden Road, Central, Hong Kong
-- 汇入其他币种时的代理银行为 **BNY Mellon**：
-  - 银行名称：THE BANK OF NEW YORK MELLON
-  - SWIFT Code：IRVTUS3NXXX
-  - 银行地址：THE BANK OF NEW YORK MELLON, 240 GREENWICH STREET, NEW YORK, United States
-
-### 虚拟币打赏 (Crypto Donation)
-
-如果这个项目对你有帮助，欢迎扫描二维码打赏支持，谢谢！
-
-| 主网 (Network) | 二维码 (QR Code) | 钱包地址 (Wallet Address) |
-|---|---|---|
-| BNB Smart Chain (BEP20) | [<img src="docs/coin/1.jpg" width="150" alt="BNB Smart Chain (BEP20)">](docs/coin/1.jpg) | `0x355d429f97511897ccb4e271ec888205f9ab6629` |
-| Tron (TRC20) | [<img src="docs/coin/2.jpg" width="150" alt="Tron (TRC20)">](docs/coin/2.jpg) | `TEdDHWLajt1XvqtPDWmQctdrJaC3pzZZzz` |
-| Ethereum (ERC20) | [<img src="docs/coin/3.jpg" width="150" alt="Ethereum (ERC20)">](docs/coin/3.jpg) | `0x355d429f97511897ccb4e271ec888205f9ab6629` |
-| Aptos | [<img src="docs/coin/4.jpg" width="150" alt="Aptos">](docs/coin/4.jpg) | `0x836e3780edfc3f7b2372b39e2a1a3a5d7adfaccd96c726f21cfde1b50dd68030` |
-| Plasma | [<img src="docs/coin/5.jpg" width="150" alt="Plasma">](docs/coin/5.jpg) | `0x355d429f97511897ccb4e271ec888205f9ab6629` |
-| Polygon POS | [<img src="docs/coin/6.jpg" width="150" alt="Polygon POS">](docs/coin/6.jpg) | `0x355d429f97511897ccb4e271ec888205f9ab6629` |
-| Solana | [<img src="docs/coin/7.jpg" width="150" alt="Solana">](docs/coin/7.jpg) | `2hfhboHdmdrYsY25XfQSsEWxq5ip4EQsR7f4AzSRMUyr` |
-| The Open Network (TON) | [<img src="docs/coin/8.jpg" width="150" alt="The Open Network (TON)">](docs/coin/8.jpg) | `UQB9kFQohzmXUir9QSSZq01iwl9aQZIDdBpNmDklljRtCoGK` |
-| Arbitrum One | [<img src="docs/coin/9.jpg" width="150" alt="Arbitrum One">](docs/coin/9.jpg) | `0x355d429f97511897ccb4e271ec888205f9ab6629` |
-| AVAX C-Chain | [<img src="docs/coin/10.jpg" width="150" alt="AVAX C-Chain">](docs/coin/10.jpg) | `0x355d429f97511897ccb4e271ec888205f9ab6629` |
-
----
-
-## License
-
-简化版 — MIT License | 标准版/完整版 — Proprietary
-
-<!-- pet-expressions:start -->
 ## 项目宠物表情形态 · 云团
 
 <table align="center">
@@ -739,4 +659,3 @@ SVG / PNG）**不是开源资产**，版权归作者所有。未经书面许可�
 
 > 代码部分仍遵循仓库原有 `LICENSE`；第三方素材（如明确标注的 Go Gopher 等）仍遵循其原许可证。
 <!-- assets-license:end -->
-

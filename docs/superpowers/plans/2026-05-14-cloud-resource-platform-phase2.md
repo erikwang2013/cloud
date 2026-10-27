@@ -1,5 +1,8 @@
 # Phase 2: 资源交付 — Implementation Plan
 
+
+> 历史文档：本文记录当时状态；其中 GraphQL、KVM/gRPC、CDN/SSL/对象存储、按量计费、分销、HarmonyOS 与 `/admin/api` 等模块已移除，当前实现以 README 与 `docs/` 主文档为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** 实现支付后自动开通资源、域名管理、供应商入驻与管理。Proxmox API 控制物理机创建/管理 VM、IP、磁盘。

@@ -1,5 +1,7 @@
 # Admin Panel Design Document
 
+> Historical note: the `service/app/admin` HTTP API (`/admin/api/*`) has been removed. Administrative operations are provided by the standalone `admin/` panel.
+
 ## Overview
 
 `admin/` is a standalone webman v2.1 instance providing a Layui-based management dashboard. It runs independently from the `service/` backend, sharing only the MySQL database and the 7 erikwang2013 packages.
@@ -256,19 +258,6 @@ POST /api/v1/orders/{id}/pay
 | POST | `/api/v1/supplier/withdraw` | Request withdrawal |
 | DELETE | `/api/v1/dns/{domain}/records/{id}` | Delete DNS record |
 
-**Sensitive admin endpoints** (Auth + AdminRole + Confirmation):
-| Method | Path | Operation |
-|--------|------|-----------|
-| DELETE | `/admin/api/v1/products/{id}` | Delete product |
-| POST | `/admin/api/v1/orders/{id}/refund` | Refund order |
-| POST | `/admin/api/v1/provisioning/resources/{id}/destroy` | Destroy resource |
-| POST | `/admin/api/v1/kyc/{id}/approve` | Approve KYC |
-| POST | `/admin/api/v1/kyc/{id}/reject` | Reject KYC |
-| POST | `/admin/api/v1/suppliers/{id}/approve` | Approve supplier |
-| POST | `/admin/api/v1/suppliers/{id}/settle` | Generate settlement |
-| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | Approve withdrawal |
-| PUT | `/admin/api/v1/system/config` | Update system config |
-
 API version is in the URL path (e.g. `/api/v1/...`).
 
 **Security features**:
@@ -390,49 +379,11 @@ All Crud-based controllers (Admin, User, Role, etc.) inherit `export()` automati
 - The `export` event handler calls `window.exportExcel()` which collects current table filter params and opens the download URL
 - `Layui::buildTable()` generates the toolbar with the custom export button for all CRUD pages
 
-### Service Admin API Export
-
-The service backend (`service/`) also has Excel export via its own `Common\ExcelExport` wrapper:
-
-| Endpoint | Controller | Exported Data |
-|----------|-----------|---------------|
-| `GET /admin/api/v1/orders/export` | OrderController | id, order_no, user_id, type, status, total, currency, created_at, paid_at |
-| `GET /admin/api/v1/users/export` | UserController | id, email, phone, role, status, created_at, last_login_at |
-| `GET /admin/api/v1/suppliers/export` | SupplierController | id, user_id, status, contact_name, contact_email, contact_phone, created_at |
-
 All API endpoints are versioned via the URL path (e.g. `/api/v1/...`).
 
 Export routes are placed BEFORE `/{id}` parameter routes to avoid conflicts.
 
-## Service Admin API — Extended Features
-
-### Admin API Endpoints (Service Layer)
-
-All admin REST endpoints are prefixed with `/admin/api` and require `AdminRoleMiddleware`.
-
-| Group | Endpoints | Controller |
-|-------|-----------|------------|
-| Dashboard | `GET /dashboard`, `/kyc`, `POST /kyc/{id}/approve`, `/reject` | `Admin\DashboardController` |
-| Users | `GET /users`, `/users/export`, `/users/{id}`, `PUT /users/{id}/status` | `Admin\UserController` |
-| Products | `POST /products`, `PUT /products/{id}`, `DELETE /products/{id}`, `POST /products/{id}/skus`, `PUT /skus/{id}`, `POST /skus/{id}/region-price` | `Admin\ProductController` |
-| Product Import/Export | `GET /products/export` (CSV), `POST /products/import` (CSV upsert) | `Admin\ImportExportController` |
-| Orders | `GET /orders`, `/orders/export`, `/orders/{id}`, `POST /orders/{id}/refund` | `Admin\OrderController` |
-| Invoices | `GET /invoices`, `POST /invoices/{orderId}/generate` | `Admin\InvoiceController` |
-| Payments | `GET /payments/channels`, `PUT /payments/channels/{id}`, `GET /payments/transactions`, `/reconcile` | `Admin\PaymentController` |
-| Provisioning | `GET /provisioning/tasks`, `POST /tasks/{id}/retry`, `POST /resources/{id}/upgrade`, `/destroy`, `GET /hosts` | `Provisioning\TaskController` |
-| Provider APIs | `GET /providers`, `POST /providers`, `PUT /providers/{id}`, `DELETE /providers/{id}` | `Admin\ProviderApiController` |
-| Suppliers | `GET /suppliers`, `/suppliers/export`, `POST /suppliers/{id}/approve`, `/settle`, `/withdraws/{id}/approve` | `Admin\SupplierController` |
-| Supplier API Keys | `GET /suppliers/{id}/api-keys`, `POST /suppliers/{id}/api-keys`, `DELETE /suppliers/api-keys/{id}` | `Admin\SupplierController` |
-| Tickets | `GET /tickets`, `POST /tickets/{id}/assign`, `/close` | `Ticket\TicketController` |
-| Coupons | `GET /coupons`, `POST /coupons`, `DELETE /coupons/{id}` | `Admin\CouponController` |
-| Webhooks | `GET /webhooks`, `POST /webhooks`, `DELETE /webhooks`, `POST /webhooks/test` | `Admin\WebhookController` |
-| Domains | `GET /domains/tlds`, `POST /domains/tlds`, `PUT /domains/tlds/{id}`, `DELETE /domains/tlds/{id}`, `GET /domains/zones`, `/transfers`, `POST /transfers/{id}/approve` | `Admin\DomainController` |
-| Notifications | `GET /notifications/templates`, `PUT /notifications/templates/{id}`, `GET /notifications/log` | `Admin\NotificationController` |
-| Help Articles | `GET /help`, `POST /help`, `PUT /help/{id}`, `DELETE /help/{id}` | `Admin\HelpController` |
-| Reports | `GET /reports/revenue`, `/supplier`, `/region` | `Report\ReportController` |
-| Monitoring | `GET /monitor/dashboard`, `/resources/{id}` | `Monitor\MonitorController` |
-| Audit | `GET /audit-logs` | `Admin\SystemController` |
-| System Config | `PUT /system/config` | `Admin\SystemController` |
+## Admin Panel — Extended Features
 
 ### Report Center (v3.1.0)
 
@@ -450,21 +401,6 @@ Panel-side report center (`admin/app/controller/ReportController.php` + `admin/a
 Amounts are aggregated with bcmath (`SUM(DECIMAL)` + PDO string returns) to avoid floating-point errors.
 
 Dashboard statistics are served by `Admin\DashboardController::index()` (today's orders / revenue / new users / active resources, 30-day revenue trend, region distribution, pending orders / KYC / tickets) for the home page stat cards and ECharts charts.
-
-### Dashboard Data (Service Layer)
-
-`Admin\DashboardController::index()` provides real operational metrics:
-
-```php
-[
-    'today_stats' => [todayOrders, todayRevenue, newUsers, activeResources],
-    'revenue_trend_30d' => [...],   // Daily revenue for last 30 days
-    'region_distribution' => [...],  // Active resources grouped by region
-    'pending_orders' => ...,         // Orders awaiting payment
-    'pending_kyc' => ...,            // KYC submissions awaiting review
-    'open_tickets' => ...,           // Open or in-progress tickets
-]
-```
 
 ### Admin Panel Dashboard View (`app/view/index/dashboard.html`)
 
@@ -894,20 +830,6 @@ All 4 jobs pass: 243 total tests (67 admin + 176 service), 400 assertions, both 
 4. **Container-based service resolution**: Services (Snowflake, HashidsManager, EncryptionManager) are registered as singletons via Bootstrap classes at worker start. Container resolution via `\support\Container::instance()` uses lazy instantiation — services are only created on first access.
 
 ## Extended Features (2026-05-20)
-
-### Service Admin API — New Endpoints
-
-| Group | Endpoints | Controller |
-|-------|-----------|------------|
-| Invoices | `GET /admin/api/v1/invoices`, `POST .../invoices/{orderId}/generate` | `Admin\InvoiceController` |
-| Provider APIs | `GET/POST /admin/api/v1/providers`, `PUT/DELETE .../providers/{id}` | `Admin\ProviderApiController` |
-| Supplier API Keys | `GET/POST /admin/api/v1/suppliers/{id}/api-keys`, `DELETE .../api-keys/{id}` | `Admin\SupplierController` |
-| Coupons | `GET/POST /admin/api/v1/coupons`, `DELETE .../coupons/{id}` | `Admin\CouponController` |
-| Webhooks | `GET/POST/DELETE /admin/api/v1/webhooks`, `POST .../webhooks/test` | `Admin\WebhookController` |
-| Product Import/Export | `GET /admin/api/v1/products/export`, `POST .../products/import` | `Admin\ImportExportController` |
-| Domain Management | `GET/POST/PUT/DELETE /admin/api/v1/domains/tlds`, `GET .../zones`, `GET .../transfers`, `POST .../transfers/{id}/approve` | `Admin\DomainController` |
-| Notification Templates | `GET /admin/api/v1/notifications/templates`, `PUT .../templates/{id}`, `GET .../log` | `Admin\NotificationController` |
-| Help Articles | `GET/POST /admin/api/v1/help`, `PUT/DELETE .../help/{id}` | `Admin\HelpController` |
 
 ### New Middleware
 

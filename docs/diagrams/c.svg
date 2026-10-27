@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 400" role="img" aria-labelledby="mcTitle mcDesc">
   <title id="mcTitle">CloudPlatform 项目宠物「云团」</title>
-  <desc id="mcDesc">一朵抱着服务器的云朵精灵——云是平台，服务器是资源，双臂环抱即自动交付与托管；外围轨道环串起地球与增长箭头，对应全球交易与按量计费。</desc>
 
   <defs>
     <linearGradient id="mcCloud" gradientUnits="userSpaceOnUse" x1="140" y1="110" x2="350" y2="270">

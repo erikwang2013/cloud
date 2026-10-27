@@ -168,10 +168,10 @@ POST /api/v1/products/{id}/reviews (需登录)
 ### 2.5 批量导入导出
 
 ```
-GET /admin/api/v1/products/export
+管理后台导出
   → CSV 下载 (产品 + SKU + 区域定价)
 
-POST /admin/api/v1/products/import
+管理后台导入
   → CSV 上传 upsert
   ← {imported: N, errors: [...]}
 ```
@@ -363,12 +363,6 @@ ProvisionWorker (Redis Queue 消费)
   1min → 5min → 15min → 1h → 6h → 24h (6 次后标记失败 + 告警)
 ```
 
-> **供应通道演进**：Rust kvm-server（`infrastructure/kvm-server`，e-cat workspace）已入库——
-> gRPC `ping/create_vm/vm_status`（:50051）+ etcd 注册发现，PHP 侧 KvmClient /
-> RegistryProcess（`service/app/grpc/`）已接线。驱动层当前为**模拟驱动**（libvirt 真实
-> 驱动为 Phase 2），开通链路暂仍走 ProxmoxProvider 直连；kvm-server 接管 VM 创建后本节
-> 流程不变，仅通道切换。
-
 ### 5.3 Proxmox 操作汇总
 
 | 操作 | API | 热操作 |
@@ -394,8 +388,7 @@ POST /api/v1/supplier/apply (需用户登录)
   → status = 'pending'
   → 管理员审核
 
-管理员审批:
-  POST /admin/api/v1/suppliers/{id}/approve (密码确认)
+管理员审批（管理后台，密码确认）:
     → Supplier::status = 'active'
     → User::role = 'supplier'
     → 用户获得供应商权限
@@ -421,7 +414,7 @@ POST /api/v1/supplier/apply (需用户登录)
 ### 6.2 外部 API
 
 ```
-POST /admin/api/v1/suppliers/{id}/api-keys
+管理后台生成供应商 API Key
   → sk_ . bin2hex(random_bytes(24))
   → hash('sha256', rawKey) 存储
   ← {api_key: "sk_xxx..."} (仅显示一次)
@@ -455,10 +448,8 @@ GET /api/v1/tickets                     # 我的工单
 GET /api/v1/tickets/{id}                # 工单详情
 POST /api/v1/tickets/{id}/reply         # 回复工单
 
-管理员:
-  GET /admin/api/v1/tickets              # 工单队列
-  POST /admin/api/v1/tickets/{id}/assign # 分配客服
-  POST /admin/api/v1/tickets/{id}/close  # 关闭工单
+管理员（管理后台）:
+  工单队列 / 分配客服 / 关闭工单
 
 事件驱动:
   TicketCreated 事件
@@ -506,11 +497,9 @@ Cron: CollectMetrics (每 5 分钟)
   → ProxmoxApi::status() / Provider API
   → 指标存储到 Redis hash (TTL 1h)
 
-管理员:
-  GET /admin/api/v1/monitor/dashboard
-    → 概览统计 + 最近告警
-  GET /admin/api/v1/monitor/resources/{id}
-    → 实时指标 (从 Redis 读取)
+管理员（管理后台）:
+  监控概览 + 最近告警
+  资源实时指标 (从 Redis 读取)
 ```
 
 ### 10.2 告警规则
@@ -571,9 +560,9 @@ config/features.php (默认值)
   ↓ 可被运行时覆盖
 Redis feature:{name} (TTL 1h, 通过管理 API 动态调整)
 
-管理 API:
-  GET /admin/api/v1/features → 列出所有 Flag 及状态/来源
-  PUT /admin/api/v1/features/{name} → enable/disable/toggle/reset
+管理后台:
+  列出所有 Flag 及状态/来源
+  启用 / 禁用 / 切换 / 重置
 
 当前 Flags:
   supplier_external_api, websocket_push, maintenance_redirect,

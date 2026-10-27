@@ -17,12 +17,6 @@
     <text x="50" y="85" fill="#6b21a8" font-size="13" font-weight="bold">客户端层 — 多平台接入</text>
     <rect x="50" y="95" width="170" height="36" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
     <text x="135" y="118" text-anchor="middle" fill="#6b21a8" font-size="11.5" font-weight="bold">Flutter 移动端</text>
-    <rect x="232" y="95" width="170" height="36" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
-    <text x="317" y="118" text-anchor="middle" fill="#6b21a8" font-size="11.5" font-weight="bold">Flutter 桌面端</text>
-    <rect x="414" y="95" width="170" height="36" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
-    <text x="499" y="118" text-anchor="middle" fill="#6b21a8" font-size="11.5" font-weight="bold">Flutter Web</text>
-    <rect x="596" y="95" width="170" height="36" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
-    <text x="681" y="118" text-anchor="middle" fill="#6b21a8" font-size="11.5" font-weight="bold">HarmonyOS ArkTS</text>
     <rect x="778" y="95" width="170" height="36" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
     <text x="863" y="118" text-anchor="middle" fill="#6b21a8" font-size="11.5" font-weight="bold">管理后台 Web</text>
     <rect x="960" y="95" width="170" height="36" rx="6" fill="#ede9fe" stroke="#a78bfa"/>
@@ -33,12 +27,6 @@
 
   <!-- ══ 边缘层 ══ -->
   <g filter="url(#sh)">
-    <rect x="30" y="168" width="1120" height="74" rx="8" fill="#ecfeff" stroke="#67e8f9" stroke-width="1.5"/>
-    <text x="50" y="189" fill="#0e7490" font-size="13" font-weight="bold">边缘层 — 入口防护与反向代理</text>
-    <rect x="50" y="199" width="530" height="32" rx="6" fill="#cffafe" stroke="#22d3ee"/>
-    <text x="315" y="220" text-anchor="middle" fill="#0e7490" font-size="11.5" font-weight="bold">Cloudflare CDN　DDoS 缓解 · Bot 识别 · 边缘缓存</text>
-    <rect x="600" y="199" width="530" height="32" rx="6" fill="#cffafe" stroke="#22d3ee"/>
-    <text x="865" y="220" text-anchor="middle" fill="#0e7490" font-size="11.5" font-weight="bold">Nginx × 2　SSL 终端 · gzip · limit_req 限流 · WS Upgrade</text>
   </g>
   <path d="M590,242 L590,266" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrD)"/>
   <text x="602" y="258" fill="#64748b" font-size="10">反向代理 → 常驻内存多进程（Workerman）</text>
@@ -70,11 +58,9 @@
     </g>
     <text x="62" y="409" fill="#64748b" font-size="9">路由中间件：Encryption(AES-256-GCM) · Auth(JWT) · Confirmation · AdminRole(RBAC) · SupplierApiKey · InternalToken</text>
 
-    <text x="62" y="430" fill="#1d4ed8" font-size="10.5" font-weight="bold">业务模块（23）</text>
+    <text x="62" y="430" fill="#1d4ed8" font-size="10.5" font-weight="bold">业务模块</text>
     <g fill="#1e40af" font-size="10">
       <text x="62" y="448">User · Product · Order · Payment · Provisioning · Supplier · Ticket · Domain</text>
-      <text x="62" y="464">SSL · Storage · CDN · Billing · Affiliate · Monitor · Notification · Report</text>
-      <text x="62" y="480">Admin · Captcha · Cron · WebSocket · GraphQL · Webhook · Common</text>
     </g>
 
     <rect x="62" y="492" width="668" height="46" rx="6" fill="#eff6ff" stroke="#bfdbfe"/>
@@ -110,30 +96,17 @@
 
   <!-- ══ 数据层 ══ -->
   <g filter="url(#sh)">
-    <rect x="30" y="596" width="1120" height="92" rx="8" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.5"/>
-    <text x="50" y="617" fill="#047857" font-size="13" font-weight="bold">数据层 — 存储与检索</text>
     <rect x="50" y="627" width="358" height="48" rx="6" fill="#d1fae5" stroke="#34d399"/>
     <text x="229" y="647" text-anchor="middle" fill="#047857" font-size="11.5" font-weight="bold">MySQL 8.0</text>
-    <text x="229" y="664" text-anchor="middle" fill="#059669" font-size="9.5">cloud_platform 主库 + 审计库（双连接）· 46 张表</text>
+    <text x="229" y="664" text-anchor="middle" fill="#059669" font-size="9.5">cloud_platform 主库 + 审计库（双连接）· 数据库表</text>
     <rect x="420" y="627" width="358" height="48" rx="6" fill="#d1fae5" stroke="#34d399"/>
     <text x="599" y="647" text-anchor="middle" fill="#047857" font-size="11.5" font-weight="bold">Redis 7</text>
     <text x="599" y="664" text-anchor="middle" fill="#059669" font-size="9.5">缓存 · 队列 · 会话 · 限流令牌桶 · 分布式锁</text>
-    <rect x="790" y="627" width="340" height="48" rx="6" fill="#d1fae5" stroke="#34d399"/>
-    <text x="960" y="647" text-anchor="middle" fill="#047857" font-size="11.5" font-weight="bold">Elasticsearch 8.x</text>
-    <text x="960" y="664" text-anchor="middle" fill="#059669" font-size="9.5">IK 分词全文搜索（未配置时降级 SQL LIKE）</text>
   </g>
   <path d="M590,692 L590,716" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrB)"/>
-  <text x="602" y="708" fill="#2563eb" font-size="10">gRPC :50051（etcd 服务发现）</text>
 
   <!-- ══ 交付链路 ══ -->
   <g filter="url(#sh)">
-    <rect x="30" y="718" width="1120" height="94" rx="8" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.5"/>
-    <text x="50" y="739" fill="#92400e" font-size="13" font-weight="bold">交付层 — 自营物理机资源供应</text>
-    <rect x="50" y="749" width="500" height="50" rx="6" fill="#fef3c7" stroke="#fbbf24"/>
-    <text x="300" y="770" text-anchor="middle" fill="#92400e" font-size="11.5" font-weight="bold">kvm-server（Rust · gRPC :50051）</text>
-    <text x="300" y="787" text-anchor="middle" fill="#b45309" font-size="9.5">e-cat / etcd 注册发现 · 模拟驱动（libvirt 真实驱动 Phase 2）</text>
-    <path d="M556,774 L594,774" stroke="#f59e0b" stroke-width="2.5" marker-end="url(#arrD)"/>
-    <text x="575" y="766" text-anchor="middle" fill="#b45309" font-size="9">API</text>
     <rect x="600" y="749" width="530" height="50" rx="6" fill="#fef3c7" stroke="#fbbf24"/>
     <text x="865" y="770" text-anchor="middle" fill="#92400e" font-size="11.5" font-weight="bold">Proxmox VE API（:8006）</text>
     <text x="865" y="787" text-anchor="middle" fill="#b45309" font-size="9.5">KVM / QEMU 虚拟化 · 宿主机池 · IP 池 · 磁盘池</text>
@@ -144,13 +117,6 @@
     <rect x="30" y="828" width="1120" height="72" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
     <text x="50" y="849" fill="#334155" font-size="13" font-weight="bold">外部服务 — 第三方集成</text>
     <g font-size="9.5" fill="#475569" text-anchor="middle">
-      <rect x="50" y="859" width="128" height="26" rx="5" fill="#ffffff" stroke="#cbd5e1"/><text x="114" y="876">Stripe 支付</text>
-      <rect x="188" y="859" width="128" height="26" rx="5" fill="#ffffff" stroke="#cbd5e1"/><text x="252" y="876">Twilio 短信</text>
-      <rect x="326" y="859" width="128" height="26" rx="5" fill="#ffffff" stroke="#cbd5e1"/><text x="390" y="876">Firebase 推送</text>
-      <rect x="464" y="859" width="128" height="26" rx="5" fill="#ffffff" stroke="#cbd5e1"/><text x="528" y="876">AWS S3 存储</text>
-      <rect x="602" y="859" width="128" height="26" rx="5" fill="#ffffff" stroke="#cbd5e1"/><text x="666" y="876">Cloudflare CDN</text>
-      <rect x="740" y="859" width="128" height="26" rx="5" fill="#ffffff" stroke="#cbd5e1"/><text x="804" y="876">域名注册商</text>
-      <rect x="878" y="859" width="128" height="26" rx="5" fill="#ffffff" stroke="#cbd5e1"/><text x="942" y="876">SSL / ACME</text>
       <rect x="1016" y="859" width="114" height="26" rx="5" fill="#ffffff" stroke="#cbd5e1"/><text x="1073" y="876">Google / Apple</text>
     </g>
   </g>

@@ -1,5 +1,8 @@
 # CloudPlatform 审查报告（第二轮，2026-08-06）
 
+
+> 历史文档：本文记录当时状态；其中 GraphQL、KVM/gRPC、CDN/SSL/对象存储、按量计费、分销、HarmonyOS 与 `/admin/api` 等模块已移除，当前实现以 README 与 `docs/` 主文档为准。
+
 > 范围：上一轮（audit-report-2026-08-06.md）全部问题修复后的复检。
 > 测试基线：PHPUnit **319/319 通过（505 断言）**；`php -l` 253 个 PHP 文件 **0 语法错误**。
 

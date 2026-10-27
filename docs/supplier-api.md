@@ -11,7 +11,7 @@
 
 **Base URL**: `https://api.example.com`
 
-**版本控制**: API 版本位于 URL 路径中（如 `/api/v1/...`）。不支持的版本返回 `400`。仅对 `/api/v1/*` 和 `/admin/api/v1/*` 路径生效，由 `VersionMiddleware` 统一处理。
+**版本控制**: API 版本位于 URL 路径中（如 `/api/v1/...`）。不支持的版本返回 `400`。仅对 `/api/v1/*` 路径生效，由 `VersionMiddleware` 统一处理。
 
 ---
 
@@ -632,18 +632,3 @@ print(resp.json())
 5. **5xx 服务端错误**: 指数退避重试 (1s -> 5s -> 25s)
 
 ---
-
-## 管理后台端点参考
-
-以下是管理员管理供应商的相关端点（仅供后台使用，需 Admin 角色）：
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/admin/api/v1/suppliers` | 供应商列表（支持 status 筛选） |
-| GET | `/admin/api/v1/suppliers/export` | 导出供应商 Excel |
-| POST | `/admin/api/v1/suppliers/{id}/approve` | 审批通过供应商 |
-| POST | `/admin/api/v1/suppliers/{id}/settle` | 生成结算单 |
-| POST | `/admin/api/v1/suppliers/withdraws/{id}/approve` | 批准提现 |
-| GET | `/admin/api/v1/suppliers/{id}/api-keys` | 查看供应商 API Key 列表 |
-| POST | `/admin/api/v1/suppliers/{id}/api-keys` | 创建 API Key（仅返回一次原始 Key） |
-| DELETE | `/admin/api/v1/suppliers/api-keys/{id}` | 吊销 API Key |

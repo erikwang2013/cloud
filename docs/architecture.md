@@ -19,7 +19,7 @@ CloudPlatform 是一个面向全球的云资源交易平台，支持自营物理
 | 字段加密 | AES-128-ECB | Eloquent Cast 自动加解密，确定性加密（密文可等值查询，登录/唯一性校验依赖）；仅支持 ECB |
 | 消息队列 | Redis Queue | 异步处理支付回调、通知分发、资源开通 |
 | 搜索引擎 | database（默认）/ Elasticsearch 8.x | webman-scout 默认 database 驱动（SQL LIKE 降级）；配置 ES 后启用 IK 分词索引 |
-| 虚拟化 | Proxmox VE + kvm-server | 自营 VM 由 Rust kvm-server（gRPC :50051，e-cat/etcd 注册发现）供应；驱动层当前为模拟驱动，libvirt 真实驱动 Phase 2 |
+| 虚拟化 | Proxmox VE | 自营 VM 通过 Proxmox VE API 交付 |
 | 客户端 | Flutter | 单代码库 iOS/macOS/Windows/Linux/Web 五端 |
 
 ### 1.2 系统边界
@@ -59,12 +59,6 @@ CloudPlatform 是一个面向全球的云资源交易平台，支持自营物理
     └─────────────┘ └───────────┘ └────────────────┘
            │
     ┌──────┴──────────────────────┐
-    │  kvm-server (Rust gRPC)     │
-    │  e-cat / etcd 注册发现      │
-    │  模拟驱动 (libvirt Phase 2) │
-    └──────┬──────────────────────┘
-           │
-    ┌──────┴──────────────────────┐
     │  Proxmox VE API (:8006)     │
     │  KVM/QEMU 虚拟化             │
     │  IP 池 / 磁盘池 / 宿主机     │
@@ -80,7 +74,7 @@ CloudPlatform 是一个面向全球的云资源交易平台，支持自营物理
 ```
 cloud-php/
 ├── service/                  # 用户侧 webman 实例（:8787）
-│   ├── app/                  # 23 个业务模块，每个模块含 controller/service/model/event/listener/provider/queue/cron
+│   ├── app/                  # 按领域垂直切分的业务模块，每个模块含 controller/service/model/event/listener/provider/queue/cron
 │   ├── common/               # 公共库：中间件、雪花 ID、Hashids、加密、i18n、安全、Metrics、Webhook
 │   ├── config/               # 17 个配置文件 + 插件配置
 │   ├── database/migrations/  # 37 个迁移
@@ -89,8 +83,7 @@ cloud-php/
 ├── admin/                    # 管理后台 webman 实例（:8788，webman-admin + Layui）
 │   ├── app/                  # 插件源码：54 控制器、46 模型、bootstrap、command、middleware、view
 │   └── tests/                # PHPUnit 11（286 tests / 962 assertions）
-├── apps/                     # 客户端：Flutter（6 平台）
-├── infrastructure/           # Rust e-cat workspace：kvm-server（gRPC :50051）+ ecat-* 基础 crate
+├── apps/                     # 客户端：Flutter（多平台）
 ├── docs/                     # 文档与 docs/diagrams/ 下的 SVG 图
 ├── docker/                   # Dockerfile + docker-compose + nginx + supervisor
 ├── install.php / install/    # 一键安装向导（单文件，无框架依赖）
@@ -170,27 +163,7 @@ common/
 └── webhook/             # Webhook 事件分发器
 ```
 
-### 2.4 CDN 模块
-
-产品级 CDN 模块（`service/app/cdn/`）通过适配器模式对接四家服务商，将服务器或存储桶作为源站接入 CDN：
-
-```
-CdnAdapterInterface
-  ├── CloudflareAdapter   REST v4（SSL SaaS 自动证书），无需 ICP 备案
-  ├── CloudFrontAdapter   aws-sdk-php（CloudFront + ACM），无需 ICP 备案
-  ├── AliyunCdnAdapter    RPC 签名，需 ICP 备案
-  └── TencentCdnAdapter   TC3 签名，需 ICP 备案
-         ▲
-CdnAdapterFactory.resolve(type, accountId, strict)
-  ① 绑定账号 (provider_account_id) → ② code=cdn-{type} 活动账号 → ③ env 兜底
-  strict=true（删除/purge）：仅用绑定账号，缺失即 4003，不静默切换
-```
-
-**账号管理：** 复用 `provider_apis` 模型（凭据 Encryptable 加密入库），管理端 `/admin/providers` CRUD（RbacMiddleware），`code` 约定 `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`，env 凭据降级为 fallback。
-
-**数据模型：** `resource_cdn`（provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config；cert_config 落库前剔除私钥）。权限隔离：CDN 资源经 `resource.user_id` 归属校验，非本用户统一 404。
-
-### 2.5 报表模块
+### 2.4 报表模块
 
 服务端报表（`service/app/report/`，`Report\ReportController` + `ReportService`）提供营收 / 供应商 / 区域报表；v3.1.0 在管理面板侧新增报表中心（`admin/app/controller/ReportController.php` + `admin/app/view/report/index.html`），路由自动注册为 `/app/admin/report/{action}`：
 
@@ -265,20 +238,9 @@ HTTP 请求
   │   AuthMiddleware
   │   ConfirmationMiddleware        ← 密码二次确认，Redis 计数器，5 次锁 15min
   │
-  ├─ /api/v1/supplier/external ────────
-  │   VersionMiddleware
-  │   SupplierApiKeyMiddleware      ← sk_xxx SHA256 验证 → $request->supplierId
-  │
-  ├─ /admin/api ────────────────────
-  │   EncryptionMiddleware
-  │   AuthMiddleware
-  │   AdminRoleMiddleware           ← RBAC 权限检查
-  │
-  └─ /admin/api (敏感操作) ─────────
-      EncryptionMiddleware
-      AuthMiddleware
-      AdminRoleMiddleware
-      ConfirmationMiddleware
+  └─ /api/v1/supplier/external ────────
+      VersionMiddleware
+      SupplierApiKeyMiddleware      ← sk_xxx SHA256 验证 → $request->supplierId
   │
   ▼
 控制器 → Service → Model → DB
@@ -455,9 +417,9 @@ Accept-Language: zh-CN,zh;q=0.9
                     Internet
                         │
                ┌────────┴────────┐
-               │  Cloudflare CDN │  ← 平台自身边缘防护（DDoS/Bot），
-               │  DDoS / Bot     │    与产品级 CDN 模块（四服务商，
-               └────────┬────────┘    见 §2.4）无关
+               │  Cloudflare CDN │  ← 平台自身边缘防护（DDoS/Bot）
+               │  DDoS / Bot     │
+               └────────┬────────┘
                         │
                ┌────────┴────────┐
                │  Nginx × 2      │
@@ -476,12 +438,6 @@ Accept-Language: zh-CN,zh;q=0.9
          │ MySQL 主从  │ Redis Cluster │
          │ 1 主 2 从   │ 缓存+队列     │
          └─────────────┴───────────────┘
-               │
-         ┌─────┴──────────────────────┐
-         │  kvm-server (Rust gRPC)    │
-         │  e-cat / etcd 注册         │
-         │  模拟驱动 (libvirt Phase 2)│
-         └─────┬──────────────────────┘
                │
          ┌─────┴──────────────────────┐
          │  Proxmox VE 集群            │

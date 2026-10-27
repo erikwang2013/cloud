@@ -1,5 +1,7 @@
 # CloudPlatform 团队规划
 
+> 历史计划文档：HarmonyOS 客户端已移除，文中相关计划与验收项不再适用。
+
 > 版本：2026-08-17（v2）｜v1 由多智能体流水线编制（PASS_WITH_FIXES）；v2 基于 Phase 0-2 实际执行结果由 Lead 更新
 > 依据：v1 + Phase 0-2 全部提交（git 111 commits）+ 双人复核记录 + 实测测试基线
 

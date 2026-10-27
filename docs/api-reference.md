@@ -73,8 +73,6 @@
 | `/api` (用户) | 全局 + Encryption + Auth | `/api/v1/user/*`, `/api/v1/cart`, `/api/v1/orders` |
 | `/api` (敏感) | 全局 + Encryption + Auth + Confirmation | `/api/v1/orders/{id}/pay` |
 | `/api/v1/supplier/external` | Version + SupplierApiKey | 供应商外部 API |
-| `/admin/api` | 全局 + Encryption + Auth + AdminRole | 管理后台 API |
-| `/admin/api` (敏感) | 全局 + Encryption + Auth + AdminRole + Confirmation | 敏感管理操作 |
 
 ---
 
@@ -545,14 +543,6 @@ GET /api/v1/supplier/ratings/me
   → 我的评分记录
 ```
 
-### 管理端
-
-```
-GET /admin/api/v1/suppliers/{id}/ratings          → 全部评分（含 pending）
-POST /admin/api/v1/suppliers/ratings/{id}/approve → 审核通过
-POST /admin/api/v1/suppliers/ratings/{id}/hide    → 隐藏
-```
-
 ---
 
 ## 十八、支付 Webhook
@@ -627,7 +617,7 @@ POST /api/v1/payments/webhook/stripe
 | `Captcha verification failed` | /api/v1/auth/login, /api/v1/auth/register |
 | `Email already verified` | /api/v1/user/resend-verify-email |
 | `Password too short` | /api/v1/auth/register |
-| `Unknown feature: xxx` | /admin/api/v1/features/{name} |
-| `Refund window expired: server orders are refundable within 72 hours of payment` | /admin/api/v1/orders/{id}/refund |
-| `Refund window expired: domain orders are refundable within 5 days of payment` | /admin/api/v1/orders/{id}/refund |
-| `This product type (IP) is not refundable` | /admin/api/v1/orders/{id}/refund |
+| `Unknown feature: xxx` | 管理后台功能开关 |
+| `Refund window expired: server orders are refundable within 72 hours of payment` | 管理后台退款操作 |
+| `Refund window expired: domain orders are refundable within 5 days of payment` | 管理后台退款操作 |
+| `This product type (IP) is not refundable` | 管理后台退款操作 |

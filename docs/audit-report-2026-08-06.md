@@ -1,5 +1,8 @@
 # CloudPlatform 整体审查报告
 
+
+> 历史文档：本文记录当时状态；其中 GraphQL、KVM/gRPC、CDN/SSL/对象存储、按量计费、分销、HarmonyOS 与 `/admin/api` 等模块已移除，当前实现以 README 与 `docs/` 主文档为准。
+
 **日期**: 2026-08-06
 **审查范围**: service 全量（app / common / config / tests）+ 生态配置 + 安全防护
 **方法**: PHPUnit 测试套件、全量 PHP 语法检查、路由/中间件审计、OAuth 新功能代码审查、环境变量与配置一致性核对、依赖安全审计、冒烟测试

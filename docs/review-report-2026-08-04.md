@@ -1,5 +1,8 @@
 # Cloud Platform 生态扩展审查报告
 
+
+> 历史文档：本文记录当时状态；其中 GraphQL、KVM/gRPC、CDN/SSL/对象存储、按量计费、分销、HarmonyOS 与 `/admin/api` 等模块已移除，当前实现以 README 与 `docs/` 主文档为准。
+
 **日期**：2026-08-04
 **审查范围**：Phase 1-5 全部变更（6 新模块、7 迁移、14 feature flags、10 cron jobs、12 providers）
 **结论**：通过 — 252/252 语法检查 0 错误，3 项问题已修复，8 项建议待跟踪

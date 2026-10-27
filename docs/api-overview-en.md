@@ -45,28 +45,3 @@
 | POST | `/api/v1/supplier/withdraw` | Request withdrawal |
 
 > **Note:** The API version is in the URL path (e.g. `/api/v1/...`). Authenticated and admin endpoints are processed by `EncryptionMiddleware`. Clients set `X-Encrypted: 1` header and wrap body as `{"payload": "<base64(AES-256-GCM)>"}`. Responses are likewise encrypted and wrapped in a `payload` field. Integer IDs in API responses are automatically converted to 12-character Hashid strings; Hashid strings in requests are decoded back to integer IDs by `HashidRequestMiddleware`.
-
-## Admin Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/admin/api/v1/dashboard` | Operations dashboard |
-| GET/PUT | `/admin/api/v1/users` | User management |
-| GET/POST | `/admin/api/v1/kyc` | KYC review |
-| GET/POST/PUT/DELETE | `/admin/api/v1/products` | Product management |
-| POST | `/admin/api/v1/products/{productId}/skus` | Create SKU |
-| POST | `/admin/api/v1/skus/{skuId}/region-price` | Set regional price |
-| GET/POST | `/admin/api/v1/orders` | Order management (incl. refunds) |
-| GET | `/admin/api/v1/orders/export` | Export orders (.xlsx) |
-| GET | `/admin/api/v1/users/export` | Export users (.xlsx) |
-| GET | `/admin/api/v1/suppliers/export` | Export suppliers (.xlsx) |
-| GET/PUT | `/admin/api/v1/payments/*` | Channels / transactions / reconciliation |
-| GET/POST | `/admin/api/v1/provisioning/*` | Provisioning tasks / host management |
-| GET/PUT | `/admin/api/v1/cdn/domains` | CDN domain management (plan changes) |
-| GET/POST/PUT/DELETE | `/admin/api/v1/providers` | Provider account credentials (shared by CDN/provisioning, Encryptable) |
-| GET/POST | `/admin/api/v1/suppliers/*` | Supplier approval / settlement / withdrawal |
-| GET/POST | `/admin/api/v1/tickets` | Ticket assignment / closure |
-| GET | `/admin/api/v1/reports/*` | Revenue / regional / supplier reports |
-| GET | `/admin/api/v1/monitor/*` | Monitoring dashboard / resource metrics |
-| GET | `/admin/api/v1/audit-logs` | Audit logs |
-| PUT | `/admin/api/v1/system/config` | System config update |

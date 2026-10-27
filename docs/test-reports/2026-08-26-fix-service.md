@@ -1,5 +1,8 @@
 # 2026-08-26 service 缺陷修复报告（A/C/F）
 
+
+> 历史文档：本文记录当时状态；其中 GraphQL、KVM/gRPC、CDN/SSL/对象存储、按量计费、分销、HarmonyOS 与 `/admin/api` 等模块已移除，当前实现以 README 与 `docs/` 主文档为准。
+
 ## 结论
 
 - 3 个缺陷全部修复并端到端复测通过（9/9 PASS）

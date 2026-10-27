@@ -1,5 +1,8 @@
 # P4.1 + P4.2 设计：独立 API 网关/统一限流 + 多币种全链路一致性
 
+
+> 历史文档：本文记录当时状态；其中 GraphQL、KVM/gRPC、CDN/SSL/对象存储、按量计费、分销、HarmonyOS 与 `/admin/api` 等模块已移除，当前实现以 README 与 `docs/` 主文档为准。
+
 > 版本：2026-08-17 v1｜架构师产出，供 gateway-impl / multicurrency-impl 实现、reviewer-gate 复核
 > 依据：docs/team-plan.md v2 Phase 4、docs/architecture.md、现有代码实读
 
