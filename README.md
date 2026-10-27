@@ -648,6 +648,21 @@ ProviderInterface
 | 增长 | 无 | 联盟佣金、推广链接、收益与提现审批 |
 | 产品类型 | 服务器/IP/磁盘/域名 | 增加 SSL 证书、S3 对象存储、CDN 加速 |
 
+### 多维度对比
+
+| 维度 | 开源版 | 商业版 |
+|---|---|---|
+| 功能覆盖 | 86 控制器 / 102 个 service API 路由 / 67 张表；覆盖用户、商品、订单、支付、域名、供应商、工单、Proxmox VE 交付、通知、报表、监控与 WebSocket | 111 控制器 / 225 路由 / 79 张表；增加管理 API、联盟分销、按量计费、CDN/SSL/对象存储、GraphQL、KVM/gRPC |
+| 安全防护 | JWT + 角色鉴权、TOTP 2FA、7 个 OAuth 提供商、31 类攻击检测 WAF、IP/Token 双桶限流、CSP/HSTS 等安全头、地域封禁、维护模式、Hashid、加密中间件与操作审计 | 同一套全局安全链；管理 API 额外 AdminRole/RBAC 与更广的审计覆盖（审计相关代码文件 14 vs 6）；安全配置文本一致 |
+| 性能与规模 | webman 常驻进程、Redis、队列消费者、WebSocket、Prometheus metrics、7 个定时任务、4 个常驻进程；12 个 Compose 服务 | 同一运行时架构；增加 gRPC registry 进程（5 vs 4）与 4 个定时任务（11 vs 7）；26 vs 18 个业务模块、225 vs 102 条路由 |
+| 数据与检索 | MySQL + Redis；127 个索引；webman-scout 默认 database(LIKE) 引擎，未安装 ES 客户端 | MySQL + Redis；146 个索引；含 Elasticsearch/Scout 健康检查与可选同步路径；79 表/65 模型 vs 67 表/58 模型 |
+| 测试与质量 | 74 个测试文件、489 个用例、7 个 CI job | 95 个测试文件、604 个用例、9 个 CI job；同一 PHPUnit/CI 结构 |
+| 部署与运维 | Docker Compose 12 个服务、2 个 Dockerfile、/health、/live、/ready、/metrics、Prometheus、cron、WebSocket | 同一 Compose/Dockerfile/健康与指标端点；增加 KVM/gRPC registry 运维路径 |
+| 多端与国际化 | Flutter 客户端；Accept-Language/i18n 中间件；中英文文档 | Flutter + HarmonyOS；同一 i18n 中间件；12 语种文档（开源版仅中英文） |
+| 扩展性与二次开发 | 18 个业务模块、Provider/Factory 扩展点、/api/v1 版本化路由、215 份文档 | 26 个业务模块、同一版本化路由与 Provider 体系，另有管理 API、GraphQL、gRPC 扩展面；2,506 份文档 |
+| 授权与商业支持 | 个人学习/研究；商业使用需书面授权 | 商业授权、交付与支持条款请联系 erik@erik.xyz；LICENSE 文本一致 |
+| 适用场景 | 个人学习、研究、小规模自建 | 生产运营、云资源交易平台、多产品计费/分销/CDN/SSL/存储、管理 API 集成与 HarmonyOS 交付 |
+
 **商业版独有能力**
 
 - 计费与增长：按量计费、联盟分销/佣金结算。

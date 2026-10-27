@@ -635,6 +635,21 @@ The commercial edition adds the modules needed for operations and scale, plus co
 | Growth | — | Affiliate commissions, referral links, earnings and payout approval |
 | Product types | Servers/IPs/disks/domains | Adds SSL certificates, S3 object storage, CDN |
 
+### Multi-dimensional comparison
+
+| Dimension | Open Source | Commercial |
+|---|---|---|
+| Feature coverage | 86 controllers / 102 service API routes / 67 tables; users, products, orders, payments, domains, suppliers, tickets, Proxmox VE provisioning, notifications, reports, monitoring, WebSocket | 111 controllers / 225 routes / 79 tables; adds admin API, affiliate, usage billing, CDN/SSL/object storage, GraphQL, KVM/gRPC |
+| Security | JWT + role checks, TOTP 2FA, 7 OAuth providers, WAF with 31 attack detectors, per-IP/per-token rate limiting, CSP/HSTS headers, geo-blocking, maintenance mode, Hashid, encryption middleware, operation audit | Same global security chain; admin API adds AdminRole/RBAC and broader audit coverage (14 vs 6 audit-related files); security config identical |
+| Performance & scale | webman resident workers, Redis, queue consumer, WebSocket, Prometheus metrics, 7 cron jobs, 4 resident processes; 12 Compose services | Same runtime; adds gRPC registry process (5 vs 4) and 4 cron jobs (11 vs 7); 26 vs 18 business modules and 225 vs 102 routes |
+| Data & search | MySQL + Redis; 127 indexes; webman-scout defaults to database (LIKE); ES client not installed | MySQL + Redis; 146 indexes; includes Elasticsearch/Scout health check and optional sync path; 79 tables/65 models vs 67/58 |
+| Testing & quality | 74 test files, 489 cases, 7 CI jobs | 95 test files, 604 cases, 9 CI jobs; same PHPUnit/CI structure |
+| Deployment & ops | Docker Compose 12 services, 2 Dockerfiles, /health /live /ready /metrics, Prometheus, cron, WebSocket | Same Compose/Dockerfiles/health/metrics; adds KVM/gRPC registry operations |
+| Clients & i18n | Flutter client; Accept-Language/i18n middleware; Chinese/English docs | Flutter + HarmonyOS; same i18n middleware; 12-language docs (open is zh/en only) |
+| Extensibility | 18 business modules, Provider/Factory extension points, /api/v1 versioned routes, 215 docs | 26 modules, same versioning/Provider system, plus admin API, GraphQL and gRPC; 2,506 docs |
+| License & support | Personal study/research; commercial use requires written authorization | Commercial license, delivery and support via erik@erik.xyz; LICENSE text identical |
+| Fit | Personal study, research, small self-hosted deployments | Production operations, cloud marketplace, multi-product billing/affiliate/CDN/SSL/storage, admin API integrations, HarmonyOS delivery |
+
 **Commercial-only capabilities**
 
 - Billing & growth: usage-based billing, affiliate/referral commissions.
