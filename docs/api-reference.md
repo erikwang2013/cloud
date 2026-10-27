@@ -882,40 +882,6 @@ PUT /admin/api/v1/cdn/domains/{id}       → 更新域名套餐（plan 白名单
 
 ---
 
-## 十五、联盟佣金（Affiliate）
-
-### 用户端
-
-```
-GET /api/v1/affiliate/summary
-  → 佣金总览（累计/待结算/可提现、链接数、转化率）
-
-POST /api/v1/affiliate/links
-  体: { source? }
-  → 生成推广链接（?ref=CODE）
-
-GET /api/v1/affiliate/earnings
-  参数: status, page
-  → 佣金明细（订单归属、比例、状态: pending/approved/paid）
-
-POST /api/v1/affiliate/payout
-  体: { amount, method }
-  → 发起提现申请
-```
-
-### 管理端
-
-```
-GET /admin/api/v1/affiliate/plans                → 佣金方案列表
-POST /admin/api/v1/affiliate/plans               → 创建佣金方案
-GET /admin/api/v1/affiliate/earnings             → 全部佣金记录
-POST /admin/api/v1/affiliate/earnings/{id}/approve → 审核佣金
-GET /admin/api/v1/affiliate/payouts              → 提现申请列表
-POST /admin/api/v1/affiliate/payouts/{id}/approve → 审核/打款提现
-```
-
----
-
 ## 十七、供应商评分与商品评价
 
 ### 公开

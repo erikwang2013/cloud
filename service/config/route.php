@@ -202,11 +202,6 @@ Route::group('/api/v1', function () {
     // Logout (revokes current access token via blacklist)
     Route::post('/auth/logout', [App\user\controller\AuthController::class, 'logout']);
 
-    // Affiliate
-    Route::get('/affiliate/summary', [App\affiliate\controller\AffiliateController::class, 'summary']);
-    Route::post('/affiliate/links', [App\affiliate\controller\AffiliateController::class, 'generateLink']);
-    Route::get('/affiliate/earnings', [App\affiliate\controller\AffiliateController::class, 'earnings']);
-    Route::post('/affiliate/payout', [App\affiliate\controller\AffiliateController::class, 'requestPayout']);
 })->middleware([VersionMiddleware::class, Common\encryption\middleware\EncryptionMiddleware::class, Common\auth\middleware\AuthMiddleware::class]);
 
 // === User sensitive operations (requires password confirmation) ===
@@ -360,13 +355,6 @@ Route::group('/admin/api/v1', function () {
     Route::post('/suppliers/ratings/{id}/approve', [App\admin\controller\RatingController::class, 'approve'])->middleware([new Common\auth\middleware\RbacMiddleware('supplier.review')]);
     Route::post('/suppliers/ratings/{id}/hide', [App\admin\controller\RatingController::class, 'hide'])->middleware([new Common\auth\middleware\RbacMiddleware('supplier.review')]);
 
-    // Affiliate management
-    Route::get('/affiliate/plans', [App\admin\controller\AffiliateController::class, 'plans'])->middleware([new Common\auth\middleware\RbacMiddleware('affiliate.approve')]);
-    Route::post('/affiliate/plans', [App\admin\controller\AffiliateController::class, 'storePlan'])->middleware([new Common\auth\middleware\RbacMiddleware('affiliate.approve')]);
-    Route::get('/affiliate/earnings', [App\admin\controller\AffiliateController::class, 'earnings'])->middleware([new Common\auth\middleware\RbacMiddleware('affiliate.approve')]);
-    Route::post('/affiliate/earnings/{id}/approve', [App\admin\controller\AffiliateController::class, 'approveEarning'])->middleware([new Common\auth\middleware\RbacMiddleware('affiliate.approve')]);
-    Route::get('/affiliate/payouts', [App\admin\controller\AffiliateController::class, 'payouts'])->middleware([new Common\auth\middleware\RbacMiddleware('affiliate.approve')]);
-    Route::post('/affiliate/payouts/{id}/approve', [App\admin\controller\AffiliateController::class, 'approvePayout'])->middleware([new Common\auth\middleware\RbacMiddleware('affiliate.approve')]);
 })->middleware([VersionMiddleware::class, Common\encryption\middleware\EncryptionMiddleware::class, Common\auth\middleware\AuthMiddleware::class, Common\auth\middleware\AdminRoleMiddleware::class]);
 
 // === Admin sensitive operations (requires password confirmation) ===

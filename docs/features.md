@@ -632,14 +632,6 @@ CDN 产品支持四家服务商（Cloudflare / AWS CloudFront / 阿里云 CDN / 
 
 **数据模型：** `supplier_ratings`、`suppliers.rating_avg/rating_count`
 
-## 19. 推荐分销
-
-用户生成推荐链接（?ref=CODE），新用户注册时绑定 affiliate_code，订单支付后自动归因佣金。
-
-**事件驱动：** OrderPaid → Affiliate OrderPaidListener → attributeOrder()
-
-**数据模型：** `affiliate_plans`、`affiliate_links`、`affiliate_earnings`、`affiliate_payouts`
-
 ## 21. 可观测性
 
 Prometheus 指标端点独立进程 127.0.0.1:9100，不受 WAF/限流影响。MetricsMiddleware 记录 HTTP 请求计数和延迟。Docker Compose 预置 Prometheus + Grafana + 告警规则 + 仪表盘。

@@ -27,7 +27,6 @@ final class FeatureFlagsTest extends TestCase
             'totp_two_factor',
             'google_oauth', 'apple_oauth', 'facebook_oauth', 'x_oauth',
             'microsoft_oauth', 'linkedin_oauth', 'github_oauth',
-            'affiliate_program',
             'websocket_push',
             'prometheus_metrics',
         ];

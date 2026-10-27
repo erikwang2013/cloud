@@ -43,10 +43,6 @@ class AuthController
         }
 
         try {
-            $refCode = $request->input('ref');
-            if ($refCode && FeatureFlags::isEnabled('affiliate_program')) {
-                $data['affiliate_code'] = $refCode;
-            }
             $tokens = $this->auth->register($data, $this->clientPlatform($request), $this->deviceFingerprint($request));
             return json(Response::success($tokens, I18n::trans('auth.register_success')));
         } catch (\InvalidArgumentException $e) {

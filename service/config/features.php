@@ -31,5 +31,4 @@ return [
     'prometheus_metrics'      => $env('FEATURE_PROMETHEUS', true),
     'cdn_product'             => $env('FEATURE_CDN_PRODUCT', true),
     'supplier_rating'         => $env('FEATURE_SUPPLIER_RATING', true),
-    'affiliate_program'       => $env('FEATURE_AFFILIATE', true),
 ];

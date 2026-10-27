@@ -134,7 +134,6 @@ CREATE TABLE IF NOT EXISTS `users` (
     timezone        VARCHAR(64)     NOT NULL DEFAULT 'UTC',
     status          VARCHAR(32)     NOT NULL DEFAULT 'active',
     role            VARCHAR(32)     NOT NULL DEFAULT 'user',
-    affiliate_code  VARCHAR(32)     DEFAULT NULL,
     fcm_token       VARCHAR(255)    DEFAULT NULL,
     fcm_platform    VARCHAR(16)     DEFAULT NULL,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -144,7 +143,6 @@ CREATE TABLE IF NOT EXISTS `users` (
     UNIQUE INDEX uk_phone (phone),
     INDEX idx_status (status),
     INDEX idx_role (role),
-    INDEX idx_affiliate_code (affiliate_code),
     INDEX idx_fcm_token (fcm_token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -1155,55 +1153,6 @@ CREATE TABLE IF NOT EXISTS `resource_cdn` (
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_resource (resource_id),
     INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ======================== Affiliate ========================
-
-CREATE TABLE IF NOT EXISTS `affiliate_plans` (
-    id                      BIGINT          NOT NULL PRIMARY KEY,
-    name                    VARCHAR(128)    NOT NULL,
-    commission_rate         DECIMAL(5,2)    NOT NULL,
-    tier                    INT             NOT NULL DEFAULT 1,
-    min_payout              DECIMAL(12,4)   NOT NULL DEFAULT 50.0000,
-    lifetime_commissions    TINYINT(1)      NOT NULL DEFAULT 0,
-    created_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS `affiliate_links` (
-    id              BIGINT          NOT NULL PRIMARY KEY,
-    user_id         BIGINT          NOT NULL,
-    code            VARCHAR(32)     NOT NULL,
-    source          VARCHAR(64)     DEFAULT NULL,
-    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE INDEX uk_code (code),
-    UNIQUE INDEX uk_user (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS `affiliate_earnings` (
-    id              BIGINT          NOT NULL PRIMARY KEY,
-    affiliate_id    BIGINT          NOT NULL,
-    order_id        BIGINT          NOT NULL,
-    user_id         BIGINT          NOT NULL,
-    rate            DECIMAL(5,2)    NOT NULL,
-    amount          DECIMAL(12,4)   NOT NULL,
-    currency        VARCHAR(3)      NOT NULL DEFAULT 'USD',
-    status          VARCHAR(16)     NOT NULL DEFAULT 'pending',
-    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_affiliate (affiliate_id),
-    INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS `affiliate_payouts` (
-    id              BIGINT          NOT NULL PRIMARY KEY,
-    affiliate_id    BIGINT          NOT NULL,
-    amount          DECIMAL(12,4)   NOT NULL,
-    status          VARCHAR(16)     NOT NULL DEFAULT 'pending',
-    admin_notes     TEXT            DEFAULT NULL,
-    paid_at         DATETIME        DEFAULT NULL,
-    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_affiliate (affiliate_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
