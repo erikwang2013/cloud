@@ -492,7 +492,6 @@ POST /api/v1/tickets/{id}/reply         # 回复工单
 | 资源到期提醒 | email/push | 7d/3d/1d 前 |
 | 工单回复 | email/push/in_app | Ticket 新消息 |
 | 退款完成 | email/push | 退款处理完 |
-| SSL 证书到期 | email | 30d 前 |
 | 域名到期 | email | 30d 前 |
 
 ---
@@ -535,7 +534,6 @@ Cron: CollectMetrics (每 5 分钟)
 | `37 2 * * *` | PaymentReconcile | 每日对账 |
 | `17 4 * * 1` | SupplierSettlement | 每周一结算供应商 |
 | `23 6 * * *` | ExpirationCheck | 到期检查 + 通知 |
-| `43 7 * * *` | SslCertificateCheck | SSL 证书检查 |
 | `*/5 * * * *` | CollectMetrics | 资源指标采集 |
 | `*/30 * * * *` | CheckExpirations | 资源到期检查 |
 
@@ -582,49 +580,6 @@ Redis feature:{name} (TTL 1h, 通过管理 API 动态调整)
   totp_two_factor, google_oauth, apple_oauth, facebook_oauth,
   x_oauth, microsoft_oauth, linkedin_oauth, github_oauth
 ```
-
-## 14. SSL 证书
-
-SSL 证书产品支持 DV/OV/EV 三种类型，通过 ACME 协议（Let's Encrypt）或外部 CA API（ZeroSSL/GoGetSSL）自动签发和续期。
-
-**关键流程：**
-
-    用户选购 SSL 套餐 → 下单支付 → ProvisionTask 创建
-      → SslProvider::create() → CertificateAuthority::issue()
-      → ACME HTTP-01/DNS-01 验证 → 证书签发
-      → 每天检查 expires_at → 到期前 14 天自动续期
-      → 到期 → status=expired → 通知用户
-
-**数据模型：** `ssl_plans`（套餐）、`resource_ssl_certs`（证书实例）
-
-## 15. 对象存储（S3）
-
-兼容 S3 API 的对象存储，支持 AWS S3 及 MinIO 自建存储。用户通过预签名 URL 上传/下载文件。
-
-**数据模型：** `resource_storage_buckets`
-
-## 16. CDN 加速
-
-CDN 产品支持四家服务商（Cloudflare / AWS CloudFront / 阿里云 CDN / 腾讯云 CDN），可将服务器或存储桶作为源站接入 CDN，支持缓存清除与可选 HTTPS 证书配置。
-
-**适配器架构：** `service/app/cdn/provider/` 下每服务商一个适配器，统一实现 `CdnAdapterInterface`（createDomain / configureDomain / purgeCache / disableDomain / requiresIcpRegistration），由 `CdnAdapterFactory` 按 `provider_type` 分发：
-
-| provider_type | 适配器 | 接入协议 | 需 ICP 备案 |
-|---------------|--------|---------|------------|
-| `cloudflare` | CloudflareAdapter | REST v4 API（含 SSL SaaS 自动证书） | 否 |
-| `cloudfront` | CloudFrontAdapter | aws-sdk-php（CloudFront + ACM） | 否 |
-| `aliyun` | AliyunCdnAdapter | RPC 签名 | 是 |
-| `tencent` | TencentCdnAdapter | TC3 签名 | 是 |
-
-**服务商账号配置：** 管理端通过 `/admin/providers` CRUD 维护 `provider_apis` 账号（凭据 Encryptable 加密入库，`code` 约定 `cdn-cloudflare` / `cdn-cloudfront` / `cdn-aliyun` / `cdn-tencent`）。用户侧凭据解析优先级：绑定账号（provider_account_id）→ code 匹配的活动账号 → env 配置兜底。
-
-**严格快照绑定：** 域名创建时确定 `provider_account_id`，后续删除/缓存刷新只使用该绑定账号；账号缺失或禁用返回 4003，不静默切换账号。阿里云/腾讯云域名需 ICP 备案，未备案返回 4002（含 `requires_icp_registration` 提示）。
-
-**缓存刷新：** `POST /api/v1/cdn/domains/{id}/purge`，URL 自动去重去空格（最多 100 个），仅允许本域名或子域、拒绝通配符与外部 URL，幂等。
-
-**接口：** CdnAdapterInterface + CdnProvider（复用 ProvisionProvider 升级通道，支持 plan 升级）
-
-**数据模型：** `resource_cdn`（provider_type / provider_account_id / zone_id / provider_domain_id / cert_config / config；cert_config 落库前剔除私钥，仅存非敏感证书信息）
 
 ## 18. 供应商评分
 

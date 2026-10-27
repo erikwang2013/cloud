@@ -35,9 +35,6 @@
 | GET/POST | `/api/v1/resources` | 我的资源 |
 | GET | `/api/v1/resources/{id}/status` | 资源状态 |
 | GET | `/api/v1/resources/{id}/console` | VNC 控制台链接 |
-| GET/POST | `/api/v1/cdn/domains` | CDN 域名列表 / 创建（cloudflare \| cloudfront \| aliyun \| tencent） |
-| GET/DELETE | `/api/v1/cdn/domains/{id}` | CDN 域名详情 / 删除 |
-| POST | `/api/v1/cdn/domains/{id}/purge` | 清除缓存（幂等，最多 100 个 URL） |
 | GET/POST | `/api/v1/tickets` | 工单 |
 | POST | `/api/v1/tickets/{id}/reply` | 工单回复 |
 | GET/POST | `/api/v1/dns/{domain}` | DNS 管理 |
@@ -63,7 +60,6 @@
 | GET | `/admin/api/v1/suppliers/export` | 供应商导出 (.xlsx) |
 | GET/PUT | `/admin/api/v1/payments/*` | 支付通道 / 交易 / 对账 |
 | GET/POST | `/admin/api/v1/provisioning/*` | 交付任务 / 主机管理 |
-| GET/PUT | `/admin/api/v1/cdn/domains` | CDN 域名管理（套餐变更） |
 | GET/POST/PUT/DELETE | `/admin/api/v1/providers` | 服务商账号凭据管理（CDN/交付共用，Encryptable 加密） |
 | GET/POST | `/admin/api/v1/suppliers/*` | 供应商审批 / 结算 / 提现 |
 | GET/POST | `/admin/api/v1/tickets` | 工单分配 / 关闭 |

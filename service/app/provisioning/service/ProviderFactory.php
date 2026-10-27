@@ -18,17 +18,6 @@ class ProviderFactory
         self::register('disk', 'proxmox', fn() => new \App\provisioning\provider\ProxmoxProvider());
         self::register('ip', 'proxmox', fn() => new \App\provisioning\provider\ProxmoxProvider());
 
-        // SSL certificate providers
-        self::register('ssl', 'letsencrypt', fn() => new \App\ssl\service\SslProvider());
-        self::register('ssl', 'zerossl', fn() => new \App\ssl\service\SslProvider());
-
-        // Object storage providers
-        self::register('storage', 's3', fn() => new \App\storage\provider\S3StorageProvider());
-        self::register('storage', 'minio', fn() => new \App\storage\provider\MinioProvider());
-
-        // CDN providers
-        self::register('cdn', 'cloudflare', fn() => new \App\cdn\provider\CdnProvider());
-
         if (getenv('AWS_ACCESS_KEY_ID')) {
             $cfg = new ProviderApi([
                 'name' => 'AWS EC2 (env)', 'code' => 'aws-ec2',

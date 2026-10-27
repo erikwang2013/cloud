@@ -76,9 +76,6 @@ Route::get('/api/v1/help', [App\controller\HelpController::class, 'index']);
 Route::get('/api/v1/help/categories', [App\controller\HelpController::class, 'categories']);
 Route::get('/api/v1/help/{slug}', [App\controller\HelpController::class, 'show']);
 
-// SSL plans (public)
-Route::get('/api/v1/ssl/plans', [App\ssl\controller\SslController::class, 'plans']);
-
 // Supplier ratings (public)
 Route::get('/api/v1/suppliers/{supplierId}/ratings', [App\supplier\controller\SupplierRatingController::class, 'supplierRatings']);
 
@@ -173,27 +170,6 @@ Route::group('/api/v1', function () {
     // Supplier
     Route::post('/supplier/apply', [App\supplier\controller\SupplierController::class, 'apply']);
     Route::get('/supplier/settlements', [App\supplier\controller\SupplierController::class, 'settlements']);
-
-    // SSL certificates
-    Route::get('/ssl-certs', [App\ssl\controller\SslController::class, 'index']);
-    Route::get('/ssl-certs/{id}', [App\ssl\controller\SslController::class, 'show']);
-    Route::get('/ssl-certs/{id}/download', [App\ssl\controller\SslController::class, 'downloadCert']);
-    Route::post('/ssl-certs/{id}/auto-renew', [App\ssl\controller\SslController::class, 'toggleAutoRenew']);
-
-    // Object storage
-    Route::get('/storage/buckets', [App\storage\controller\StorageController::class, 'index']);
-    Route::get('/storage/buckets/{id}', [App\storage\controller\StorageController::class, 'show']);
-    Route::post('/storage/buckets/{id}/presign-upload', [App\storage\controller\StorageController::class, 'presignUpload']);
-    Route::post('/storage/buckets/{id}/presign-download', [App\storage\controller\StorageController::class, 'presignDownload']);
-    Route::get('/storage/buckets/{id}/credentials', [App\storage\controller\StorageController::class, 'credentials']);
-
-    // CDN
-    Route::get('/cdn/domains', [App\cdn\controller\CdnController::class, 'index']);
-    Route::post('/cdn/domains', [App\cdn\controller\CdnController::class, 'create']);
-    Route::get('/cdn/domains/{id}', [App\cdn\controller\CdnController::class, 'show']);
-    Route::delete('/cdn/domains/{id}', [App\cdn\controller\CdnController::class, 'destroy']);
-    Route::post('/cdn/domains/{id}/purge', [App\cdn\controller\CdnController::class, 'purgeCache']);
-    Route::get('/cdn/domains/{id}/stats', [App\cdn\controller\CdnController::class, 'stats']);
 
     // Supplier ratings
     Route::post('/supplier/ratings', [App\supplier\controller\SupplierRatingController::class, 'store']);
@@ -337,18 +313,6 @@ Route::group('/admin/api/v1', function () {
     Route::post('/webhooks', [App\admin\controller\WebhookController::class, 'store'])->middleware([new Common\auth\middleware\RbacMiddleware('webhook.manage')]);
     Route::delete('/webhooks', [App\admin\controller\WebhookController::class, 'destroy'])->middleware([new Common\auth\middleware\RbacMiddleware('webhook.manage')]);
     Route::post('/webhooks/test', [App\admin\controller\WebhookController::class, 'test'])->middleware([new Common\auth\middleware\RbacMiddleware('webhook.manage')]);
-
-    // SSL certificate management
-    Route::get('/ssl/plans', [App\admin\controller\SslController::class, 'plans'])->middleware([new Common\auth\middleware\RbacMiddleware('ssl.plan')]);
-    Route::post('/ssl/plans', [App\admin\controller\SslController::class, 'storePlan'])->middleware([new Common\auth\middleware\RbacMiddleware('ssl.plan')]);
-    Route::put('/ssl/plans/{id}', [App\admin\controller\SslController::class, 'updatePlan'])->middleware([new Common\auth\middleware\RbacMiddleware('ssl.plan')]);
-    Route::delete('/ssl/plans/{id}', [App\admin\controller\SslController::class, 'destroyPlan'])->middleware([new Common\auth\middleware\RbacMiddleware('ssl.plan')]);
-    Route::get('/ssl/certs', [App\admin\controller\SslController::class, 'certs'])->middleware([new Common\auth\middleware\RbacMiddleware('ssl.plan')]);
-    Route::post('/ssl/certs/{id}/revoke', [App\admin\controller\SslController::class, 'revokeCert'])->middleware([new Common\auth\middleware\RbacMiddleware('ssl.plan')]);
-
-    // CDN management
-    Route::get('/cdn/domains', [App\admin\controller\CdnController::class, 'index'])->middleware([new Common\auth\middleware\RbacMiddleware('cdn.manage')]);
-    Route::put('/cdn/domains/{id}', [App\admin\controller\CdnController::class, 'updatePlan'])->middleware([new Common\auth\middleware\RbacMiddleware('cdn.manage')]);
 
     // Supplier rating moderation
     Route::get('/suppliers/{id}/ratings', [App\admin\controller\RatingController::class, 'supplierRatings'])->middleware([new Common\auth\middleware\RbacMiddleware('supplier.view')]);

@@ -29,14 +29,11 @@ return [
     // Domain/Renewal expiry check — daily at 06:23
     '23 6 * * *'   => [App\cron\ExpirationCheck::class, 'run'],
 
-    // SSL certificate check — twice daily at 07:43 and 19:43
-    '43 7,19 * * *' => [App\cron\SslCertificateCheck::class, 'run'],
-
     // Resource metrics collection — every 5 minutes
     '*/5 * * * *'  => [App\monitor\service\ResourceMonitor::class, 'collectAllMetrics'],
 
     // Online SSL certificate probe for domain resources — every 30 minutes
-    // (expiration notifications covered by ExpirationCheck + SslCertificateCheck)
+    // (expiration notifications covered by ExpirationCheck)
     '*/30 * * * *' => [App\monitor\service\ResourceMonitor::class, 'checkSslCertificates'],
 
 ];
