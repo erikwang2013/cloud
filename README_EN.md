@@ -672,3 +672,22 @@ Copyright (c) 2026 erik (erik@erik.xyz) — https://erik.xyz
 - 第三方组件仍遵循其各自原有的许可证；视觉资产适用仓库内的 ASSETS-LICENSE.md（如适用）。
 
 **English:** This project is provided for personal study and research only. Commercial use of any kind requires prior written authorization from the author (erik@erik.xyz). Unauthorized commercial use will be pursued for legal liability worldwide, and the author reserves the right to pursue such liability for life. Third-party components remain under their original licenses; visual assets are governed by ASSETS-LICENSE.md where applicable.
+
+## Project Pet Expressions · 云团
+
+<table align="center">
+<tr><td align="center"><img src="docs/pet-expressions/smile.svg" width="88" alt="Smile"><br><b>Smile</b><br><code>:emoji-smile:</code></td><td align="center"><img src="docs/pet-expressions/joy.svg" width="88" alt="Joy"><br><b>Joy</b><br><code>:emoji-joy:</code></td><td align="center"><img src="docs/pet-expressions/cry.svg" width="88" alt="Cry"><br><b>Cry</b><br><code>:emoji-cry:</code></td><td align="center"><img src="docs/pet-expressions/depressed.svg" width="88" alt="Depressed"><br><b>Depressed</b><br><code>:emoji-depressed:</code></td><td align="center"><img src="docs/pet-expressions/terrified.svg" width="88" alt="Terrified"><br><b>Terrified</b><br><code>:emoji-terrified:</code></td><td align="center"><img src="docs/pet-expressions/angry.svg" width="88" alt="Angry"><br><b>Angry</b><br><code>:emoji-angry:</code></td></tr>
+<tr><td align="center"><img src="docs/pet-expressions/coquettish.svg" width="88" alt="Coquettish"><br><b>Coquettish</b><br><code>:emoji-coquettish:</code></td><td align="center"><img src="docs/pet-expressions/cute.svg" width="88" alt="Cute"><br><b>Cute</b><br><code>:emoji-cute:</code></td><td align="center"><img src="docs/pet-expressions/pleasing.svg" width="88" alt="Pleasing"><br><b>Pleasing</b><br><code>:emoji-pleasing:</code></td><td align="center"><img src="docs/pet-expressions/knocking.svg" width="88" alt="Knocking"><br><b>Knocking</b><br><code>:emoji-knocking:</code></td><td align="center"><img src="docs/pet-expressions/facepalm.svg" width="88" alt="Facepalm"><br><b>Facepalm</b><br><code>:emoji-facepalm:</code></td><td align="center"><img src="docs/pet-expressions/tongue.svg" width="88" alt="Tongue Out"><br><b>Tongue Out</b><br><code>:emoji-tongue:</code></td></tr>
+</table>
+
+> 12 animated color expressions: Smile / Joy / Cry / Depressed / Terrified / Angry / Coquettish / Cute / Pleasing / Knocking / Facepalm / Tongue Out. Each SVG carries its own expression, mood effects and whole-body motion, and honors `prefers-reduced-motion`.
+
+## 视觉资产授权 / Visual Assets License
+
+The project pet, images, icons and emoji/expression forms in this repository (including the
+SVG / PNG files under `docs/pet-expressions/`) are **not open-source assets**; copyright
+remains with the author. They may not be copied, modified, redistributed or used
+commercially without prior written permission. For commercial licensing, contact
+**erik@erik.xyz**. See [ASSETS-LICENSE.md](ASSETS-LICENSE.md).
+
+> The code remains under the repository's `LICENSE`; third-party assets (such as the explicitly credited Go Gopher) remain under their original licenses.
