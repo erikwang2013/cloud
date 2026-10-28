@@ -1,33 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 480 400" width="480" height="400" role="img" aria-label="云团 · 撒娇 Coquettish"><title>云团 · 撒娇 Coquettish</title><desc>云团 的 撒娇 表情形态 · animated expression form</desc><style>
 .ex-motion { animation: ex-sway 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 50%; }
-.ex-anim-tear { animation: ex-tear 1.8s ease-in infinite; transform-box: fill-box; transform-origin: center; }
-.ex-anim-sweat { animation: ex-tear 1.5s ease-in infinite; transform-box: fill-box; transform-origin: center; }
 .ex-anim-heart { animation: ex-heart 2.2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
-.ex-anim-spark { animation: ex-spark 1.9s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.ex-anim-rain { animation: ex-rain 1.4s linear infinite; transform-box: fill-box; transform-origin: center; }
-.ex-anim-confetti { animation: ex-confetti 2.4s linear infinite; transform-box: fill-box; transform-origin: center; }
 .ex-anim-pulse { animation: ex-pulse 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.ex-anim-knock { animation: ex-knock 0.55s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.ex-anim-knockline { animation: ex-knockline 0.55s ease-out infinite; transform-box: fill-box; transform-origin: center; }
-.ex-anim-palm { animation: ex-palm 0.9s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.ex-anim-steam { animation: ex-steam 1.8s ease-out infinite; transform-box: fill-box; transform-origin: center; }
-.ex-anim-shock { animation: ex-shock 0.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.ex-anim-please { animation: ex-please 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.ex-anim-drift { animation: ex-drift 4.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes ex-sway { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-2.5deg); } }
-@keyframes ex-tear { 0% { transform: translateY(0); opacity: 0; } 18% { opacity: 1; } 100% { transform: translateY(14.3px); opacity: 0; } }
 @keyframes ex-heart { 0% { transform: translateY(0) scale(.65); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-23.4px) scale(1.15); opacity: 0; } }
-@keyframes ex-spark { 0%,100% { transform: scale(.6) rotate(0deg); opacity: .3; } 50% { transform: scale(1.15) rotate(25deg); opacity: 1; } }
-@keyframes ex-rain { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(15.6px); opacity: 0; } }
-@keyframes ex-confetti { 0% { transform: translateY(-4.55px) rotate(0deg); opacity: 1; } 100% { transform: translateY(20.8px) rotate(200deg); opacity: 0; } }
 @keyframes ex-pulse { 0%,100% { transform: scale(1); opacity: .35; } 50% { transform: scale(1.18); opacity: .7; } }
-@keyframes ex-knock { 0%,100% { transform: translateX(5.85px); } 35% { transform: translateX(0); } }
-@keyframes ex-knockline { 0%,100% { transform: scaleX(.6); opacity: .35; } 35% { transform: scaleX(1); opacity: 1; } }
-@keyframes ex-palm { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-1.56px) rotate(-4deg); } }
-@keyframes ex-steam { 0% { transform: translateY(0); opacity: .7; } 100% { transform: translateY(-11.7px); opacity: 0; } }
-@keyframes ex-shock { 0%,100% { transform: scaleX(.7); opacity: .4; } 50% { transform: scaleX(1.25); opacity: 1; } }
-@keyframes ex-please { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2.34px); } }
-@keyframes ex-drift { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2.6px); } }
 @media (prefers-reduced-motion: reduce) {
   .ex-motion, [class*="ex-anim-"] { animation: none !important; }
 }
