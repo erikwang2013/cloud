@@ -2,6 +2,7 @@
 namespace App\user\controller;
 
 use App\user\model\UserAddress;
+use Common\hashid\HashidService;
 use Common\helper\Response;
 
 class AddressController
@@ -30,8 +31,9 @@ class AddressController
         return json(Response::success($addr));
     }
 
-    public function update($request, int $id)
+    public function update($request, string $id)
     {
+        $id = HashidService::decodeId($id);
         $addr = UserAddress::where('id', $id)->where('user_id', $request->userId)->firstOrFail();
         $data = $request->only(['type', 'name', 'phone', 'country', 'state', 'city', 'address', 'postcode']);
 
@@ -44,9 +46,9 @@ class AddressController
         return json(Response::success($addr));
     }
 
-    public function destroy($request, int $id)
+    public function destroy($request, string $id)
     {
-        UserAddress::where('id', $id)->where('user_id', $request->userId)->delete();
+        UserAddress::where('id', HashidService::decodeId($id))->where('user_id', $request->userId)->delete();
         return json(Response::success());
     }
 }

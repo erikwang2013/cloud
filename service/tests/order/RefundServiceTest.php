@@ -62,4 +62,29 @@ final class RefundServiceTest extends TestCase
         $this->assertSame(1000, $svc->toSmallestUnit('1000', 'JPY'));
         $this->assertSame(20, $svc->toSmallestUnit('19.6', 'JPY'));
     }
+
+    // --- amountError: 只支持整单全额退款 ---
+
+    public function testAmountErrorAcceptsFullPaidAmount(): void
+    {
+        $this->assertNull(RefundService::amountError('100.0000', '100.0000'));
+        $this->assertNull(RefundService::amountError('100', '100.0000'));
+    }
+
+    public function testAmountErrorRejectsZeroAndNegative(): void
+    {
+        $this->assertSame('Refund amount must be positive', RefundService::amountError('0', '100.0000'));
+        $this->assertSame('Invalid refund amount', RefundService::amountError('-1.00', '100.0000'));
+    }
+
+    public function testAmountErrorRejectsOverPayAndPartial(): void
+    {
+        $this->assertSame('Refund amount must equal paid amount', RefundService::amountError('100.0001', '100.0000'));
+        $this->assertSame('Refund amount must equal paid amount', RefundService::amountError('99.9999', '100.0000'));
+    }
+
+    public function testAmountErrorRejectsMoreThanFourDecimals(): void
+    {
+        $this->assertSame('Invalid refund amount', RefundService::amountError('100.00000', '100.0000'));
+    }
 }

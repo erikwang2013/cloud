@@ -33,6 +33,7 @@ return new class extends Migration {
 
     private function hasColumn(string $table, string $column): bool
     {
+        $table = $this->table($table);
         $columns = Capsule::select("SHOW COLUMNS FROM `{$table}` LIKE '" . addslashes($column) . "'");
         return !empty($columns);
     }

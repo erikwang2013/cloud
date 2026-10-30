@@ -18,6 +18,18 @@ class AuthService
         $this->jwt = new JwtAuth();
     }
 
+    // email/phone 是 Encryptable 加密列，明文 where 永不命中，须用确定性加密后的值查询
+    public function findByEmail(string $email): ?User
+    {
+        return User::where('email', Encryption::php()->encrypt($email))->first();
+    }
+
+    public function findByLogin(string $login): ?User
+    {
+        $cipher = Encryption::php()->encrypt($login);
+        return User::where('email', $cipher)->orWhere('phone', $cipher)->first();
+    }
+
     public function register(array $data, string $clientPlatform = '', string $deviceFingerprint = ''): array
     {
         $minLength = config('auth.password.min_length', 8);
@@ -43,6 +55,7 @@ class AuthService
             'status'             => 'active',
             'role'               => 'user',
             'email_verify_token' => !empty($data['email']) ? bin2hex(random_bytes(32)) : null,
+            'email_verify_expires_at' => !empty($data['email']) ? date('Y-m-d H:i:s', time() + 86400) : null,
         ]);
 
         UserProfile::create(['user_id' => $user->id, 'country' => $data['country'] ?? null]);
@@ -53,7 +66,7 @@ class AuthService
 
         // Send verification email if email provided
         if (!empty($data['email']) && $user->email_verify_token) {
-            $verifyUrl = getenv('APP_URL') . '/api/auth/verify-email?token=' . $user->email_verify_token;
+            $verifyUrl = getenv('APP_URL') . '/api/v1/auth/verify-email?token=' . $user->email_verify_token;
             (new \App\notification\service\NotificationDispatcher())->dispatch($user->id, 'email_verify', [
                 'verify_url' => $verifyUrl,
             ], ['email']);
@@ -62,11 +75,9 @@ class AuthService
         return $this->issueTokens($user->id, 'user', $deviceFingerprint, $clientPlatform);
     }
 
-    public function login(string $login, string $password, string $deviceFingerprint, string $clientPlatform = '', string $totpCode = ''): array
+    public function login(string $login, string $password, string $deviceFingerprint, string $clientPlatform = '', string $totpCode = '', ?string $ip = null): array
     {
-        // email/phone 是 Encryptable 加密列，明文 where 永不命中，须用确定性加密后的值查询
-        $cipher = Encryption::php()->encrypt($login);
-        $user   = User::where('email', $cipher)->orWhere('phone', $cipher)->first();
+        $user = $this->findByLogin($login);
 
         if (!$user || !password_verify($password, $user->password_hash)) {
             throw new \InvalidArgumentException('Invalid credentials');
@@ -92,7 +103,8 @@ class AuthService
         }
 
         // New IP alert — notify user if login from unrecognized IP
-        $currentIp = $_SERVER['REMOTE_ADDR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? '0.0.0.0';
+        // webman 常驻进程里 $_SERVER['REMOTE_ADDR'] 不可靠，优先用控制器传入的 request->getRealIp()
+        $currentIp = $ip ?: ($_SERVER['REMOTE_ADDR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? '0.0.0.0');
         $lastIp    = $user->last_login_ip;
         if ($lastIp && $lastIp !== $currentIp && !empty($user->email)) {
             try {
@@ -194,7 +206,7 @@ class AuthService
             Redis::expire($key, 900);
 
             if ($count >= 5) {
-                $user = User::where('email', Encryption::php()->encrypt($login))->orWhere('phone', Encryption::php()->encrypt($login))->first();
+                $user = $this->findByLogin($login);
                 if ($user) {
                     Redis::setex("login_lock:{$user->id}", 900, '1');
                 }

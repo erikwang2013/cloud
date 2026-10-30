@@ -127,13 +127,21 @@ CREATE TABLE IF NOT EXISTS `cloud_wa_users` (
 CREATE TABLE IF NOT EXISTS `cloud_users` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     email           VARCHAR(255)    DEFAULT NULL,
+    email_verified_at TIMESTAMP     NULL DEFAULT NULL,
+    email_verify_token VARCHAR(255) DEFAULT NULL,
+    email_verify_expires_at DATETIME DEFAULT NULL,
     phone           VARCHAR(32)     DEFAULT NULL,
     password_hash   VARCHAR(255)    NOT NULL,
+    totp_secret     VARCHAR(255)    DEFAULT NULL,
+    totp_enabled    TINYINT(1)      NOT NULL DEFAULT 0,
     language        VARCHAR(10)     NOT NULL DEFAULT 'en-US',
     currency        VARCHAR(3)      NOT NULL DEFAULT 'USD',
     timezone        VARCHAR(64)     NOT NULL DEFAULT 'UTC',
     status          VARCHAR(32)     NOT NULL DEFAULT 'active',
+    last_login_ip   VARCHAR(45)     DEFAULT NULL,
+    last_login_at   TIMESTAMP       NULL DEFAULT NULL,
     role            VARCHAR(32)     NOT NULL DEFAULT 'user',
+    notification_prefs JSON         DEFAULT NULL,
     fcm_token       VARCHAR(255)    DEFAULT NULL,
     fcm_platform    VARCHAR(16)     DEFAULT NULL,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -143,7 +151,8 @@ CREATE TABLE IF NOT EXISTS `cloud_users` (
     UNIQUE INDEX uk_phone (phone),
     INDEX idx_status (status),
     INDEX idx_role (role),
-    INDEX idx_fcm_token (fcm_token)
+    INDEX idx_fcm_token (fcm_token),
+    INDEX idx_users_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `cloud_user_profiles` (
@@ -388,6 +397,7 @@ CREATE TABLE IF NOT EXISTS `cloud_refunds` (
     user_id         BIGINT          NOT NULL,
     amount          DECIMAL(12,4)   NOT NULL,
     reason          VARCHAR(512)    DEFAULT NULL,
+    stripe_refund_id VARCHAR(128)   DEFAULT NULL,
     status          VARCHAR(32)     NOT NULL DEFAULT 'pending',
     handled_by      BIGINT          DEFAULT NULL,
     reject_reason   VARCHAR(512)    DEFAULT NULL,
@@ -397,7 +407,8 @@ CREATE TABLE IF NOT EXISTS `cloud_refunds` (
     UNIQUE INDEX uniq_refunds_pending_order (pending_order_id),
     INDEX idx_order (order_id),
     INDEX idx_user (user_id),
-    INDEX idx_status (status)
+    INDEX idx_status (status),
+    INDEX idx_stripe_refund_id (stripe_refund_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ======================== Payment ========================
@@ -460,10 +471,12 @@ CREATE TABLE IF NOT EXISTS `cloud_dns_zones` (
     id              BIGINT          NOT NULL PRIMARY KEY,
     user_id         BIGINT          NOT NULL,
     domain_name     VARCHAR(255)    NOT NULL,
+    expires_at      DATETIME        DEFAULT NULL,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE INDEX uk_domain (domain_name),
-    INDEX idx_user (user_id)
+    INDEX idx_user (user_id),
+    INDEX idx_dns_zones_expires_at (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `cloud_dns_records` (
@@ -716,6 +729,7 @@ CREATE TABLE IF NOT EXISTS `cloud_supplier_settlements` (
     status          VARCHAR(32)     NOT NULL DEFAULT 'pending',
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX uniq_supplier_settlement_period (supplier_id, period_start, period_end),
     INDEX idx_supplier (supplier_id),
     INDEX idx_period (period_start, period_end),
     INDEX idx_status (status)

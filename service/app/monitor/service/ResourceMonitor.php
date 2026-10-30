@@ -4,7 +4,6 @@ namespace App\monitor\service;
 use App\provisioning\model\Resource;
 use App\provisioning\model\ProvisionTask;
 use App\provisioning\service\ProviderFactory;
-use App\notification\service\NotificationDispatcher;
 use Illuminate\Support\Facades\Redis;
 
 class ResourceMonitor
@@ -55,30 +54,6 @@ class ResourceMonitor
             $alertEngine->trigger('server_down', $resource, [
                 'consecutive_checks' => $count,
             ]);
-        }
-    }
-
-    public function checkExpirations(): void
-    {
-        $windows = [7, 3, 1];
-
-        foreach ($windows as $days) {
-            $expiring = Resource::where('status', 'active')
-                ->whereBetween('expired_at', [
-                    date('Y-m-d H:i:s', strtotime("+{$days} days")),
-                    date('Y-m-d H:i:s', strtotime("+{$days} days + 1 hour")),
-                ])
-                ->get();
-
-            foreach ($expiring as $resource) {
-                $dispatcher = new NotificationDispatcher();
-                $dispatcher->dispatch($resource->user_id, 'resource_expiring', [
-                    'resource_id'   => $resource->id,
-                    'resource_type' => $resource->type,
-                    'days_left'     => (string)$days,
-                    'expired_at'    => $resource->expired_at,
-                ]);
-            }
         }
     }
 

@@ -159,7 +159,7 @@ GET /api/v1/supplier/products
 |------|------|------|------|
 | page | int | 否 | 页码，默认 1 |
 
-**响应**: 分页列表，每项含商品信息和佣金比例
+**响应**: 分页列表，每项含商品信息和平台设置的佣金比例
 
 ```json
 {
@@ -192,15 +192,15 @@ POST /api/v1/supplier/products
 
 ```json
 {
-  "product_id": "PrOdEfG456",
-  "commission_rate": 0.15
+  "product_id": "PrOdEfG456"
 }
 ```
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | product_id | string | 是 | 商品 ID（Hashid） |
-| commission_rate | float | 否 | 佣金比例，默认 0.1 |
+
+> `commission_rate` 只能由平台管理员设置；供应商请求中携带该字段会被忽略，结算只使用已审批费率（0 ≤ rate < 1，缺失/脏数据回落 10%）。
 
 **响应**: 创建的 SupplierProduct 对象
 
@@ -259,10 +259,10 @@ GET /api/v1/supplier/settlements
 
 | 字段 | 说明 |
 |------|------|
-| total_sales | 周期内已完成订单的总销售额 |
-| commission | 平台佣金总额 |
+| total_sales | 周期内该供应商明细的销售额，非 USD 订单按订单快照汇率折算 USD |
+| commission | 平台佣金总额（按已审批商品费率逐行计算） |
 | payable | 应付供应商金额（total_sales - commission） |
-| status | `pending` / `paid` |
+| status | `pending` / `completed` / `paid` |
 
 ---
 
@@ -299,7 +299,7 @@ POST /api/v1/supplier/withdraw
 | account_info | object | 是 | 收款账户信息 |
 | account_info.method | string | 是 | 提现方式：`bank_transfer` / `alipay` / `wechat` |
 
-**可提现余额计算**: 所有已完成的结算单 `payable` 之和 - 所有处理中的提现 `amount` 之和
+**可提现余额计算**: 所有已完成（completed）结算单 `payable` 之和 - 所有非 rejected/cancelled 提现 `amount` 之和（已完成的提现仍占用额度，防止同一笔钱重复提现）
 
 **响应**:
 

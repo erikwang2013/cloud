@@ -2,26 +2,26 @@
 namespace App\user\controller;
 
 use App\user\service\AuthService;
-use App\user\service\OAuthService;
 use Common\auth\JwtAuth;
 use Common\auth\TotpService;
 use Common\feature\FeatureFlags;
 use Common\captcha\CaptchaService;
+use Common\hashid\HashidService;
+use Common\helper\ClientContext;
 use Common\helper\Response;
 use Common\helper\Validator;
 use Common\i18n\I18n;
 use Common\security\AuditLogger;
 use App\user\model\User;
+use Erikwang2013\Encryptable\Encryption;
 
 class AuthController
 {
     private AuthService $auth;
-    private OAuthService $oauth;
 
     public function __construct()
     {
-        $this->auth  = new AuthService();
-        $this->oauth = new OAuthService();
+        $this->auth = new AuthService();
     }
 
     public function register($request)
@@ -43,7 +43,7 @@ class AuthController
         }
 
         try {
-            $tokens = $this->auth->register($data, $this->clientPlatform($request), $this->deviceFingerprint($request));
+            $tokens = $this->auth->register($data, ClientContext::clientPlatform($request), ClientContext::deviceFingerprint($request));
             return json(Response::success($tokens, I18n::trans('auth.register_success')));
         } catch (\InvalidArgumentException $e) {
             return json(Response::error(422, $e->getMessage()));
@@ -54,7 +54,7 @@ class AuthController
     {
         $login    = $request->input('login');
         $password = $request->input('password');
-        $deviceFp = $this->deviceFingerprint($request);
+        $deviceFp = ClientContext::deviceFingerprint($request);
 
         if (empty($login) || empty($password)) {
             return json(Response::error(422, 'Login and password required'));
@@ -65,7 +65,7 @@ class AuthController
         }
 
         try {
-            $tokens = $this->auth->login($login, $password, $deviceFp, $this->clientPlatform($request), (string) $request->input('totp_code', ''));
+            $tokens = $this->auth->login($login, $password, $deviceFp, ClientContext::clientPlatform($request), (string) $request->input('totp_code', ''), $request->getRealIp());
             $payload = (new \Common\auth\JwtAuth())->verify($tokens['access_token']);
             AuditLogger::record('user_login', ['user_id' => $payload['sub'] ?? null], $request);
             return json(Response::success($tokens, I18n::trans('auth.login_success')));
@@ -82,10 +82,10 @@ class AuthController
         if (!is_string($refreshToken) || $refreshToken === '') {
             return json(Response::error(422, 'Refresh token required'));
         }
-        $deviceFp = $this->deviceFingerprint($request);
+        $deviceFp = ClientContext::deviceFingerprint($request);
 
         try {
-            $tokens = $this->auth->refreshToken($refreshToken, $deviceFp, $this->clientPlatform($request));
+            $tokens = $this->auth->refreshToken($refreshToken, $deviceFp, ClientContext::clientPlatform($request));
             return json(Response::success($tokens));
         } catch (\InvalidArgumentException $e) {
             return json(Response::error(401, $e->getMessage()));
@@ -111,7 +111,8 @@ class AuthController
             return json(Response::error(422, 'Email required'));
         }
 
-        $user = \App\user\model\User::where('email', $email)->first();
+        // email 是 Encryptable 加密列，须按密文查询
+        $user = $this->auth->findByEmail($email);
         if (!$user) {
             // Return success even if not found to prevent enumeration
             return json(Response::success(null, 'If the email exists, a reset code has been sent'));
@@ -159,7 +160,11 @@ class AuthController
         }
 
         \Illuminate\Support\Facades\Redis::del($attemptKey);
-        $user = \App\user\model\User::where('email', $email)->firstOrFail();
+        // email 是 Encryptable 加密列，须按密文查询
+        $user = $this->auth->findByEmail($email);
+        if (!$user) {
+            return json(Response::error(422, 'Invalid or expired reset code'));
+        }
         $user->update(['password_hash' => password_hash($password, PASSWORD_BCRYPT, ["cost" => 12])]);
         \Illuminate\Support\Facades\Redis::del("password_reset:{$email}");
 
@@ -237,41 +242,6 @@ class AuthController
         return json(Response::success(null, 'Two-factor authentication has been disabled'));
     }
 
-    public function oauthRedirect($request, string $provider)
-    {
-        if (!FeatureFlags::isEnabled("{$provider}_oauth")) {
-            return json(Response::error(403, 'OAuth login is disabled'));
-        }
-        try {
-            $url = $this->oauth->authorizeUrl($provider);
-            return json(Response::success(['url' => $url]));
-        } catch (\InvalidArgumentException $e) {
-            return json(Response::error(422, $e->getMessage()));
-        }
-    }
-
-    public function oauthCallback($request, string $provider)
-    {
-        if (!FeatureFlags::isEnabled("{$provider}_oauth")) {
-            return json(Response::error(403, 'OAuth login is disabled'));
-        }
-        try {
-            $tokens = $this->oauth->completeLogin(
-                $provider,
-                (string) $request->input('code'),
-                (string) $request->input('state'),
-                $this->deviceFingerprint($request),
-                $this->clientPlatform($request),
-                $request->header('Accept-Language', 'en-US')
-            );
-            return json(Response::success($tokens));
-        } catch (\InvalidArgumentException $e) {
-            return json(Response::error(422, $e->getMessage()));
-        } catch (\RuntimeException $e) {
-            return json(Response::error(401, $e->getMessage()));
-        }
-    }
-
     public function sendSmsVerify($request)
     {
         $phone = $request->input('phone');
@@ -330,12 +300,23 @@ class AuthController
             return json(Response::error(422, 'Verification token required'));
         }
 
-        $user = User::where('email_verify_token', $token)->first();
+        // email_verify_token 是 Encryptable 加密列，须按确定性密文查询
+        $user = User::where('email_verify_token', Encryption::php()->encrypt($token))->first();
         if (!$user) {
             return json(Response::error(422, 'Invalid or expired verification token'));
         }
 
-        $user->update(['email_verified_at' => now(), 'email_verify_token' => null]);
+        // token 24h 过期；过期后清空，必须重新发送
+        if (!$user->email_verify_expires_at || strtotime((string) $user->email_verify_expires_at) < time()) {
+            $user->update(['email_verify_token' => null, 'email_verify_expires_at' => null]);
+            return json(Response::error(422, 'Invalid or expired verification token'));
+        }
+
+        $user->update([
+            'email_verified_at' => now(),
+            'email_verify_token' => null,
+            'email_verify_expires_at' => null,
+        ]);
         AuditLogger::record('email_verified', ['user_id' => $user->id], $request);
         return json(Response::success(null, 'Email verified successfully'));
     }
@@ -347,8 +328,11 @@ class AuthController
             return json(Response::error(422, 'Email already verified'));
         }
 
-        $user->update(['email_verify_token' => bin2hex(random_bytes(32))]);
-        $verifyUrl = getenv('APP_URL') . '/api/auth/verify-email?token=' . $user->email_verify_token;
+        $user->update([
+            'email_verify_token' => bin2hex(random_bytes(32)),
+            'email_verify_expires_at' => date('Y-m-d H:i:s', time() + 86400),
+        ]);
+        $verifyUrl = getenv('APP_URL') . '/api/v1/auth/verify-email?token=' . $user->email_verify_token;
         (new \App\notification\service\NotificationDispatcher())->dispatch($user->id, 'email_verify', [
             'verify_url' => $verifyUrl,
         ], ['email']);
@@ -396,9 +380,19 @@ class AuthController
             return json(Response::error(422, 'Login, password, and recovery code required'));
         }
 
-        $user = User::where('email', $login)->orWhere('phone', $login)->first();
+        // email/phone 是 Encryptable 加密列，须按密文查询
+        $user = $this->auth->findByLogin($login);
         if (!$user || !password_verify($password, $user->password_hash)) {
+            $this->auth->recordFailedLogin($login);
             return json(Response::error(401, 'Invalid credentials'));
+        }
+
+        // recovery 登录与普通登录保持同一套状态/锁定校验
+        if ($user->status !== 'active') {
+            return json(Response::error(401, 'Account is not active'));
+        }
+        if (\Illuminate\Support\Facades\Redis::exists("login_lock:{$user->id}")) {
+            return json(Response::error(429, 'Account temporarily locked, try again later'));
         }
 
         $stored = \Illuminate\Support\Facades\Redis::get("totp_recovery:{$user->id}");
@@ -407,17 +401,27 @@ class AuthController
         }
 
         $codes = json_decode($stored, true);
-        $index = array_search($code, $codes);
+        if (!is_array($codes)) {
+            return json(Response::error(400, 'Recovery codes are corrupted, please regenerate'));
+        }
+        $index = array_search($code, $codes, true);
         if ($index === false) {
+            $failKey = "totp_recovery_fail:{$user->id}";
+            $fails = \Illuminate\Support\Facades\Redis::incr($failKey);
+            \Illuminate\Support\Facades\Redis::expire($failKey, 900);
+            if ($fails >= 5) {
+                \Illuminate\Support\Facades\Redis::setex("login_lock:{$user->id}", 900, '1');
+            }
             return json(Response::error(422, 'Invalid recovery code'));
         }
 
         // Remove used code
         array_splice($codes, $index, 1);
         \Illuminate\Support\Facades\Redis::setex("totp_recovery:{$user->id}", 86400 * 365, json_encode($codes));
+        \Illuminate\Support\Facades\Redis::del("totp_recovery_fail:{$user->id}");
 
-        $deviceFp = $this->deviceFingerprint($request);
-        $tokens   = $this->auth->issueTokens($user->id, $user->role, $deviceFp, $this->clientPlatform($request));
+        $deviceFp = ClientContext::deviceFingerprint($request);
+        $tokens   = $this->auth->issueTokens($user->id, $user->role, $deviceFp, ClientContext::clientPlatform($request));
         AuditLogger::record('user_login_recovery_code', ['user_id' => $user->id], $request);
         return json(Response::success($tokens));
     }
@@ -441,8 +445,9 @@ class AuthController
         return json(Response::success($sessions));
     }
 
-    public function revokeSession($request, int $id)
+    public function revokeSession($request, string $id)
     {
+        $id = HashidService::decodeId($id);
         \App\user\model\RefreshToken::where('id', $id)
             ->where('user_id', $request->userId)
             ->update(['revoked' => true]);
@@ -499,20 +504,5 @@ class AuthController
 
         AuditLogger::record('account_deleted', ['user_id' => $user->id], $request);
         return json(Response::success(null, 'Account deleted. Data will be retained per our retention policy.'));
-    }
-
-    private function deviceFingerprint($request): string
-    {
-        $ua = $request->header('User-Agent', '');
-        $ip = $request->getRealIp();
-        $ipCidr = str_contains($ip, ':')
-            ? substr($ip, 0, strpos($ip, ':')) . ':'
-            : substr($ip, 0, (int) strrpos($ip, '.'));
-        return hash('sha256', $ua . $ipCidr);
-    }
-
-    private function clientPlatform($request): string
-    {
-        return $request->properties['client_platform'] ?? 'unknown';
     }
 }

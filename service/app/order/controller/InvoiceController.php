@@ -3,6 +3,7 @@ namespace App\order\controller;
 
 use App\order\model\Invoice;
 use App\order\model\Order;
+use Common\hashid\HashidService;
 use Common\helper\Response;
 
 class InvoiceController
@@ -17,14 +18,16 @@ class InvoiceController
         return json(Response::paginated($invoices->items(), $invoices->total(), $request->input('page', 1), 20));
     }
 
-    public function show($request, int $id)
+    public function show($request, string $id)
     {
+        $id = HashidService::decodeId($id);
         $invoice = Invoice::where('id', $id)->where('user_id', $request->userId)->with('order.items')->firstOrFail();
         return json(Response::success($invoice));
     }
 
-    public function download($request, int $id)
+    public function download($request, string $id)
     {
+        $id = HashidService::decodeId($id);
         $invoice = Invoice::where('id', $id)->where('user_id', $request->userId)->firstOrFail();
 
         // 已有真实 PDF 文件（file_url）时直接下发
@@ -137,7 +140,7 @@ class InvoiceController
             . '</tr></thead><tbody>' . $itemsHtml . '</tbody></table>'
             . '<div class="totals">'
             . ($order ? '<p>Subtotal: ' . $h($order->subtotal) . ' ' . $h($currency) . '</p>' : '')
-            . ($order && (float) $order->discount ? '<p>Discount: -' . $h($order->discount) . ' ' . $h($currency) . '</p>' : '')
+            . ($order && bccomp((string) $order->discount, '0', 4) > 0 ? '<p>Discount: -' . $h($order->discount) . ' ' . $h($currency) . '</p>' : '')
             . ($order ? '<p>Tax: ' . $h($order->tax) . ' ' . $h($currency) . '</p>' : '')
             . '<p class="total">Total: ' . $h($total) . ' ' . $h($currency) . '</p>'
             . '</div>'

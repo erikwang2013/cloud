@@ -193,6 +193,14 @@ ENCRYPTION_CIPHER=aes-128-ecb
 HASHIDS_SALT=<自定义随机字符串>
 HASHIDS_LENGTH=12
 
+# 内部接口令牌 (生成: openssl rand -hex 32)
+# /internal/v1 退款接口强制校验，admin 与 service 必须配置一致；缺失时退款审批直接失败
+INTERNAL_MONITOR_TOKEN=<随机令牌>
+
+# admin/.env 另需配置（与 service 相同的令牌）：
+# SERVICE_INTERNAL_URL=http://127.0.0.1:8787    # docker compose 部署为 http://app:8787
+# INTERNAL_MONITOR_TOKEN=<随机令牌>
+
 # Stripe 支付
 STRIPE_SECRET_KEY=sk_live_xxx
 STRIPE_WEBHOOK_SECRET=whsec_xxx
@@ -370,12 +378,25 @@ server {
     add_header X-Frame-Options DENY;
     add_header X-XSS-Protection "1; mode=block";
 
+    # 内部端点禁止公网访问（全量反代下 remote IP 均为 127.0.0.1，不能靠 loopback 鉴权）
+    # admin 需直连 service 并配置一致的 INTERNAL_MONITOR_TOKEN
+    location ^~ /internal/ {
+        return 404;
+    }
+
+    # 依赖详情不对外；内部调用请直连 8787 并带 X-Internal-Token
+    location = /health/deps {
+        return 404;
+    }
+
     # API 请求代理到 webman
     location / {
         proxy_pass http://127.0.0.1:8787;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        # 覆盖而非追加：防止客户端伪造 XFF 首个值绕过限流/GeoBlock/登录 IP。
+        # 若前置 LB/CDN，先配置 set_real_ip_from + real_ip_header 还原可信客户端地址。
+        proxy_set_header X-Forwarded-For \$remote_addr;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_read_timeout 60s;
     }
@@ -410,7 +431,7 @@ server {
         proxy_pass http://127.0.0.1:8788;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For \$remote_addr;
         proxy_set_header X-Forwarded-Proto \$scheme;
     }
 

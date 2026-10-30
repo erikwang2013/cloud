@@ -3,6 +3,7 @@ namespace App\supplier\controller\external;
 
 use App\order\model\Order;
 use App\supplier\model\Supplier;
+use Common\hashid\HashidService;
 use Common\helper\Response;
 
 class OrderController
@@ -31,8 +32,9 @@ class OrderController
         ));
     }
 
-    public function show($request, int $id)
+    public function show($request, string $id)
     {
+        $id = HashidService::decodeId($id);
         $supplier = Supplier::findOrFail($request->supplierId);
         $order    = Order::whereHas('items.sku.product', function ($q) use ($supplier) {
             $q->where('supplier_id', $supplier->id);

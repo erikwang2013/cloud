@@ -2,6 +2,7 @@
 namespace App\product\controller;
 
 use App\product\service\ProductService;
+use Common\hashid\HashidService;
 use Common\helper\Response;
 
 class ProductController
@@ -23,9 +24,9 @@ class ProductController
         return json($result);
     }
 
-    public function show($request, int $id)
+    public function show($request, string $id)
     {
-        $product = $this->service->detail($id);
+        $product = $this->service->detail(HashidService::decodeId($id));
         return json(Response::success($product));
     }
 

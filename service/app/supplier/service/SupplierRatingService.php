@@ -101,12 +101,26 @@ class SupplierRatingService
 
     public function listForSupplier(int $supplierId, int $limit = 20): array
     {
-        return SupplierRating::where('supplier_id', $supplierId)
+        $page = SupplierRating::where('supplier_id', $supplierId)
             ->where('status', 'published')
-            ->with('user:id,nickname,avatar')
+            ->with('profile')
             ->orderBy('created_at', 'desc')
-            ->paginate($limit)
-            ->toArray();
+            ->paginate($limit);
+
+        $result = $page->toArray();
+        $result['data'] = array_map(function (SupplierRating $rating) {
+            $row = $rating->toArray();
+            // 公开评价只输出 id/nickname/avatar，禁止序列化 User/UserProfile 泄露 PII
+            $row['user'] = [
+                'id'       => $rating->user_id,
+                'nickname' => $rating->profile?->nickname,
+                'avatar'   => $rating->profile?->avatar,
+            ];
+            unset($row['profile']);
+            return $row;
+        }, $page->items());
+
+        return $result;
     }
 
     public function approve(int $ratingId): void

@@ -11,15 +11,17 @@ return new class extends Migration {
     public function up(): void
     {
         if (!Capsule::schema()->hasIndex('supplier_settlements', 'uniq_supplier_settlement_period')) {
-            Capsule::statement('ALTER TABLE supplier_settlements
-                ADD UNIQUE INDEX uniq_supplier_settlement_period (supplier_id, period_start, period_end)');
+            $table = $this->table('supplier_settlements');
+            Capsule::statement("ALTER TABLE `{$table}`
+                ADD UNIQUE INDEX uniq_supplier_settlement_period (supplier_id, period_start, period_end)");
         }
     }
 
     public function down(): void
     {
         if (Capsule::schema()->hasIndex('supplier_settlements', 'uniq_supplier_settlement_period')) {
-            Capsule::statement('ALTER TABLE supplier_settlements DROP INDEX uniq_supplier_settlement_period');
+            $table = $this->table('supplier_settlements');
+            Capsule::statement("ALTER TABLE `{$table}` DROP INDEX uniq_supplier_settlement_period");
         }
     }
 };

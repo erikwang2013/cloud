@@ -4,6 +4,7 @@ namespace App\supplier\controller;
 use App\supplier\model\Supplier;
 use App\supplier\model\SupplierProduct;
 use App\product\model\Product;
+use Common\hashid\HashidService;
 use Common\helper\Response;
 
 class SupplierProductController
@@ -29,19 +30,19 @@ class SupplierProductController
             return json(Response::error(422, 'Product already assigned to this supplier'));
         }
 
+        // 佣金率只能由平台设置：供应商入口忽略请求中的 commission_rate，使用表默认值
         $sp = SupplierProduct::create([
             'supplier_id' => $supplier->id,
             'product_id'  => $productId,
-            'commission_rate' => $request->input('commission_rate', 0.1),
         ]);
 
         return json(Response::success($sp));
     }
 
-    public function destroy($request, int $id)
+    public function destroy($request, string $id)
     {
         $supplier = Supplier::where('user_id', $request->userId)->firstOrFail();
-        SupplierProduct::where('id', $id)->where('supplier_id', $supplier->id)->delete();
+        SupplierProduct::where('id', HashidService::decodeId($id))->where('supplier_id', $supplier->id)->delete();
         return json(Response::success());
     }
 }

@@ -27,8 +27,12 @@ class Collector
 
     public static function histogram(string $name, float $value, array $labels = []): void
     {
-        $key = self::buildKey($name, $labels);
-        self::append($key . ':samples', (string) $value);
+        $key = self::buildKey($name, $labels) . ':samples';
+        self::append($key, (string) $value);
+        // 只保留最近 1000 个样本，避免 list 无限增长
+        if (self::$redis) {
+            self::$redis->lTrim($key, -1000, -1);
+        }
     }
 
     public static function duration(string $name, float $startMicrotime, array $labels = []): void
@@ -40,20 +44,28 @@ class Collector
     public static function getAll(): array
     {
         if (!self::$redis) return [];
-        $keys = self::$redis->keys(self::$prefix . '*');
         $result = [];
-        foreach ($keys as $k) {
-            $short = substr($k, strlen(self::$prefix));
-            $val = self::$redis->get($k);
-            if ($val !== false) {
-                $result[$short] = $val;
+        $cursor = null;
+        do {
+            // SCAN 游标迭代，避免 KEYS 全键空间阻塞
+            $keys = self::$redis->scan($cursor, self::$prefix . '*');
+            if (!is_array($keys)) break;
+            foreach ($keys as $k) {
+                $short = substr($k, strlen(self::$prefix));
+                // 直方图只有 :samples 列表、没有基键，必须直接从列表读取
+                if (str_ends_with($k, ':samples')) {
+                    $samples = self::$redis->lRange($k, 0, -1);
+                    if (!empty($samples)) {
+                        $result[substr($short, 0, -8) . ':samples'] = $samples;
+                    }
+                    continue;
+                }
+                $val = self::$redis->get($k);
+                if ($val !== false && $val !== null) {
+                    $result[$short] = $val;
+                }
             }
-            // Histogram samples
-            $samples = self::$redis->lRange($k . ':samples', 0, -1);
-            if (!empty($samples)) {
-                $result[$short . ':samples'] = $samples;
-            }
-        }
+        } while ($cursor > 0);
         return $result;
     }
 
@@ -63,6 +75,7 @@ class Collector
         if (!empty($labels)) {
             $pairs = [];
             foreach ($labels as $k => $v) {
+                $v = str_replace(['\\', '"', "\n"], ['\\\\', '\\"', '\\n'], (string) $v);
                 $pairs[] = "{$k}=\"{$v}\"";
             }
             $key .= '{' . implode(',', $pairs) . '}';

@@ -230,8 +230,9 @@ PUT /api/v1/cart/{id}      → updateCartQuantity
                     │ refunded │ 已退款
                     └──────────┘
 
-退款条件: 服务器 72h 内 | 域名 5 天内 | IP 不可退款 | 促销商品不可退款（其他类型如 disk 无窗口限制；未知分类类型默认放行）
-退款流程: 用户申请 → Ticket 生成 → 客服审核 → admin 确认 → Provider.destroy() → Payment.refund()
+退款条件: 服务器 72h 内 | 域名 5 天内 | IP 不可退款 | 其他类型（disk/未知分类）无窗口限制
+退款流程: 用户申请 → admin 审批（密码确认）→ service 内部端点（强制 X-Internal-Token）→ Stripe refund → 订单 refunded
+退款约束: 仅支持整单全额退款，不支持部分退款；金额必须与成功支付金额一致；Stripe 调用带订单维度幂等键
 ```
 
 ---
@@ -395,18 +396,20 @@ POST /api/v1/supplier/apply (需用户登录)
 
 商品上架:
   POST /api/v1/supplier/products
-    → {product_id, commission_rate}
-    → 关联供应商商品
+    → {product_id}
+    → 关联供应商商品；commission_rate 由平台设置，供应商请求中的该字段会被忽略
 
 结算:
   Cron: SupplierSettlement (每周一 04:17)
-    → 统计周期内已完成订单
+    → 统计周期内已完成订单，只累计该供应商的 order_items
+    → 非 USD 订单按订单快照 exchange_rate 折算 USD（rate = 外币/USD，除以 rate）
+    → 佣金取已审批 supplier_products.commission_rate（0 ≤ rate < 1，缺失/脏数据回落 10%）
     → total_sales - commission = payable
     → 创建 SupplierSettlement
 
 提现:
   POST /api/v1/supplier/withdraw (密码确认)
-    → 检查可提现余额
+    → 检查可提现余额：completed 结算单 - 所有非 rejected/cancelled 提现
     → 创建 SupplierWithdraw (status=pending)
     → 管理员审批打款
 ```
@@ -580,7 +583,7 @@ Redis feature:{name} (TTL 1h, 通过管理 API 动态调整)
 
 Prometheus 指标端点独立进程 127.0.0.1:9100，不受 WAF/限流影响。MetricsMiddleware 记录 HTTP 请求计数和延迟。Docker Compose 预置 Prometheus + Grafana + 告警规则 + 仪表盘。
 
-**健康检查：** /health（公开）、/health/live、/health/ready（5 项依赖检查）、/health/deps（延迟详情）
+**健康检查：** /health（公开）、/health/live、/health/ready（5 项依赖检查，loopback/token）、/health/deps（延迟详情，强制 X-Internal-Token；nginx 对外 deny）
 
 ## 22. 管理端报表
 
@@ -595,14 +598,14 @@ Prometheus 指标端点独立进程 127.0.0.1:9100，不受 WAF/限流影响。M
 
 **Excel 导出：** `export` 接口按 `type` 白名单（order / product / payment / user）导出 xlsx，复用后台 `ExcelExport` 工具（PhpSpreadsheet ^2.0），文件名 `{title}_{YYYYmmddHHMMSS}.xlsx`。
 
-**金额精度：** 聚合统一走 bcmath（`SUM(DECIMAL)` 由 PDO 返回字符串），避免浮点误差；日期参数 `start_date` / `end_date` 格式 `YYYY-MM-DD`（默认近 30 天），非法值抛 BusinessException。
+**金额精度：** 报表按订单快照 `exchange_rate` 折算 USD（rate = 外币/USD，除以 rate），聚合结果保留 4 位小数；服务端金额计算链统一走 bcmath / `Money::bcround`。日期参数 `start_date` / `end_date` 格式 `YYYY-MM-DD`（默认近 30 天），非法值抛 BusinessException。
 
 ## 23. 起始页统计
 
 管理后台起始页（Dashboard）统计补齐（`admin/app/controller/DashboardController.php`），在原有用户统计基础上新增运营指标：
 
 - **今日订单数**（`today_orders`）— 今日 `paid_at` 且非 refunded 的订单数
-- **今日营收**（`today_revenue`）— 今日订单营收合计（`COALESCE(SUM(total), 0)`，非 refunded）
+- **今日营收**（`today_revenue`）— 今日订单营收折 USD 合计（`SUM(total / NULLIF(exchange_rate,0))`，非 refunded；rate = 外币/USD）
 - **待支付订单**（`pending_orders`）— status = pending 的订单数
 - **活跃资源**（`active_resources`）— status = active 的资源数
 

@@ -2,6 +2,7 @@
 namespace App\domain\controller;
 
 use App\domain\service\DomainService;
+use Common\hashid\HashidService;
 use Common\helper\Response;
 
 class DomainController
@@ -37,9 +38,9 @@ class DomainController
         return json(Response::success($record));
     }
 
-    public function deleteRecord($request, string $domain, int $id)
+    public function deleteRecord($request, string $domain, string $id)
     {
-        $this->service->deleteDnsRecord($request->userId, $domain, $id);
+        $this->service->deleteDnsRecord($request->userId, $domain, HashidService::decodeId($id));
         return json(Response::success());
     }
 }

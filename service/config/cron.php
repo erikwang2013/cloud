@@ -29,6 +29,9 @@ return [
     // Domain/Renewal expiry check — daily at 06:23
     '23 6 * * *'   => [App\cron\ExpirationCheck::class, 'run'],
 
+    // 回收卡在 processing 的交付任务 — every 5 minutes（15 分钟未更新视为进程失联）
+    '*/5 * * * *'  => [App\cron\ProvisionTaskRecovery::class, 'run'],
+
     // Resource metrics collection — every 5 minutes
     '*/5 * * * *'  => [App\monitor\service\ResourceMonitor::class, 'collectAllMetrics'],
 

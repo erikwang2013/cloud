@@ -42,14 +42,16 @@ if (!Capsule::schema()->hasTable('payment_transactions')) {
     });
 } else {
     // 旧库补齐：MODIFY 幂等（已是 128/NOT NULL 则无操作）；ADD/DROP 索引需存在性守卫
-    Capsule::statement('ALTER TABLE `payment_transactions` MODIFY COLUMN `transaction_no` VARCHAR(128) NOT NULL');
-    $unique = Capsule::select("SHOW INDEX FROM `payment_transactions` WHERE Key_name = 'uk_transaction_no'");
+    // Capsule::statement 不会自动加 DB_PREFIX，raw SQL 必须显式带前缀
+    $txTable = Capsule::connection()->getTablePrefix() . 'payment_transactions';
+    Capsule::statement("ALTER TABLE `{$txTable}` MODIFY COLUMN `transaction_no` VARCHAR(128) NOT NULL");
+    $unique = Capsule::select("SHOW INDEX FROM `{$txTable}` WHERE Key_name = 'uk_transaction_no'");
     if (empty($unique)) {
-        Capsule::statement('ALTER TABLE `payment_transactions` ADD UNIQUE INDEX `uk_transaction_no` (`transaction_no`)');
+        Capsule::statement("ALTER TABLE `{$txTable}` ADD UNIQUE INDEX `uk_transaction_no` (`transaction_no`)");
     }
-    $plain = Capsule::select("SHOW INDEX FROM `payment_transactions` WHERE Key_name = 'payment_transactions_transaction_no_index'");
+    $plain = Capsule::select("SHOW INDEX FROM `{$txTable}` WHERE Key_name = 'payment_transactions_transaction_no_index'");
     if (!empty($plain)) {
-        Capsule::statement('ALTER TABLE `payment_transactions` DROP INDEX `payment_transactions_transaction_no_index`');
+        Capsule::statement("ALTER TABLE `{$txTable}` DROP INDEX `payment_transactions_transaction_no_index`");
     }
 }
 

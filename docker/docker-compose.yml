@@ -19,6 +19,7 @@ services:
       - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
       - ENCRYPTION_MASTER_KEY=${ENCRYPTION_MASTER_KEY}
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - INTERNAL_MONITOR_TOKEN=${INTERNAL_MONITOR_TOKEN:?INTERNAL_MONITOR_TOKEN must be set in docker/.env}
     depends_on:
       mysql:
         condition: service_healthy
@@ -49,6 +50,9 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_HOST=redis
       - ENCRYPTION_MASTER_KEY=${ENCRYPTION_MASTER_KEY}
+      # admin 与 service 同容器网络，直连内部端口，不经公网 nginx /internal deny
+      - SERVICE_INTERNAL_URL=http://app:8787
+      - INTERNAL_MONITOR_TOKEN=${INTERNAL_MONITOR_TOKEN:?INTERNAL_MONITOR_TOKEN must be set in docker/.env}
     depends_on:
       mysql:
         condition: service_healthy

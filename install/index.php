@@ -92,8 +92,11 @@ if ($isPost && $requestedStep === 2) {
 
             $pdo->exec("USE `{$dbName}`");
 
+            // install.sql / config/database.php 默认使用 cloud_ 前缀
+            $prefix = 'cloud_';
+
             // Check for existing installation
-            $stmt = $pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '{$dbName}' AND table_name = 'wa_admins'");
+            $stmt = $pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '{$dbName}' AND table_name = '{$prefix}wa_admins'");
             if ($stmt->fetchColumn() > 0) {
                 $error = 'Tables already exist in this database. It appears CloudPlatform is already installed. To reinstall, drop all tables first.';
                 $_SESSION['db_form'] = compact('dbHost', 'dbPort', 'dbName', 'dbUser', 'dbPass', 'dbCreate');
@@ -210,25 +213,25 @@ if ($isPost && $requestedStep === 4) {
                 // Seed super-admin role
                 $roleId = snowflakeId();
                 $now = date('Y-m-d H:i:s');
-                $stmt = $pdo->prepare("SELECT COUNT(*) FROM wa_roles WHERE `rules` = '*'");
+                $stmt = $pdo->prepare("SELECT COUNT(*) FROM {$prefix}wa_roles WHERE `rules` = '*'");
                 $stmt->execute();
                 if ($stmt->fetchColumn() == 0) {
-                    $stmt = $pdo->prepare("INSERT INTO wa_roles (id, name, rules, created_at, updated_at, pid) VALUES (?, 'SuperAdmin', '*', ?, ?, NULL)");
+                    $stmt = $pdo->prepare("INSERT INTO {$prefix}wa_roles (id, name, rules, created_at, updated_at, pid) VALUES (?, 'SuperAdmin', '*', ?, ?, NULL)");
                     $stmt->execute([$roleId, $now, $now]);
                 } else {
-                    $stmt = $pdo->query("SELECT id FROM wa_roles WHERE `rules` = '*' LIMIT 1");
+                    $stmt = $pdo->query("SELECT id FROM {$prefix}wa_roles WHERE `rules` = '*' LIMIT 1");
                     $roleId = $stmt->fetchColumn();
                 }
 
                 // Create admin user
                 $adminId = snowflakeId();
                 $passwordHash = password_hash($admin['adminPass'], PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("INSERT INTO wa_admins (id, username, nickname, password, email, created_at, updated_at, status) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
+                $stmt = $pdo->prepare("INSERT INTO {$prefix}wa_admins (id, username, nickname, password, email, created_at, updated_at, status) VALUES (?, ?, ?, ?, ?, ?, ?, 0)");
                 $stmt->execute([$adminId, $admin['adminUser'], $admin['adminNick'], $passwordHash, $admin['adminEmail'], $now, $now]);
 
                 // Assign super-admin role
                 $arId = snowflakeId();
-                $stmt = $pdo->prepare("INSERT INTO wa_admin_roles (id, role_id, admin_id) VALUES (?, ?, ?)");
+                $stmt = $pdo->prepare("INSERT INTO {$prefix}wa_admin_roles (id, role_id, admin_id) VALUES (?, ?, ?)");
                 $stmt->execute([$arId, $roleId, $adminId]);
 
                 // MySQL DDL 隐式提交会结束事务，此时无需也不能再 commit/rollBack

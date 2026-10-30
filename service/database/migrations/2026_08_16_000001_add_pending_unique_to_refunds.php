@@ -13,24 +13,27 @@ return new class extends Migration {
         if (!$this->hasColumn('refunds', 'pending_order_id')) {
             // VIRTUAL：legacy 库 refunds 带 FK（refunds_order_id_foreign），STORED 生成列在 FK 存在时
             // ALTER 报 1215；VIRTUAL 不受影响，唯一索引照常物化生效
-            Capsule::statement('ALTER TABLE refunds
+            $refunds = $this->table('refunds');
+            Capsule::statement("ALTER TABLE `{$refunds}`
                 ADD COLUMN pending_order_id BIGINT UNSIGNED
-                GENERATED ALWAYS AS (IF(status = \'pending\', order_id, NULL)) VIRTUAL,
-                ADD UNIQUE INDEX uniq_refunds_pending_order (pending_order_id)');
+                GENERATED ALWAYS AS (IF(status = 'pending', order_id, NULL)) VIRTUAL,
+                ADD UNIQUE INDEX uniq_refunds_pending_order (pending_order_id)");
         }
     }
 
     public function down(): void
     {
         if ($this->hasColumn('refunds', 'pending_order_id')) {
-            Capsule::statement('ALTER TABLE refunds
+            $refunds = $this->table('refunds');
+            Capsule::statement("ALTER TABLE `{$refunds}`
                 DROP INDEX uniq_refunds_pending_order,
-                DROP COLUMN pending_order_id');
+                DROP COLUMN pending_order_id");
         }
     }
 
     private function hasColumn(string $table, string $column): bool
     {
+        $table = $this->table($table);
         $columns = Capsule::select("SHOW COLUMNS FROM `{$table}` LIKE '" . addslashes($column) . "'");
         return !empty($columns);
     }

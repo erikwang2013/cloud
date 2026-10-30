@@ -9,6 +9,7 @@ class Refund extends Model
     use HasSnowflakeId;
     protected $table = 'refunds';
     protected $fillable = [
+        'stripe_refund_id',
         'order_id', 'user_id', 'amount', 'reason', 'status',
         'handled_by', 'reject_reason',
     ];

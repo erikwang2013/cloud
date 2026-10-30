@@ -65,7 +65,7 @@
 
     <rect x="62" y="492" width="668" height="46" rx="6" fill="#eff6ff" stroke="#bfdbfe"/>
     <text x="74" y="509" fill="#1e3a8a" font-size="10" font-weight="bold">进程模型</text>
-    <text x="74" y="525" fill="#334155" font-size="9.5">HTTP Worker ×8　│　Queue Worker：provisioning ×2 · email ×5 · sms ×10 · push ×20　│　WebSocket :8282 ×2　│　Cron Timer ×1</text>
+    <text x="74" y="525" fill="#334155" font-size="9.5">HTTP Worker ×4　│　Queue Consumer ×2（provisioning / email / sms / push）　│　WebSocket :8282 ×2　│　Cron Timer ×1</text>
 
     <!-- admin -->
     <rect x="762" y="300" width="372" height="252" rx="8" fill="#fff1f2" stroke="#fda4af" stroke-width="1.5"/>
@@ -74,7 +74,7 @@
 
     <rect x="778" y="333" width="340" height="42" rx="6" fill="#ffe4e6" stroke="#fda4af"/>
     <text x="948" y="351" text-anchor="middle" fill="#9f1239" font-size="10.5" font-weight="bold">webman-admin + Layui</text>
-    <text x="948" y="366" text-anchor="middle" fill="#be123c" font-size="9.5">54 控制器 · 46 模型 · 13 组功能菜单</text>
+    <text x="948" y="366" text-anchor="middle" fill="#be123c" font-size="9.5">55 控制器 · 47 模型 · 13 组功能菜单</text>
 
     <text x="778" y="395" fill="#9f1239" font-size="10.5" font-weight="bold">中间件链</text>
     <rect x="778" y="402" width="164" height="24" rx="4" fill="#ffe4e6" stroke="#fda4af"/>

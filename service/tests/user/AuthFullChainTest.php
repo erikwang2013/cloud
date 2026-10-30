@@ -8,6 +8,7 @@ use App\user\model\UserBalance;
 use App\user\model\UserProfile;
 use App\user\service\AuthService;
 use Common\auth\JwtAuth;
+use Erikwang2013\Encryptable\Encryption;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -93,7 +94,8 @@ final class AuthFullChainTest extends TestCase
     {
         $email = 'audit-fullchain-' . bin2hex(random_bytes(6)) . '@test.local';
         $tokens = $this->auth->register(['email' => $email, 'password' => 'Str0ng-pass!'], 'test');
-        $user = User::where('email', $email)->firstOrFail();
+        // email 是 Encryptable 加密列，明文 where 查不到；用 token 里的 user id 定位
+        $user = User::findOrFail($this->jwt->verify($tokens['access_token'])['sub']);
         $this->createdUserIds[] = $user->id;
         return [$user, $tokens];
     }
@@ -127,17 +129,98 @@ final class AuthFullChainTest extends TestCase
         $this->assertSame(0, (int) $rows[0]->revoked);
     }
 
+    public function testLookupByEmailMatchesEncryptedColumn(): void
+    {
+        [$user] = $this->createUser();
+
+        // 明文 where 永不命中加密列（忘记密码/找回登录修复的根因）
+        $this->assertNull(User::where('email', $user->email)->first());
+
+        $found = $this->auth->findByEmail($user->email);
+        $this->assertNotNull($found);
+        $this->assertSame($user->id, $found->id);
+
+        $foundByLogin = $this->auth->findByLogin($user->email);
+        $this->assertNotNull($foundByLogin);
+        $this->assertSame($user->id, $foundByLogin->id);
+    }
+
+    public function testSecurityFieldsPersistAndStayHidden(): void
+    {
+        [$user] = $this->createUser();
+
+        // register 写入的 email_verify_token 必须落库（$fillable 缺失时会被静默丢弃）
+        $this->assertNotNull($user->email_verify_token);
+
+        $prefs = ['email' => ['order' => false, 'promo' => true]];
+        $user->update([
+            'totp_secret'        => 'JBSWY3DPEHPK3PXP',
+            'totp_enabled'       => true,
+            'last_login_ip'      => '203.0.113.9',
+            'last_login_at'      => date('Y-m-d H:i:s'),
+            'notification_prefs' => json_encode($prefs),
+        ]);
+
+        // fresh model 读回
+        $fresh = User::findOrFail($user->id);
+        $this->assertSame('JBSWY3DPEHPK3PXP', $fresh->totp_secret);
+        $this->assertTrue((bool) $fresh->totp_enabled);
+        $this->assertSame('203.0.113.9', $fresh->last_login_ip);
+        $this->assertSame($prefs, json_decode($fresh->notification_prefs, true));
+
+        // raw DB 读回（确认真正落库而非内存属性；敏感字段必须是密文）
+        $raw = \Illuminate\Support\Facades\DB::connection('default')
+            ->table('users')->where('id', $user->id)->first();
+        $this->assertNotSame('JBSWY3DPEHPK3PXP', $raw->totp_secret);
+        $this->assertSame(Encryption::php()->encrypt('JBSWY3DPEHPK3PXP'), $raw->totp_secret);
+        $this->assertTrue((bool) $raw->totp_enabled);
+        $this->assertSame('203.0.113.9', $raw->last_login_ip);
+        $this->assertNotNull($raw->last_login_at);
+        $this->assertSame($prefs, json_decode($raw->notification_prefs, true));
+        $this->assertNotSame($user->email_verify_token, $raw->email_verify_token);
+        $this->assertSame(Encryption::php()->encrypt($user->email_verify_token), $raw->email_verify_token);
+
+        // 序列化（GET /user/profile）不得泄露
+        $serialized = $fresh->toArray();
+        foreach (['totp_secret', 'email_verify_token', 'last_login_ip', 'email_verified_at'] as $field) {
+            $this->assertArrayNotHasKey($field, $serialized);
+        }
+    }
+
+    public function testEmailVerifyTokenStoredEncryptedAndVerifyQueryHits(): void
+    {
+        [$user] = $this->createUser();
+        $token = $user->email_verify_token;
+        $this->assertNotNull($token);
+
+        // 明文查不到（verifyEmail 修复的根因），控制器口径按密文查询可命中
+        $this->assertNull(User::where('email_verify_token', $token)->first());
+        $found = User::where('email_verify_token', Encryption::php()->encrypt($token))->first();
+        $this->assertNotNull($found);
+        $this->assertSame($user->id, $found->id);
+
+        // 读回自动解密为明文，URL 拼接使用明文 token
+        $this->assertSame($token, $found->email_verify_token);
+
+        // 验证完成后 token 置空，链接不可重放
+        $found->update(['email_verified_at' => date('Y-m-d H:i:s'), 'email_verify_token' => null]);
+        $fresh = User::findOrFail($user->id);
+        $this->assertNull($fresh->email_verify_token);
+        $this->assertNotNull($fresh->email_verified_at);
+    }
+
     public function testLoginIssuesFreshTokens(): void
     {
         [$user, $tokens] = $this->createUser();
 
-        $loginTokens = $this->auth->login($user->email, 'Str0ng-pass!', 'fp-a', 'test');
+        $loginTokens = $this->auth->login($user->email, 'Str0ng-pass!', 'fp-a', 'test', '', '198.51.100.7');
         $this->assertNotEmpty($loginTokens['access_token']);
         $this->assertNotSame($tokens['access_token'], $loginTokens['access_token']);
 
-        // login 更新登录时间
+        // login 更新登录时间与真实 IP（webman 下 $_SERVER 不可靠，IP 由控制器传入）
         $user->refresh();
         $this->assertNotNull($user->last_login_at);
+        $this->assertSame('198.51.100.7', $user->last_login_ip);
     }
 
     public function testLoginRejectsWrongPassword(): void

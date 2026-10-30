@@ -3,6 +3,7 @@ namespace App\supplier\controller\external;
 
 use App\provisioning\model\Resource;
 use App\supplier\model\Supplier;
+use Common\hashid\HashidService;
 use Common\helper\Response;
 
 class ResourceController
@@ -35,8 +36,9 @@ class ResourceController
         ));
     }
 
-    public function status($request, int $id)
+    public function status($request, string $id)
     {
+        $id = HashidService::decodeId($id);
         $supplier = Supplier::findOrFail($request->supplierId);
         $resource = Resource::whereHas('orderItem.sku.product', function ($q) use ($supplier) {
             $q->where('supplier_id', $supplier->id);

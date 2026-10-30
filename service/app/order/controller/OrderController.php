@@ -4,6 +4,7 @@ namespace App\order\controller;
 use App\order\service\OrderService;
 use App\order\service\CartService;
 use App\order\model\Order;
+use Common\hashid\HashidService;
 use Common\helper\Response;
 
 class OrderController
@@ -72,22 +73,23 @@ class OrderController
 
     public function removeFromCart($request, string $id)
     {
-        $this->cartService->removeFromCart($request->userId, (int)$id);
+        $this->cartService->removeFromCart($request->userId, HashidService::decodeId($id));
         return json(Response::success(null, 'Removed from cart'));
     }
 
     public function updateCartItem($request, string $id)
     {
         try {
-            $cart = $this->cartService->updateQuantity($request->userId, (int)$id, $request->input('quantity'));
+            $cart = $this->cartService->updateQuantity($request->userId, HashidService::decodeId($id), $request->input('quantity'));
             return json(Response::success($cart, 'Cart updated'));
         } catch (\InvalidArgumentException $e) {
             return json(Response::error(422, $e->getMessage()));
         }
     }
 
-    public function show($request, int $id)
+    public function show($request, string $id)
     {
+        $id = HashidService::decodeId($id);
         $order = Order::with(['items', 'timeline'])
             ->where('user_id', $request->userId)
             ->findOrFail($id);

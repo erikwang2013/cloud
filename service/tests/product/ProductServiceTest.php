@@ -10,6 +10,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Redis as RedisFacade;
 use PHPUnit\Framework\TestCase;
 
 final class ProductServiceTest extends TestCase
@@ -67,7 +68,7 @@ final class ProductServiceTest extends TestCase
             $t->string('status')->default('active');
             $t->timestamps();
         });
-        // detail() 会 eager load images / reviews.user.profile，空表即可
+        // detail() 会 eager load images / reviews.profile
         $schema->create('product_images', function (Blueprint $t) {
             $t->bigInteger('id')->primary();
             $t->unsignedBigInteger('product_id');
@@ -90,6 +91,8 @@ final class ProductServiceTest extends TestCase
         $schema->create('user_profiles', function (Blueprint $t) {
             $t->bigInteger('id')->primary();
             $t->unsignedBigInteger('user_id');
+            $t->string('nickname')->nullable();
+            $t->string('avatar')->nullable();
             $t->timestamps();
         });
 
@@ -214,8 +217,96 @@ final class ProductServiceTest extends TestCase
 
         $detail = (new ProductService())->detail($p->id);
 
-        $this->assertInstanceOf(Product::class, $detail);
-        $this->assertSame('VPS Gold', $detail->name_localized);
+        $this->assertIsArray($detail);
+        $this->assertSame('VPS Gold', $detail['name_localized']);
+    }
+
+    public function testDetailSecondCallFromCacheReturnsSameArrayShape(): void
+    {
+        $p = $this->seedProduct();
+        $store = $this->swapFakeRedis();
+
+        try {
+            $first = (new ProductService())->detail($p->id);
+            $second = (new ProductService())->detail($p->id);
+        } finally {
+            RedisFacade::swap($store->previous);
+        }
+
+        $this->assertIsArray($first);
+        // 回归：缓存命中返回 json_decode 数组，第二次调用不得抛 TypeError
+        $this->assertIsArray($second);
+        $this->assertSame($first['id'], $second['id']);
+        $this->assertSame('VPS Gold', $second['name_localized']);
+        $this->assertArrayHasKey('cache:products:detail:v2:' . $p->id, $store->data);
+    }
+
+    public function testListCacheKeySeparatesPageSizes(): void
+    {
+        $this->seedProduct();
+        $this->seedProduct();
+        $this->seedProduct();
+        $store = $this->swapFakeRedis();
+
+        try {
+            $small = (new ProductService())->list([], 1, 1);
+            $large = (new ProductService())->list([], 1, 5);
+        } finally {
+            RedisFacade::swap($store->previous);
+        }
+
+        $this->assertCount(1, $small['data']);
+        $this->assertCount(3, $large['data']);
+        $this->assertCount(2, $store->data, '不同 page_size 必须落到不同缓存 key');
+    }
+
+    /**
+     * 内存 fake Redis：swap 后 CacheService 读写走内存，tearDown 由调用方恢复原 facade。
+     */
+    private function swapFakeRedis(): object
+    {
+        $store = new class {
+            public $previous;
+            public array $data = [];
+            public function get($key) { return $this->data[$key] ?? null; }
+            public function setex($key, $ttl, $value) { $this->data[$key] = $value; return true; }
+            public function del($key) { unset($this->data[$key]); return 1; }
+        };
+        $store->previous = RedisFacade::getFacadeRoot();
+        RedisFacade::swap($store);
+        return $store;
+    }
+
+    public function testDetailReviewUserExposesWhitelistedFieldsOnly(): void
+    {
+        // AUD-04：评价者 User/UserProfile 直接序列化会泄露 email/phone 等 PII
+        $p = $this->seedProduct();
+        Capsule::table('product_reviews')->insert([
+            'id' => 9001,
+            'product_id' => $p->id,
+            'user_id' => 777,
+            'status' => 'approved',
+            'created_at' => '2026-08-01 10:00:00',
+            'updated_at' => '2026-08-01 10:00:00',
+        ]);
+        Capsule::table('user_profiles')->insert([
+            'id' => 8001,
+            'user_id' => 777,
+            'nickname' => 'Alice',
+            'avatar' => 'https://cdn.example.com/a.png',
+            'created_at' => '2026-08-01 10:00:00',
+            'updated_at' => '2026-08-01 10:00:00',
+        ]);
+
+        $detail = (new ProductService())->detail($p->id);
+
+        $this->assertCount(1, $detail['reviews']);
+        $user = $detail['reviews'][0]['user'];
+        $this->assertSame(['id', 'nickname', 'avatar'], array_keys($user), 'user 只允许白名单字段');
+        $this->assertSame(777, $user['id']);
+        $this->assertSame('Alice', $user['nickname']);
+        $this->assertSame('https://cdn.example.com/a.png', $user['avatar']);
+        $this->assertArrayNotHasKey('profile', $detail['reviews'][0]);
     }
 
     public function testDetailMissingProductFails(): void

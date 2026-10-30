@@ -23,4 +23,9 @@ class SupplierRating extends Model
     {
         return $this->belongsTo(\App\user\model\User::class, 'user_id');
     }
+
+    public function profile()
+    {
+        return $this->belongsTo(\App\user\model\UserProfile::class, 'user_id', 'user_id');
+    }
 }

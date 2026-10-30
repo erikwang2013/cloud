@@ -10,7 +10,9 @@ class CaptchaService
     private static function loadConfig(): void
     {
         if (!self::$configLoaded) {
-            PosterConfig::load(config_path() . '/poster.php');
+            // 必须 merge 而非 load(自定义路径)：PosterConfig::get() 会按 vendor 默认配置的
+            // mtime 重新 load，load(自定义路径) 的结果会被覆盖，merge 的结果则能被缓存命中
+            PosterConfig::merge(require config_path() . '/poster.php');
             self::$configLoaded = true;
         }
     }

@@ -34,9 +34,10 @@ final class DashboardControllerTest extends TestCase
         $capsule->bootEloquent();
 
         $schema = $capsule->schema('mysql');
-        $schema->create('wa_users', function ($t) {
+        $schema->create('users', function ($t) {
             $t->integer('id');
             $t->timestamp('created_at')->nullable();
+            $t->timestamp('deleted_at')->nullable();
         });
         $schema->create('orders', function ($t) {
             $t->integer('id');
@@ -77,10 +78,11 @@ final class DashboardControllerTest extends TestCase
 
     public function testStatsWithData(): void
     {
-        $this->db()->table('wa_users')->insert([
-            ['id' => 1, 'created_at' => $this->ts(0, '08:00:00')],
-            ['id' => 2, 'created_at' => $this->ts(0, '09:00:00')],
-            ['id' => 3, 'created_at' => $this->ts(1, '08:00:00')],
+        $this->db()->table('users')->insert([
+            ['id' => 1, 'created_at' => $this->ts(0, '08:00:00'), 'deleted_at' => null],
+            ['id' => 2, 'created_at' => $this->ts(0, '09:00:00'), 'deleted_at' => null],
+            ['id' => 3, 'created_at' => $this->ts(1, '08:00:00'), 'deleted_at' => null],
+            ['id' => 4, 'created_at' => $this->ts(0, '10:00:00'), 'deleted_at' => $this->ts(0, '11:00:00')],
         ]);
         $this->db()->table('orders')->insert([
             ['id' => 1, 'status' => 'paid', 'total' => 100, 'paid_at' => $this->ts(0, '10:00:00')],
@@ -99,11 +101,11 @@ final class DashboardControllerTest extends TestCase
         $stats = $data['stats'];
 
         $this->assertSame(2, $stats['today_orders'], '今日已付且非退款');
-        $this->assertSame(150, $stats['today_revenue'], 'refunded 不计入营收');
+        $this->assertEquals(150, $stats['today_revenue'], 'refunded 不计入营收');
         $this->assertSame(1, $stats['pending_orders']);
         $this->assertSame(2, $stats['active_resources']);
 
-        // 回归：原有用户统计与趋势不受影响
+        // 用户统计走 users（业务用户）表，软删不计
         $this->assertSame(2, $stats['today_users']);
         $this->assertSame(3, $stats['week_users']);
         $this->assertSame(3, $stats['month_users']);
@@ -113,6 +115,21 @@ final class DashboardControllerTest extends TestCase
 
         // VERSION() 注册生效：系统信息路径未被破坏
         $this->assertSame('8.0.99-test', $data['system']['mysql_version']);
+    }
+
+    public function testRevenueConvertsForeignCurrencyToUsdByDivision(): void
+    {
+        $this->db()->table('orders')->insert([
+            // exchange_rate = 外币/USD：720 CNY ÷ 7.2 = 100 USD（乘法则会变成 5184）
+            ['id' => 1, 'status' => 'paid', 'total' => 720, 'exchange_rate' => 7.2, 'paid_at' => $this->ts(0, '10:00:00')],
+            // USD rate=1 不受换算方向影响
+            ['id' => 2, 'status' => 'paid', 'total' => 30, 'exchange_rate' => 1, 'paid_at' => $this->ts(0, '11:00:00')],
+            ['id' => 3, 'status' => 'refunded', 'total' => 999, 'exchange_rate' => 7.2, 'paid_at' => $this->ts(0, '12:00:00')],
+        ]);
+
+        $stats = $this->stats()['stats'];
+
+        $this->assertEquals(130.0, $stats['today_revenue'], '720 CNY @7.2 = 100 USD，加 30 USD');
     }
 
     public function testStatsEmptyDatabase(): void

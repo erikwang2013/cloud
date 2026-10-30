@@ -22,9 +22,10 @@ class StripeChannel
     private PaymentChannel $channel;
     private ?StripeClient $stripe = null;
 
-    public function __construct(PaymentChannel $channel)
+    public function __construct(PaymentChannel $channel, ?StripeClient $stripe = null)
     {
         $this->channel = $channel;
+        $this->stripe = $stripe;
     }
 
     private function stripe(): StripeClient
@@ -36,7 +37,11 @@ class StripeChannel
         return $this->stripe;
     }
 
-    public function createPaymentIntent(Order $order): array
+    /**
+     * 调用 Stripe 创建 PaymentIntent，成功后把 pending 占位交易更新为 intent id。
+     * 调用方已在事务外持有 claim 行，外部 HTTP 不再阻塞数据库行锁。
+     */
+    public function createPaymentIntent(Order $order, PaymentTransaction $transaction, string $idempotencyKey): array
     {
         $amount = Money::toSmallestUnit($order->total, $order->currency);
 
@@ -50,18 +55,12 @@ class StripeChannel
                     'order_id' => $order->id,
                     'order_no' => $order->order_no,
                 ],
-            ]);
+            ], ['idempotency_key' => $idempotencyKey]);
 
-            PaymentTransaction::create([
-                'order_id' => $order->id,
-                'user_id' => $order->user_id,
-                'channel_id' => $this->channel->id,
-                'amount' => $order->total,
-                'currency' => $order->currency,
-                'exchange_rate' => $order->exchange_rate,
-                'channel_fee' => $fee,
+            $transaction->update([
+                'channel_id'    => $this->channel->id,
+                'channel_fee'   => $fee,
                 'transaction_no' => $intent->id,
-                'status' => 'pending',
             ]);
 
             return [
@@ -69,6 +68,7 @@ class StripeChannel
                 'transaction_id' => $intent->id,
             ];
         } catch (ApiErrorException $e) {
+            $transaction->update(['status' => 'failed']);
             throw new \RuntimeException('Stripe PaymentIntent creation failed: ' . $e->getMessage(), 0, $e);
         }
     }

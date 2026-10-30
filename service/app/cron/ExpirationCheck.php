@@ -16,8 +16,10 @@ class ExpirationCheck
         foreach ($warnDays as $days) {
             $targetDate = date('Y-m-d', strtotime("+{$days} days"));
 
+            // 半开区间替代 whereDate，expired_at 索引才能生效
             $resources = \App\provisioning\model\Resource::where('status', 'active')
-                ->whereDate('expired_at', $targetDate)
+                ->where('expired_at', '>=', $targetDate . ' 00:00:00')
+                ->where('expired_at', '<', date('Y-m-d', strtotime($targetDate . ' +1 day')) . ' 00:00:00')
                 ->with('user')
                 ->get();
 
@@ -54,7 +56,7 @@ class ExpirationCheck
 
         // Check domain renewals
         $domains = \App\domain\model\DnsZone::whereNotNull('expires_at')
-            ->whereDate('expires_at', '<=', date('Y-m-d', strtotime('+30 days')))
+            ->where('expires_at', '<=', date('Y-m-d', strtotime('+30 days')) . ' 23:59:59')
             ->with('user')
             ->get();
 

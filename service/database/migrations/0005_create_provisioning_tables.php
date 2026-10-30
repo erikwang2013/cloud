@@ -119,6 +119,7 @@ if (!Capsule::schema()->hasTable('provider_apis')) {
         $table->string('api_key_encrypted', 500)->nullable();
         $table->string('api_secret_encrypted', 500)->nullable();
         $table->string('webhook_secret', 255)->nullable();
+        $table->json('config')->nullable()->comment('non-sensitive provider metadata (zone_id/region...)');
         $table->string('status', 20)->default('active');
         $table->timestamps();
     });

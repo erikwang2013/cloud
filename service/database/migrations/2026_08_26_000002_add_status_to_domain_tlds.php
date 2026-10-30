@@ -11,19 +11,22 @@ return new class extends Migration {
     public function up(): void
     {
         if (!$this->hasColumn('domain_tlds', 'status')) {
-            Capsule::statement("ALTER TABLE domain_tlds ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active' AFTER registrar");
+            $table = $this->table('domain_tlds');
+            Capsule::statement("ALTER TABLE `{$table}` ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active' AFTER registrar");
         }
     }
 
     public function down(): void
     {
         if ($this->hasColumn('domain_tlds', 'status')) {
-            Capsule::statement('ALTER TABLE domain_tlds DROP COLUMN status');
+            $table = $this->table('domain_tlds');
+            Capsule::statement("ALTER TABLE `{$table}` DROP COLUMN status");
         }
     }
 
     private function hasColumn(string $table, string $column): bool
     {
+        $table = $this->table($table);
         $columns = Capsule::select("SHOW COLUMNS FROM `{$table}` LIKE '" . addslashes($column) . "'");
         return !empty($columns);
     }

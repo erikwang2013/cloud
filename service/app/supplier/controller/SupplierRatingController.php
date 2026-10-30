@@ -2,6 +2,7 @@
 namespace App\supplier\controller;
 
 use App\supplier\service\SupplierRatingService;
+use Common\hashid\HashidService;
 use Common\helper\Response;
 
 class SupplierRatingController
@@ -34,10 +35,10 @@ class SupplierRatingController
         return json(Response::success($ratings));
     }
 
-    public function supplierRatings($request, int $supplierId)
+    public function supplierRatings($request, string $supplierId)
     {
         $service = new SupplierRatingService();
-        $ratings = $service->listForSupplier($supplierId);
+        $ratings = $service->listForSupplier(HashidService::decodeId($supplierId));
         return json(Response::success($ratings));
     }
 }

@@ -116,7 +116,9 @@ class PaymentReconcile
     private static function systemTotals(int $channelId, string $date): array
     {
         return PaymentTransaction::where('channel_id', $channelId)
-            ->whereDate('created_at', $date)
+            // 半开区间替代 whereDate，created_at 索引才能生效
+            ->where('created_at', '>=', $date . ' 00:00:00')
+            ->where('created_at', '<', date('Y-m-d', strtotime($date . ' +1 day')) . ' 00:00:00')
             ->where('status', 'success')
             ->selectRaw('currency, SUM(amount) AS total')
             ->groupBy('currency')

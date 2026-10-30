@@ -145,7 +145,7 @@ cloud-php/
 │   │   ├── database.php        # Database connections
 │   │   └── ...                 # 18 config files total
 │   ├── database/migrations/    # Database migration files
-│   ├── tests/                  # Unit tests (PHPUnit 11, 286 tests / 962 assertions)
+│   ├── tests/                  # Unit tests (PHPUnit 11, 309 tests / 1087 assertions)
 │   │   ├── HashidsTest.php     # hashids encode/decode (21 tests)
 │   │   ├── BaseJsonTest.php    # Base::json() ID encoding (13 tests)
 │   │   ├── CrudHashidsTest.php # Crud input decoding (14 tests)
@@ -203,7 +203,7 @@ cloud-php/
 │   ├── database/migrations/    # Database migration files (37 migrations)
 │   ├── i18n/                   # Internationalization resources (en-US / zh-CN)
 │   ├── support/                # Bootstrap (Eloquent / Redis / Event / encryption / snowflake / hashids / scout / MigrationRunner)
-│   ├── tests/                  # Unit tests (PHPUnit 10, 672 tests / 1632 assertions)
+│   ├── tests/                  # Unit tests (PHPUnit 10, 639 tests / 1452 assertions)
 │   │   ├── admin/              # ImportExport / SupplierWithdrawApprove
 │   │   ├── auth/               # JwtAuth / RbacSeed / Rbac
 │   │   ├── captcha/            # CaptchaService
@@ -442,7 +442,7 @@ Login/Register: Captcha verify → Auth → Business logic
 ### Test Coverage
 
 ```
-phpunit.xml (PHPUnit 11, 286 tests / 962 assertions)
+phpunit.xml (PHPUnit 11, 309 tests / 1087 assertions)
 ├── HashidsTest              (21 tests) encode/decode/encode_ids
 ├── BaseJsonTest             (13 tests) Base::json/success/fail encoding
 ├── CrudHashidsTest          (14 tests) Crud input decoding (select/update/delete)
@@ -534,7 +534,7 @@ Global middleware pipeline: `Version → CORS → SecurityHeaders → ClientPlat
 | Field | AES-256-CBC | Auto encrypt/decrypt sensitive model attributes, CBC uses random IV (no pattern leakage) |
 | Primary Key | Hashids | External IDs obfuscated to 12-char strings, hides true data scale |
 
-**Encrypted fields:** 14 fields across 7 models use `Encryptable::class` auto-casting — `User(email, phone, password_hash)`, `UserKyc(id_number, real_name)`, `UserAddress(phone, address)`, `Supplier(contact_name, phone, email)`, `HostMachine(api_token)`, `PaymentChannel(api_key, webhook_secret)`, `RefreshToken(token_hash, device_fingerprint)`.
+**Encrypted fields:** 16 fields across 7 models use `Encryptable::class` auto-casting — `User(email, phone, password_hash, totp_secret, email_verify_token)`, `UserKyc(id_number, real_name)`, `UserAddress(phone, address)`, `Supplier(contact_name, phone, email)`, `HostMachine(api_token)`, `PaymentChannel(api_key, webhook_secret)`, `RefreshToken(token_hash, device_fingerprint)`.
 
 **Key management:** Transport and field encryption use independent keys (`ENCRYPTION_MASTER_KEY` vs `ENCRYPTION_KEY`). Previous key list (`ENCRYPTION_PREVIOUS_KEYS`) enables zero-downtime key rotation.
 
@@ -577,8 +577,8 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] Field-level encryption (`erikwang2013/encryptable`, auto encrypt/decrypt sensitive fields)
 - [x] Full-text search (`erikwang2013/webman-scout`, database driver SQL LIKE fallback by default, optional Elasticsearch + IK Analyzer)
 - [x] Country flags (`erikwang2013/season`, Unicode flag emoji)
-- [x] Admin panel (`admin/`, webman-admin + 7 package integrations, 286 unit tests)
-- [x] Code review (2 critical + 4 important fixes applied)
+- [x] Admin panel (`admin/`, webman-admin + 7 package integrations, 309 unit tests)
+- [x] Security audit & fixes (mandatory token for internal refund endpoint, platform-controlled supplier commission, ticket-reply IDOR, review PII redaction, provisioning idempotency/stuck-task recovery, XFF spoofing, encrypted TOTP/email tokens)
 - [x] Excel export (PhpSpreadsheet ^2.0, admin Crud/Table + service admin API)
 - [x] Dashboard visualization (ECharts charts + animated stat cards + system info panel)
 - [x] PDF export (html2canvas + jsPDF, dashboard screenshot export)
@@ -588,7 +588,7 @@ Unicode flag emoji support via `erikwang2013/season`:
 - [x] FCM push notification production integration (kreait/firebase-php, with invalid token cleanup)
 - [x] Click CAPTCHA (erikwang2013/poster-php, login/register verification)
 - [x] Password confirmation (ConfirmationMiddleware, sensitive ops password re-entry, 5 fails → 15 min lock)
-- [x] Service-layer unit tests (672 tests / 1632 assertions, 15 skipped)
+- [x] Service-layer unit tests (639 tests / 1452 assertions, 18 skipped)
 - [x] Client platform identification (ClientPlatformMiddleware, X-Client-Platform header, 8 platforms)
 - [x] WAF security enhancement (8 categories 45+ rules: SQLi/XSS/CMDi/file inclusion/header injection/SSRF/NoSQL injection/open redirect + size limits + Content-Type validation)
 - [x] Security Plugin (erikwang2013/security-php, 31 attack detectors + IP blacklist auto-ban + log rotation)
@@ -640,7 +640,7 @@ The commercial edition adds the modules needed for operations and scale, plus co
 | Security | JWT + role checks, TOTP 2FA, 7 OAuth providers, WAF with 31 attack detectors, per-IP/per-token rate limiting, CSP/HSTS headers, geo-blocking, maintenance mode, Hashid, encryption middleware, operation audit | Same global security chain; admin API adds AdminRole/RBAC and broader audit coverage (14 vs 6 audit-related files); security config identical |
 | Performance & scale | webman resident workers, Redis, queue consumer, WebSocket, Prometheus metrics, 7 cron jobs, 4 resident processes; 12 Compose services | Same runtime; adds gRPC registry process (5 vs 4) and 4 cron jobs (11 vs 7); 26 vs 18 business modules and 225 vs 102 routes |
 | Data & search | MySQL + Redis; 127 indexes; webman-scout defaults to database (LIKE); ES client not installed | MySQL + Redis; 146 indexes; includes Elasticsearch/Scout health check and optional sync path; 79 tables/65 models vs 67/58 |
-| Testing & quality | 74 test files, 489 cases, 7 CI jobs | 95 test files, 604 cases, 9 CI jobs; same PHPUnit/CI structure |
+| Testing & quality | 99 test files, 948 cases, 7 CI jobs | 95 test files, 604 cases, 9 CI jobs; same PHPUnit/CI structure |
 | Deployment & ops | Docker Compose 12 services, 2 Dockerfiles, /health /live /ready /metrics, Prometheus, cron, WebSocket | Same Compose/Dockerfiles/health/metrics; adds KVM/gRPC registry operations |
 | Clients & i18n | Flutter client; Accept-Language/i18n middleware; Chinese/English docs | Flutter + HarmonyOS; same i18n middleware; 12-language docs (open is zh/en only) |
 | Extensibility | 18 business modules, Provider/Factory extension points, /api/v1 versioned routes, 215 docs | 26 modules, same versioning/Provider system, plus admin API, GraphQL and gRPC; 2,506 docs |

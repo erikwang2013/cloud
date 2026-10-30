@@ -76,7 +76,7 @@
 
     <rect x="510" y="350" width="300" height="60" rx="10" fill="url(#provGrad)" stroke="#86efac" stroke-width="1.5"/>
     <text x="660" y="377" text-anchor="middle" fill="#166534" font-size="14" font-weight="bold">供应商结算</text>
-    <text x="660" y="397" text-anchor="middle" fill="#64748b" font-size="11">周期汇总 total_sales / commission / payable</text>
+    <text x="660" y="397" text-anchor="middle" fill="#64748b" font-size="11">周期汇总 total_sales / commission / payable（非 USD 按快照汇率折算）</text>
 
     <path d="M810,380 L840,380" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
 

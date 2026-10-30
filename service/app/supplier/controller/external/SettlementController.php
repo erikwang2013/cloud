@@ -3,6 +3,7 @@ namespace App\supplier\controller\external;
 
 use App\supplier\model\Supplier;
 use App\supplier\model\SupplierSettlement;
+use Common\hashid\HashidService;
 use Common\helper\Response;
 
 class SettlementController
@@ -27,8 +28,9 @@ class SettlementController
         ));
     }
 
-    public function show($request, int $id)
+    public function show($request, string $id)
     {
+        $id = HashidService::decodeId($id);
         $supplier   = Supplier::findOrFail($request->supplierId);
         $settlement = SupplierSettlement::where('id', $id)
             ->where('supplier_id', $supplier->id)

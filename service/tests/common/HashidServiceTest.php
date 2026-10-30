@@ -92,6 +92,23 @@ final class HashidServiceTest extends TestCase
         $this->assertNull($result);
     }
 
+    public function testDecodeIdAcceptsHashid(): void
+    {
+        $hash = HashidService::encode(42);
+        $this->assertSame(42, HashidService::decodeId($hash));
+    }
+
+    public function testDecodeIdAcceptsPlainNumericId(): void
+    {
+        $this->assertSame(123, HashidService::decodeId('123'));
+    }
+
+    public function testDecodeIdRejectsInvalidValue(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        HashidService::decodeId('not-a-hashid');
+    }
+
     public function testEncodeZeroReturnsNonEmpty(): void
     {
         $hash = HashidService::encode(0);

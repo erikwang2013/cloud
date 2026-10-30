@@ -2,6 +2,7 @@
 namespace Common\encryption\middleware;
 
 use Common\encryption\EncryptionService;
+use Common\hashid\middleware\HashidRequestMiddleware;
 use Webman\Http\Response;
 
 class EncryptionMiddleware
@@ -22,6 +23,8 @@ class EncryptionMiddleware
                             $request->setGet($key, $value);
                             $request->setPost($key, $value);
                         }
+                        // 全局 Hashid 中间件先于本中间件执行，解密出的字段需在此再解码一次
+                        HashidRequestMiddleware::decodeRequest($request);
                     }
                     $request->encrypted = true;
                 } catch (\Exception $e) {

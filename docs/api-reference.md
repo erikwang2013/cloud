@@ -68,7 +68,8 @@
 |--------|--------|------|
 | 公开 | 全局中间件链 | `/health`, `/api/v1/*` |
 | 站点落地页 | 全局中间件链 | `/`（回吐 `public/index.html`，非 JSON API） |
-| `/health` (内部) | 全局 + InternalToken | `/health/live`, `/health/ready`, `/health/deps` |
+| `/health` (内部) | 全局 + InternalToken（live/ready）；`/health/deps` 强制 InternalTokenRequired | `/health/live`, `/health/ready`, `/health/deps` |
+| `/internal/v1` (服务内部) | InternalTokenRequired（非空 token + hash_equals，无 loopback 旁路） | `/internal/v1/refunds/execute` |
 | `/api/v1/auth` | 全局 + Encryption | `/api/v1/auth/*` |
 | `/api` (用户) | 全局 + Encryption + Auth | `/api/v1/user/*`, `/api/v1/cart`, `/api/v1/orders` |
 | `/api` (敏感) | 全局 + Encryption + Auth + Confirmation | `/api/v1/orders/{id}/pay` |
@@ -477,7 +478,8 @@ POST /api/v1/supplier/withdraw    🔒 密码确认
 
 GET /api/v1/supplier/products
 POST /api/v1/supplier/products
-  体: { product_id, commission_rate }
+  体: { product_id }
+  说明: commission_rate 由平台设置，供应商请求中的该字段会被忽略；结算只使用已审批费率
 DELETE /api/v1/supplier/products/{id}
 ```
 
@@ -552,6 +554,20 @@ POST /api/v1/payments/webhook/stripe
   头: Stripe-Signature: ...
   → Stripe 回调（支付成功/退款/争议），签名校验失败返回 400
 ```
+
+---
+
+## 十八点五、服务内部 API
+
+```
+POST /internal/v1/refunds/execute
+  头: X-Internal-Token: <INTERNAL_MONITOR_TOKEN>
+  体: { refund_id, operator_id }
+  → 执行 pending/failed 退款单（整单全额）；admin 审批调用
+  → 400 参数非法 / 403 token 缺失或错误 / 404 退款单或订单不存在 / 409 业务拒绝 / 502 Stripe 失败
+```
+
+> 该端点不对外暴露：nginx 对 `/internal/` 直接 404；缺少非空 `INTERNAL_MONITOR_TOKEN` 时 fail-closed。
 
 ---
 

@@ -28,8 +28,11 @@ Route::get('/', function () {
 Route::group('/health', function () {
     Route::get('/live', [App\controller\HealthController::class, 'live']);
     Route::get('/ready', [App\controller\HealthController::class, 'ready']);
-    Route::get('/deps', [App\controller\HealthController::class, 'deps']);
 })->middleware([Common\security\InternalTokenMiddleware::class]);
+
+// 依赖详情包含内部错误信息：不给 loopback 旁路，必须显式 token
+Route::get('/health/deps', [App\controller\HealthController::class, 'deps'])
+    ->middleware([Common\security\InternalTokenRequiredMiddleware::class]);
 
 // Auth routes (with version + encryption + rate limiting + captcha verification on sensitive ops)
 Route::group('/api/v1/auth', function () {
@@ -49,9 +52,9 @@ Route::get('/api/v1/status', [App\controller\StatusController::class, 'index']);
 
 // OAuth (public) — generic provider routes: google, apple, facebook, x, microsoft, linkedin, github
 // POST callback is required by Apple (response_mode=form_post)
-Route::get('/api/v1/auth/{provider}', [App\user\controller\AuthController::class, 'oauthRedirect']);
-Route::get('/api/v1/auth/{provider}/callback', [App\user\controller\AuthController::class, 'oauthCallback']);
-Route::post('/api/v1/auth/{provider}/callback', [App\user\controller\AuthController::class, 'oauthCallback']);
+Route::get('/api/v1/auth/{provider}', [App\user\controller\OAuthController::class, 'oauthRedirect']);
+Route::get('/api/v1/auth/{provider}/callback', [App\user\controller\OAuthController::class, 'oauthCallback']);
+Route::post('/api/v1/auth/{provider}/callback', [App\user\controller\OAuthController::class, 'oauthCallback']);
 // TOTP recovery login (public)
 Route::post('/api/v1/auth/login/recovery', [App\user\controller\AuthController::class, 'loginWithRecoveryCode']);
 // SMS verification (public)
@@ -200,3 +203,8 @@ Route::group('/api/v1', function () {
     Route::get('/supplier/external/products', [App\supplier\controller\external\ProductController::class, 'index']);
     Route::post('/supplier/external/products', [App\supplier\controller\external\ProductController::class, 'store']);
 })->middleware([Common\version\middleware\VersionMiddleware::class, Common\auth\middleware\SupplierApiKeyMiddleware::class]);
+
+// === Internal service API (mandatory token; loopback requests are proxied public traffic) ===
+Route::group('/internal/v1', function () {
+    Route::post('/refunds/execute', [App\order\controller\InternalRefundController::class, 'execute']);
+})->middleware([Common\security\InternalTokenRequiredMiddleware::class]);

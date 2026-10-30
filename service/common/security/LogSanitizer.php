@@ -11,6 +11,8 @@ class LogSanitizer
         'ssn', 'id_number', 'real_name',
         'login_password', 'private_key',
         'auth_code', 'answer',
+        'recovery_code', 'totp_code', 'totp_secret',
+        'confirm_password', 'approver_password', 'email_verify_token',
     ];
 
     public static function sanitize(array $data): array

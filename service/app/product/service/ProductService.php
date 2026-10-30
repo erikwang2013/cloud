@@ -10,7 +10,7 @@ class ProductService
 {
     public function list(array $filters, int $page = 1, int $pageSize = 20): array
     {
-        $cacheKey = 'products:list:' . md5(serialize($filters)) . ":p{$page}";
+        $cacheKey = 'products:list:' . md5(serialize($filters)) . ":p{$page}:s{$pageSize}";
 
         return CacheService::remember($cacheKey, CacheService::TTL_PRODUCT_LIST, function () use ($filters, $page, $pageSize) {
             $query = Product::published()->with(['category', 'skus.regionPrices']);
@@ -49,12 +49,24 @@ class ProductService
         return Response::paginated($items, $total, $page, $perPage);
     }
 
-    public function detail(int $id): Product
+    /**
+     * 返回数组而非模型：CacheService 命中时是 json_decode 结果，返回类型必须一致，
+     * 否则第二次请求会因类型不符抛 TypeError。
+     */
+    public function detail(int $id): array
     {
-        return CacheService::remember("products:detail:{$id}", CacheService::TTL_PRODUCT_DETAIL, function () use ($id) {
-            return Product::published()
-                ->with(['category', 'skus.regionPrices', 'images', 'reviews.user.profile'])
+        // v2：AUD-04 修复前缓存含 User/UserProfile PII，换 key 使旧缓存自然失效
+        return CacheService::remember("products:detail:v2:{$id}", CacheService::TTL_PRODUCT_DETAIL, function () use ($id) {
+            $product = Product::published()
+                ->with(['category', 'skus.regionPrices', 'images', 'reviews.profile'])
                 ->findOrFail($id);
+            // AUD-04：公开评价只输出评价者白名单字段，禁止序列化 User（email/phone 等会被解密成明文）
+            $data = $product->toArray();
+            foreach ($product->reviews as $index => $review) {
+                $data['reviews'][$index]['user'] = $review->publicUser();
+                unset($data['reviews'][$index]['profile']);
+            }
+            return $data;
         });
     }
 

@@ -42,7 +42,7 @@ admin/
 │   │   ├── SnowflakeBootstrap.php
 │   │   ├── EncryptableBootstrap.php
 │   │   └── EncryptionBootstrap.php
-│   ├── controller/       # 54 controller files (Base/Crud + per-entity CRUD)
+│   ├── controller/       # 55 controller files (Base/Crud + per-entity CRUD)
 │   │   ├── Base.php     # json() with hashids_encode_ids
 │   │   ├── Crud.php     # Select/Insert/Update/Delete/Export with hashids decode
 │   │   ├── DashboardController.php  # Dashboard data API (user stats + trends)
@@ -50,7 +50,7 @@ admin/
 │   │   ├── AdminController.php      # Admin CRUD + roles
 │   │   ├── RoleController.php       # Role CRUD + rule tree
 │   │   └── ...
-│   ├── model/            # 44 Eloquent models（36 个映射 service 无前缀业务表 + alerts（install.sql 定义）+ 7 个 wa_* 管理表）
+│   ├── model/            # 47 Eloquent models（映射 service 业务表 + 7 个 wa_* 管理表）
 │   │   ├── Base.php     # Snowflake PK + Encryptable support
 │   │   ├── Admin.php    # Encryptable: password, email, mobile
 │   │   ├── User.php     # Encryptable: 6 fields + Searchable trait
@@ -65,7 +65,7 @@ admin/
 │   ├── plugin/erikwang2013/  # 7 plugin configs
 │   ├── hashids.php       # Hashids connections (main + alternative)
 │   └── encryption.php    # Encryption config (master key, cipher)
-├── tests/                # PHPUnit 11 test suite (286 tests, 962 assertions)
+├── tests/                # PHPUnit 11 test suite (309 tests, 1087 assertions)
 │   ├── HashidsTest.php   # 21 tests
 │   ├── BaseJsonTest.php  # 13 tests
 │   ├── CrudHashidsTest.php # 14 tests
@@ -525,7 +525,7 @@ Each migration file returns a class extending `Migration` with timestamp-prefixe
 
 ### Service Migrations
 
-**Directory**: `service/database/migrations/` — 38 migration files（表名无 erik_ 前缀，admin 模型直接映射）
+**Directory**: `service/database/migrations/` — 37 migration files（表名默认 `cloud_` 前缀，admin 模型直接映射）
 
 | Migration | Tables |
 |-----------|--------|
@@ -542,7 +542,16 @@ Each migration file returns a class extending `Migration` with timestamp-prefixe
 | `0011_create_kvm_service_tables` | network_services, firewall_services, switch_services |
 | `2024_01_01_000001_create_initial_schema` | Runs `docs/database.sql` via `Capsule::unprepared()`, drops all in `down()` |
 | `2025_05_16_000002_add_fcm_token_to_users` | Adds `fcm_token`, `fcm_platform` columns + index to users |
+| `2026_08_16_000001_add_pending_unique_to_refunds` | refunds.pending_order_id 生成列 + pending 唯一索引 |
+| `2026_08_16_000002_add_reconcile_unique` | payment_reconcile(channel_id, date) 唯一索引 |
+| `2026_08_26_000001_add_supplier_settlement_unique` | supplier_settlements 周期唯一索引 |
+| `2026_08_26_000002_add_status_to_domain_tlds` | domain_tlds.status |
 | `2026_08_26_000003_widen_encrypted_columns` | users.phone / user_addresses.phone / suppliers.contact_phone VARCHAR(20)→VARCHAR(255)（Encryptable 密文长度） |
+| `2026_10_30_000001_drop_product_region_unique_index` | 删除 product_regions 冲突唯一索引（保留多币种唯一键） |
+| `2026_10_30_000002_drop_removed_module_tables` | 清理已下线模块的空表/死模板（非空表保留） |
+| `2026_10_30_000003_add_dashboard_and_expiry_indexes` | users(created_at) / dns_zones(expires_at) 索引 |
+| `2026_10_30_000004_add_audit_security_columns` | users.email_verify_expires_at / refunds.stripe_refund_id |
+| `2026_10_30_000005_encrypt_totp_and_verify_token` | 存量 totp_secret / email_verify_token 加密回写 |
 
 ### Admin Migrations
 
@@ -884,7 +893,7 @@ All 4 jobs pass: 243 total tests (67 admin + 176 service), 400 assertions, both 
 | 功能设计文档 | `docs/features.md` | 21 模块详细功能设计，含流程图、数据模型、交互说明 |
 | API 接口文档 | `docs/api-reference.md` | 200+ 端点完整参考，按模块分组，含请求/响应示例、错误码 |
 | API 在线文档 (service) | `http://localhost:8787/apidoc` | hg/apidoc 自动生成，按功能分组，支持在线调试 |
-| API 在线文档 (admin) | `http://localhost:8788/apidoc` | hg/apidoc 自动生成，54 控制器 13 功能分组 |
+| API 在线文档 (admin) | `http://localhost:8788/apidoc` | hg/apidoc 自动生成，55 控制器 13 功能分组 |
 | 系统设计规格 | `docs/superpowers/specs/2026-05-14-cloud-resource-platform-design.md` | 完整架构、数据模型、API 设计、安全策略 |
 | 管理后台设计 | `docs/admin-design.md` | Admin 面板架构、包集成、ACL 权限、测试套件 |
 | 供应商 API 文档 | `docs/supplier-api.md` | 供应商 API 参考（内部 API + 外部 API）、SDK 示例 |

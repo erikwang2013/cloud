@@ -70,11 +70,11 @@ class ReportController extends Base
         [$start, $end] = $this->parseRange($request);
         $limit = min(max((int) $request->get('limit', 10), 1), 50);
 
-        // amount 折算为 USD 基准币种（orders.exchange_rate 为币种→USD 汇率），避免跨币种相加
+        // amount 折算为 USD 基准币种（orders.exchange_rate 为外币/USD 汇率，USD = total_price / rate），避免跨币种相加
         $items = OrderItem::query()->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->whereBetween('orders.paid_at', [$start, $end])
             ->where('orders.status', '!=', 'refunded')
-            ->selectRaw('order_items.product_id, SUM(order_items.quantity) as qty, SUM(order_items.total_price * orders.exchange_rate) as amount')
+            ->selectRaw('order_items.product_id, SUM(order_items.quantity) as qty, ROUND(SUM(order_items.total_price / NULLIF(orders.exchange_rate, 0)), 4) as amount')
             ->groupBy('order_items.product_id')
             ->orderByDesc('qty')
             ->limit($limit)
@@ -172,7 +172,7 @@ class ReportController extends Base
                 $items = OrderItem::query()->join('orders', 'orders.id', '=', 'order_items.order_id')
                     ->whereBetween('orders.paid_at', [$start, $end])
                     ->where('orders.status', '!=', 'refunded')
-                    ->selectRaw('order_items.product_id, SUM(order_items.quantity) as qty, SUM(order_items.total_price * orders.exchange_rate) as amount')
+                    ->selectRaw('order_items.product_id, SUM(order_items.quantity) as qty, ROUND(SUM(order_items.total_price / NULLIF(orders.exchange_rate, 0)), 4) as amount')
                     ->groupBy('order_items.product_id')->orderByDesc('qty')->limit($limit)->get();
                 $names = Product::whereIn('id', $items->pluck('product_id')->all())->pluck('name', 'id');
                 $rows = array_map(function ($row) use ($names) {

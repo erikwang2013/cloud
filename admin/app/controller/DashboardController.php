@@ -8,9 +8,9 @@
 namespace app\controller;
 
 use app\common\Util;
+use app\model\BusinessUser;
 use app\model\Order;
 use app\model\Resource;
-use app\model\User;
 use support\Request;
 use support\Response;
 use Workerman\Worker;
@@ -25,43 +25,43 @@ class DashboardController extends Base
     public function index(Request $request): Response
     {
         $today = date('Y-m-d');
-        $weekAgo = date('Y-m-d H:i:s', time() - 7 * 24 * 60 * 60);
-        $monthAgo = date('Y-m-d H:i:s', time() - 30 * 24 * 60 * 60);
 
-        // User stats from local wa_users
-        $todayUsers = User::where('created_at', '>', $today . ' 00:00:00')->count();
-        $weekUsers = User::where('created_at', '>', $weekAgo)->count();
-        $monthUsers = User::where('created_at', '>', $monthAgo)->count();
-        $totalUsers = User::count();
+        // 业务用户（users 表，软删不计）：一条分组查询取近 30 天趋势，其余统计由结果推导
+        $dailyUsers = BusinessUser::where('created_at', '>=', date('Y-m-d 00:00:00', strtotime('-29 days')))
+            ->whereNull('deleted_at')
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->groupBy('date')
+            ->pluck('count', 'date');
 
-        // 7-day user registration trend
+        $countsByDate = [];
+        foreach ($dailyUsers as $date => $count) {
+            $countsByDate[(string) $date] = (int) $count;
+        }
+
         $userTrend = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = date('Y-m-d', time() - $i * 24 * 60 * 60);
-            $count = User::where('created_at', '>=', "$date 00:00:00")
-                ->where('created_at', '<', date('Y-m-d', strtotime($date) + 86400) . ' 00:00:00')
-                ->count();
-            $userTrend[] = ['date' => substr($date, 5), 'count' => $count];
-        }
-
-        // 30-day user registration trend
         $userTrend30d = [];
+        $monthUsers = 0;
         for ($i = 29; $i >= 0; $i--) {
-            $date = date('Y-m-d', time() - $i * 24 * 60 * 60);
-            $count = User::where('created_at', '>=', "$date 00:00:00")
-                ->where('created_at', '<', date('Y-m-d', strtotime($date) + 86400) . ' 00:00:00')
-                ->count();
+            $date = date('Y-m-d', strtotime("-{$i} days"));
+            $count = $countsByDate[$date] ?? 0;
+            $monthUsers += $count;
             $userTrend30d[] = ['date' => substr($date, 5), 'count' => $count];
+            if ($i < 7) {
+                $userTrend[] = ['date' => substr($date, 5), 'count' => $count];
+            }
         }
+        $todayUsers = $countsByDate[$today] ?? 0;
+        $weekUsers = array_sum(array_column($userTrend, 'count'));
+        $totalUsers = BusinessUser::whereNull('deleted_at')->count();
 
         // Service stats
         $todayStart = $today . ' 00:00:00';
         $todayOrders = Order::where('paid_at', '>=', $todayStart)
             ->where('status', '!=', 'refunded')->count();
-        // 多币种不可直接相加：orders.exchange_rate 为币种→USD 汇率（USD=1.0），折算为 USD 基准币种
+        // 多币种不可直接相加：orders.exchange_rate 为外币/USD 汇率（USD=1.0），USD 金额 = total / rate
         $todayRevenue = Order::where('paid_at', '>=', $todayStart)
             ->where('status', '!=', 'refunded')
-            ->selectRaw('COALESCE(SUM(total * exchange_rate), 0) as revenue')->value('revenue');
+            ->selectRaw('COALESCE(ROUND(SUM(total / NULLIF(exchange_rate, 0)), 4), 0) as revenue')->value('revenue');
         $pendingOrders = Order::where('status', 'pending')->count();
         $activeResources = Resource::where('status', 'active')->count();
 

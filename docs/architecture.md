@@ -79,10 +79,10 @@ cloud-php/
 │   ├── config/               # 17 个配置文件 + 插件配置
 │   ├── database/migrations/  # 37 个迁移
 │   ├── support/              # Bootstrap 引导（Eloquent / Redis / Event / 加密 / Scout / Migration）
-│   └── tests/                # PHPUnit 10（672 tests / 1632 assertions）
+│   └── tests/                # PHPUnit 10（639 tests / 1452 assertions）
 ├── admin/                    # 管理后台 webman 实例（:8788，webman-admin + Layui）
-│   ├── app/                  # 插件源码：54 控制器、46 模型、bootstrap、command、middleware、view
-│   └── tests/                # PHPUnit 11（286 tests / 962 assertions）
+│   ├── app/                  # 插件源码：55 控制器、47 模型、bootstrap、command、middleware、view
+│   └── tests/                # PHPUnit 11（309 tests / 1087 assertions）
 ├── apps/                     # 客户端：Flutter（多平台）
 ├── docs/                     # 文档与 docs/diagrams/ 下的 SVG 图
 ├── docker/                   # Dockerfile + docker-compose + nginx + supervisor
@@ -115,13 +115,13 @@ cloud-php/
                                │ SQL
   User/API ────────▶│   service/           │
                     │   port: 8787         │
-                    │   12 全局+6 路由中间件 │
+                    │   12 全局+路由组中间件 │
                     └─────────────────────┘
 ```
 
 | 实例 | 端口 | 职责 | 中间件 |
 |------|------|------|--------|
-| **service** | 8787 | 用户 API + 管理 API + WebSocket | 全局 12 + 路由 6 + SupplierApiKey |
+| **service** | 8787 | 用户 API + 供应商 API + 内部 API + WebSocket | 全局 12 + 路由组（Encryption/Auth/Confirmation/SupplierApiKey/InternalTokenRequired） |
 | **admin** | 8788 | 管理后台 HTML 面板 (Layui) | WafMiddleware + AccessControl |
 
 ### 2.2 模块分层结构
@@ -224,7 +224,11 @@ HTTP 请求
 [路由中间件 — 按路由组附加]
   │
   ├─ /health (内部监控) ────────────
-  │   InternalTokenMiddleware      ← 内部令牌校验 /health/live|ready|deps
+  │   InternalTokenMiddleware      ← 内部令牌校验 /health/live|ready
+  │   InternalTokenRequiredMiddleware ← /health/deps 强制 token，无 loopback 旁路
+  │
+  ├─ /internal/v1 (服务内部 API) ───
+  │   InternalTokenRequiredMiddleware ← 退款执行强制 token + hash_equals
   │
   ├─ /api/v1/auth ─────────────────────
   │   EncryptionMiddleware          ← AES-256-GCM 请求/响应体加解密
@@ -262,7 +266,8 @@ HTTP 请求
 | `MetricsMiddleware` | common/Metrics | 全局 | Prometheus HTTP 请求计数与延迟 |
 | `HashidRequestMiddleware` | common/Hashid | 全局 | hashid 请求解码 |
 | `MaintenanceMiddleware` | common/Security | 全局 | 维护模式 + IP 白名单 |
-| `InternalTokenMiddleware` | common/Security | 路由组 | `/health/live|ready|deps` 内部令牌校验 |
+| `InternalTokenMiddleware` | common/Security | 路由组 | `/health/live|ready` 内部令牌校验（允许 loopback） |
+| `InternalTokenRequiredMiddleware` | common/Security | 路由组 | `/health/deps` 与 `/internal/v1/*` 强制非空 token + `hash_equals`，无 loopback 旁路 |
 | `EncryptionMiddleware` | common/Encryption | 路由组 | AES-256-GCM 加解密 |
 | `AuthMiddleware` | common/Auth | 路由组 | JWT Bearer Token 验证 |
 | `AdminRoleMiddleware` | common/Auth | 路由组 | 管理员 RBAC |

@@ -37,47 +37,76 @@ class ProxmoxProvider implements ProviderInterface
 
         try {
             $host = $this->selector->select($task->region_id, $specs);
-            $ip = $this->allocateIp($host->id);
-
-            $api   = new ProxmoxApi($host);
-            $vmid  = $api->nextVmid();
-            $vmCfg = [
-                'vmid'      => $vmid,
-                'name'      => "vm-{$task->order_id}-{$task->order_item_id}",
-                'cores'     => $specs['cpu'] ?? 2,
-                'memory'    => ($specs['ram'] ?? 2) * 1024,
-                'net0'      => 'virtio,bridge=vmbr0',
-                'ipconfig0' => "ip={$ip->ip_address},gw={$ip->ipPool->gateway}",
-                'ostype'    => 'l26',
-            ];
-
-            $api->post("/nodes/{$host->proxmox_node}/qemu", $vmCfg);
-
-            $diskSize = $specs['system_disk'] ?? 20;
-            $api->post("/nodes/{$host->proxmox_node}/qemu/{$vmid}/config", [
-                'scsi0' => "{$host->storage_pool}:{$diskSize}G",
-            ]);
-
-            $api->post("/nodes/{$host->proxmox_node}/qemu/{$vmid}/status/start");
-
             $resource = Resource::find($task->resource_id);
-            Disk::create([
-                'resource_id'     => $resource->id,
-                'host_machine_id' => $host->id,
-                'vm_id'           => $vmid,
-                'size_gb'         => $diskSize,
-                'disk_type'       => 'system',
-                'storage_pool'    => $host->storage_pool,
-                'device_path'     => 'scsi0',
-                'status'          => 'active',
-            ]);
+            if (!$resource) {
+                return ProvisionResult::retryable('Resource not found for provisioning task');
+            }
 
+            $api      = new ProxmoxApi($host);
+            $name     = "vm-{$task->order_id}-{$task->order_item_id}";
+            $diskSize = $specs['system_disk'] ?? 20;
+            $existing = $this->findVmByName($api, $host->proxmox_node, $name);
+            $vmid     = $existing ? (int) $existing['vmid'] : $api->nextVmid();
+            $newIpConfig = null;
+
+            if ($existing) {
+                // 重试命中已创建但未完成的 VM：复用 vmid，绝不重复建机
+                $config = $api->get("/nodes/{$host->proxmox_node}/qemu/{$vmid}/config");
+                if (preg_match('/ip=([0-9.]+)/', (string) ($config['ipconfig0'] ?? ''), $m)) {
+                    $ipAddress = $m[1];
+                } else {
+                    $ip = $this->allocateIp($host->id, (int) $resource->id);
+                    $ipAddress = $ip->ip_address;
+                    $newIpConfig = "ip={$ipAddress},gw={$ip->ipPool->gateway}";
+                }
+            } else {
+                $ip = $this->allocateIp($host->id, (int) $resource->id);
+                $ipAddress = $ip->ip_address;
+                $vmCfg = [
+                    'vmid'      => $vmid,
+                    'name'      => $name,
+                    'cores'     => $specs['cpu'] ?? 2,
+                    'memory'    => ($specs['ram'] ?? 2) * 1024,
+                    'net0'      => 'virtio,bridge=vmbr0',
+                    'ipconfig0' => "ip={$ipAddress},gw={$ip->ipPool->gateway}",
+                    'ostype'    => 'l26',
+                ];
+                $api->post("/nodes/{$host->proxmox_node}/qemu", $vmCfg);
+            }
+
+            // 先落盘 vmid 再继续后续步骤：进程在 config/start 之间崩溃，重试可按名字复用
+            $disk = Disk::where('resource_id', $resource->id)->where('vm_id', $vmid)->first();
+            if (!$disk) {
+                $disk = Disk::create([
+                    'resource_id'     => $resource->id,
+                    'host_machine_id' => $host->id,
+                    'vm_id'           => $vmid,
+                    'size_gb'         => $diskSize,
+                    'disk_type'       => 'system',
+                    'storage_pool'    => $host->storage_pool,
+                    'device_path'     => 'scsi0',
+                    'status'          => 'provisioning',
+                ]);
+            }
+
+            $configUpdate = ['scsi0' => "{$host->storage_pool}:{$diskSize}G"];
+            if ($newIpConfig !== null) {
+                $configUpdate['ipconfig0'] = $newIpConfig;
+            }
+            $api->post("/nodes/{$host->proxmox_node}/qemu/{$vmid}/config", $configUpdate);
+
+            $status = $api->get("/nodes/{$host->proxmox_node}/qemu/{$vmid}/status/current");
+            if (($status['status'] ?? '') !== 'running') {
+                $api->post("/nodes/{$host->proxmox_node}/qemu/{$vmid}/status/start");
+            }
+
+            $disk->update(['status' => 'active']);
             $this->recalculateHostAllocation($host);
 
             return ProvisionResult::success([
                 'vmid'       => $vmid,
                 'host_id'    => $host->id,
-                'ip_address' => $ip->ip_address,
+                'ip_address' => $ipAddress,
             ]);
 
         } catch (\Exception $e) {
@@ -211,7 +240,7 @@ class ProxmoxProvider implements ProviderInterface
             $host = HostMachine::findOrFail($disk->host_machine_id);
             $api  = new ProxmoxApi($host);
 
-            $ip = $this->allocateIp($host->id);
+            $ip = $this->allocateIp($host->id, (int) $task->resource_id, false);
 
             $existingNets = $api->get("/nodes/{$host->proxmox_node}/qemu/{$disk->vm_id}/config");
             $netCount = 1;
@@ -298,9 +327,20 @@ class ProxmoxProvider implements ProviderInterface
         return "https://{$host->ip_address}:8006/#v1:0:=node%2F{$host->proxmox_node}";
     }
 
-    private function allocateIp(int $hostMachineId): IpAllocation
+    private function allocateIp(int $hostMachineId, int $resourceId, bool $reuseExisting = true): IpAllocation
     {
-        return DB::transaction(function () use ($hostMachineId) {
+        return DB::transaction(function () use ($hostMachineId, $resourceId, $reuseExisting) {
+            // 同一资源重试时复用已分配的主 IP，避免重复建 VM/IP 泄漏；
+            // createIp 追加 IP 时 $reuseExisting=false，必须分配新地址。
+            if ($reuseExisting) {
+                $existing = IpAllocation::where('resource_id', $resourceId)
+                    ->whereNull('released_at')
+                    ->first();
+                if ($existing) {
+                    return $existing;
+                }
+            }
+
             $pool = IpPool::where('host_machine_id', $hostMachineId)
                 ->whereRaw('used_count < total_count')
                 ->lockForUpdate()
@@ -310,11 +350,29 @@ class ProxmoxProvider implements ProviderInterface
 
             return IpAllocation::create([
                 'ip_pool_id'   => $pool->id,
+                'resource_id'  => $resourceId,
                 'ip_address'   => $this->pickIp($pool),
                 'type'         => 'primary',
                 'allocated_at' => date('Y-m-d H:i:s'),
             ]);
         });
+    }
+
+    /**
+     * 按确定性名称查找已存在的 VM（Proxmox 的 qemu 列表含 vmid/name）。
+     */
+    private function findVmByName(ProxmoxApi $api, string $node, string $name): ?array
+    {
+        $vms = $api->get("/nodes/{$node}/qemu");
+        if (!is_array($vms)) {
+            return null;
+        }
+        foreach ($vms as $vm) {
+            if ((string) ($vm['name'] ?? '') === $name) {
+                return $vm;
+            }
+        }
+        return null;
     }
 
     private function pickIp(IpPool $pool): string

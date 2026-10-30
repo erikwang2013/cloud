@@ -3,6 +3,7 @@ namespace App\provisioning\controller;
 
 use App\provisioning\model\Resource;
 use App\provisioning\service\ProviderFactory;
+use Common\hashid\HashidService;
 use Common\helper\Response;
 use Common\webhook\WebhookDispatcher;
 
@@ -18,8 +19,9 @@ class ResourceController
         return json(Response::success($resources));
     }
 
-    public function show($request, int $id)
+    public function show($request, string $id)
     {
+        $id = HashidService::decodeId($id);
         $resource = Resource::where('user_id', $request->userId)
             ->with(['product', 'disks'])
             ->findOrFail($id);
@@ -27,8 +29,9 @@ class ResourceController
         return json(Response::success($resource));
     }
 
-    public function status($request, int $id)
+    public function status($request, string $id)
     {
+        $id = HashidService::decodeId($id);
         $resource = Resource::where('user_id', $request->userId)->findOrFail($id);
 
         $factory = new ProviderFactory();
@@ -38,8 +41,9 @@ class ResourceController
         return json(Response::success($status));
     }
 
-    public function consoleUrl($request, int $id)
+    public function consoleUrl($request, string $id)
     {
+        $id = HashidService::decodeId($id);
         $resource = Resource::where('user_id', $request->userId)->findOrFail($id);
 
         $factory = new ProviderFactory();

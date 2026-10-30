@@ -207,7 +207,7 @@ class OAuthService
         return [
             'email'          => $claims['email'] ?? null,
             'nickname'       => $claims['name'] ?? null,
-            'email_verified' => (bool) ($claims['email_verified'] ?? false),
+            'email_verified' => ($claims['email_verified'] ?? false) === true,
         ];
     }
 
@@ -228,7 +228,8 @@ class OAuthService
         return [
             'email'          => $claims['email'] ?? $claims['upn'] ?? $claims['preferred_username'] ?? null,
             'nickname'       => $claims['name'] ?? null,
-            'email_verified' => (bool) ($claims['email'] ?? $claims['upn'] ?? false),
+            // 只信任 provider 明确返回的布尔 true；缺省/字符串一律视为未验证
+            'email_verified' => ($claims['email_verified'] ?? false) === true,
         ];
     }
 
@@ -258,15 +259,12 @@ class OAuthService
                 }
             }
         }
-        if (!$email) {
-            $email = $user['email'] ?? null;
-        }
-
+        // 不回落公开资料邮箱：只有 /user/emails 中 verified 的邮箱才算已验证
         return [
             'email'          => $email,
             'nickname'       => $user['name'] ?? $user['login'] ?? null,
             'avatar'         => $user['avatar_url'] ?? null,
-            'email_verified' => (bool) $email,
+            'email_verified' => $email !== null,
         ];
     }
 
@@ -289,7 +287,8 @@ class OAuthService
             'email'          => $email,
             'nickname'       => $data['name'] ?? $data['username'] ?? null,
             'avatar'         => $data['profile_image_url'] ?? null,
-            'email_verified' => (bool) $email,
+            // X 不返回邮箱验证声明：默认不信任，避免用未验证邮箱合并账号
+            'email_verified' => ($data['email_verified'] ?? $emailData['verified'] ?? false) === true,
         ];
     }
 
@@ -350,21 +349,21 @@ class OAuthService
                     'email'          => $info['email'] ?? null,
                     'nickname'       => $info['name'] ?? null,
                     'avatar'         => $info['picture'] ?? null,
-                    'email_verified' => (bool) ($info['email_verified'] ?? false),
+                    'email_verified' => ($info['email_verified'] ?? false) === true,
                 ];
             case 'facebook':
                 return [
                     'email'          => $info['email'] ?? null,
                     'nickname'       => $info['name'] ?? null,
                     'avatar'         => $info['picture']['data']['url'] ?? null,
-                    'email_verified' => (bool) ($info['email_verified'] ?? false),
+                    'email_verified' => ($info['email_verified'] ?? false) === true,
                 ];
             case 'linkedin':
                 return [
                     'email'          => $info['email'] ?? null,
                     'nickname'       => $info['name'] ?? null,
                     'avatar'         => $info['picture'] ?? null,
-                    'email_verified' => (bool) ($info['email_verified'] ?? false),
+                    'email_verified' => ($info['email_verified'] ?? false) === true,
                 ];
         }
         return [];
@@ -375,8 +374,13 @@ class OAuthService
      */
     protected function resolveUser(array $profile, string $language, string $clientPlatform): array
     {
-        $user = User::where('email', $profile['email'])->first();
+        // email 是 Encryptable 加密列，须按密文查询
+        $user = $this->auth->findByEmail($profile['email']);
         if ($user) {
+            // 已有本地账号未验证邮箱时禁止 OAuth 合并，防止预注册受害者邮箱后接管
+            if (empty($user->email_verified_at)) {
+                throw new \InvalidArgumentException('Local account email is not verified; verify it before OAuth login');
+            }
             return [$user, false];
         }
 
@@ -387,7 +391,13 @@ class OAuthService
             'currency' => 'USD',
         ], $clientPlatform);
 
-        $user = User::where('email', $profile['email'])->first();
+        $user = $this->auth->findByEmail($profile['email']);
+        // provider 已验证该邮箱：直接标记本地邮箱已验证，并清掉注册时发出的验证 token
+        $user->update([
+            'email_verified_at' => now(),
+            'email_verify_token' => null,
+            'email_verify_expires_at' => null,
+        ]);
         UserProfile::where('user_id', $user->id)->update([
             'avatar'   => $profile['avatar'] ?? null,
             'nickname' => $profile['nickname'] ?? null,

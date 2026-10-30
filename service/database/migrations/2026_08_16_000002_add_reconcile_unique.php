@@ -11,20 +11,23 @@ return new class extends Migration {
     public function up(): void
     {
         if (!$this->hasIndex('payment_reconcile', 'uniq_reconcile_channel_date')) {
-            Capsule::statement('ALTER TABLE payment_reconcile
-                ADD UNIQUE INDEX uniq_reconcile_channel_date (channel_id, date)');
+            $table = $this->table('payment_reconcile');
+            Capsule::statement("ALTER TABLE `{$table}`
+                ADD UNIQUE INDEX uniq_reconcile_channel_date (channel_id, date)");
         }
     }
 
     public function down(): void
     {
         if ($this->hasIndex('payment_reconcile', 'uniq_reconcile_channel_date')) {
-            Capsule::statement('ALTER TABLE payment_reconcile DROP INDEX uniq_reconcile_channel_date');
+            $table = $this->table('payment_reconcile');
+            Capsule::statement("ALTER TABLE `{$table}` DROP INDEX uniq_reconcile_channel_date");
         }
     }
 
     private function hasIndex(string $table, string $indexName): bool
     {
+        $table = $this->table($table);
         $indexes = Capsule::select("SHOW INDEX FROM `{$table}` WHERE Key_name = '" . addslashes($indexName) . "'");
         return !empty($indexes);
     }

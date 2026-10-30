@@ -17,14 +17,23 @@ class User extends Model
         'email', 'phone', 'password_hash', 'language',
         'currency', 'timezone', 'status', 'role',
         'fcm_token', 'fcm_platform',
+        'email_verify_token', 'email_verify_expires_at', 'email_verified_at',
+        'totp_secret', 'totp_enabled',
+        'last_login_ip', 'last_login_at', 'notification_prefs',
     ];
 
-    protected $hidden = ['password_hash', 'deleted_at'];
+    protected $hidden = [
+        'password_hash', 'deleted_at',
+        'totp_secret', 'email_verify_token', 'email_verify_expires_at',
+        'last_login_ip', 'email_verified_at',
+    ];
 
     protected $casts = [
-        'email'         => Encryptable::class,
-        'phone'         => Encryptable::class,
-        'password_hash' => Encryptable::class,
+        'email'              => Encryptable::class,
+        'phone'              => Encryptable::class,
+        'password_hash'      => Encryptable::class,
+        'totp_secret'        => Encryptable::class,
+        'email_verify_token' => Encryptable::class,
     ];
 
     public function profile()

@@ -31,4 +31,16 @@ class RequestMock extends Request
         }
         return $this->postParams[$name] ?? $default;
     }
+
+    public function setGet(array|string $input, mixed $value = null): Request
+    {
+        $this->getParams = is_array($input) ? $input : array_merge($this->getParams, [$input => $value]);
+        return $this;
+    }
+
+    public function setPost(array|string $input, mixed $value = null): Request
+    {
+        $this->postParams = is_array($input) ? $input : array_merge($this->postParams, [$input => $value]);
+        return $this;
+    }
 }

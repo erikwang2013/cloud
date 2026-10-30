@@ -3,6 +3,7 @@ namespace App\notification\controller;
 
 use App\notification\model\Notification;
 use App\user\model\User;
+use Common\hashid\HashidService;
 use Common\helper\Response;
 
 class NotificationController
@@ -22,8 +23,9 @@ class NotificationController
         ));
     }
 
-    public function markRead($request, int $id)
+    public function markRead($request, string $id)
     {
+        $id = HashidService::decodeId($id);
         Notification::where('id', $id)
             ->where('user_id', $request->userId)
             ->update(['read_at' => date('Y-m-d H:i:s')]);

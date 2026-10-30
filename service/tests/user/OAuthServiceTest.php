@@ -181,7 +181,7 @@ final class OAuthServiceTest extends TestCase
             new Response(200, [], json_encode([
                 'data' => ['id' => '1', 'name' => 'X User', 'username' => 'xuser', 'profile_image_url' => 'https://example.com/x.png'],
             ])),
-            new Response(200, [], json_encode(['email' => 'xuser@example.com'])),
+            new Response(200, [], json_encode(['email' => 'xuser@example.com', 'verified' => true])),
         ]);
 
         $service = new TestableOAuthService(new FakeAuthService(), $http);

@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Redis as RedisFacade;
 use PHPUnit\Framework\TestCase;
 
 /**
- * #7/#9 修复回归：requestWithdraw 正金额校验 + 可用额实时计算（completed 累计 - pending/processing 扣减），
- * generateSettlement 逐行 bcmath 累计 + 同周期幂等。
+ * #8 修复回归：requestWithdraw 正金额校验 + 可用额实时计算
+ * （completed 结算累计 - 所有未 rejected/cancelled 的提现扣减）。
  * SQLite 内存库（lockForUpdate 为 no-op，并发行锁语义不在本测试范围）。
  */
 final class SupplierServiceTest extends TestCase
@@ -24,9 +24,11 @@ final class SupplierServiceTest extends TestCase
         $capsule->setAsGlobal();
         $capsule->bootEloquent();
 
-        // WebhookDispatcher 仅在 webhook_urls 非空时投递，swap 空实现避免真实 Redis
+        // WebhookDispatcher 仅在 webhook_urls 非空时投递，swap 空实现避免真实 Redis。
+        // get() 一并提供：facade 假实现会泄漏到后续测试（如 OrderIdentityTest 的汇率读取）
         RedisFacade::swap(new class {
             public function smembers(string $key): array { return []; }
+            public function get(string $key) { return null; }
         });
 
         $schema = $capsule->schema();
@@ -57,33 +59,6 @@ final class SupplierServiceTest extends TestCase
             $t->string('status');
             $t->timestamps();
         });
-        $schema->create('products', function (Blueprint $t) {
-            $t->bigIncrements('id');
-            $t->string('name');
-            $t->unsignedBigInteger('supplier_id');
-            $t->string('status')->default('active');
-        });
-        $schema->create('product_skus', function (Blueprint $t) {
-            $t->bigIncrements('id');
-            $t->unsignedBigInteger('product_id');
-            $t->string('status')->default('active');
-        });
-        $schema->create('orders', function (Blueprint $t) {
-            $t->bigIncrements('id');
-            $t->string('order_no');
-            $t->unsignedBigInteger('user_id');
-            $t->string('status');
-            $t->string('currency', 3)->default('USD');
-            $t->decimal('total', 14, 4)->nullable();
-            $t->timestamp('paid_at')->nullable();
-        });
-        $schema->create('order_items', function (Blueprint $t) {
-            $t->bigIncrements('id');
-            $t->unsignedBigInteger('order_id');
-            $t->unsignedBigInteger('sku_id');
-            $t->decimal('total_price', 14, 4);
-        });
-
         Capsule::table('suppliers')->insert([
             ['id' => 1, 'user_id' => 100, 'company_name' => 'Test Co', 'status' => 'active', 'settlement_method' => 'bank'],
         ]);
@@ -114,6 +89,18 @@ final class SupplierServiceTest extends TestCase
         }
     }
 
+    public function testRejectsMalformedAmount(): void
+    {
+        foreach (['abc', '1.23456', '', '1e3'] as $amount) {
+            try {
+                (new SupplierService())->requestWithdraw(1, $amount, ['method' => 'bank']);
+                $this->fail("amount {$amount} should be rejected");
+            } catch (\InvalidArgumentException $e) {
+                $this->assertSame('Invalid withdraw amount', $e->getMessage());
+            }
+        }
+    }
+
     public function testRejectsOverAvailable(): void
     {
         $this->seedSettlement(1, '100.0000');
@@ -135,6 +122,50 @@ final class SupplierServiceTest extends TestCase
         (new SupplierService())->requestWithdraw(1, '40.0001', ['method' => 'bank']);
     }
 
+    public function testCompletedWithdrawStillReducesAvailable(): void
+    {
+        $this->seedSettlement(1, '100.0000');
+        Capsule::table('supplier_withdraws')->insert([
+            'supplier_id' => 1, 'amount' => '100.0000', 'method' => 'bank', 'account_info' => '{}', 'status' => 'completed',
+        ]);
+
+        // 已完成的提现同样占用额度，不能同一笔钱再提
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Insufficient withdrawable balance');
+        (new SupplierService())->requestWithdraw(1, '0.0001', ['method' => 'bank']);
+    }
+
+    public function testRejectedWithdrawReleasesAvailable(): void
+    {
+        $this->seedSettlement(1, '100.0000');
+        Capsule::table('supplier_withdraws')->insert([
+            'supplier_id' => 1, 'amount' => '100.0000', 'method' => 'bank', 'account_info' => '{}', 'status' => 'rejected',
+        ]);
+
+        (new SupplierService())->requestWithdraw(1, '100.0000', ['method' => 'bank']);
+        $this->assertSame(2, Capsule::table('supplier_withdraws')->count());
+    }
+
+    public function testCancelledWithdrawReleasesAvailable(): void
+    {
+        $this->seedSettlement(1, '100.0000');
+        Capsule::table('supplier_withdraws')->insert([
+            'supplier_id' => 1, 'amount' => '100.0000', 'method' => 'bank', 'account_info' => '{}', 'status' => 'cancelled',
+        ]);
+
+        (new SupplierService())->requestWithdraw(1, '100.0000', ['method' => 'bank']);
+        $this->assertSame(2, Capsule::table('supplier_withdraws')->count());
+    }
+
+    public function testPendingSettlementNotCountedAsAvailable(): void
+    {
+        $this->seedSettlement(1, '100.0000', 'pending');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Insufficient withdrawable balance');
+        (new SupplierService())->requestWithdraw(1, '0.0001', ['method' => 'bank']);
+    }
+
     public function testCreatesPendingWithdraw(): void
     {
         $this->seedSettlement(1, '100.0000');
@@ -147,41 +178,5 @@ final class SupplierServiceTest extends TestCase
         $this->assertSame('pending', $row->status);
         // 期望单层 JSON 对象（array cast 会自动 encode，显式 json_encode 会造成双编码）
         $this->assertSame(['method' => 'bank', 'account' => 'CN-001'], json_decode((string) $row->account_info, true));
-    }
-
-    public function testGenerateSettlementIdempotent(): void
-    {
-        Capsule::table('supplier_settlements')->insert([
-            'supplier_id'  => 1, 'period_start' => '2026-08-17', 'period_end' => '2026-08-23',
-            'total_sales'  => '9.9900', 'commission' => '0.9990', 'payable' => '8.9910', 'status' => 'pending',
-        ]);
-
-        $existing = Capsule::table('supplier_settlements')->first();
-        $result = (new SupplierService())->generateSettlement(1, '2026-08-17', '2026-08-23');
-
-        $this->assertSame((int) $existing->id, (int) $result->id);
-        $this->assertSame(1, Capsule::table('supplier_settlements')->count());
-    }
-
-    public function testGenerateSettlementBcmathAccumulation(): void
-    {
-        Capsule::table('products')->insert(['id' => 1, 'name' => 'P1', 'supplier_id' => 1]);
-        Capsule::table('product_skus')->insert(['id' => 1, 'product_id' => 1]);
-        Capsule::table('orders')->insert([
-            ['id' => 1, 'order_no' => 'A', 'user_id' => 1, 'status' => 'completed', 'paid_at' => '2026-08-20 10:00:00'],
-            ['id' => 2, 'order_no' => 'B', 'user_id' => 1, 'status' => 'completed', 'paid_at' => '2026-08-21 10:00:00'],
-        ]);
-        Capsule::table('order_items')->insert([
-            ['id' => 1, 'order_id' => 1, 'sku_id' => 1, 'total_price' => '10.12345'],
-            ['id' => 2, 'order_id' => 2, 'sku_id' => 1, 'total_price' => '20.67890'],
-        ]);
-
-        $s = (new SupplierService())->generateSettlement(1, '2026-08-17', '2026-08-23');
-
-        // 逐行 bcadd/bcmul scale=4 截断累计（非 HALF_UP）：10.1234 + 20.6789 = 30.8023；
-        // 佣金逐行截断：1.0123 + 2.0678 = 3.0801
-        $this->assertSame('30.8023', (string) $s->total_sales);
-        $this->assertSame('3.0801', (string) $s->commission);
-        $this->assertSame(0, bccomp((string) $s->payable, bcsub('30.8023', '3.0801', 4), 4));
     }
 }

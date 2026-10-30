@@ -39,7 +39,11 @@ class AuditLogger
     {
         self::record("threat_{$type}", [
             'user_id' => 0,
-            'input'   => $request->all(),
+            // 不落完整请求体：可能包含密码/邮箱/验证码等 PII；路径+方法足够定位攻击面
+            'input'   => [
+                'path'   => $request->path(),
+                'method' => $request->method(),
+            ],
             'status'  => 'blocked',
         ], $request);
     }

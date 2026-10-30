@@ -204,7 +204,7 @@ final class ReportControllerTest extends TestCase
         $this->assertSame(1, hashids_decode((string) $data['items'][0]['product_id']), 'product_id 必须经 hashids 编码');
         $this->assertSame('P1', $data['items'][0]['name']);
         $this->assertSame(51, $data['items'][0]['qty']);
-        $this->assertSame(510, $data['items'][0]['amount']);
+        $this->assertEquals(510, $data['items'][0]['amount']);
 
         // limit=51 钳制到 50
         $data = $this->body($this->controller()->product_top(new RequestMock($base + ['limit' => '51'], [])));
@@ -218,15 +218,15 @@ final class ReportControllerTest extends TestCase
 
     public function testProductTopConvertsAmountToUsdBase(): void
     {
-        // 多币种回归：商品金额必须按 exchange_rate 折算为 USD 基准后再汇总，禁止跨币种直接相加
+        // 多币种回归：exchange_rate = 外币/USD，商品金额必须除以 rate 折算为 USD 后再汇总
         $this->db()->table('orders')->insert([
-            ['id' => 1, 'status' => 'paid', 'currency' => 'CNY', 'total' => 200, 'exchange_rate' => 1, 'paid_at' => $this->ts(0, '10:00:00')],
-            ['id' => 2, 'status' => 'paid', 'currency' => 'USD', 'total' => 100, 'exchange_rate' => 2, 'paid_at' => $this->ts(0, '11:00:00')],
+            ['id' => 1, 'status' => 'paid', 'currency' => 'CNY', 'total' => 720, 'exchange_rate' => 7.2, 'paid_at' => $this->ts(0, '10:00:00')],
+            ['id' => 2, 'status' => 'paid', 'currency' => 'USD', 'total' => 50, 'exchange_rate' => 1, 'paid_at' => $this->ts(0, '11:00:00')],
         ]);
         $this->db()->table('products')->insert([['id' => 1, 'name' => 'VPS']]);
         $this->db()->table('order_items')->insert([
-            ['id' => 1, 'order_id' => 1, 'product_id' => 1, 'quantity' => 2, 'total_price' => 100], // CNY 100 × rate 1 = 100 USD
-            ['id' => 2, 'order_id' => 2, 'product_id' => 1, 'quantity' => 1, 'total_price' => 50],  // USD 50 × rate 2 = 100 USD
+            ['id' => 1, 'order_id' => 1, 'product_id' => 1, 'quantity' => 2, 'total_price' => 720], // 720 CNY ÷ 7.2 = 100 USD
+            ['id' => 2, 'order_id' => 2, 'product_id' => 1, 'quantity' => 1, 'total_price' => 50],  // 50 USD ÷ 1 = 50 USD
         ]);
 
         $data = $this->body($this->controller()->product_top(new RequestMock([
@@ -236,7 +236,7 @@ final class ReportControllerTest extends TestCase
 
         $this->assertSame(1, hashids_decode((string) $data['items'][0]['product_id']));
         $this->assertSame(3, $data['items'][0]['qty']);
-        $this->assertSame(200, $data['items'][0]['amount'], '折算后 100 + 100 = 200；直接相加则为 150');
+        $this->assertEquals(150, $data['items'][0]['amount'], '折算后 100 + 50 = 150；按乘法会得到 5234');
     }
 
     public function testPaymentCountsOnlySuccess(): void

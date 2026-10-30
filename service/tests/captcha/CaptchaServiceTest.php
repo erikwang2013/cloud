@@ -10,7 +10,8 @@ class CaptchaServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        PosterConfig::load(config_path() . '/poster.php');
+        // 与生产 CaptchaPlugin::start 一致：merge 项目配置（load(自定义路径) 会被 get() 覆盖）
+        PosterConfig::merge(require config_path() . '/poster.php');
     }
 
     public function testCreateReturnsValidStructure(): void

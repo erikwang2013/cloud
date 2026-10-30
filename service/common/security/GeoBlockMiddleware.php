@@ -5,9 +5,12 @@ use Common\helper\Response;
 
 class GeoBlockMiddleware
 {
+    /** @var array<string, \GeoIp2\Database\Reader> */
+    private static array $readers = [];
+
     public function process($request, callable $next)
     {
-        $blocked = explode(',', getenv('GEO_BLOCKED_COUNTRIES') ?: '');
+        $blocked = array_filter(array_map('trim', explode(',', getenv('GEO_BLOCKED_COUNTRIES') ?: '')));
         if (empty($blocked)) {
             return $next($request);
         }
@@ -29,7 +32,8 @@ class GeoBlockMiddleware
 
         try {
             if (class_exists(\GeoIp2\Database\Reader::class)) {
-                $reader = new \GeoIp2\Database\Reader($dbPath);
+                // Reader 按 dbPath 复用，避免每次请求重新加载 mmdb
+                $reader = self::$readers[$dbPath] ??= new \GeoIp2\Database\Reader($dbPath);
                 return $reader->country($ip)->country->isoCode;
             }
         } catch (\Throwable $e) {

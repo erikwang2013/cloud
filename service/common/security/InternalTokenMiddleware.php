@@ -11,7 +11,7 @@ class InternalTokenMiddleware implements MiddlewareInterface
     {
         $token = getenv('INTERNAL_MONITOR_TOKEN');
 
-        if ($token && $request->header('X-Internal-Token') === $token) {
+        if ($token && hash_equals((string) $token, (string) $request->header('X-Internal-Token'))) {
             return $handler($request);
         }
 

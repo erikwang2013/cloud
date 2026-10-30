@@ -149,7 +149,7 @@ cloud-php/
 │   │   ├── database.php        # 数据库连接
 │   │   └── ...                 # 18 个配置文件
 │   ├── database/migrations/    # 数据库迁移文件
-│   ├── tests/                  # 单元测试（PHPUnit 11, 286 tests / 962 assertions）
+│   ├── tests/                  # 单元测试（PHPUnit 11, 309 tests / 1087 assertions）
 │   │   ├── HashidsTest.php     # hashids 编解码（21 tests）
 │   │   ├── BaseJsonTest.php    # Base::json() ID 编码（13 tests）
 │   │   ├── CrudHashidsTest.php # Crud 输入解码（14 tests）
@@ -206,7 +206,7 @@ cloud-php/
 │   ├── database/migrations/    # 数据库迁移文件（37 个迁移）
 │   ├── i18n/                   # 多语言资源（en-US / zh-CN）
 │   ├── support/                # Bootstrap 引导（Eloquent / Redis / Event / 加密 / 雪花ID / Hashids / Scout / MigrationRunner）
-│   ├── tests/                  # 单元测试（PHPUnit 10, 672 tests / 1632 assertions）
+│   ├── tests/                  # 单元测试（PHPUnit 10, 639 tests / 1452 assertions）
 │   │   ├── admin/              # ImportExport / SupplierWithdrawApprove
 │   │   ├── auth/               # JwtAuth / RbacSeed / Rbac
 │   │   ├── captcha/            # CaptchaService
@@ -445,7 +445,7 @@ php start.php stop              # 停止
 ### 测试覆盖
 
 ```
-phpunit.xml (PHPUnit 11, 286 tests / 962 assertions)
+phpunit.xml (PHPUnit 11, 309 tests / 1087 assertions)
 ├── HashidsTest              (21 tests) encode/decode/encode_ids
 ├── BaseJsonTest             (13 tests) Base::json/success/fail 编码
 ├── CrudHashidsTest          (14 tests) Crud 输入解码 (select/update/delete)
@@ -537,7 +537,7 @@ ProviderInterface
 | 字段层 | AES-256-CBC | 模型敏感字段自动加解密，CBC 随机 IV 不泄漏等值模式 |
 | 主键层 | Hashids | 对外 ID 混淆为 12 位字符串，隐藏真实数据规模 |
 
-**敏感字段加密：** 7 个模型的 14 个字段使用 `Encryptable::class` 自动加解密 —— `User(email, phone, password_hash)`, `UserKyc(id_number, real_name)`, `UserAddress(phone, address)`, `Supplier(contact_name, phone, email)`, `HostMachine(api_token)`, `PaymentChannel(api_key, webhook_secret)`, `RefreshToken(token_hash, device_fingerprint)`。
+**敏感字段加密：** 7 个模型的 16 个字段使用 `Encryptable::class` 自动加解密 —— `User(email, phone, password_hash, totp_secret, email_verify_token)`, `UserKyc(id_number, real_name)`, `UserAddress(phone, address)`, `Supplier(contact_name, phone, email)`, `HostMachine(api_token)`, `PaymentChannel(api_key, webhook_secret)`, `RefreshToken(token_hash, device_fingerprint)`。
 
 **密钥管理：** 传输加密和字段加密使用不同的独立密钥（`ENCRYPTION_MASTER_KEY` vs `ENCRYPTION_KEY`），支持旧密钥列表（`ENCRYPTION_PREVIOUS_KEYS`）实现零停机密钥轮换。
 
@@ -590,8 +590,8 @@ ProviderInterface
 - [x] 字段级加密（`erikwang2013/encryptable`，敏感字段自动加解密）
 - [x] 全文搜索（`erikwang2013/webman-scout`，默认 database 驱动 SQL LIKE 降级，可选 Elasticsearch + IK 分词）
 - [x] 国家旗帜（`erikwang2013/season`，Unicode flag emoji）
-- [x] 管理后台（`admin/`，webman-admin + 7 包集成，286 单元测试）
-- [x] 代码审查（2 个关键修复 + 4 个重要修复已应用）
+- [x] 管理后台（`admin/`，webman-admin + 7 包集成，309 单元测试）
+- [x] 安全审计与修复（退款内部端点强制 token、供应商佣金率平台管控、工单回复 IDOR、评价 PII 脱敏、交付任务幂等与卡死回收、XFF 防伪、TOTP/邮箱 token 加密）
 - [x] Excel 导出（PhpSpreadsheet ^2.0，管理后台 Crud/Table + 服务端管理 API）
 - [x] 仪表板可视化（ECharts 图表 + 动画统计卡片 + 系统信息面板）
 - [x] PDF 导出（html2canvas + jsPDF，仪表板截图导出）
@@ -601,7 +601,7 @@ ProviderInterface
 - [x] FCM 推送真实集成（kreait/firebase-php，含无效 token 清理）
 - [x] 点击验证码（erikwang2013/poster-php，登录/注册敏感操作验证）
 - [x] 二次确认（ConfirmationMiddleware，敏感操作密码复核，5次失败锁定15分钟）
-- [x] 服务端单元测试（672 tests / 1632 assertions，15 skipped）
+- [x] 服务端单元测试（639 tests / 1452 assertions，18 skipped）
 - [x] 客户端平台识别（ClientPlatformMiddleware，X-Client-Platform 头支持 8 种平台）
 - [x] WAF 安全增强（8 类 45+ 规则: SQL注入/XSS/命令注入/文件包含/头注入/SSRF/NoSQL注入/开放重定向 + 请求大小限制 + Content-Type 校验）
 - [x] Security Plugin（erikwang2013/security-php，31 种攻击检测 + IP 黑名单自动封禁 + 日志轮转）
@@ -653,7 +653,7 @@ ProviderInterface
 | 安全防护 | JWT + 角色鉴权、TOTP 2FA、7 个 OAuth 提供商、31 类攻击检测 WAF、IP/Token 双桶限流、CSP/HSTS 等安全头、地域封禁、维护模式、Hashid、加密中间件与操作审计 | 同一套全局安全链；管理 API 额外 AdminRole/RBAC 与更广的审计覆盖（审计相关代码文件 14 vs 6）；安全配置文本一致 |
 | 性能与规模 | webman 常驻进程、Redis、队列消费者、WebSocket、Prometheus metrics、7 个定时任务、4 个常驻进程；12 个 Compose 服务 | 同一运行时架构；增加 gRPC registry 进程（5 vs 4）与 4 个定时任务（11 vs 7）；26 vs 18 个业务模块、225 vs 102 条路由 |
 | 数据与检索 | MySQL + Redis；127 个索引；webman-scout 默认 database(LIKE) 引擎，未安装 ES 客户端 | MySQL + Redis；146 个索引；含 Elasticsearch/Scout 健康检查与可选同步路径；79 表/65 模型 vs 67 表/58 模型 |
-| 测试与质量 | 74 个测试文件、489 个用例、7 个 CI job | 95 个测试文件、604 个用例、9 个 CI job；同一 PHPUnit/CI 结构 |
+| 测试与质量 | 99 个测试文件、948 个用例、7 个 CI job | 95 个测试文件、604 个用例、9 个 CI job；同一 PHPUnit/CI 结构 |
 | 部署与运维 | Docker Compose 12 个服务、2 个 Dockerfile、/health、/live、/ready、/metrics、Prometheus、cron、WebSocket | 同一 Compose/Dockerfile/健康与指标端点；增加 KVM/gRPC registry 运维路径 |
 | 多端与国际化 | Flutter 客户端；Accept-Language/i18n 中间件；中英文文档 | Flutter + HarmonyOS；同一 i18n 中间件；12 语种文档（开源版仅中英文） |
 | 扩展性与二次开发 | 18 个业务模块、Provider/Factory 扩展点、/api/v1 版本化路由、215 份文档 | 26 个业务模块、同一版本化路由与 Provider 体系，另有管理 API、GraphQL、gRPC 扩展面；2,506 份文档 |

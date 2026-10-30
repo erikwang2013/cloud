@@ -52,6 +52,21 @@ class HashidService
     }
 
     /**
+     * 路由参数解码：优先按 hashid 解码，兼容内部调用传入的纯数字 ID，非法值抛异常。
+     */
+    public static function decodeId(string $value): int
+    {
+        $decoded = self::decode($value);
+        if ($decoded !== null) {
+            return $decoded;
+        }
+        if (ctype_digit($value)) {
+            return (int)$value;
+        }
+        throw new \InvalidArgumentException('Invalid ID');
+    }
+
+    /**
      * Recursively transform id fields in data to hashids.
      */
     public static function encodeIds($data): array

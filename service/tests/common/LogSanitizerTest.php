@@ -83,6 +83,24 @@ final class LogSanitizerTest extends TestCase
         $this->assertSame('***REDACTED***', $result['ssn']);
     }
 
+    public function testSanitizeRedactsRecoveryAndTotpFields(): void
+    {
+        $data = [
+            'recovery_code' => 'abcd1234ef',
+            'totp_code'     => '123456',
+            'totp_secret'   => 'JBSWY3DPEHPK3PXP',
+            'confirm_password' => 'secret',
+            'approver_password' => 'secret2',
+            'email_verify_token' => 'token',
+        ];
+
+        $result = LogSanitizer::sanitize($data);
+
+        foreach (array_keys($data) as $field) {
+            $this->assertSame('***REDACTED***', $result[$field]);
+        }
+    }
+
     public function testSanitizeRedactsPrivateKey(): void
     {
         $data = ['private_key' => '-----BEGIN RSA PRIVATE KEY-----...'];

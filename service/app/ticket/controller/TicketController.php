@@ -3,6 +3,7 @@ namespace App\ticket\controller;
 
 use App\ticket\service\TicketService;
 use App\ticket\model\Ticket;
+use Common\hashid\HashidService;
 use Common\helper\Response;
 use Common\helper\Validator;
 
@@ -39,8 +40,9 @@ class TicketController
         return json(Response::paginated($tickets->items(), $tickets->total(), $request->input('page', 1), 20));
     }
 
-    public function show($request, int $id)
+    public function show($request, string $id)
     {
+        $id = HashidService::decodeId($id);
         $ticket = Ticket::with('messages')->findOrFail($id);
         if ($request->userRole === 'user' && $ticket->user_id !== $request->userId) {
             return json(Response::error(403, 'Forbidden'));
@@ -48,10 +50,20 @@ class TicketController
         return json(Response::success($ticket));
     }
 
-    public function reply($request, int $id)
+    public function reply($request, string $id)
     {
-        $senderType = in_array($request->userRole, ['admin', 'support', 'super_admin']) ? 'staff' : 'user';
-        $msg = $this->service->reply($id, $request->userId, $senderType, $request->input('content'));
+        $id = HashidService::decodeId($id);
+        $isStaff = in_array($request->userRole, ['admin', 'support', 'super_admin'], true);
+        // 普通用户只能回复自己的工单；非 staff 的其余角色拒绝
+        if ($isStaff) {
+            Ticket::findOrFail($id);
+        } elseif ($request->userRole === 'user') {
+            Ticket::where('user_id', $request->userId)->findOrFail($id);
+        } else {
+            return json(Response::error(403, 'Forbidden'));
+        }
+
+        $msg = $this->service->reply($id, $request->userId, $isStaff ? 'staff' : 'user', $request->input('content'));
         return json(Response::success($msg, 'Reply sent'));
     }
 
