@@ -31,7 +31,8 @@ final class AuthFullChainTest extends TestCase
             return;
         }
         $base = dirname(__DIR__, 2);
-        \Dotenv\Dotenv::createUnsafeMutable($base)->load();
+        // CI 没有 service/.env：safeLoad() 缺失时静默跳过，而不是让整组测试报错
+        \Dotenv\Dotenv::createUnsafeMutable($base)->safeLoad();
         // dotenv 默认只写 $_ENV/$_SERVER，业务代码用 getenv() —— 回灌进程环境
         foreach ($_ENV as $k => $v) {
             putenv("$k=$v");
