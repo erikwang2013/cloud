@@ -1,8 +1,10 @@
 {
     "name": "cloud/admin",
+    "description": "CloudPlatform admin panel",
     "type": "project",
+    "license": "proprietary",
     "require": {
-        "php": ">=8.2",
+        "php": ">=8.3",
         "workerman/webman-framework": "^2.1",
         "webman/admin": "^2.1",
         "webman/captcha": "^1.0",

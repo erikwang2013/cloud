@@ -811,14 +811,14 @@ GitHub Actions workflow at `.github/workflows/ci.yml`.
 
 | Job | Strategy | Description |
 |-----|----------|-------------|
-| `syntax` | PHP 8.2 | `php -l` lint all `.php` files in admin/ and service/ |
-| `admin-tests` | PHP 8.2, 8.3 | `composer install -d admin` → `admin/vendor/bin/phpunit` |
-| `service-tests` | PHP 8.2, 8.3 | `composer install -d service` → `service/vendor/bin/phpunit` |
-| `composer-validate` | PHP 8.2 | `composer validate --strict` on both composer.json files |
+| `syntax` | PHP 8.3 | `php -l` lint all `.php` files in admin/ and service/ |
+| `admin-tests` | PHP 8.3, 8.4 | `composer install -d admin` → `admin/vendor/bin/phpunit` |
+| `service-tests` | PHP 8.3, 8.4 | `composer install -d service` → `service/vendor/bin/phpunit` |
+| `composer-validate` | PHP 8.3 | `composer validate --strict` on both composer.json files |
 
 ### PHP Version Matrix
 
-Both test jobs run on PHP 8.2 and 8.3 via `shivammathur/setup-php@v2`.
+Both test jobs run on PHP 8.3 and 8.4 via `shivammathur/setup-php@v2`.
 
 ### Current Status
 

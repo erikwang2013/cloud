@@ -1,6 +1,6 @@
 FROM composer:2 AS composer-stage
 
-FROM php:8.2-cli AS base
+FROM php:8.3-cli AS base
 
 RUN apt-get update && apt-get install -y \
     libzip-dev zip unzip libpng-dev libjpeg-dev curl \

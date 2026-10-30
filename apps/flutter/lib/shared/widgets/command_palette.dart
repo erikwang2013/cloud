@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class _CommandItem {
+class CommandItem {
   final String id;
   final String title;
   final String category;
   final IconData icon;
   final VoidCallback onSelect;
 
-  const _CommandItem({
+  const CommandItem({
     required this.id,
     required this.title,
     required this.category,
@@ -17,12 +17,12 @@ class _CommandItem {
 }
 
 class CommandPalette extends StatefulWidget {
-  final List<_CommandItem> commands;
+  final List<CommandItem> commands;
 
   const CommandPalette({super.key, required this.commands});
 
   /// Show the command palette as an overlay.
-  static void show(BuildContext context, {List<_CommandItem> commands = const []}) {
+  static void show(BuildContext context, {List<CommandItem> commands = const []}) {
     final items = commands.isEmpty ? _defaultCommands(context) : commands;
     showDialog(
       context: context,
@@ -31,57 +31,57 @@ class CommandPalette extends StatefulWidget {
     );
   }
 
-  static List<_CommandItem> _defaultCommands(BuildContext context) => [
-    _CommandItem(
+  static List<CommandItem> _defaultCommands(BuildContext context) => [
+    CommandItem(
       id: 'products',
       title: 'Products',
       category: 'Navigation',
       icon: Icons.computer_rounded,
       onSelect: () => Navigator.of(context).pop(),
     ),
-    _CommandItem(
+    CommandItem(
       id: 'cart',
       title: 'Shopping Cart',
       category: 'Navigation',
       icon: Icons.shopping_cart_outlined,
       onSelect: () => Navigator.of(context).pop(),
     ),
-    _CommandItem(
+    CommandItem(
       id: 'resources',
       title: 'My Resources',
       category: 'Navigation',
       icon: Icons.dns_outlined,
       onSelect: () => Navigator.of(context).pop(),
     ),
-    _CommandItem(
+    CommandItem(
       id: 'tickets',
       title: 'Support Tickets',
       category: 'Navigation',
       icon: Icons.support_agent_outlined,
       onSelect: () => Navigator.of(context).pop(),
     ),
-    _CommandItem(
+    CommandItem(
       id: 'profile',
       title: 'Profile Settings',
       category: 'Navigation',
       icon: Icons.person_outline,
       onSelect: () => Navigator.of(context).pop(),
     ),
-    _CommandItem(
+    CommandItem(
       id: 'new_resource',
       title: 'New Resource',
       category: 'Actions',
       icon: Icons.add,
       onSelect: () => Navigator.of(context).pop(),
     ),
-    _CommandItem(
+    CommandItem(
       id: 'theme_toggle',
       title: 'Toggle Dark Mode',
       category: 'Actions',
       icon: Icons.dark_mode,
       onSelect: () => Navigator.of(context).pop(),
     ),
-    _CommandItem(
+    CommandItem(
       id: 'settings',
       title: 'Settings',
       category: 'Actions',
@@ -99,7 +99,7 @@ class _CommandPaletteState extends State<CommandPalette> {
   final _focusNode = FocusNode();
   int _selectedIndex = 0;
   String _query = '';
-  late List<_CommandItem> _filtered;
+  late List<CommandItem> _filtered;
 
   @override
   void initState() {
@@ -233,7 +233,7 @@ class _CommandPaletteState extends State<CommandPalette> {
 }
 
 class _CommandTile extends StatelessWidget {
-  final _CommandItem item;
+  final CommandItem item;
   final bool selected;
   final VoidCallback onTap;
   final VoidCallback onHover;

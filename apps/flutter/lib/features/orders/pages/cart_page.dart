@@ -27,13 +27,17 @@ class _CartPageState extends State<CartPage> {
     setState(() { _loading = true; _error = null; });
     try {
       final data = await _api.getCart();
-      if (mounted) setState(() {
-        _items = data['items'] as List<dynamic>? ?? [];
-        _summary = data['summary'] as Map<String, dynamic>?;
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _items = data['items'] as List<dynamic>? ?? [];
+          _summary = data['summary'] as Map<String, dynamic>?;
+          _loading = false;
+        });
+      }
     } on DioException catch (e) {
-      if (mounted) setState(() { _error = e.message; _loading = false; });
+      if (mounted) {
+        setState(() { _error = e.message; _loading = false; });
+      }
     }
   }
 
@@ -87,7 +91,6 @@ class _CartPageState extends State<CartPage> {
                     DataColumn(label: Text('')),
                   ],
                   rows: _items.asMap().entries.map((entry) {
-                    final i = entry.key;
                     final item = entry.value as Map<String, dynamic>? ?? {};
                     final name = (item['product'] is Map ? item['product']['name'] ?? 'Unknown' : 'Unknown').toString();
                     final region = (item['region'] ?? 'N/A').toString();
@@ -162,7 +165,7 @@ class _CartPageState extends State<CartPage> {
               trailing: Text('\$$price', style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
           );
-        }).toList(),
+        }),
         const SizedBox(height: 16),
         Card(
           child: Padding(

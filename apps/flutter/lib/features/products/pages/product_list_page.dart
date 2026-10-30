@@ -1,9 +1,22 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/network/api_service.dart';
-import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/responsive.dart';
+
+/// Find the lowest price across all SKUs and regions.
+String _lowestPrice(dynamic product) {
+  double? lowest;
+  final skus = product['skus'] as List<dynamic>? ?? [];
+  for (final sku in skus) {
+    final prices = sku['region_prices'] as List<dynamic>? ?? [];
+    for (final rp in prices) {
+      final p = double.tryParse((rp['price'] ?? '').toString());
+      if (p != null && (lowest == null || p < lowest)) lowest = p;
+    }
+  }
+  return lowest != null ? '\$${lowest.toStringAsFixed(2)}' : '\$--';
+}
 
 class ProductListPage extends StatefulWidget {
   const ProductListPage({super.key});
@@ -238,20 +251,6 @@ class _ProductListPageState extends State<ProductListPage> {
         ],
       ),
     );
-  }
-
-  /// Find the lowest price across all SKUs and regions.
-  String _lowestPrice(dynamic product) {
-    double? lowest;
-    final skus = product['skus'] as List<dynamic>? ?? [];
-    for (final sku in skus) {
-      final prices = sku['region_prices'] as List<dynamic>? ?? [];
-      for (final rp in prices) {
-        final p = double.tryParse((rp['price'] ?? '').toString());
-        if (p != null && (lowest == null || p < lowest)) lowest = p;
-      }
-    }
-    return lowest != null ? '\$${lowest.toStringAsFixed(2)}' : '\$--';
   }
 
   void _showContextMenu(BuildContext context, Offset position, int index) {

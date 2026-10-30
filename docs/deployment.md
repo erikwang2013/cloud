@@ -8,7 +8,7 @@
 | CPU | 2 核 | 4 核+ |
 | 内存 | 4 GB | 8 GB+ |
 | 磁盘 | 40 GB SSD | 100 GB SSD |
-| PHP | 8.2+ | 8.3 |
+| PHP | 8.3+ | 8.4 |
 | MySQL | 8.0 | 8.0 |
 | Redis | 7.x | 7.x |
 
@@ -616,7 +616,7 @@ php start.php status
 ### 基础设施
 - [ ] MySQL 可连接：`mysql -u app_user -p -e "SELECT 1"`
 - [ ] Redis 可连接：`redis-cli ping` → `PONG`
-- [ ] PHP 版本 >= 8.2：`php -v`
+- [ ] PHP 版本 >= 8.3：`php -v`
 - [ ] Composer 依赖安装成功
 
 ### 应用配置

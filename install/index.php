@@ -469,7 +469,7 @@ ENV;
 function envChecks(): array
 {
     $checks = [];
-    $checks[] = ['name' => 'PHP Version >= 8.2', 'pass' => version_compare(PHP_VERSION, '8.2', '>='), 'value' => PHP_VERSION];
+    $checks[] = ['name' => 'PHP Version >= 8.3', 'pass' => version_compare(PHP_VERSION, '8.3', '>='), 'value' => PHP_VERSION];
     $checks[] = ['name' => 'PDO Extension', 'pass' => extension_loaded('pdo'), 'value' => extension_loaded('pdo') ? 'Loaded' : 'Missing'];
     $checks[] = ['name' => 'PDO MySQL Driver', 'pass' => extension_loaded('pdo_mysql'), 'value' => extension_loaded('pdo_mysql') ? 'Loaded' : 'Missing'];
     $checks[] = ['name' => 'JSON Extension', 'pass' => extension_loaded('json'), 'value' => extension_loaded('json') ? 'Loaded' : 'Missing'];

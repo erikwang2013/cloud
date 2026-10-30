@@ -1,9 +1,10 @@
 {
     "name": "cloud/platform",
+    "description": "CloudPlatform API and provisioning service",
     "type": "project",
-    "license": "MIT",
+    "license": "proprietary",
     "require": {
-        "php": ">=8.2",
+        "php": ">=8.3",
         "workerman/webman-framework": "^2.1",
         "webman/admin": "^2.1",
         "illuminate/database": "^10.0",

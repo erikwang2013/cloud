@@ -19,7 +19,7 @@ The system is organized into **four layers** — Client Layer (Flutter multi-pla
 
 | Layer | Technology |
 |-------|------------|
-| Backend | PHP 8.2 + [webman](https://github.com/walkor/webman) (workerman) |
+| Backend | PHP 8.3 + [webman](https://github.com/walkor/webman) (workerman) |
 | Admin Panel | [webman-admin](https://www.workerman.net/plugin/1) (Layui) |
 | ORM | Illuminate/Eloquent 10.x |
 | Auth | JWT HS256 ([erikwang2013/jwt-webman](https://github.com/erikwang2013/jwt-webman)) |
@@ -252,7 +252,7 @@ cloud-php/
 │   │   ├── pubspec.yaml        # Dependency manifest
 │   │   └── analysis_options.yaml # Dart static analysis config
 ├── docker/                     # Docker deployment
-│   ├── Dockerfile              # PHP 8.2 image
+│   ├── Dockerfile              # PHP 8.3 image
 │   ├── docker-compose.yml      # Service orchestration
 │   ├── nginx.conf              # Nginx config
 │   └── supervisor.conf         # Supervisor process manager
@@ -290,7 +290,7 @@ cloud-php/
 
 ### Prerequisites
 
-- PHP 8.2+ (ext-json, ext-pdo, ext-pdo_mysql, ext-redis, ext-openssl)
+- PHP 8.3+ (ext-json, ext-pdo, ext-pdo_mysql, ext-redis, ext-openssl)
 - MySQL 8.0
 - Redis 7
 

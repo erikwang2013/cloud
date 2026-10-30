@@ -19,7 +19,7 @@
 
 | 层级 | 技术 |
 |------|------|
-| 后端框架 | PHP 8.2 + [webman](https://github.com/walkor/webman) (workerman) |
+| 后端框架 | PHP 8.3 + [webman](https://github.com/walkor/webman) (workerman) |
 | 管理后台 | [webman-admin](https://www.workerman.net/plugin/1) (Layui) |
 | ORM | Illuminate/Eloquent 10.x |
 | 认证 | JWT HS256 ([erikwang2013/jwt-webman](https://github.com/erikwang2013/jwt-webman)) |
@@ -255,7 +255,7 @@ cloud-php/
 │   │   ├── pubspec.yaml        # 依赖声明
 │   │   └── analysis_options.yaml # Dart 静态分析配置
 ├── docker/                     # Docker 部署
-│   ├── Dockerfile              # PHP 8.2 镜像
+│   ├── Dockerfile              # PHP 8.3 镜像
 │   ├── docker-compose.yml      # 服务编排
 │   ├── nginx.conf              # Nginx 配置
 │   └── supervisor.conf         # Supervisor 进程守护
@@ -293,7 +293,7 @@ cloud-php/
 
 ### 环境要求
 
-- PHP 8.2+ (ext-json, ext-pdo, ext-pdo_mysql, ext-redis, ext-openssl)
+- PHP 8.3+ (ext-json, ext-pdo, ext-pdo_mysql, ext-redis, ext-openssl)
 - MySQL 8.0
 - Redis 7
 
