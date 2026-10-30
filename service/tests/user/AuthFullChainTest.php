@@ -51,14 +51,14 @@ final class AuthFullChainTest extends TestCase
         \Illuminate\Support\Facades\Facade::setFacadeApplication($capsule->getContainer());
         $capsule->getContainer()->singleton('redis', fn() => \support\Redis::manager());
 
-        \Common\snowflake\SnowflakeService::init();
-        \Common\encryption\EncryptionService::init();
-        \Common\hashid\HashidService::init();
-
         try {
+            \Common\snowflake\SnowflakeService::init();
+            \Common\encryption\EncryptionService::init();
+            \Common\hashid\HashidService::init();
             \Illuminate\Support\Facades\DB::connection('default')->getPdo();
             self::$dbOk = true;
         } catch (\Throwable $e) {
+            // CI 无 .env/MySQL：初始化失败按“环境不可用”跳过，而不是让整组测试报错
             self::$dbError = $e->getMessage();
         }
 

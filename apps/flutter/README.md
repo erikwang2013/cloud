@@ -1,6 +1,6 @@
 # CloudPlatform Flutter 客户端
 
-CloudPlatform 云资源交易平台的 Flutter 客户端，支持 iOS / Android / Web / Linux / macOS / Windows 六平台。
+CloudPlatform 云资源交易平台的 Flutter 客户端，支持 iOS / Web / Linux / macOS / Windows 五平台。
 
 ## 环境要求
 
@@ -13,7 +13,7 @@ CloudPlatform 云资源交易平台的 Flutter 客户端，支持 iOS / Android 
 cd apps/flutter
 flutter pub get          # 安装依赖
 flutter run              # 调试运行
-flutter build apk        # Android 打包
+flutter build web        # Web 打包
 flutter build ios        # iOS 打包（需 macOS + Xcode）
 flutter build web        # Web 打包
 flutter build macos / linux / windows   # 桌面端打包

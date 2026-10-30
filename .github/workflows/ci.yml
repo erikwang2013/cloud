@@ -81,6 +81,6 @@ jobs:
       - name: Analyze
         # warning 级 lint 不阻断，error 级仍失败
         run: cd apps/flutter && flutter analyze --no-fatal-warnings
-      - name: Build debug APK
-        run: cd apps/flutter && flutter build apk --debug
+      - name: Build web
+        run: cd apps/flutter && flutter build web --release
 

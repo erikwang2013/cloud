@@ -39,7 +39,7 @@
 | 数据库 | MySQL 8.0（主库 + 审计库双连接） |
 | 搜索引擎 | Elasticsearch 8.x |
 | 虚拟化 | Proxmox VE |
-| 客户端 | Flutter (iOS/Android/Web/Linux/macOS/Windows) |
+| 客户端 | Flutter (iOS/Web/Linux/macOS/Windows) |
 | 可观测性 | Prometheus + Grafana（预置仪表盘） |
 | 多语言 | i18n 7 语言（中/英/日/韩/德/法/西） |
 | 部署 | Docker Compose 一键启动 |
@@ -402,7 +402,7 @@ php start.php stop              # 停止
 
 ### 客户端构建
 
-- **Flutter 客户端**（`apps/flutter/`）：覆盖 iOS / Android / Web / Linux / macOS / Windows 六平台。`flutter pub get` 安装依赖，`flutter run` 调试，`flutter build apk` / `flutter build ios` / `flutter build web` 打包
+- **Flutter 客户端**（`apps/flutter/`）：覆盖 iOS / Web / Linux / macOS / Windows 五平台。`flutter pub get` 安装依赖，`flutter run` 调试，`flutter build ios` / `flutter build web` 打包
 
 ## API 概览
 

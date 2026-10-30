@@ -39,7 +39,7 @@ The system is organized into **four layers** — Client Layer (Flutter multi-pla
 | Database | MySQL 8.0 (main + audit dual connection) |
 | Search Engine | Elasticsearch 8.x |
 | Virtualization | Proxmox VE |
-| Clients | Flutter (iOS/Android/Web/Linux/macOS/Windows) |
+| Clients | Flutter (iOS/Web/Linux/macOS/Windows) |
 | Deployment | Docker Compose |
 
 ## System Architecture
@@ -399,7 +399,7 @@ Once running, `http://localhost:8787` serves the site landing page (project pet 
 
 ### Building Clients
 
-- **Flutter client** (`apps/flutter/`): iOS / Android / Web / Linux / macOS / Windows. Run `flutter pub get` to install dependencies, `flutter run` to debug, `flutter build apk` / `flutter build ios` / `flutter build web` to package
+- **Flutter client** (`apps/flutter/`): iOS / Web / Linux / macOS / Windows. Run `flutter pub get` to install dependencies, `flutter run` to debug, `flutter build ios` / `flutter build web` to package
 
 ## API Overview
 
